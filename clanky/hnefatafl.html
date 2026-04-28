@@ -161,7 +161,7 @@
       0 0 0 1px rgba(200,168,75,0.08),
       0 8px 40px rgba(0,0,0,0.6),
       0 0 60px rgba(93,58,26,0.2);
-    overflow: hidden;
+    overflow: visible;
     margin-bottom: 0.8rem;
     position: relative;
   }
@@ -174,6 +174,7 @@
     cursor: default;
     transition: background 0.08s;
     position: relative;
+    overflow: visible;
   }
   .cell.clickable { cursor: pointer; }
   .cell.clickable:hover { filter: brightness(1.12); }
@@ -184,7 +185,20 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform 0.1s, box-shadow 0.1s;
+    pointer-events: none;
+    position: absolute;
+    transition: box-shadow 0.08s;
+    will-change: transform;
+    z-index: 2;
+  }
+  .piece.moving {
+    transition: transform 0.12s ease, box-shadow 0.08s;
+    z-index: 10;
+  }
+  .piece.capturing {
+    transition: transform 0.15s ease, opacity 0.15s ease;
+    transform: scale(0.3) !important;
+    opacity: 0;
     pointer-events: none;
   }
   .piece-king {
@@ -829,7 +843,8 @@ const G = {
     this.currentTurn = playerIsDefender ? 'player' : 'ai';
 
     this._updateDiffButtons();
-    this._render();
+    this._cs = null; // force recalc
+    this._buildBoard();
     document.getElementById('end-banner').classList.remove('open');
     document.getElementById('thinking').classList.remove('visible');
 
@@ -1143,12 +1158,11 @@ const G = {
 
   /* ── TURN MANAGEMENT ──────────────── */
   _afterPlayerMove(toR, toC) {
-    if (this._checkWin(toR, toC, 'player')) { this._render(); return; }
+    if (this._checkWin(toR, toC, 'player')) { this._buildBoard(); return; }
     this.currentTurn = 'ai';
     this._msg('AI přemýšlí…');
-    this._render();
+    this._updateState();
     document.getElementById('thinking').classList.add('visible');
-    // Give browser time to paint before heavy computation
     setTimeout(() => this._aiTurn(), this.difficulty === 3 ? 80 : 50);
   },
 
@@ -1156,7 +1170,7 @@ const G = {
     if (!this.gameActive || this.currentTurn !== 'ai') return;
     document.getElementById('thinking').classList.remove('visible');
     const moves = this.getAllMoves('ai');
-    if (!moves.length) { this._endGame('player'); this._render(); return; }
+    if (!moves.length) { this._endGame('player'); this._buildBoard(); return; }
 
     let chosen;
     if (this.difficulty === 1) {
@@ -1167,11 +1181,43 @@ const G = {
       chosen = this._minimaxMove();
     }
 
-    this._execMove(chosen, 'ai');
-    if (this._checkWin(chosen.toR, chosen.toC, 'ai')) { this._render(); return; }
-    this.currentTurn = 'player';
-    this._msg('Váš tah');
-    this._render();
+    // Collect which cells will be captured (before applying)
+    const capturedCells = [];
+    const opp = 'player';
+    const side = 'ai';
+    const b = this.board;
+    const { toR, toC, fromR, fromC } = chosen;
+    // Temporarily apply move to scan captures
+    b[toR][toC] = b[fromR][fromC];
+    b[fromR][fromC] = null;
+    [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr, dc]) => {
+      const mr = toR+dr, mc = toC+dc;
+      const br2 = toR+dr*2, bc2 = toC+dc*2;
+      if (!this.inBounds(mr, mc)) return;
+      const t = b[mr][mc];
+      if (!t || t.owner !== opp || t.type === 'king') return;
+      const far = this.inBounds(br2, bc2) && (
+        (b[br2][bc2] && b[br2][bc2].owner === side) ||
+        this.isCorner(br2, bc2) ||
+        (br2 === this.THRONE[0] && bc2 === this.THRONE[1])
+      );
+      if (far || !this.inBounds(br2, bc2)) capturedCells.push([mr, mc]);
+    });
+    // Undo temp move
+    b[fromR][fromC] = b[toR][toC];
+    b[toR][toC] = null;
+
+    // Now apply fully via BASE execMove (skip animation wrapper)
+    G._baseExecMove(chosen, 'ai', this.board, true);
+    this._updateState();
+    this._updateCounters();
+
+    this._animateMove(chosen, capturedCells, () => {
+      if (this._checkWin(chosen.toR, chosen.toC, 'ai')) { this._buildBoard(); return; }
+      this.currentTurn = 'player';
+      this._msg('Váš tah');
+      this._updateState();
+    });
   },
 
   /* ── AI LEVEL 2: GREEDY ───────────── */
@@ -1340,78 +1386,114 @@ const G = {
 
   _msg(m) { const el = document.getElementById('s-msg'); if (el) el.textContent = m; },
 
-  /* ── RENDER ───────────────────────── */
-  _render() {
-    const wrap = document.getElementById('board-wrap');
-    if (!wrap) return;
+  /* ── CELL SIZE CALC ───────────────── */
+  _cellSize() {
     const W = window.innerWidth;
     const mobile = W <= 500;
-    const cs = Math.floor(Math.min((W - 40) / this.SIZE, mobile ? 30 : 46));
+    return Math.floor(Math.min((W - 40) / this.SIZE, mobile ? 30 : 46));
+  },
+
+  /* ── BUILD BOARD DOM (once per game) ─ */
+  _buildBoard() {
+    const wrap = document.getElementById('board-wrap');
+    if (!wrap) return;
+    const cs = this._cellSize();
     const ks = Math.round(cs * 0.75);
     const ps = Math.round(cs * 0.66);
+    this._cs = cs; this._ks = ks; this._ps = ps;
 
     let h = '';
     for (let r = 0; r < this.SIZE; r++) {
       h += '<div class="board-row">';
       for (let c = 0; c < this.SIZE; c++) {
-        const piece = this.board[r][c];
-        const isSel = this.selectedCell && this.selectedCell[0]===r && this.selectedCell[1]===c;
-        const isThrone = r===this.THRONE[0] && c===this.THRONE[1];
-        const isCorn = this.isCorner(r, c);
-        const isLastFrom = this.lastMove && this.lastMove.fromR===r && this.lastMove.fromC===c;
-        const isLastTo   = this.lastMove && this.lastMove.toR===r   && this.lastMove.toC===c;
-
-        let isVT = false;
-        if (this.selectedCell && this.currentTurn === 'player') {
-          const [sr, sc] = this.selectedCell;
-          isVT = this.getMovesFor(sr, sc).some(m => m.toR===r && m.toC===c);
-        }
-
+        const isThrone = r === this.THRONE[0] && c === this.THRONE[1];
+        const isCorn   = this.isCorner(r, c);
         let bg = (r+c)%2===0 ? 'var(--board-light)' : 'var(--board-dark)';
         if (isThrone) bg = 'var(--throne)';
         if (isCorn)   bg = 'var(--corner)';
-        if (isSel)    bg = 'var(--sel)';
-        else if (isVT) bg = 'var(--valid)';
 
-        const clickable = this.currentTurn === 'player' && this.gameActive;
-        const extraClass = [
-          clickable ? 'clickable' : '',
-          isLastFrom ? 'last-from' : '',
-          isLastTo   ? 'last-to'   : ''
-        ].filter(Boolean).join(' ');
-
-        h += `<div class="cell ${extraClass}" style="width:${cs}px;height:${cs}px;background:${bg};"`;
-        if (clickable) h += ` onclick="G.onCellClick(${r},${c})"`;
-        h += '>';
-
-        if (!piece) {
-          if (isThrone) h += `<span style="font-size:${Math.round(cs*0.35)}px;opacity:0.4;">⊕</span>`;
-          else if (isCorn) h += `<span style="font-size:${Math.round(cs*0.35)}px;opacity:0.5;">🏰</span>`;
+        let inner = '';
+        if (!this.board[r][c]) {
+          if (isThrone) inner = `<span style="font-size:${Math.round(cs*0.35)}px;opacity:0.4;pointer-events:none;">⊕</span>`;
+          else if (isCorn) inner = `<span style="font-size:${Math.round(cs*0.35)}px;opacity:0.5;pointer-events:none;">🏰</span>`;
+        } else {
+          const piece = this.board[r][c];
+          const half = Math.round(cs / 2);
+          const psize = piece.type === 'king' ? ks : ps;
+          const offset = Math.round((cs - psize) / 2);
+          const cls = piece.type === 'king' ? 'piece piece-king' : piece.type === 'defender' ? 'piece piece-def' : 'piece piece-att';
+          const content = piece.type === 'king' ? '👑' : '';
+          inner = `<div id="piece-${r}-${c}" class="${cls}" style="width:${psize}px;height:${psize}px;top:${offset}px;left:${offset}px;">${content}</div>`;
         }
 
-        if (piece) {
-          const selClass = isSel ? ' selected' : '';
-          if (piece.type === 'king')
-            h += `<div class="piece piece-king${selClass}" style="width:${ks}px;height:${ks}px;">👑</div>`;
-          else if (piece.type === 'defender')
-            h += `<div class="piece piece-def${selClass}" style="width:${ps}px;height:${ps}px;"></div>`;
-          else
-            h += `<div class="piece piece-att${selClass}" style="width:${ps}px;height:${ps}px;"></div>`;
-        }
-
-        h += '</div>';
+        h += `<div id="cell-${r}-${c}" class="cell" style="width:${cs}px;height:${cs}px;background:${bg};" onclick="G.onCellClick(${r},${c})">${inner}</div>`;
       }
       h += '</div>';
     }
     wrap.innerHTML = h;
+    this._updateState();
+  },
 
-    // Status counts
+  /* ── UPDATE STATE ONLY (no DOM rebuild) */
+  _render() {
+    if (!document.getElementById('cell-0-0')) { this._buildBoard(); return; }
+    this._updateState();
+    this._updateCounters();
+  },
+
+  _updateState() {
+    const cs = this._cs || this._cellSize();
+    const po = this.playerOwner || 'player';
+    const clickable = this.currentTurn === 'player' && this.gameActive;
+
+    let validTargets = new Set();
+    if (this.selectedCell && this.currentTurn === 'player') {
+      const [sr, sc] = this.selectedCell;
+      this.getMovesFor(sr, sc).forEach(m => validTargets.add(`${m.toR}-${m.toC}`));
+    }
+
+    for (let r = 0; r < this.SIZE; r++) {
+      for (let c = 0; c < this.SIZE; c++) {
+        const cell = document.getElementById(`cell-${r}-${c}`);
+        if (!cell) continue;
+
+        const isThrone   = r === this.THRONE[0] && c === this.THRONE[1];
+        const isCorn     = this.isCorner(r, c);
+        const isSel      = this.selectedCell && this.selectedCell[0]===r && this.selectedCell[1]===c;
+        const isLastFrom = this.lastMove && this.lastMove.fromR===r && this.lastMove.fromC===c;
+        const isLastTo   = this.lastMove && this.lastMove.toR===r   && this.lastMove.toC===c;
+        const isVT       = validTargets.has(`${r}-${c}`);
+
+        let bg = (r+c)%2===0 ? 'var(--board-light)' : 'var(--board-dark)';
+        if (isThrone)    bg = 'var(--throne)';
+        if (isCorn)      bg = 'var(--corner)';
+        if (isSel)       bg = 'var(--sel)';
+        else if (isVT)   bg = 'var(--valid)';
+        else if (isLastFrom) bg = 'rgba(200,168,75,0.12)';
+        else if (isLastTo)   bg = 'rgba(200,168,75,0.22)';
+
+        cell.style.background = bg;
+        cell.className = 'cell' + (clickable ? ' clickable' : '');
+
+        // Piece selected state
+        const pieceEl = document.getElementById(`piece-${r}-${c}`);
+        if (pieceEl) {
+          if (isSel) pieceEl.classList.add('selected');
+          else pieceEl.classList.remove('selected');
+        }
+      }
+    }
+    this._updateCounters();
+  },
+
+  _updateCounters() {
     const nd = this.countPieces('player');
     const na = this.countPieces('ai');
-    document.getElementById('s-def').textContent = `⬜ Obránci: ${nd}`;
-    document.getElementById('s-att').textContent = `⬛ Útočníci: ${na}`;
+    const sdef = document.getElementById('s-def');
+    const satt = document.getElementById('s-att');
+    if (sdef) sdef.textContent = `⬜ Obránci: ${nd}`;
+    if (satt) satt.textContent = `⬛ Útočníci: ${na}`;
 
-    // Captured dots
     let caps = '';
     if (this.capturedAtts > 0) {
       caps += `Zajato ⬛: `;
@@ -1424,22 +1506,128 @@ const G = {
       for(let i=0;i<Math.min(this.capturedDefs,12);i++) caps+=`<span class="cap-dot" style="background:var(--defender);border:1px solid var(--def-border);"></span>`;
       if (this.capturedDefs>12) caps+=` +${this.capturedDefs-12}`;
     }
-    document.getElementById('cap-row').innerHTML = caps;
-  }
+    const capRow = document.getElementById('cap-row');
+    if (capRow) capRow.innerHTML = caps;
+  },
+
+  /* ── ANIMATED MOVE ────────────────── */
+  _animateMove(move, capturedCells, onDone) {
+    const cs = this._cs || this._cellSize();
+    const { fromR, fromC, toR, toC } = move;
+    const pieceEl = document.getElementById(`piece-${fromR}-${fromC}`);
+    if (!pieceEl) { onDone(); return; }
+
+    const dx = (toC - fromC) * cs;
+    const dy = (toR - fromR) * cs;
+
+    // 1. Animate movement
+    pieceEl.classList.add('moving');
+    pieceEl.style.transform = `translate(${dx}px, ${dy}px)`;
+
+    setTimeout(() => {
+      // 2. Physically move piece element to target cell
+      pieceEl.classList.remove('moving');
+      pieceEl.style.transform = '';
+      pieceEl.id = `piece-${toR}-${toC}`;
+
+      const fromCell = document.getElementById(`cell-${fromR}-${fromC}`);
+      const toCell   = document.getElementById(`cell-${toR}-${toC}`);
+      if (fromCell && toCell) {
+        // Clear throne/corner icon in target if present
+        const icon = toCell.querySelector('span');
+        if (icon) icon.remove();
+        toCell.appendChild(pieceEl);
+
+        // Restore throne/corner icon in source cell if needed
+        const isThrone = fromR===this.THRONE[0] && fromC===this.THRONE[1];
+        const isCorn   = this.isCorner(fromR, fromC);
+        const iconSize = Math.round(cs * 0.35);
+        if (isThrone) fromCell.innerHTML = `<span style="font-size:${iconSize}px;opacity:0.4;pointer-events:none;">⊕</span>`;
+        else if (isCorn) fromCell.innerHTML = `<span style="font-size:${iconSize}px;opacity:0.5;pointer-events:none;">🏰</span>`;
+      }
+
+      // 3. Animate captures
+      if (capturedCells && capturedCells.length > 0) {
+        capturedCells.forEach(([cr, cc]) => {
+          const capEl = document.getElementById(`piece-${cr}-${cc}`);
+          if (capEl) {
+            capEl.classList.add('capturing');
+            setTimeout(() => {
+              capEl.remove();
+              // Restore cell icon if needed
+              const capCell = document.getElementById(`cell-${cr}-${cc}`);
+              if (capCell) {
+                const isCT = cr===this.THRONE[0] && cc===this.THRONE[1];
+                const isCCorn = this.isCorner(cr, cc);
+                const iconSize2 = Math.round(cs * 0.35);
+                if (isCT) capCell.innerHTML = `<span style="font-size:${iconSize2}px;opacity:0.4;pointer-events:none;">⊕</span>`;
+                else if (isCCorn) capCell.innerHTML = `<span style="font-size:${iconSize2}px;opacity:0.5;pointer-events:none;">🏰</span>`;
+              }
+            }, 150);
+          }
+        });
+        setTimeout(onDone, 160);
+      } else {
+        onDone();
+      }
+    }, 120);
+  },
 };
 
-// Exec move with live=true wired to player/ai flow
+// Animated execMove wrapper
 const _origExecMove = G._execMove.bind(G);
+G._baseExecMove = _origExecMove; // direct access without animation
 G._execMove = function(move, side, board, live) {
   if (board === undefined || board === G.board) {
-    // Live move
+    // Collect captured cells BEFORE applying move to board
+    const capturedCells = [];
+    const opp = side === 'player' ? 'ai' : 'player';
+    [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr, dc]) => {
+      const mr = move.toR+dr, mc = move.toC+dc;
+      const br = move.toR+dr*2, bc = move.toC+dc*2;
+      if (!G.inBounds(mr, mc)) return;
+      const t = G.board[mr][mc];
+      if (!t || t.owner !== opp || t.type === 'king') return;
+      const far = G.inBounds(br, bc) && (
+        (G.board[br][bc] && G.board[br][bc].owner === side) ||
+        G.isCorner(br, bc) ||
+        (br === G.THRONE[0] && bc === G.THRONE[1])
+      );
+      const edge = !G.inBounds(br, bc);
+      if (far || edge) capturedCells.push([mr, mc]);
+    });
+
+    // Apply move to game state
     _origExecMove(move, side, G.board, true);
-    G._render();
-    if (side === 'player') G._afterPlayerMove(move.toR, move.toC);
+
+    // Update state styles (highlights, selection)
+    G._updateState();
+    G._updateCounters();
+
+    // Animate, then handle post-move logic
+    G._animateMove(move, capturedCells, () => {
+      if (side === 'player') {
+        G._afterPlayerMove(move.toR, move.toC);
+      }
+    });
+
+    // AI move: post-logic runs immediately after animation cb in _aiTurn
   } else {
     _origExecMove(move, side, board, false);
   }
 };
+
+// Resize debounce — rebuild board DOM with new cell size
+let _resizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(_resizeTimer);
+  _resizeTimer = setTimeout(() => {
+    G._cs = G._cellSize();
+    G._ks = Math.round(G._cs * 0.75);
+    G._ps = Math.round(G._cs * 0.66);
+    G._buildBoard();
+  }, 150);
+});
 
 // Start on load
 window.addEventListener('load', () => {
@@ -1447,12 +1635,10 @@ window.addEventListener('load', () => {
   G.aiOwner = 'ai';
   G._loadSavedSettings();
   G.newGame(G._settingsState.diff || 1);
-  // Overlay close on backdrop click
   document.getElementById('settings-overlay').addEventListener('click', function(e) {
     if (e.target === this) G.closeSettings();
   });
 });
-window.addEventListener('resize', () => G._render());
 </script>
 </body>
 </html>
