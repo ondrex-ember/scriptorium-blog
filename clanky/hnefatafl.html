@@ -28,6 +28,27 @@
     --defender:   #ddd8cc;
     --def-border: #aaa49a;
   }
+  [data-theme="light"] {
+    --gold:       #8a6010;
+    --gold-dim:   rgba(138,96,16,0.12);
+    --gold-glow:  rgba(138,96,16,0.4);
+    --bg:         #f5f0e8;
+    --bg2:        #ede6d6;
+    --bg3:        #e4dbc8;
+    --ink:        #2a1f0a;
+    --ink-dim:    #5a4520;
+    --ink-faint:  #9a8060;
+    --board-dark: #c8a87a;
+    --board-light:#d4b98a;
+    --throne:     #c07070;
+    --corner:     #5a9040;
+    --sel:        #d4a84a;
+    --valid:      rgba(60,160,40,0.35);
+    --attacker:   #1a0a00;
+    --att-border: #6b3c14;
+    --defender:   #ddd8cc;
+    --def-border: #aaa49a;
+  }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -242,7 +263,8 @@
 
   /* ── THINKING INDICATOR ── */
   .thinking {
-    display: none;
+    visibility: hidden;
+    min-height: 1.4em;
     font-size: 0.72rem;
     color: var(--ink-faint);
     letter-spacing: 0.15em;
@@ -250,7 +272,7 @@
     text-align: center;
     margin: 0.3rem 0;
   }
-  .thinking.visible { display: block; animation: pulse 1.2s infinite; }
+  .thinking.visible { visibility: visible; animation: pulse 1.2s infinite; }
   @keyframes pulse { 0%,100%{opacity:0.4} 50%{opacity:1} }
 
   /* ── RULES OVERLAY ── */
@@ -338,6 +360,237 @@
   @media (max-width: 480px) {
     body { padding: 1rem 0.5rem 2rem; }
   }
+
+  [data-theme="light"] body {
+    background-image:
+      radial-gradient(ellipse at 20% 0%, rgba(138,96,16,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 100%, rgba(180,140,80,0.08) 0%, transparent 50%);
+  }
+
+  /* ── SETTINGS MODAL ── */
+  .settings-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(5,3,0,0.82);
+    z-index: 150;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+  [data-theme="light"] .settings-overlay { background: rgba(80,60,20,0.55); }
+  .settings-overlay.open { display: flex; }
+
+  .settings-modal {
+    background: var(--bg2);
+    border: 1px solid rgba(200,168,75,0.25);
+    border-radius: 6px;
+    width: 100%;
+    max-width: 480px;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    animation: modalIn 0.22s ease;
+  }
+  @keyframes modalIn { from{opacity:0;transform:translateY(-12px)} to{opacity:1;transform:translateY(0)} }
+
+  .settings-hdr {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(200,168,75,0.12);
+  }
+  .settings-hdr h2 {
+    font-family: 'Cinzel', serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--gold);
+    letter-spacing: 0.1em;
+  }
+  .settings-hdr .close-btn { font-size: 1.3rem; }
+
+  .settings-tabs {
+    display: flex;
+    border-bottom: 1px solid rgba(200,168,75,0.12);
+    background: var(--bg);
+  }
+  .stab {
+    flex: 1;
+    padding: 8px 4px;
+    font-family: 'Cinzel', serif;
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    background: none;
+    border: none;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+  }
+  .stab:hover { color: var(--ink-dim); }
+  .stab.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+  .settings-body {
+    padding: 16px 18px;
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  .s-section { margin-bottom: 18px; }
+  .s-label {
+    font-family: 'Cinzel', serif;
+    font-size: 0.6rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 7px;
+  }
+
+  /* Variant grid */
+  .variant-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .variant-opt {
+    border: 1px solid rgba(200,168,75,0.15);
+    border-radius: 4px;
+    padding: 8px 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: var(--bg3);
+  }
+  .variant-opt:hover:not(.disabled) { border-color: rgba(200,168,75,0.35); }
+  .variant-opt.selected { border-color: var(--gold); background: var(--gold-dim); }
+  .variant-opt.disabled { opacity: 0.35; cursor: not-allowed; }
+  .variant-name {
+    font-family: 'Cinzel', serif;
+    font-size: 0.72rem;
+    color: var(--gold);
+    margin-bottom: 2px;
+  }
+  .variant-opt.selected .variant-name { font-weight: 600; }
+  .variant-desc { font-size: 0.68rem; color: var(--ink-faint); }
+
+  /* Side picker */
+  .side-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+  .side-opt {
+    border: 1px solid rgba(200,168,75,0.15);
+    border-radius: 4px;
+    padding: 9px 6px;
+    cursor: pointer;
+    text-align: center;
+    background: var(--bg3);
+    transition: all 0.15s;
+  }
+  .side-opt:hover { border-color: rgba(200,168,75,0.35); }
+  .side-opt.selected { border-color: var(--gold); background: var(--gold-dim); }
+  .side-opt-icon { font-size: 1.1rem; display: block; margin-bottom: 3px; }
+  .side-opt-lbl {
+    font-family: 'Cinzel', serif;
+    font-size: 0.6rem;
+    letter-spacing: 0.08em;
+    color: var(--ink-dim);
+  }
+  .side-opt.selected .side-opt-lbl { color: var(--gold); font-weight: 600; }
+
+  /* Difficulty in modal */
+  .diff-grid { display: flex; flex-direction: column; gap: 6px; }
+  .diff-opt {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    border: 1px solid rgba(200,168,75,0.15);
+    border-radius: 4px;
+    padding: 9px 12px;
+    cursor: pointer;
+    background: var(--bg3);
+    transition: all 0.15s;
+  }
+  .diff-opt:hover { border-color: rgba(200,168,75,0.35); }
+  .diff-opt.selected { border-color: var(--gold); background: var(--gold-dim); }
+  .diff-opt-title {
+    font-family: 'Cinzel', serif;
+    font-size: 0.72rem;
+    color: var(--gold);
+    margin-bottom: 2px;
+  }
+  .diff-opt.selected .diff-opt-title { font-weight: 600; }
+  .diff-opt-desc { font-size: 0.68rem; color: var(--ink-faint); line-height: 1.5; }
+  .diff-radio {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    border: 1px solid rgba(200,168,75,0.3);
+    margin-top: 1px;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .diff-opt.selected .diff-radio { border-color: var(--gold); background: var(--gold-dim); }
+  .diff-opt.selected .diff-radio::after {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--gold);
+  }
+
+  /* Theme picker */
+  .theme-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+  .theme-opt {
+    border: 1px solid rgba(200,168,75,0.15);
+    border-radius: 4px;
+    padding: 9px 6px;
+    cursor: pointer;
+    text-align: center;
+    background: var(--bg3);
+    transition: all 0.15s;
+  }
+  .theme-opt:hover { border-color: rgba(200,168,75,0.35); }
+  .theme-opt.selected { border-color: var(--gold); background: var(--gold-dim); }
+  .theme-swatch {
+    width: 28px; height: 16px;
+    border-radius: 3px;
+    margin: 0 auto 5px;
+    border: 1px solid rgba(200,168,75,0.2);
+  }
+  .swatch-dark   { background: #0e0b06; }
+  .swatch-light  { background: #f5f0e8; border-color: rgba(138,96,16,0.3); }
+  .swatch-system { background: linear-gradient(135deg,#0e0b06 50%,#f5f0e8 50%); }
+  .theme-lbl {
+    font-family: 'Cinzel', serif;
+    font-size: 0.6rem;
+    letter-spacing: 0.08em;
+    color: var(--ink-dim);
+  }
+  .theme-opt.selected .theme-lbl { color: var(--gold); font-weight: 600; }
+
+  /* Settings footer */
+  .settings-ftr {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 12px 18px;
+    border-top: 1px solid rgba(200,168,75,0.12);
+    background: var(--bg);
+  }
+  .s-btn {
+    font-family: 'Cinzel', serif;
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    padding: 8px 18px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.18s;
+    border: 1px solid rgba(200,168,75,0.25);
+    background: none;
+    color: var(--ink-dim);
+  }
+  .s-btn:hover { color: var(--gold); border-color: var(--gold-glow); background: var(--gold-dim); }
+  .s-btn.primary { border-color: rgba(200,168,75,0.5); color: var(--gold); background: var(--gold-dim); }
+  .s-btn.primary:hover { background: rgba(200,168,75,0.28); }
 </style>
 </head>
 <body>
@@ -350,9 +603,8 @@
 
 <div class="controls">
   <div class="diff-row">
-    <button class="diff-btn active" id="d1" onclick="G.newGame(1)">Náhodná</button>
-    <button class="diff-btn" id="d2" onclick="G.newGame(2)">Taktická</button>
-    <button class="diff-btn" id="d3" onclick="G.newGame(3)">Minimax</button>
+    <button class="diff-btn active" id="d1" onclick="G.openSettings()">⚙ Nastavení &amp; Nová hra</button>
+    <button class="diff-btn" onclick="G.newGame(G.difficulty)">↺ Opakovat</button>
   </div>
 </div>
 
@@ -375,6 +627,121 @@
 <div class="action-row">
   <button class="act-btn" onclick="document.getElementById('rules').classList.add('open')">Pravidla</button>
   <button class="act-btn primary" onclick="G.newGame(G.difficulty)">Nová hra</button>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="settings-overlay" id="settings-overlay">
+  <div class="settings-modal">
+    <div class="settings-hdr">
+      <h2>Nastavení hry</h2>
+      <button class="close-btn" onclick="G.closeSettings()">×</button>
+    </div>
+    <div class="settings-tabs">
+      <button class="stab active" id="stab-variant" onclick="G.switchTab('variant')">Varianta</button>
+      <button class="stab" id="stab-diff" onclick="G.switchTab('diff')">Obtížnost</button>
+      <button class="stab" id="stab-theme" onclick="G.switchTab('theme')">Vzhled</button>
+    </div>
+    <div class="settings-body">
+
+      <!-- Tab: Varianta -->
+      <div id="tab-variant">
+        <div class="s-section">
+          <div class="s-label">Herní varianta</div>
+          <div class="variant-grid">
+            <div class="variant-opt selected" id="vopt-tablut" onclick="G.selectVariant('tablut')">
+              <div class="variant-name">11×11 Tablut</div>
+              <div class="variant-desc">Klasická · 12 obr. vs 24 út.</div>
+            </div>
+            <div class="variant-opt" id="vopt-brandubh" onclick="G.selectVariant('brandubh')">
+              <div class="variant-name">7×7 Brandubh</div>
+              <div class="variant-desc">Irská · 4 obr. vs 8 út.</div>
+            </div>
+            <div class="variant-opt disabled">
+              <div class="variant-name">9×9 Hnefatafl</div>
+              <div class="variant-desc">Připravujeme…</div>
+            </div>
+            <div class="variant-opt disabled">
+              <div class="variant-name">13×13 Tawlbwrdd</div>
+              <div class="variant-desc">Připravujeme…</div>
+            </div>
+          </div>
+        </div>
+        <div class="s-section">
+          <div class="s-label">Volba strany</div>
+          <div class="side-grid">
+            <div class="side-opt selected" id="sopt-defender" onclick="G.selectSide('defender')">
+              <span class="side-opt-icon">⬜</span>
+              <span class="side-opt-lbl">Obránci</span>
+            </div>
+            <div class="side-opt" id="sopt-attacker" onclick="G.selectSide('attacker')">
+              <span class="side-opt-icon">⬛</span>
+              <span class="side-opt-lbl">Útočníci</span>
+            </div>
+            <div class="side-opt" id="sopt-random" onclick="G.selectSide('random')">
+              <span class="side-opt-icon">🎲</span>
+              <span class="side-opt-lbl">Náhodně</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Obtížnost -->
+      <div id="tab-diff" style="display:none">
+        <div class="s-section">
+          <div class="s-label">Úroveň AI</div>
+          <div class="diff-grid">
+            <div class="diff-opt" id="dopt-1" onclick="G.selectDiff(1)">
+              <div class="diff-radio"></div>
+              <div>
+                <div class="diff-opt-title">Náhodná</div>
+                <div class="diff-opt-desc">AI volí tahy náhodně. Vhodné pro první hry a pochopení pravidel.</div>
+              </div>
+            </div>
+            <div class="diff-opt" id="dopt-2" onclick="G.selectDiff(2)">
+              <div class="diff-radio"></div>
+              <div>
+                <div class="diff-opt-title">Taktická</div>
+                <div class="diff-opt-desc">Pronásleduje Krále, oceňuje zajmutí. Základní strategie bez hledání dopředu.</div>
+              </div>
+            </div>
+            <div class="diff-opt" id="dopt-3" onclick="G.selectDiff(3)">
+              <div class="diff-radio"></div>
+              <div>
+                <div class="diff-opt-title">Minimax</div>
+                <div class="diff-opt-desc">Alpha-beta pruning, hloubka 4. Blokuje rohy, hodnotí mobilitu. Skutečná výzva.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Vzhled -->
+      <div id="tab-theme" style="display:none">
+        <div class="s-section">
+          <div class="s-label">Barevný režim</div>
+          <div class="theme-grid">
+            <div class="theme-opt" id="topt-dark" onclick="G.selectTheme('dark')">
+              <div class="theme-swatch swatch-dark"></div>
+              <div class="theme-lbl">Tmavý</div>
+            </div>
+            <div class="theme-opt" id="topt-light" onclick="G.selectTheme('light')">
+              <div class="theme-swatch swatch-light"></div>
+              <div class="theme-lbl">Světlý</div>
+            </div>
+            <div class="theme-opt" id="topt-system" onclick="G.selectTheme('system')">
+              <div class="theme-swatch swatch-system"></div>
+              <div class="theme-lbl">Systém</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <div class="settings-ftr">
+      <button class="s-btn" onclick="G.closeSettings()">Zrušit</button>
+      <button class="s-btn primary" onclick="G.applySettings()">Spustit hru</button>
+    </div>
+  </div>
 </div>
 
 <!-- RULES -->
@@ -427,20 +794,52 @@ const G = {
   capturedAtts: 0,
 
   /* ── INIT ─────────────────────────── */
-  newGame(diff) {
+  newGame(diff, variant) {
     this.difficulty = diff || 1;
     this.gameActive = true;
-    this.currentTurn = 'player';
     this.selectedCell = null;
     this.lastMove = null;
     this.capturedDefs = 0;
     this.capturedAtts = 0;
-    this._initBoard();
+
+    const v = variant || this._settingsState.variant || 'tablut';
+    if (v === 'brandubh') {
+      this.SIZE = 7;
+      this.THRONE = [3,3];
+      this.CORNERS = [[0,0],[0,6],[6,0],[6,6]];
+      this._initBrandubh();
+    } else {
+      this.SIZE = 11;
+      this.THRONE = [5,5];
+      this.CORNERS = [[0,0],[0,10],[10,0],[10,10]];
+      this._initBoard();
+    }
+
+    // Side selection: who is player vs AI
+    const side = this._settingsState.side || 'defender';
+    let playerIsDefender;
+    if (side === 'random') {
+      playerIsDefender = Math.random() < 0.5;
+    } else {
+      playerIsDefender = side === 'defender';
+    }
+    this.playerOwner = playerIsDefender ? 'player' : 'ai';
+    this.aiOwner    = playerIsDefender ? 'ai' : 'player';
+    // Attackers always go first; if player chose attacker side they go first
+    this.currentTurn = playerIsDefender ? 'player' : 'ai';
+
     this._updateDiffButtons();
     this._render();
-    this._msg('Váš tah — vyberte obránce nebo Krále');
     document.getElementById('end-banner').classList.remove('open');
     document.getElementById('thinking').classList.remove('visible');
+
+    if (this.currentTurn === 'player') {
+      this._msg('Váš tah — vyberte obránce nebo Krále');
+    } else {
+      this._msg('AI zahajuje…');
+      document.getElementById('thinking').classList.add('visible');
+      setTimeout(() => this._aiTurn(), this.difficulty === 3 ? 80 : 50);
+    }
   },
 
   _initBoard() {
@@ -461,14 +860,154 @@ const G = {
 
   _updateDiffButtons() {
     [1,2,3].forEach(i => {
-      document.getElementById('d'+i).classList.toggle('active', i === this.difficulty);
+      const el = document.getElementById('dopt-'+i);
+      if (el) el.classList.toggle('selected', i === this.difficulty);
     });
+  },
+
+  /* ── BRANDUBH BOARD SETUP ─────────── */
+  _initBrandubh() {
+    const S = 7;
+    this.board = Array(S).fill(null).map(() => Array(S).fill(null));
+    // Attackers (8)
+    [[0,3],[3,0],[3,6],[6,3],[1,3],[3,1],[3,5],[5,3]]
+      .forEach(([r,c]) => this.board[r][c] = {type:'attacker', owner:'ai'});
+    // Defenders (4)
+    [[2,3],[3,2],[3,4],[4,3]]
+      .forEach(([r,c]) => this.board[r][c] = {type:'defender', owner:'player'});
+    // King
+    this.board[3][3] = {type:'king', owner:'player'};
+  },
+
+  /* ── SETTINGS MODAL ───────────────── */
+  _settingsState: {
+    variant: 'tablut',
+    side: 'defender',
+    diff: 1,
+    theme: 'dark'
+  },
+
+  openSettings() {
+    this._syncSettingsUI();
+    document.getElementById('settings-overlay').classList.add('open');
+  },
+
+  closeSettings() {
+    document.getElementById('settings-overlay').classList.remove('open');
+  },
+
+  applySettings() {
+    const s = this._settingsState;
+    // Apply theme
+    this.selectTheme(s.theme);
+    // Apply side
+    let playerIsDefender;
+    if (s.side === 'random') {
+      playerIsDefender = Math.random() < 0.5;
+    } else {
+      playerIsDefender = s.side === 'defender';
+    }
+    this.playerSide = playerIsDefender ? 'player' : 'ai';
+    this.aiSide = playerIsDefender ? 'ai' : 'player';
+    // Apply variant
+    if (s.variant === 'brandubh') {
+      this.SIZE = 7;
+      this.THRONE = [3,3];
+      this.CORNERS = [[0,0],[0,6],[6,0],[6,6]];
+    } else {
+      this.SIZE = 11;
+      this.THRONE = [5,5];
+      this.CORNERS = [[0,0],[0,10],[10,0],[10,10]];
+    }
+    this.difficulty = s.diff;
+    // Save to localStorage
+    try { localStorage.setItem('hnefatafl_settings', JSON.stringify(s)); } catch(e){}
+    this.closeSettings();
+    this.newGame(s.diff, s.variant);
+  },
+
+  _loadSavedSettings() {
+    try {
+      const saved = localStorage.getItem('hnefatafl_settings');
+      if (saved) {
+        const p = JSON.parse(saved);
+        this._settingsState = Object.assign(this._settingsState, p);
+        this.selectTheme(p.theme || 'dark');
+      }
+    } catch(e){}
+  },
+
+  _syncSettingsUI() {
+    const s = this._settingsState;
+    // Variant
+    ['tablut','brandubh'].forEach(v => {
+      const el = document.getElementById('vopt-'+v);
+      if (el) el.classList.toggle('selected', v === s.variant);
+    });
+    // Side
+    ['defender','attacker','random'].forEach(v => {
+      const el = document.getElementById('sopt-'+v);
+      if (el) el.classList.toggle('selected', v === s.side);
+    });
+    // Diff
+    [1,2,3].forEach(i => {
+      const el = document.getElementById('dopt-'+i);
+      if (el) el.classList.toggle('selected', i === s.diff);
+    });
+    // Theme
+    ['dark','light','system'].forEach(v => {
+      const el = document.getElementById('topt-'+v);
+      if (el) el.classList.toggle('selected', v === s.theme);
+    });
+  },
+
+  switchTab(tab) {
+    ['variant','diff','theme'].forEach(t => {
+      document.getElementById('tab-'+t).style.display = t === tab ? '' : 'none';
+      document.getElementById('stab-'+t).classList.toggle('active', t === tab);
+    });
+  },
+
+  selectVariant(v) {
+    this._settingsState.variant = v;
+    ['tablut','brandubh'].forEach(id => {
+      const el = document.getElementById('vopt-'+id);
+      if (el) el.classList.toggle('selected', id === v);
+    });
+  },
+
+  selectSide(v) {
+    this._settingsState.side = v;
+    ['defender','attacker','random'].forEach(id => {
+      const el = document.getElementById('sopt-'+id);
+      if (el) el.classList.toggle('selected', id === v);
+    });
+  },
+
+  selectDiff(v) {
+    this._settingsState.diff = v;
+    [1,2,3].forEach(i => {
+      const el = document.getElementById('dopt-'+i);
+      if (el) el.classList.toggle('selected', i === v);
+    });
+  },
+
+  selectTheme(v) {
+    this._settingsState.theme = v;
+    ['dark','light','system'].forEach(id => {
+      const el = document.getElementById('topt-'+id);
+      if (el) el.classList.toggle('selected', id === v);
+    });
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const isDark = v === 'dark' || (v === 'system' && prefersDark);
+    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
   },
 
   /* ── PLAYER INPUT ─────────────────── */
   onCellClick(row, col) {
     if (!this.gameActive || this.currentTurn !== 'player') return;
     const cell = this.board[row][col];
+    const po = this.playerOwner || 'player';
 
     if (this.selectedCell) {
       const [sr, sc] = this.selectedCell;
@@ -477,11 +1016,11 @@ const G = {
       const mv = this.getMovesFor(sr, sc).find(m => m.toR === row && m.toC === col);
       if (mv) { this._execMove(mv, 'player'); return; }
 
-      if (cell && cell.owner === 'player') { this.selectedCell = [row, col]; this._render(); return; }
+      if (cell && cell.owner === po) { this.selectedCell = [row, col]; this._render(); return; }
       this.selectedCell = null; this._render(); return;
     }
 
-    if (cell && cell.owner === 'player') {
+    if (cell && cell.owner === po) {
       this.selectedCell = [row, col];
       this._render();
     }
@@ -902,8 +1441,17 @@ G._execMove = function(move, side, board, live) {
   }
 };
 
-// Start with difficulty 1 on load
-window.addEventListener('load', () => G.newGame(1));
+// Start on load
+window.addEventListener('load', () => {
+  G.playerOwner = 'player';
+  G.aiOwner = 'ai';
+  G._loadSavedSettings();
+  G.newGame(G._settingsState.diff || 1);
+  // Overlay close on backdrop click
+  document.getElementById('settings-overlay').addEventListener('click', function(e) {
+    if (e.target === this) G.closeSettings();
+  });
+});
 window.addEventListener('resize', () => G._render());
 </script>
 </body>
