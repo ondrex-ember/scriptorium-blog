@@ -185,6 +185,62 @@
             margin-top: -2px;
             display: block;
         }
+
+        /* ═══════════════════════════════════════════════
+           MOBILE RESPONSIVE  (≤ 600px)
+           ═══════════════════════════════════════════════ */
+        @media (max-width: 600px) {
+            body { padding: 6px 0 70px; justify-content: flex-start; }
+
+            #gameHeader { width: 100vw; margin-bottom: 6px; }
+            #logoGO { font-size: clamp(32px, 11vw, 54px); }
+            #logoSub { font-size: clamp(7px, 2.2vw, 11px); }
+
+            #topPanel {
+                width: 100vw; border-radius: 0;
+                padding: 8px 10px; margin-bottom: 6px;
+                flex-direction: row; flex-wrap: wrap; gap: 4px;
+            }
+            .player-box { min-width: 0; flex: 1; padding: 4px 6px; border-radius: 8px; }
+            .player-name { font-size: .85rem; }
+            .timer { font-size: 1.3rem; margin: 2px 0; }
+            .prisoners { font-size: .72rem; }
+            .player-label { font-size: .55rem; }
+            #statusContainer { order: -1; width: 100%; flex: none; text-align: center; padding-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,.08); margin-bottom: 2px; }
+            #status { font-size: .9rem; }
+            #levelBadge { font-size: .65rem; padding: 1px 6px; }
+            #cpuThinking { font-size: .75rem; }
+
+            canvas {
+                width: 100vw !important;
+                height: 100vw !important;
+                border-radius: 0;
+                border-left: none;
+                border-right: none;
+            }
+
+            #bottomPanel {
+                position: fixed; bottom: 0; left: 0; right: 0;
+                width: 100vw; margin: 0;
+                padding: 10px 16px;
+                background: rgba(26,26,46,.97);
+                border-top: 1px solid rgba(255,255,255,.1);
+                box-sizing: border-box;
+                z-index: 100;
+                backdrop-filter: blur(8px);
+            }
+            #bottomPanel button { padding: 8px 16px; font-size: .9rem; }
+
+            .modal-content { width: 96vw; padding: 20px 16px; border-radius: 12px; }
+            .level-grid { grid-template-columns: repeat(7,1fr); gap: 3px; }
+            .lvl-btn { padding: 4px 1px; font-size: .62rem; }
+
+            #colorPickModal .cp-box { padding: 24px 20px; margin: 0 12px; }
+            .cp-btn { padding: 14px 8px; }
+            .cp-btn .cp-stone { width: 34px; height: 34px; }
+
+            #achPopup { bottom: 80px; right: 10px; left: 10px; min-width: 0; }
+        }
     </style>
 </head>
 <body>
@@ -1084,6 +1140,11 @@
             updateUI();
             drawBoard();
             startTimer();
+            // Po každém tahu zkontroluj jestli má hrát AI
+            if (!gameOver && selCpu.value === 'cpu' && !isAiThinking) {
+                const _ac = playerColor === 1 ? 2 : 1;
+                if (currentPlayer === _ac) setTimeout(playAI, 10);
+            }
             return true;
         }
 
@@ -1171,9 +1232,7 @@
             const clickCol = Math.floor((event.clientX - clickRect.left - MARGIN + GRID_SIZE / 2) / GRID_SIZE);
             const clickRow = Math.floor((event.clientY - clickRect.top - MARGIN + GRID_SIZE / 2) / GRID_SIZE);
             if (clickRow >= 0 && clickRow < BOARD_SIZE && clickCol >= 0 && clickCol < BOARD_SIZE) {
-                if (attemptMove(clickRow, clickCol) && selCpu.value === 'cpu' && !gameOver) {
-                    playAI();
-                }
+                attemptMove(clickRow, clickCol); // playAI se zavolá automaticky z attemptMove
             }
         });
 
