@@ -371,6 +371,68 @@
     background: rgba(200,168,75,0.08);
   }
 
+  /* ── UNDO TOGGLE ── */
+  .s-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    border: 1px solid rgba(200,168,75,0.15);
+    border-radius: 4px;
+    background: var(--bg3);
+    margin-top: 8px;
+  }
+  .s-toggle-label {
+    font-family: 'Cinzel', serif;
+    font-size: 0.72rem;
+    color: var(--gold);
+  }
+  .s-toggle-desc {
+    font-size: 0.65rem;
+    color: var(--ink-faint);
+    margin-top: 2px;
+  }
+  .s-toggle {
+    display: flex;
+    gap: 4px;
+  }
+  .s-toggle-btn {
+    font-family: 'Cinzel', serif;
+    font-size: 0.6rem;
+    letter-spacing: 0.08em;
+    padding: 4px 12px;
+    border-radius: 3px;
+    border: 1px solid rgba(200,168,75,0.2);
+    background: none;
+    color: var(--ink-faint);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .s-toggle-btn:hover { color: var(--ink-dim); border-color: rgba(200,168,75,0.35); }
+  .s-toggle-btn.active { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); font-weight: 600; }
+
+  /* ── UNDO BUTTON ── */
+  .undo-wrap {
+    display: none;
+    justify-content: center;
+    margin-bottom: 0.5rem;
+  }
+  .undo-wrap.visible { display: flex; }
+  .undo-btn {
+    font-family: 'Cinzel', serif;
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    background: none;
+    border: 1px solid rgba(200,168,75,0.22);
+    color: var(--ink-faint);
+    padding: 6px 20px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.18s;
+  }
+  .undo-btn:hover:not(:disabled) { color: var(--gold); border-color: var(--gold-glow); background: var(--gold-dim); }
+  .undo-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
   @media (max-width: 480px) {
     body { padding: 1rem 0.5rem 2rem; }
   }
@@ -634,6 +696,10 @@
 
 <div class="board-wrap" id="board-wrap"></div>
 
+<div class="undo-wrap" id="undo-wrap">
+  <button class="undo-btn" id="undo-btn" onclick="G.undoMove()" disabled>↩ Vrátit tah</button>
+</div>
+
 <div class="legend">
   🏰 Rohový cíl &nbsp;·&nbsp; ⊕ Trůn &nbsp;·&nbsp; 👑 Král &nbsp;·&nbsp; ⬜ Obránce (vy) &nbsp;·&nbsp; ⬛ Útočník (AI)
 </div>
@@ -670,13 +736,13 @@
               <div class="variant-name">7×7 Brandubh</div>
               <div class="variant-desc">Irská · 4 obr. vs 8 út.</div>
             </div>
-            <div class="variant-opt disabled">
-              <div class="variant-name">9×9 Hnefatafl</div>
-              <div class="variant-desc">Připravujeme…</div>
+            <div class="variant-opt" id="vopt-tablut9" onclick="G.selectVariant('tablut9')">
+              <div class="variant-name">9×9 Tablut</div>
+              <div class="variant-desc">Laponská · 8 obr. vs 16 út.</div>
             </div>
-            <div class="variant-opt disabled">
+            <div class="variant-opt" id="vopt-tawlbwrdd" onclick="G.selectVariant('tawlbwrdd')">
               <div class="variant-name">13×13 Tawlbwrdd</div>
-              <div class="variant-desc">Připravujeme…</div>
+              <div class="variant-desc">Velšská · 12 obr. vs 24 út.</div>
             </div>
           </div>
         </div>
@@ -724,6 +790,19 @@
                 <div class="diff-opt-title">Minimax</div>
                 <div class="diff-opt-desc">Alpha-beta pruning, hloubka 4. Blokuje rohy, hodnotí mobilitu. Skutečná výzva.</div>
               </div>
+            </div>
+          </div>
+        </div>
+        <div class="s-section">
+          <div class="s-label">Možnosti</div>
+          <div class="s-toggle-row">
+            <div>
+              <div class="s-toggle-label">Undo tah</div>
+              <div class="s-toggle-desc">Vrátí poslední tah hráče i odpověď AI</div>
+            </div>
+            <div class="s-toggle">
+              <button class="s-toggle-btn" id="undo-off" onclick="G.selectUndo(false)">Ne</button>
+              <button class="s-toggle-btn" id="undo-on"  onclick="G.selectUndo(true)">Ano</button>
             </div>
           </div>
         </div>
@@ -822,6 +901,16 @@ const G = {
       this.THRONE = [3,3];
       this.CORNERS = [[0,0],[0,6],[6,0],[6,6]];
       this._initBrandubh();
+    } else if (v === 'tablut9') {
+      this.SIZE = 9;
+      this.THRONE = [4,4];
+      this.CORNERS = [[0,0],[0,8],[8,0],[8,8]];
+      this._initTablut9();
+    } else if (v === 'tawlbwrdd') {
+      this.SIZE = 13;
+      this.THRONE = [6,6];
+      this.CORNERS = [[0,0],[0,12],[12,0],[12,12]];
+      this._initTawlbwrdd();
     } else {
       this.SIZE = 11;
       this.THRONE = [5,5];
@@ -844,7 +933,11 @@ const G = {
 
     this._updateDiffButtons();
     this._cs = null; // force recalc
+    this._undoStack = [];
+    this.undoEnabled = !!this._settingsState.undoEnabled;
     this._buildBoard();
+    this._saveUndoSnapshot(); // initial state snapshot
+    this._updateUndoBtn();
     document.getElementById('end-banner').classList.remove('open');
     document.getElementById('thinking').classList.remove('visible');
 
@@ -853,7 +946,7 @@ const G = {
     } else {
       this._msg('AI zahajuje…');
       document.getElementById('thinking').classList.add('visible');
-      setTimeout(() => this._aiTurn(), this.difficulty === 3 ? 80 : 50);
+      setTimeout(() => this._aiTurn(), this.difficulty === 3 ? (this.SIZE >= 13 ? 120 : 80) : 50);
     }
   },
 
@@ -894,12 +987,50 @@ const G = {
     this.board[3][3] = {type:'king', owner:'player'};
   },
 
+  /* ── TABLUT 9×9 BOARD SETUP ───────── */
+  // Linnaeus 1732: 8 defenders + king vs 16 attackers
+  _initTablut9() {
+    const S = 9;
+    this.board = Array(S).fill(null).map(() => Array(S).fill(null));
+    // Attackers (16) — 4 groups of 4 along each edge midpoint
+    [[0,3],[0,4],[0,5],[1,4],
+     [3,0],[4,0],[5,0],[4,1],
+     [3,8],[4,8],[5,8],[4,7],
+     [8,3],[8,4],[8,5],[7,4]]
+      .forEach(([r,c]) => this.board[r][c] = {type:'attacker', owner:'ai'});
+    // Defenders (8) — cross pattern around king
+    [[2,4],[3,4],[4,2],[4,3],[4,5],[4,6],[5,4],[6,4]]
+      .forEach(([r,c]) => this.board[r][c] = {type:'defender', owner:'player'});
+    // King
+    this.board[4][4] = {type:'king', owner:'player'};
+  },
+
+  /* ── TAWLBWRDD 13×13 BOARD SETUP ─── */
+  // Welsh variant: 12 defenders + king vs 24 attackers
+  _initTawlbwrdd() {
+    const S = 13;
+    this.board = Array(S).fill(null).map(() => Array(S).fill(null));
+    // Attackers (24) — 6 per side along each edge
+    [[0,4],[0,5],[0,6],[0,7],[0,8],[1,6],
+     [4,0],[5,0],[6,0],[7,0],[8,0],[6,1],
+     [4,12],[5,12],[6,12],[7,12],[8,12],[6,11],
+     [12,4],[12,5],[12,6],[12,7],[12,8],[11,6]]
+      .forEach(([r,c]) => this.board[r][c] = {type:'attacker', owner:'ai'});
+    // Defenders (12) — extended cross around king
+    [[3,6],[4,6],[5,6],[6,3],[6,4],[6,5],
+     [6,7],[6,8],[6,9],[7,6],[8,6],[9,6]]
+      .forEach(([r,c]) => this.board[r][c] = {type:'defender', owner:'player'});
+    // King
+    this.board[6][6] = {type:'king', owner:'player'};
+  },
+
   /* ── SETTINGS MODAL ───────────────── */
   _settingsState: {
     variant: 'tablut',
     side: 'defender',
     diff: 1,
-    theme: 'dark'
+    theme: 'dark',
+    undoEnabled: false
   },
 
   openSettings() {
@@ -935,6 +1066,7 @@ const G = {
       this.CORNERS = [[0,0],[0,10],[10,0],[10,10]];
     }
     this.difficulty = s.diff;
+    this.undoEnabled = !!s.undoEnabled;
     // Save to localStorage
     try { localStorage.setItem('hnefatafl_settings', JSON.stringify(s)); } catch(e){}
     this.closeSettings();
@@ -955,7 +1087,7 @@ const G = {
   _syncSettingsUI() {
     const s = this._settingsState;
     // Variant
-    ['tablut','brandubh'].forEach(v => {
+    ['tablut','brandubh','tablut9','tawlbwrdd'].forEach(v => {
       const el = document.getElementById('vopt-'+v);
       if (el) el.classList.toggle('selected', v === s.variant);
     });
@@ -974,6 +1106,11 @@ const G = {
       const el = document.getElementById('topt-'+v);
       if (el) el.classList.toggle('selected', v === s.theme);
     });
+    // Undo
+    const undoOn  = document.getElementById('undo-on');
+    const undoOff = document.getElementById('undo-off');
+    if (undoOn)  undoOn.classList.toggle('active',  !!s.undoEnabled);
+    if (undoOff) undoOff.classList.toggle('active', !s.undoEnabled);
   },
 
   switchTab(tab) {
@@ -985,7 +1122,7 @@ const G = {
 
   selectVariant(v) {
     this._settingsState.variant = v;
-    ['tablut','brandubh'].forEach(id => {
+    ['tablut','brandubh','tablut9','tawlbwrdd'].forEach(id => {
       const el = document.getElementById('vopt-'+id);
       if (el) el.classList.toggle('selected', id === v);
     });
@@ -1018,7 +1155,54 @@ const G = {
     document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
   },
 
-  /* ── PLAYER INPUT ─────────────────── */
+  selectUndo(enabled) {
+    this._settingsState.undoEnabled = enabled;
+    const undoOn  = document.getElementById('undo-on');
+    const undoOff = document.getElementById('undo-off');
+    if (undoOn)  undoOn.classList.toggle('active',  enabled);
+    if (undoOff) undoOff.classList.toggle('active', !enabled);
+  },
+
+  /* ── UNDO STACK ───────────────────── */
+  _undoStack: [],
+
+  _saveUndoSnapshot() {
+    this._undoStack.push({
+      board: this._cloneBoard(),
+      currentTurn: this.currentTurn,
+      lastMove: this.lastMove ? {...this.lastMove} : null,
+      capturedDefs: this.capturedDefs,
+      capturedAtts: this.capturedAtts
+    });
+    // Keep max 10 snapshots
+    if (this._undoStack.length > 10) this._undoStack.shift();
+    this._updateUndoBtn();
+  },
+
+  _updateUndoBtn() {
+    const wrap = document.getElementById('undo-wrap');
+    const btn  = document.getElementById('undo-btn');
+    if (!wrap || !btn) return;
+    const show = this.undoEnabled && this.gameActive;
+    wrap.classList.toggle('visible', show);
+    btn.disabled = !show || this._undoStack.length < 2;
+  },
+
+  undoMove() {
+    // Need at least 2 snapshots: pop current state (after AI), restore previous (before player move)
+    if (this._undoStack.length < 2) return;
+    this._undoStack.pop(); // discard current state
+    const snap = this._undoStack[this._undoStack.length - 1];
+    this.board        = snap.board.map(row => row.map(cell => cell ? {...cell} : null));
+    this.currentTurn  = snap.currentTurn;
+    this.lastMove     = snap.lastMove;
+    this.capturedDefs = snap.capturedDefs;
+    this.capturedAtts = snap.capturedAtts;
+    this.selectedCell = null;
+    this._msg('Tah vrácen');
+    this._buildBoard();
+    this._updateUndoBtn();
+  },
   onCellClick(row, col) {
     if (!this.gameActive || this.currentTurn !== 'player') return;
     const cell = this.board[row][col];
@@ -1163,7 +1347,7 @@ const G = {
     this._msg('AI přemýšlí…');
     this._updateState();
     document.getElementById('thinking').classList.add('visible');
-    setTimeout(() => this._aiTurn(), this.difficulty === 3 ? 80 : 50);
+    setTimeout(() => this._aiTurn(), this.difficulty === 3 ? (this.SIZE >= 13 ? 120 : 80) : 50);
   },
 
   _aiTurn() {
@@ -1216,6 +1400,8 @@ const G = {
       if (this._checkWin(chosen.toR, chosen.toC, 'ai')) { this._buildBoard(); return; }
       this.currentTurn = 'player';
       this._msg('Váš tah');
+      this._saveUndoSnapshot(); // checkpoint after AI responded
+      this._updateUndoBtn();
       this._updateState();
     });
   },
@@ -1254,14 +1440,15 @@ const G = {
     const moves = this.getAllMoves('ai');
     let best = null, bestScore = -Infinity;
     const alpha = -Infinity, beta = Infinity;
+    // Reduce depth for larger boards to keep response time reasonable
+    const depth = this.SIZE >= 13 ? 2 : 3;
 
     for (const move of moves) {
       const saved = this._cloneBoard();
       this._execMove(move, 'ai', this.board, false);
       const caps = this._doCaptures(move.toR, move.toC, 'ai');
-      const score = this._minimax(3, false, -Infinity, Infinity);
+      const score = this._minimax(depth, false, -Infinity, Infinity);
       this.board = saved;
-      // Add immediate capture bonus to differentiate at top level
       const adjusted = score + caps * 2;
       if (adjusted > bestScore) { bestScore = adjusted; best = move; }
     }
@@ -1596,6 +1783,9 @@ G._execMove = function(move, side, board, live) {
       const edge = !G.inBounds(br, bc);
       if (far || edge) capturedCells.push([mr, mc]);
     });
+
+    // Save undo snapshot BEFORE applying player move
+    if (side === 'player') G._saveUndoSnapshot();
 
     // Apply move to game state
     _origExecMove(move, side, G.board, true);
