@@ -1,0 +1,1295 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go - Člověk vs CPU (Multithread AI)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Bebas+Neue&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --board-color: #e5b776;
+            --bg-color: #1a1a2e;
+            --panel-bg: rgba(255, 255, 255, 0.05);
+            --text-color: #e0e0e0;
+            --accent: #e94560;
+        }
+        body {
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            min-height: 100vh; background-color: var(--bg-color);
+            background-image: radial-gradient(circle at center, #2a2a4a 0%, #1a1a2e 100%);
+            margin: 0; padding: 12px 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text-color); overflow-x: hidden; box-sizing: border-box;
+        }
+        
+        #topPanel {
+            display: flex; justify-content: space-between; align-items: center; width: 580px;
+            margin-bottom: 12px; background: var(--panel-bg); padding: 12px 20px;
+            border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            box-sizing: border-box; border: 1px solid rgba(255,255,255,0.1);
+        }
+        .player-box { display:flex; flex-direction:column; align-items:center; min-width:110px; border-radius:10px; padding:6px 10px; border:2px solid transparent; transition:border-color .3s,box-shadow .3s; }
+        .player-box.is-human { border-color:#f1c40f; box-shadow:0 0 14px rgba(241,196,15,.35); background:rgba(241,196,15,.07); }
+        .player-box.is-active-turn { border-color:#2ed573; box-shadow:0 0 12px rgba(46,213,115,.3); }
+        .player-box.is-human.is-active-turn { border-color:#f1c40f; box-shadow:0 0 18px rgba(241,196,15,.5); }
+        .player-label { font-size:.65rem; color:#f1c40f; font-weight:bold; letter-spacing:1px; margin-bottom:2px; display:none; }
+        .player-box.is-human .player-label { display:block; }
+        .player-name { font-size: 1.1rem; font-weight: bold; letter-spacing: 1px; text-transform: uppercase;}
+        .timer { font-size: 1.8rem; font-weight: bold; margin: 5px 0; font-family: monospace; color: #fff;}
+        .prisoners { font-size: 0.85rem; color: #aaa; }
+        #colorPickModal { position:fixed; inset:0; background:rgba(0,0,0,.85); backdrop-filter:blur(6px); display:flex; justify-content:center; align-items:center; z-index:2000; }
+        #colorPickModal .cp-box { background:#22223b; border-radius:18px; padding:36px 40px; text-align:center; border:1px solid rgba(255,255,255,.12); box-shadow:0 20px 60px rgba(0,0,0,.8); max-width:340px; }
+        #colorPickModal h2 { margin:0 0 8px; font-size:1.4rem; }
+        #colorPickModal p { color:#aaa; font-size:.88rem; margin:0 0 28px; line-height:1.5; }
+        .cp-buttons { display:flex; gap:16px; justify-content:center; }
+        .cp-btn { flex:1; padding:18px 12px; border-radius:12px; font-size:1rem; font-weight:bold; cursor:pointer; border:2px solid rgba(255,255,255,.2); transition:all .2s; display:flex; flex-direction:column; align-items:center; gap:8px; background:rgba(255,255,255,.06); color:#fff; }
+        .cp-btn:hover { background:rgba(255,255,255,.14); border-color:#fff; transform:translateY(-3px); }
+        .cp-btn .cp-stone { width:42px; height:42px; border-radius:50%; box-shadow:0 4px 12px rgba(0,0,0,.5); }
+        .cp-note { font-size:.75rem; color:#888; margin-top:20px; line-height:1.5; }
+        
+        #statusContainer { text-align: center; flex-grow: 1; }
+        #status { font-size: 1.1rem; font-weight: bold; color: #fff;}
+        #cpuThinking { 
+            color: var(--accent); font-size: 0.85rem; display: none; margin-top: 5px; 
+            font-weight: bold; letter-spacing: 1px; animation: pulse 1s infinite;
+        }
+        @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
+
+        canvas {
+            background-color: var(--board-color);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6), inset 0 0 50px rgba(139, 90, 43, 0.3); 
+            cursor: crosshair; border-radius: 4px; border: 2px solid #5c3a21;
+        }
+
+        #bottomPanel { display: flex; justify-content: space-between; width: 540px; margin-top: 20px; }
+        button {
+            padding: 10px 20px; font-size: 1rem; cursor: pointer;
+            background-color: rgba(255,255,255,0.1); color: white;
+            border: 1px solid rgba(255,255,255,0.2); border-radius: 8px;
+            transition: all 0.2s ease; font-weight: bold;
+        }
+        button:hover { background-color: rgba(255,255,255,0.2); transform: translateY(-2px); }
+        .btn-primary { background-color: var(--accent); border: none; }
+        .btn-primary:hover { background-color: #ff5c77; box-shadow: 0 4px 15px rgba(233, 69, 96, 0.4);}
+
+        #settingsModal {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(5px);
+            display: none; justify-content: center; align-items: center; z-index: 1000;
+        }
+        .modal-content {
+            background: #22223b; padding: 30px 40px; border-radius: 16px; width: 400px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.8); border: 1px solid rgba(255,255,255,0.1);
+            max-height: 88vh; overflow-y: auto;
+        }
+        .modal-content h2 { margin-top: 0; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px;}
+        .setting-row { display: flex; justify-content: space-between; align-items: center; margin: 15px 0; font-size: 1rem; }
+        select, input[type="checkbox"], input[type="range"] {
+            padding: 6px; font-size: 0.95rem; background: rgba(0,0,0,0.3); color: white; border: 1px solid #555; border-radius: 4px;
+        }
+        .modal-buttons { display: flex; justify-content: space-between; margin-top: 25px; gap: 10px;}
+        .modal-buttons button { flex: 1; }
+        .json-row { display: flex; gap: 10px; margin-top: 15px; }
+        .json-row button { flex: 1; padding: 8px; font-size: 0.9rem; background: #34495e;}
+
+        /* LEVEL SELECTOR */
+        #levelSelectorWrap { margin: 10px 0 4px; }
+        .level-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 4px; margin-top: 6px; }
+        .lvl-btn {
+            padding: 6px 2px; font-size: 0.72rem; font-weight: bold; border-radius: 6px;
+            cursor: pointer; border: 2px solid transparent; text-align: center;
+            background: rgba(255,255,255,0.07); color: #ccc; transition: all .15s;
+            line-height: 1.3;
+        }
+        .lvl-btn:hover { background: rgba(255,255,255,0.15); transform: none; }
+        .lvl-btn.active { border-color: #f1c40f; color: #f1c40f; background: rgba(241,196,15,0.12); }
+        .lvl-btn.locked { opacity: .38; cursor: not-allowed; }
+        .lvl-btn.unlocked:not(.active) { border-color: rgba(46,213,115,.4); color: #2ed573; background: rgba(46,213,115,.07); }
+
+        /* ACHIEVEMENT POPUP */
+        #achPopup {
+            position: fixed; bottom: 30px; right: 30px; z-index: 9999;
+            background: linear-gradient(135deg,#1e3a2f,#16213e);
+            border: 1px solid #f1c40f; border-radius: 14px;
+            padding: 14px 20px 14px 16px; min-width: 260px; max-width: 320px;
+            box-shadow: 0 8px 32px rgba(0,0,0,.6), 0 0 20px rgba(241,196,15,.2);
+            display: none; opacity: 0;
+            transition: opacity .35s ease, transform .35s ease;
+            transform: translateY(20px);
+        }
+        #achPopup.show { display: flex !important; opacity: 1; transform: translateY(0); }
+        #achPopup .ach-title { font-size: .72rem; color: #f1c40f; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
+        #achPopup .ach-name { font-size: 1.05rem; font-weight: bold; color: #fff; }
+        #achPopup .ach-desc { font-size: .8rem; color: #aaa; margin-top: 3px; }
+        #achPopup .ach-icon { font-size: 2rem; margin-right: 12px; flex-shrink: 0; }
+
+        /* ACHIEVEMENTS PANEL inside modal */
+        #achPanel { margin-top: 14px; border-top: 1px solid rgba(255,255,255,.1); padding-top: 12px; }
+        #achPanel h3 { margin: 0 0 10px; font-size: .9rem; color: #f1c40f; letter-spacing: 1px; text-transform: uppercase; }
+        .ach-list { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; max-height: 180px; overflow-y: auto; }
+        .ach-item {
+            background: rgba(255,255,255,.05); border-radius: 8px; padding: 7px 9px;
+            font-size: .75rem; border: 1px solid rgba(255,255,255,.08);
+            opacity: .4; transition: opacity .2s;
+        }
+        .ach-item.done { opacity: 1; border-color: rgba(241,196,15,.35); background: rgba(241,196,15,.07); }
+        .ach-item .ai { font-size: 1.1rem; }
+        .ach-item .an { font-weight: bold; color: #fff; margin-left: 4px; font-size: .78rem; }
+        .ach-item .ad { color: #888; font-size: .7rem; margin-top: 2px; }
+
+        /* TOP PANEL level badge */
+        #levelBadge {
+            font-size: .75rem; font-weight: bold; color: #f1c40f;
+            background: rgba(241,196,15,.13); border: 1px solid rgba(241,196,15,.3);
+            border-radius: 6px; padding: 2px 8px; margin-top: 4px; letter-spacing: .5px;
+        }
+
+        /* HERO HEADER */
+        #gameHeader {
+            width: 580px;
+            text-align: center;
+            margin-bottom: 10px;
+            line-height: 1;
+            user-select: none;
+        }
+        #logoGO {
+            font-family: 'Bebas Neue', 'Black Han Sans', 'Impact', sans-serif;
+            font-size: clamp(42px, 8vw, 80px);
+            font-weight: 900;
+            letter-spacing: .18em;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, #f1c40f 0%, #e67e22 40%, #e94560 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: inline-block;
+            filter: drop-shadow(0 2px 12px rgba(233,69,96,.35));
+            transform: scaleY(1.15);
+            transform-origin: center bottom;
+        }
+        #logoGO .letter-o {
+            display: inline-block;
+            position: relative;
+        }
+        #logoGO .reversed-e {
+            display: inline-block;
+            transform: scaleX(-1) translateX(0.04em);
+            letter-spacing: 0;
+        }
+        #logoSub {
+            font-family: 'Segoe UI', sans-serif;
+            font-size: clamp(9px, 1.3vw, 13px);
+            letter-spacing: .35em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,.35);
+            margin-top: -2px;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <header id="gameHeader">
+        <div id="logoGO">GO<span class="reversed-e">E</span></div>
+        <span id="logoSub">Ancient Strategy · AI Challenge</span>
+    </header>
+
+    <div id="topPanel">
+        <div class="player-box" id="boxBlack">
+            <div class="player-label">👤 TY</div>
+            <div class="player-name">⚫ Černý</div>
+            <div class="timer" id="timerBlack">05:00</div>
+            <div class="prisoners">Zajatci: <span id="prisBlack">0</span></div>
+        </div>
+        <div id="statusContainer">
+            <div id="status">Na tahu: Černý</div>
+            <div id="cpuThinking">🤖 AI analyzuje multivesmír...</div>
+            <div id="levelBadge">Level 1 – Kámen</div>
+        </div>
+        <div class="player-box" id="boxWhite">
+            <div class="player-label">👤 TY</div>
+            <div class="player-name">⚪ Bílý</div>
+            <div class="timer" id="timerWhite">05:00</div>
+            <div class="prisoners">Zajatci: <span id="prisWhite">0</span></div>
+        </div>
+    </div>
+
+    <canvas id="goBoard" width="540" height="540"></canvas>
+    
+    <div id="bottomPanel">
+        <button id="btnSettings">⚙️ Nastavení</button>
+        <button id="btnPass" class="btn-primary">Pasovat</button>
+        <button id="btnConfirmScore" class="btn-primary" style="display:none;">✅ Potvrdit skóre</button>
+    </div>
+
+    <div id="colorPickModal" style="position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(6px);display:none;justify-content:center;align-items:center;z-index:2000;pointer-events:none;">
+        <div class="cp-box" style="background:#22223b;border-radius:18px;padding:36px 40px;text-align:center;border:1px solid rgba(255,255,255,.12);box-shadow:0 20px 60px rgba(0,0,0,.8);max-width:340px;">
+            <h2 style="margin:0 0 8px;font-size:1.4rem;">🎮 Výběr barvy</h2>
+            <p style="color:#aaa;font-size:.88rem;margin:0 0 28px;line-height:1.5;">V Go začíná vždy <strong>Černý</strong>. Černý má výhodu prvního tahu &mdash; Bílý dostává <strong>6,5 bodů komi</strong> jako kompenzaci.</p>
+            <div style="display:flex;gap:16px;justify-content:center;">
+                <button id="cpPickBlack" style="flex:1;padding:18px 12px;border-radius:12px;font-size:1rem;font-weight:bold;cursor:pointer;border:2px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:#fff;display:flex;flex-direction:column;align-items:center;gap:8px;transition:all .2s;">
+                    <div style="width:42px;height:42px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#555,#0a0a0a);box-shadow:0 4px 12px rgba(0,0,0,.5);"></div>
+                    <span>⚫ Černý</span>
+                    <small style="color:#aaa;font-size:.72rem;">Hraju první</small>
+                </button>
+                <button id="cpPickWhite" style="flex:1;padding:18px 12px;border-radius:12px;font-size:1rem;font-weight:bold;cursor:pointer;border:2px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:#fff;display:flex;flex-direction:column;align-items:center;gap:8px;transition:all .2s;">
+                    <div style="width:42px;height:42px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff,#ccc);box-shadow:0 4px 12px rgba(0,0,0,.5);"></div>
+                    <span>⚪ Bílý</span>
+                    <small style="color:#aaa;font-size:.72rem;">Hraju druhý</small>
+                </button>
+            </div>
+            <div style="font-size:.75rem;color:#888;margin-top:20px;line-height:1.5;">Toto nastavení platí pro tuto partii. Příště si můžeš vybrat znovu.</div>
+        </div>
+    </div>
+
+    <div id="settingsModal">
+        <div class="modal-content">
+            <h2>Herní Menu</h2>
+            
+            <div class="setting-row">
+                <label>Velikost desky:</label>
+                <select id="selBoardSize">
+                    <option value="9" selected>9×9 (Začátečník)</option>
+                    <option value="13">13×13 (Střední)</option>
+                    <option value="19">19×19 (Plná hra)</option>
+                </select>
+            </div>
+            <div class="setting-row">
+                <label>Soupeř:</label>
+                <select id="selCpu">
+                    <option value="cpu" selected>Umělá Inteligence (Bot)</option>
+                    <option value="human">Druhý hráč (Hotseat)</option>
+                </select>
+            </div>
+            <div class="setting-row" id="rowDifficulty" style="display:none;">
+                <label>Obtížnost AI:</label>
+                <select id="selDifficulty">
+                    <option value="easy">Lehká (Dělá chyby)</option>
+                    <option value="medium" selected>Střední (Rychlá hra)</option>
+                    <option value="hard">Těžká (Pomalá, Hluboká)</option>
+                </select>
+            </div>
+            <div class="setting-row">
+                <label>Pravidla skórování:</label>
+                <select id="selRules">
+                    <option value="japanese">Japonská</option>
+                    <option value="chinese">Čínská</option>
+                </select>
+            </div>
+            <div class="setting-row">
+                <label>Časomíra (5 min):</label>
+                <input type="checkbox" id="chkTimer">
+            </div>
+            <div class="setting-row">
+                <label>Hlasitost efektů:</label>
+                <input type="range" id="rngVolume" min="0" max="1" step="0.1" value="0.5">
+            </div>
+            <div id="levelSelectorWrap">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                    <label style="font-size:.85rem;color:#f1c40f;font-weight:bold;">🎮 Výběr levelu:</label>
+                    <label style="font-size:.78rem;color:#aaa;display:flex;align-items:center;gap:6px;cursor:pointer;">
+                        <input type="checkbox" id="chkFreeMode">
+                        <span>Volný režim</span>
+                    </label>
+                </div>
+                <div class="level-grid" id="levelGrid"></div>
+            </div>
+            <div id="rowDifficultyFree" style="display:none;margin:4px 0 8px;padding:8px 10px;background:rgba(255,255,255,.04);border-radius:8px;border:1px solid rgba(255,255,255,.08);">
+                <label style="font-size:.78rem;color:#aaa;display:block;margin-bottom:5px;">Obtížnost volného režimu:</label>
+                <div class="level-grid" id="freeLevelGrid"></div>
+            </div>
+
+            <div id="achPanel">
+                <h3>🏆 Achievements</h3>
+                <div class="ach-list" id="achList"></div>
+            </div>
+
+            <div class="setting-row" style="margin-top:8px;">
+                <label>Vyhodnocovat mrtvé kameny:</label>
+                <input type="checkbox" id="chkDeadStones" checked>
+            </div>
+            <details id="deadStonesHelp" style="margin:4px 0 8px;">
+                <summary style="cursor:pointer;background:rgba(233,69,96,0.08);border:1px solid rgba(233,69,96,0.25);border-radius:8px;padding:8px 12px;font-size:0.82rem;color:#e94560;font-weight:bold;display:flex;justify-content:space-between;align-items:center;list-style:none;">
+                    ℹ️ Co jsou mrtvé kameny?
+                    <span style="font-size:.7rem;color:#aaa;font-weight:normal;">▼ nápověda</span>
+                </summary>
+                <div style="background:rgba(233,69,96,0.06);border:1px solid rgba(233,69,96,0.2);border-top:none;border-radius:0 0 8px 8px;padding:11px 13px;font-size:0.81rem;line-height:1.55;color:#ddd;">
+                    Po dvou pasech označíš skupiny odsouzené k zániku — nemohou vytvořit dvě "oči" a soupeř je může kdykoliv zachytit.<br><br>
+                    <strong style="color:#f1c40f;">⚠️ Jak neprohrát vedoucí partii:</strong><br>
+                    • Klikni na <em>své vlastní</em> obklíčené kameny bez šance úniku.<br>
+                    • <strong>Nikdy neklikej na živé skupiny</strong> — ty s alespoň dvěma vnitřními prostory.<br>
+                    • Označ také mrtvé kameny <em>soupeře</em> — přičtou se ti jako zajatci.<br>
+                    • Nejsi-li si jist — nic neoznačuj, klikni „Potvrdit skóre".<br><br>
+                    <span style="color:#aaa;font-size:0.78rem;">Klik = označí celou skupinu. Druhý klik = zruší označení.</span>
+                </div>
+            </details>
+
+
+            <div class="json-row">
+                <button id="btnExport">💾 Uložit hru</button>
+                <input type="file" id="fileImport" style="display:none" accept=".json">
+                <button id="btnImport">📂 Načíst hru</button>
+            </div>
+            
+            <div class="modal-buttons" style="flex-direction: column;">
+                <button id="btnNewGame" class="btn-primary" style="margin-bottom: 10px;">Začít Novou Hru</button>
+                <button id="btnCloseModal">Zpět do Hry</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="achPopup">
+        <div class="ach-icon" id="achPopIcon"></div>
+        <div>
+            <div class="ach-title">🏆 Achievement odemčen!</div>
+            <div class="ach-name" id="achPopName"></div>
+            <div class="ach-desc" id="achPopDesc"></div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('goBoard');
+        const ctx = canvas.getContext('2d');
+        const statusDiv = document.getElementById('status');
+        const cpuThinking = document.getElementById('cpuThinking');
+        
+        const KOMI = 6.5; 
+
+        // Dynamické konstanty desky – přepočítají se při nové hře
+        let BOARD_SIZE = 9;
+        let GRID_SIZE = canvas.width / BOARD_SIZE;
+        let MARGIN = GRID_SIZE / 2;
+
+        function recalcBoardDimensions(size) {
+            BOARD_SIZE = size;
+            GRID_SIZE = canvas.width / BOARD_SIZE;
+            MARGIN = GRID_SIZE / 2;
+        }
+
+        // Herní stav
+        let boardState = Array.from({ length: BOARD_SIZE }, () => Array(BOARD_SIZE).fill(0));
+        let currentPlayer = 1; 
+        let boardHistory = []; 
+        let consecutivePasses = 0; 
+        let gameOver = false;      
+        
+        let lastMove = null; 
+        let hoverPos = null; 
+        let isAiThinking = false; // Ochrana proti klikání, když bot přemýšlí
+        let rafPending = false;   // Fix 4: rAF guard pro hover
+        let markingPhase = false; // Fix 3: fáze označování mrtvých kamenů
+        let deadStones = new Set(); // Fix 3: klíče "r,c" mrtvých kamenů
+        
+        let blackPrisoners = 0; 
+        let whitePrisoners = 0; 
+        let timeLeft = { 1: 300, 2: 300 }; 
+        let timerInterval = null;
+        let playerColor = 1;   // 1 = hráč hraje černým, 2 = bílým
+        let freeMode = false;  // true = ignoruje level systém, používá manuální obtížnost
+        let freeLevelIndex = 0; // 0-6, index do LEVELS[] pro volný režim
+
+        // ── LEVEL SYSTEM ──────────────────────────────────────────────────────
+        const LEVELS = [
+            { id:1, name:'Kámen',    desc:'Čistý easy AI',             easyFreq:1, medFreq:0, hardFreq:0 },
+            { id:2, name:'Oblázek',  desc:'Každý 8. tah medium',       easyFreq:0, medFreq:8, hardFreq:0 },
+            { id:3, name:'Žák',      desc:'Každý 5. tah medium',       easyFreq:0, medFreq:5, hardFreq:0 },
+            { id:4, name:'Student',  desc:'Každý 3. med + každý 10. hard', easyFreq:0, medFreq:3, hardFreq:10 },
+            { id:5, name:'Hráč',     desc:'Každý 2. med + každý 6. hard', easyFreq:0, medFreq:2, hardFreq:6 },
+            { id:6, name:'Mistr',    desc:'Vždy medium + každý 4. hard',  easyFreq:0, medFreq:1, hardFreq:4 },
+            { id:7, name:'Sensei',   desc:'Čistý hard AI',             easyFreq:0, medFreq:0, hardFreq:1 },
+        ];
+
+        let savedProgress = JSON.parse(localStorage.getItem('go_progress') || '{"unlockedLevels":[1],"currentLevel":1}');
+        let currentLevel = savedProgress.currentLevel || 1;
+        let unlockedLevels = new Set(savedProgress.unlockedLevels || [1]);
+        let aiTurnCount = 0; // counts AI turns for frequency logic
+
+        function saveProgress() {
+            localStorage.setItem('go_progress', JSON.stringify({
+                unlockedLevels: [...unlockedLevels],
+                currentLevel
+            }));
+        }
+
+        function getLevelDifficulty() {
+            const lv = freeMode ? LEVELS[freeLevelIndex] : LEVELS[currentLevel - 1];
+            aiTurnCount++;
+            if (lv.hardFreq > 0 && aiTurnCount % lv.hardFreq === 0) return 'hard';
+            if (lv.medFreq > 0 && aiTurnCount % lv.medFreq === 0) return 'medium';
+            if (lv.easyFreq === 1) return 'easy';
+            return 'easy';
+        }
+
+        function renderFreeLevelGrid() {
+            const grid = document.getElementById('freeLevelGrid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            const icons = ['🪨','🪨','📚','🎓','♟️','🏯','🥋'];
+            LEVELS.forEach((lv, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'lvl-btn ' + (idx === freeLevelIndex ? 'active' : 'unlocked');
+                btn.innerHTML = `<div style="font-size:1.1rem">${icons[idx]}</div><div>L${lv.id}</div><div style="font-size:.62rem;opacity:.8">${lv.name}</div>`;
+                btn.title = lv.desc;
+                btn.addEventListener('click', () => {
+                    freeLevelIndex = idx;
+                    renderFreeLevelGrid();
+                    updateLevelBadge();
+                });
+                grid.appendChild(btn);
+            });
+        }
+
+        function renderLevelGrid() {
+            const grid = document.getElementById('levelGrid');
+            grid.innerHTML = '';
+            LEVELS.forEach(lv => {
+                const btn = document.createElement('button');
+                btn.className = 'lvl-btn';
+                const isUnlocked = unlockedLevels.has(lv.id);
+                const isActive = lv.id === currentLevel;
+                if (isActive) btn.classList.add('active');
+                else if (isUnlocked) btn.classList.add('unlocked');
+                else btn.classList.add('locked');
+                btn.innerHTML = `<div style="font-size:1.1rem">${['🪨','🪨','📚','🎓','♟️','🏯','🥋'][lv.id-1]}</div><div>L${lv.id}</div><div style="font-size:.62rem;opacity:.8">${lv.name}</div>`;
+                btn.title = lv.desc;
+                if (isUnlocked) {
+                    btn.addEventListener('click', () => {
+                        currentLevel = lv.id;
+                        saveProgress();
+                        renderLevelGrid();
+                        updateLevelBadge();
+                    });
+                }
+                grid.appendChild(btn);
+            });
+        }
+
+        function updateLevelBadge() {
+            if (freeMode) {
+                const lv = LEVELS[freeLevelIndex];
+                document.getElementById('levelBadge').textContent = `Volný L${lv.id} – ${lv.name}`;
+                return;
+            }
+            const lv = LEVELS[currentLevel - 1];
+            document.getElementById('levelBadge').textContent = `Level ${lv.id} – ${lv.name}`;
+        }
+
+        function unlockLevel(id) {
+            if (!unlockedLevels.has(id)) {
+                unlockedLevels.add(id);
+                saveProgress();
+                renderLevelGrid();
+            }
+        }
+
+        // ── ACHIEVEMENT SYSTEM ────────────────────────────────────────────────
+        const ACHIEVEMENTS = [
+            { id:'first_win',    icon:'🎉', name:'První vítězství',      desc:'Vyhraj svou první partii' },
+            { id:'beat_l2',      icon:'🪨', name:'Přes Oblázek',          desc:'Poraz Level 2' },
+            { id:'beat_l3',      icon:'📚', name:'Žák úspěšný',           desc:'Poraz Level 3' },
+            { id:'beat_l4',      icon:'🎓', name:'Graduace',              desc:'Poraz Level 4' },
+            { id:'beat_l5',      icon:'♟️', name:'Skutečný hráč',         desc:'Poraz Level 5' },
+            { id:'beat_l6',      icon:'🏯', name:'Mistr poražen',         desc:'Poraz Level 6' },
+            { id:'beat_l7',      icon:'🥋', name:'Sensei překonán',       desc:'Poraz Level 7' },
+            { id:'win_20',       icon:'💥', name:'Drtivé vítězství',      desc:'Vyhraj o 20+ bodů' },
+            { id:'capture_10',   icon:'⚔️', name:'Lovec kamenů',          desc:'Zachyť 10+ kamenů v jedné partii' },
+            { id:'big_board',    icon:'🗺️', name:'Velký svět',            desc:'Dokonči partii na 19×19' },
+            { id:'no_capture',   icon:'🕊️', name:'Pacifista',             desc:'Vyhraj bez jediného zachycení' },
+            { id:'century',      icon:'💯', name:'Stotak',                desc:'Odehraj 100+ tahů v jedné partii' },
+            { id:'speed_win',    icon:'⚡', name:'Rychlý jako blesk',     desc:'Vyhraj za méně než 30 tahů' },
+            { id:'ten_games',    icon:'🔟', name:'Veterán',               desc:'Odehraj 10 partií' },
+            { id:'comeback',     icon:'🔄', name:'Comeback',              desc:'Vyhraj když jsi vedl o méně než 3 body po 50 tazích' },
+        ];
+
+        let unlockedAch = new Set(JSON.parse(localStorage.getItem('go_achievements') || '[]'));
+        let gamesPlayed = parseInt(localStorage.getItem('go_games_played') || '0');
+        let turnCount = 0; // total turns this game (both players)
+        let midgameScore = null; // snapshot at turn 50
+
+        function saveAch() { localStorage.setItem('go_achievements', JSON.stringify([...unlockedAch])); }
+
+        let achPopQueue = [];
+        let achPopShowing = false;
+
+        function playAchievementSound() {
+            if (!audioCtx) return;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const vol = parseFloat(rngVolume.value);
+            if (vol <= 0) return;
+            // Fanfáre: C5 → E5 → G5 → C6
+            const notes = [523, 659, 784, 1047];
+            notes.forEach((freq, i) => {
+                const osc = audioCtx.createOscillator();
+                const g = audioCtx.createGain();
+                osc.connect(g); g.connect(audioCtx.destination);
+                osc.type = 'triangle';
+                const t = audioCtx.currentTime + i * 0.12;
+                osc.frequency.setValueAtTime(freq, t);
+                g.gain.setValueAtTime(0, t);
+                g.gain.linearRampToValueAtTime(0.35 * vol, t + 0.04);
+                g.gain.exponentialRampToValueAtTime(0.01, t + 0.22);
+                osc.start(t); osc.stop(t + 0.25);
+            });
+        }
+
+        function showAchPopup(ach) {
+            achPopQueue.push(ach);
+            if (!achPopShowing) processAchQueue();
+        }
+
+        function processAchQueue() {
+            if (achPopQueue.length === 0) { achPopShowing = false; return; }
+            achPopShowing = true;
+            const ach = achPopQueue.shift();
+            const pop = document.getElementById('achPopup');
+            document.getElementById('achPopIcon').textContent = ach.icon;
+            document.getElementById('achPopName').textContent = ach.name;
+            document.getElementById('achPopDesc').textContent = ach.desc;
+            pop.style.display = 'flex';
+            requestAnimationFrame(() => { pop.classList.add('show'); });
+            playAchievementSound();
+            setTimeout(() => {
+                pop.classList.remove('show');
+                setTimeout(() => { pop.style.display = 'none'; processAchQueue(); }, 380);
+            }, 3200);
+        }
+
+        function unlockAch(id) {
+            if (unlockedAch.has(id)) return;
+            unlockedAch.add(id);
+            saveAch();
+            const ach = ACHIEVEMENTS.find(a => a.id === id);
+            if (ach) showAchPopup(ach);
+            renderAchList();
+        }
+
+        function renderAchList() {
+            const list = document.getElementById('achList');
+            list.innerHTML = '';
+            ACHIEVEMENTS.forEach(a => {
+                const div = document.createElement('div');
+                div.className = 'ach-item' + (unlockedAch.has(a.id) ? ' done' : '');
+                div.innerHTML = `<span class="ai">${a.icon}</span><span class="an">${a.name}</span><div class="ad">${a.desc}</div>`;
+                list.appendChild(div);
+            });
+        }
+
+        // ── UI Elementy
+        const elTimerBlack = document.getElementById('timerBlack');
+        const elTimerWhite = document.getElementById('timerWhite');
+        const elPrisBlack = document.getElementById('prisBlack');
+        const elPrisWhite = document.getElementById('prisWhite');
+        
+        const modal = document.getElementById('settingsModal');
+        const selCpu = document.getElementById('selCpu');
+        const selDifficulty = document.getElementById('selDifficulty');
+        const rowDifficulty = document.getElementById('rowDifficulty');
+        const selRules = document.getElementById('selRules');
+        const chkTimer = document.getElementById('chkTimer');
+        const rngVolume = document.getElementById('rngVolume');
+
+        // --- 🧠 AI – inline (bez Web Workeru, kvůli CSP sandbox omezením) ---
+        // Pomocné funkce pro AI (sdílené s hlavním vláknem)
+        function aiCloneBoard(state) { return state.map(row => [...row]); }
+
+        function aiGetGroupInfo(state, startRow, startCol) {
+            const color = state[startRow][startCol];
+            if (color === 0) return null;
+            const group = [], liberties = new Set(), visited = new Set();
+            const queue = [[startRow, startCol]];
+            visited.add(startRow + ',' + startCol);
+            const directions = [[-1,0],[1,0],[0,-1],[0,1]];
+            while (queue.length > 0) {
+                const [r, c] = queue.shift();
+                group.push([r, c]);
+                for (const [dr, dc] of directions) {
+                    const nr = r + dr, nc = c + dc;
+                    if (nr >= 0 && nr < BOARD_SIZE && nc >= 0 && nc < BOARD_SIZE) {
+                        if (state[nr][nc] === 0) liberties.add(nr + ',' + nc);
+                        else if (state[nr][nc] === color && !visited.has(nr + ',' + nc)) {
+                            visited.add(nr + ',' + nc); queue.push([nr, nc]);
+                        }
+                    }
+                }
+            }
+            return { group, liberties: liberties.size };
+        }
+
+        function aiFastSimulateMove(state, row, col, color) {
+            if (state[row][col] !== 0) return null;
+            let newState = aiCloneBoard(state);
+            newState[row][col] = color;
+            const enemyColor = color === 1 ? 2 : 1;
+            let captured = 0;
+            const dirs = [[-1,0],[1,0],[0,-1],[0,1]];
+            for (const [dr, dc] of dirs) {
+                const nr = row + dr, nc = col + dc;
+                if (nr >= 0 && nr < BOARD_SIZE && nc >= 0 && nc < BOARD_SIZE && newState[nr][nc] === enemyColor) {
+                    const eg = aiGetGroupInfo(newState, nr, nc);
+                    if (eg && eg.liberties === 0) {
+                        eg.group.forEach(([gr, gc]) => { newState[gr][gc] = 0; captured++; });
+                    }
+                }
+            }
+            const mg = aiGetGroupInfo(newState, row, col);
+            if (mg.liberties === 0 && captured === 0) return null;
+            return newState;
+        }
+
+        function computeAIMove(bState, bHistory, difficulty, useSuperko) {
+            let validMoves = [];
+            for (let r = 0; r < BOARD_SIZE; r++) {
+                for (let c = 0; c < BOARD_SIZE; c++) {
+                    if (bState[r][c] === 0) {
+                        let testState = aiFastSimulateMove(bState, r, c, 2);
+                        if (testState !== null) {
+                            const stateStr = JSON.stringify(testState);
+                            const koOk = useSuperko
+                                ? !bHistory.includes(stateStr)
+                                : (bHistory.length < 2 || stateStr !== bHistory[bHistory.length - 2]);
+                            if (koOk) validMoves.push({r, c, state: testState});
+                        }
+                    }
+                }
+            }
+            if (validMoves.length === 0) return null; // pasovat
+
+            let SIMS = 15, DEPTH = 15;
+            if (difficulty === 'easy') { SIMS = 3; DEPTH = 5; }
+            else if (difficulty === 'medium') { SIMS = 25; DEPTH = 15; }
+            else if (difficulty === 'hard') { SIMS = 120; DEPTH = 30; }
+
+            if (difficulty === 'easy' && Math.random() < 0.25) {
+                return validMoves[Math.floor(Math.random() * validMoves.length)];
+            }
+
+            let bestMove = validMoves[0], maxAvg = -Infinity;
+            for (let move of validMoves) {
+                let totalScore = 0;
+                for (let i = 0; i < SIMS; i++) {
+                    let simState = aiCloneBoard(move.state), simPlayer = 1;
+                    for (let d = 0; d < DEPTH; d++) {
+                        let empty = [];
+                        for (let rr = 0; rr < BOARD_SIZE; rr++)
+                            for (let cc = 0; cc < BOARD_SIZE; cc++)
+                                if (simState[rr][cc] === 0) empty.push({r:rr, c:cc});
+                        if (empty.length === 0) break;
+                        const rnd = empty[Math.floor(Math.random() * empty.length)];
+                        const nxt = aiFastSimulateMove(simState, rnd.r, rnd.c, simPlayer);
+                        if (nxt) simState = nxt;
+                        simPlayer = simPlayer === 1 ? 2 : 1;
+                    }
+                    let score = 0;
+                    for (let rr = 0; rr < BOARD_SIZE; rr++)
+                        for (let cc = 0; cc < BOARD_SIZE; cc++) {
+                            if (simState[rr][cc] === 2) score++;
+                            if (simState[rr][cc] === 1) score--;
+                        }
+                    totalScore += score;
+                }
+                const avg = totalScore / SIMS + (Math.random() * 0.1);
+                if (avg > maxAvg) { maxAvg = avg; bestMove = move; }
+            }
+            return bestMove;
+        }
+
+        // --- ZVUKY S HLASITOSTÍ ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playStoneSound() {
+            const vol = parseFloat(rngVolume.value);
+            if (vol <= 0 || !audioCtx) return;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.05);
+            gainNode.gain.setValueAtTime(0.8 * vol, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.05);
+        }
+
+        // --- UI A ČASOMÍRA ---
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const s = (seconds % 60).toString().padStart(2, '0');
+            return `${m}:${s}`;
+        }
+
+        function updateUI() {
+            elTimerBlack.innerText = formatTime(timeLeft[1]);
+            elTimerWhite.innerText = formatTime(timeLeft[2]);
+            elPrisBlack.innerText = blackPrisoners;
+            elPrisWhite.innerText = whitePrisoners;
+
+            if (!gameOver && !isAiThinking) {
+                statusDiv.innerText = `Na tahu: ${currentPlayer === 1 ? 'Černý' : 'Bílý'}`;
+                statusDiv.style.color = currentPlayer === 1 ? '#fff' : '#aaa';
+            }
+        }
+
+        function updatePlayerBoxes() {
+            const bB=document.getElementById('boxBlack'),bW=document.getElementById('boxWhite');
+            bB.classList.toggle('is-human',playerColor===1); bW.classList.toggle('is-human',playerColor===2);
+            if(!gameOver&&!markingPhase){bB.classList.toggle('is-active-turn',currentPlayer===1);bW.classList.toggle('is-active-turn',currentPlayer===2);}else{bB.classList.remove('is-active-turn');bW.classList.remove('is-active-turn');}
+        }
+        function showColorPicker(){
+            const m = document.getElementById('colorPickModal');
+            m.style.display = 'flex';
+            m.style.pointerEvents = 'auto';
+        }
+        function hideColorPicker(){
+            const m = document.getElementById('colorPickModal');
+            m.style.display = 'none';
+            m.style.pointerEvents = 'none';
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            if (!chkTimer.checked || gameOver) return;
+            timerInterval = setInterval(() => {
+                timeLeft[currentPlayer]--;
+                updateUI();
+                if (timeLeft[currentPlayer] <= 0) {
+                    clearInterval(timerInterval);
+                    gameOver = true;
+                    statusDiv.innerText = `Čas! Vyhrál ${currentPlayer === 1 ? 'Bílý' : 'Černý'}.`;
+                    statusDiv.style.color = '#e94560';
+                }
+            }, 1000);
+        }
+
+        // --- VYKRESLOVÁNÍ DESKY ---
+        function drawBoard() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = '#3a2512';
+            ctx.lineWidth = 1.2;
+            for (let i = 0; i < BOARD_SIZE; i++) {
+                ctx.beginPath();
+                ctx.moveTo(MARGIN, MARGIN + i * GRID_SIZE);
+                ctx.lineTo(canvas.width - MARGIN, MARGIN + i * GRID_SIZE);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.moveTo(MARGIN + i * GRID_SIZE, MARGIN);
+                ctx.lineTo(MARGIN + i * GRID_SIZE, canvas.height - MARGIN);
+                ctx.stroke();
+            }
+            
+            const starPoints = [[2, 2], [2, 6], [4, 4], [6, 2], [6, 6]];
+            ctx.fillStyle = '#3a2512';
+            starPoints.forEach(([r, c]) => {
+                ctx.beginPath();
+                ctx.arc(MARGIN + c * GRID_SIZE, MARGIN + r * GRID_SIZE, 3, 0, 2 * Math.PI);
+                ctx.fill();
+            });
+
+            for (let row = 0; row < BOARD_SIZE; row++) {
+                for (let col = 0; col < BOARD_SIZE; col++) {
+                    const stone = boardState[row][col];
+                    if (stone !== 0) {
+                        const isDead = deadStones.has(row + ',' + col);
+                        drawSingleStone(row, col, stone, isDead ? 0.25 : 1.0);
+                        if (isDead) {
+                            const x = MARGIN + col * GRID_SIZE;
+                            const y = MARGIN + row * GRID_SIZE;
+                            const r = (GRID_SIZE / 2) * 0.5;
+                            ctx.strokeStyle = '#e94560';
+                            ctx.lineWidth = 2.5;
+                            ctx.beginPath(); ctx.moveTo(x - r, y - r); ctx.lineTo(x + r, y + r); ctx.stroke();
+                            ctx.beginPath(); ctx.moveTo(x + r, y - r); ctx.lineTo(x - r, y + r); ctx.stroke();
+                        } else if (lastMove && lastMove.r === row && lastMove.c === col) {
+                            ctx.beginPath();
+                            ctx.arc(MARGIN + col * GRID_SIZE, MARGIN + row * GRID_SIZE, 4, 0, 2 * Math.PI);
+                            ctx.fillStyle = '#e94560';
+                            ctx.fill();
+                        }
+                    }
+                }
+            }
+
+            if(selCpu.value==='cpu'){const _lv=LEVELS[currentLevel-1];ctx.save();ctx.globalAlpha=0.22;ctx.fillStyle='#f1c40f';ctx.font='bold 12px monospace';ctx.textAlign='right';ctx.fillText(`L${_lv.id} ${_lv.name}`,canvas.width-7,canvas.height-6);ctx.restore();} // Level watermark
+            if (markingPhase) {
+                ctx.fillStyle = 'rgba(233,69,96,0.10)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = 'rgba(233,69,96,0.9)';
+                ctx.font = 'bold 13px monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText('Klikni na mrtvé kameny · poté Potvrdit skóre', canvas.width / 2, 18);
+                ctx.textAlign = 'left';
+            }
+
+            const isCpuTurn = (selCpu.value === 'cpu' && currentPlayer === 2);
+            if (!gameOver && !markingPhase && !isCpuTurn && !isAiThinking && hoverPos && boardState[hoverPos.r][hoverPos.c] === 0) {
+                drawSingleStone(hoverPos.r, hoverPos.c, currentPlayer, 0.4);
+            }
+        }
+
+        function drawSingleStone(row, col, color, alpha) {
+            const x = MARGIN + col * GRID_SIZE;
+            const y = MARGIN + row * GRID_SIZE;
+            const radius = (GRID_SIZE / 2) * 0.94;
+            
+            ctx.globalAlpha = alpha;
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, 2 * Math.PI);
+            
+            const gradient = ctx.createRadialGradient(x - radius/3, y - radius/3, radius/10, x, y, radius);
+            if (color === 1) { 
+                gradient.addColorStop(0, '#555'); gradient.addColorStop(1, '#0a0a0a');
+                ctx.shadowColor = 'rgba(0,0,0,0.5)';
+            } else { 
+                gradient.addColorStop(0, '#fff'); gradient.addColorStop(1, '#ccc');
+                ctx.shadowColor = 'rgba(0,0,0,0.3)';
+            }
+            
+            ctx.shadowBlur = 4; ctx.shadowOffsetX = 2; ctx.shadowOffsetY = 2;
+            ctx.fillStyle = gradient; ctx.fill();
+            
+            ctx.shadowBlur = 0; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
+            ctx.globalAlpha = 1.0;
+        }
+
+        // Fix 4: mousemove throttlovaný přes requestAnimationFrame
+        let pendingMouseX = 0, pendingMouseY = 0;
+        canvas.addEventListener('mousemove', (event) => {
+            pendingMouseX = event.clientX;
+            pendingMouseY = event.clientY;
+            if (rafPending) return;
+            rafPending = true;
+            requestAnimationFrame(() => {
+                rafPending = false;
+                const rect = canvas.getBoundingClientRect();
+                const col = Math.floor((pendingMouseX - rect.left - MARGIN + GRID_SIZE / 2) / GRID_SIZE);
+                const row = Math.floor((pendingMouseY - rect.top - MARGIN + GRID_SIZE / 2) / GRID_SIZE);
+                if (col >= 0 && col < BOARD_SIZE && row >= 0 && row < BOARD_SIZE) {
+                    if (!hoverPos || hoverPos.r !== row || hoverPos.c !== col) {
+                        hoverPos = {r: row, c: col}; drawBoard();
+                    }
+                } else {
+                    if (hoverPos) { hoverPos = null; drawBoard(); }
+                }
+            });
+        });
+        canvas.addEventListener('mouseout', () => { hoverPos = null; rafPending = false; drawBoard(); });
+
+        // --- PRAVIDLA, TAHY A SKÓRE ---
+        function cloneBoard(state) { return state.map(row => [...row]); }
+
+        function getGroupInfo(state, startRow, startCol) {
+            const color = state[startRow][startCol];
+            if (color === 0) return null; 
+            const group = [];
+            const liberties = new Set(); 
+            const visited = new Set();
+            const queue = [[startRow, startCol]];
+            visited.add(startRow + ',' + startCol);
+            const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+
+            while (queue.length > 0) {
+                const [r, c] = queue.shift();
+                group.push([r, c]);
+                for (const [dr, dc] of directions) {
+                    const nr = r + dr, nc = c + dc;
+                    if (nr >= 0 && nr < BOARD_SIZE && nc >= 0 && nc < BOARD_SIZE) {
+                        if (state[nr][nc] === 0) liberties.add(nr + ',' + nc);
+                        else if (state[nr][nc] === color && !visited.has(nr + ',' + nc)) {
+                            visited.add(nr + ',' + nc); queue.push([nr, nc]);
+                        }
+                    }
+                }
+            }
+            return { group, liberties: liberties.size };
+        }
+
+        function getGroupCoords(state, startRow, startCol) {
+            const color = state[startRow][startCol];
+            if (color === 0) return [];
+            const visited = new Set(), queue = [[startRow, startCol]];
+            visited.add(startRow + ',' + startCol);
+            const dirs = [[-1,0],[1,0],[0,-1],[0,1]];
+            while (queue.length) {
+                const [r, c] = queue.shift();
+                for (const [dr, dc] of dirs) {
+                    const nr = r + dr, nc = c + dc;
+                    const key = nr + ',' + nc;
+                    if (nr >= 0 && nr < BOARD_SIZE && nc >= 0 && nc < BOARD_SIZE
+                        && state[nr][nc] === color && !visited.has(key)) {
+                        visited.add(key); queue.push([nr, nc]);
+                    }
+                }
+            }
+            return [...visited];
+        }
+
+        function enterMarkingPhase() {
+            // Pokud je vyhodnocování mrtvych kamenů vypnuto, přeskoč rovnou na skóre
+            if (!document.getElementById('chkDeadStones').checked) {
+                gameOver = true;
+                clearInterval(timerInterval);
+                calculateScore();
+                return;
+            }
+            markingPhase = true;
+            deadStones = new Set();
+            gameOver = false;
+            clearInterval(timerInterval);
+            statusDiv.innerText = 'Označte mrtvé kameny';
+            statusDiv.style.color = '#e94560';
+            document.getElementById('btnPass').style.display = 'none';
+            document.getElementById('btnConfirmScore').style.display = 'block';
+            drawBoard();
+        }
+
+        function calculateScore() {
+            let blackStones = 0, whiteStones = 0;
+            let blackTerritory = 0, whiteTerritory = 0;
+            let visitedEmpty = new Set();
+
+            for (let r = 0; r < BOARD_SIZE; r++) {
+                for (let c = 0; c < BOARD_SIZE; c++) {
+                    if (boardState[r][c] === 1) blackStones++;
+                    else if (boardState[r][c] === 2) whiteStones++;
+                    else if (boardState[r][c] === 0 && !visitedEmpty.has(r + ',' + c)) {
+                        
+                        let reachesBlack = false, reachesWhite = false;
+                        let territorySize = 0;
+                        let queue = [[r, c]];
+                        let tVisited = new Set();
+                        tVisited.add(r + ',' + c);
+
+                        while (queue.length > 0) {
+                            let [cr, cc] = queue.shift();
+                            territorySize++;
+                            visitedEmpty.add(cr + ',' + cc);
+
+                            const dirs = [[-1,0],[1,0],[0,-1],[0,1]];
+                            for (let [dr, dc] of dirs) {
+                                let nr = cr + dr, nc = cc + dc;
+                                if (nr >= 0 && nr < BOARD_SIZE && nc >= 0 && nc < BOARD_SIZE) {
+                                    if (boardState[nr][nc] === 1) reachesBlack = true;
+                                    else if (boardState[nr][nc] === 2) reachesWhite = true;
+                                    else if (boardState[nr][nc] === 0 && !tVisited.has(nr + ',' + nc)) {
+                                        tVisited.add(nr + ',' + nc); queue.push([nr, nc]);
+                                    }
+                                }
+                            }
+                        }
+                        
+                        if (reachesBlack && !reachesWhite) blackTerritory += territorySize;
+                        if (reachesWhite && !reachesBlack) whiteTerritory += territorySize;
+                    }
+                }
+            }
+
+            let blackTotal = 0, whiteTotal = 0;
+            const rules = selRules.value;
+
+            if (rules === 'chinese') {
+                blackTotal = blackStones + blackTerritory;
+                whiteTotal = whiteStones + whiteTerritory + KOMI;
+            } else {
+                blackTotal = blackTerritory + blackPrisoners;
+                whiteTotal = whiteTerritory + whitePrisoners + KOMI;
+            }
+
+            const diff = Math.abs(blackTotal - whiteTotal);
+            const winner = blackTotal > whiteTotal ? "Černý" : "Bílý";
+            const playerWon = blackTotal > whiteTotal; // hráč = černý
+
+            statusDiv.innerHTML = `Konec! ${winner} vyhrál o ${diff.toFixed(1)} bodů. <br><small style="font-size:0.8rem">(${rules === 'chinese' ? 'Čínská' : 'Japonská'} prav. Č:${blackTotal} B:${whiteTotal})</small>`;
+            statusDiv.style.color = '#f1c40f';
+
+            // ── Achievement checks ──
+            gamesPlayed++;
+            localStorage.setItem('go_games_played', gamesPlayed);
+            if (gamesPlayed >= 10) unlockAch('ten_games');
+
+            if (playerWon) {
+                unlockAch('first_win');
+                if (diff >= 20) unlockAch('win_20');
+                if (blackPrisoners === 0) unlockAch('no_capture');
+                if (turnCount >= 100) unlockAch('century');
+                if (turnCount < 30) unlockAch('speed_win');
+                if (BOARD_SIZE === 19) unlockAch('big_board');
+                // comeback: vedl o méně než 3 body po 50 tazích a přesto vyhrál
+                if (midgameScore !== null && midgameScore < 3) unlockAch('comeback');
+                // unlock next level
+                const nextId = currentLevel + 1;
+                if (nextId <= 7) unlockLevel(nextId);
+                const achMap = { 2:'beat_l2', 3:'beat_l3', 4:'beat_l4', 5:'beat_l5', 6:'beat_l6', 7:'beat_l7' };
+                if (achMap[currentLevel]) unlockAch(achMap[currentLevel]);
+            }
+            if (blackPrisoners >= 10) unlockAch('capture_10');
+        }
+
+        function attemptMove(row, col) {
+            if (boardState[row][col] !== 0) return false;
+
+            const backupState = cloneBoard(boardState);
+            boardState[row][col] = currentPlayer;
+            const enemyColor = currentPlayer === 1 ? 2 : 1;
+            let capturedEnemies = 0;
+
+            const dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+            for (const [dr, dc] of dirs) {
+                const nr = row + dr, nc = col + dc;
+                if (nr >= 0 && nr < BOARD_SIZE && nc >= 0 && nc < BOARD_SIZE && boardState[nr][nc] === enemyColor) {
+                    const enemyGroup = getGroupInfo(boardState, nr, nc);
+                    if (enemyGroup.liberties === 0) {
+                        enemyGroup.group.forEach(([gr, gc]) => { boardState[gr][gc] = 0; capturedEnemies++; });
+                    }
+                }
+            }
+
+            const myGroup = getGroupInfo(boardState, row, col);
+            if (myGroup.liberties === 0 && capturedEnemies === 0) {
+                boardState = backupState; return false; 
+            }
+
+            const newStateString = JSON.stringify(boardState);
+            // Fix 2: Superko – čínská pravidla kontrolují celou historii, japonská jen simple ko
+            const isKoViolation = selRules.value === 'chinese'
+                ? boardHistory.includes(newStateString)
+                : (boardHistory.length >= 2 && newStateString === boardHistory[boardHistory.length - 2]);
+            if (isKoViolation) {
+                boardState = backupState; return false;
+            }
+
+            if (capturedEnemies > 0) {
+                if (currentPlayer === 1) blackPrisoners += capturedEnemies;
+                else whitePrisoners += capturedEnemies;
+            }
+
+            playStoneSound();
+            turnCount++;
+            // midgame snapshot at turn 50 for comeback achievement
+            if (turnCount === 50) {
+                let bS=0, wS=0;
+                for (let r=0;r<BOARD_SIZE;r++) for(let c=0;c<BOARD_SIZE;c++) {
+                    if (boardState[r][c]===1) bS++; else if(boardState[r][c]===2) wS++;
+                }
+                midgameScore = bS - wS; // positive = black leading
+            }
+            lastMove = {r: row, c: col}; 
+            boardHistory.push(newStateString);
+            consecutivePasses = 0; 
+            currentPlayer = enemyColor;
+            
+            updateUI();
+            drawBoard();
+            startTimer();
+            return true;
+        }
+
+        // AI TAHA – volá inline computeAIMove přes setTimeout (nulová latence pro UI update)
+        function playAI() {
+            const aiColor = playerColor === 1 ? 2 : 1;
+            if (gameOver || currentPlayer !== aiColor || isAiThinking) return;
+            isAiThinking = true;
+            cpuThinking.style.display = "block";
+            statusDiv.innerText = "CPU na tahu...";
+
+            // setTimeout(0) nechá prohlížeč překreslit UI (cpuThinking indikátor)
+            // před spuštěním synchronního výpočtu
+            setTimeout(() => {
+                // Level system: pokud je vybrán CPU mode, použij level difficulty
+                const diff = selCpu.value === 'cpu' ? getLevelDifficulty() : selDifficulty.value;
+                const move = computeAIMove(
+                    boardState,
+                    boardHistory,
+                    diff,
+                    selRules.value === 'chinese'
+                );
+                isAiThinking = false;
+                cpuThinking.style.display = "none";
+                if (move) {
+                    attemptMove(move.r, move.c);
+                } else {
+                    consecutivePasses++;
+                    currentPlayer = playerColor; // return turn to human
+                    updateUI();
+                    startTimer();
+                    if (consecutivePasses >= 2) { enterMarkingPhase(); }
+                }
+            }, 0);
+        }
+
+        // --- EVENTY A MENU ---
+        const _cpBlack = document.getElementById('cpPickBlack');
+        const _cpWhite = document.getElementById('cpPickWhite');
+        if (_cpBlack) _cpBlack.addEventListener('click',()=>{playerColor=1;hideColorPicker();updatePlayerBoxes();});
+        if (_cpWhite) _cpWhite.addEventListener('click',()=>{playerColor=2;hideColorPicker();updatePlayerBoxes();if(selCpu.value==='cpu')setTimeout(()=>playAI(),200);});
+
+        selCpu.addEventListener('change', () => {
+            // rowDifficulty hidden in HTML; freeMode toggle controls rowDifficultyFree // level grid replaces manual difficulty in CPU mode
+        });
+
+        const _chkFree = document.getElementById('chkFreeMode');
+        if (_chkFree) _chkFree.addEventListener('change', function() {
+            freeMode = this.checked;
+            document.getElementById('rowDifficultyFree').style.display = freeMode ? 'block' : 'none';
+            document.getElementById('levelGrid').style.opacity = freeMode ? '0.35' : '1';
+            document.getElementById('levelGrid').style.pointerEvents = freeMode ? 'none' : 'auto';
+            if (freeMode) renderFreeLevelGrid();
+            updateLevelBadge();
+        });
+
+        // Zobraz napovedu jen na easy/medium
+        function updateDeadStoneHelp() { /* <details> is native, no JS needed */ }
+        document.getElementById('selDifficulty').addEventListener('change', updateDeadStoneHelp);
+        document.getElementById('chkDeadStones').addEventListener('change', updateDeadStoneHelp);
+
+        canvas.addEventListener('click', (event) => {
+            if (markingPhase) {
+                const rect = canvas.getBoundingClientRect();
+                const col = Math.floor((event.clientX - rect.left - MARGIN + GRID_SIZE / 2) / GRID_SIZE);
+                const row = Math.floor((event.clientY - rect.top - MARGIN + GRID_SIZE / 2) / GRID_SIZE);
+                if (row >= 0 && row < BOARD_SIZE && col >= 0 && col < BOARD_SIZE && boardState[row][col] !== 0) {
+                    const group = getGroupCoords(boardState, row, col);
+                    const key0 = group[0];
+                    if (deadStones.has(key0)) {
+                        group.forEach(k => deadStones.delete(k));
+                    } else {
+                        group.forEach(k => deadStones.add(k));
+                    }
+                    drawBoard();
+                }
+                return;
+            }
+            const _aiCol = playerColor === 1 ? 2 : 1;
+            if (gameOver || isAiThinking || (selCpu.value === 'cpu' && currentPlayer === _aiCol)) return;
+            // Počítej souřadnice přímo z kliknutí (nezávisle na hoverPos)
+            const clickRect = canvas.getBoundingClientRect();
+            const clickCol = Math.floor((event.clientX - clickRect.left - MARGIN + GRID_SIZE / 2) / GRID_SIZE);
+            const clickRow = Math.floor((event.clientY - clickRect.top - MARGIN + GRID_SIZE / 2) / GRID_SIZE);
+            if (clickRow >= 0 && clickRow < BOARD_SIZE && clickCol >= 0 && clickCol < BOARD_SIZE) {
+                if (attemptMove(clickRow, clickCol) && selCpu.value === 'cpu' && !gameOver) {
+                    playAI();
+                }
+            }
+        });
+
+        document.getElementById('btnPass').addEventListener('click', () => {
+            const aiColorP = playerColor === 1 ? 2 : 1;
+            if (gameOver || isAiThinking || (selCpu.value === 'cpu' && currentPlayer === aiColorP)) return;
+            consecutivePasses++;
+            currentPlayer = currentPlayer === 1 ? 2 : 1;
+            lastMove = null; 
+            updateUI();
+            drawBoard();
+            
+            if (consecutivePasses >= 2) {
+                enterMarkingPhase();
+            } else {
+                startTimer();
+                if (selCpu.value === 'cpu' && currentPlayer === 2 && !gameOver) playAI();
+            }
+        });
+
+        document.getElementById('btnConfirmScore').addEventListener('click', () => {
+            deadStones.forEach(key => {
+                const [r, c] = key.split(',').map(Number);
+                const color = boardState[r][c];
+                if (color === 1) whitePrisoners++;
+                else if (color === 2) blackPrisoners++;
+                boardState[r][c] = 0;
+            });
+            deadStones.clear();
+            markingPhase = false;
+            gameOver = true;
+            document.getElementById('btnPass').style.display = 'block';
+            document.getElementById('btnConfirmScore').style.display = 'none';
+            drawBoard();
+            calculateScore();
+        });
+
+        document.getElementById('btnSettings').addEventListener('click', () => { modal.style.display = 'flex'; });
+        document.getElementById('btnCloseModal').addEventListener('click', () => {
+            modal.style.display = 'none';
+            // Show color picker only if no moves yet and CPU mode and game just started
+            const gameStarted = boardHistory.length > 1 || turnCount > 0;
+            if (selCpu.value === 'cpu' && !gameStarted && !gameOver) {
+                showColorPicker();
+            } else {
+                if (chkTimer.checked && !gameOver) startTimer();
+                else clearInterval(timerInterval);
+            }
+        });
+
+        document.getElementById('btnNewGame').addEventListener('click', () => {
+            // Fix 5: přepočítat velikost desky
+            const newSize = parseInt(document.getElementById('selBoardSize').value);
+            recalcBoardDimensions(newSize);
+
+            boardState = Array.from({ length: BOARD_SIZE }, () => Array(BOARD_SIZE).fill(0));
+            currentPlayer = 1; boardHistory = [JSON.stringify(boardState)];
+            consecutivePasses = 0; gameOver = false;
+            blackPrisoners = 0; whitePrisoners = 0;
+            timeLeft = { 1: 300, 2: 300 }; lastMove = null;
+            isAiThinking = false; cpuThinking.style.display = "none";
+            hoverPos = null; rafPending = false;
+            markingPhase = false; deadStones = new Set();
+            turnCount = 0; midgameScore = null; aiTurnCount = 0;
+            // freeMode persists across games
+            document.getElementById('btnPass').style.display = 'block';
+            document.getElementById('btnConfirmScore').style.display = 'none';
+            
+            playerColor = 1;
+            modal.style.display = 'none';
+            updateUI(); drawBoard(); clearInterval(timerInterval);
+            if(chkTimer.checked) startTimer();
+            if (selCpu.value === 'cpu') showColorPicker();
+        });
+
+        // JSON EXPORT / IMPORT
+        document.getElementById('btnExport').addEventListener('click', () => {
+            const dataToExport = { boardState, currentPlayer, boardHistory, consecutivePasses, gameOver, blackPrisoners, whitePrisoners, timeLeft, lastMove };
+            const blob = new Blob([JSON.stringify(dataToExport, null, 2)], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = 'moje_go_partie.json'; a.click(); URL.revokeObjectURL(url);
+        });
+
+        const fileImportInput = document.getElementById('fileImport');
+        document.getElementById('btnImport').addEventListener('click', () => { fileImportInput.click(); });
+        fileImportInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    boardState = data.boardState; currentPlayer = data.currentPlayer;
+                    boardHistory = data.boardHistory; consecutivePasses = data.consecutivePasses || 0;
+                    gameOver = data.gameOver || false; blackPrisoners = data.blackPrisoners || 0;
+                    whitePrisoners = data.whitePrisoners || 0; timeLeft = data.timeLeft || { 1: 300, 2: 300 };
+                    lastMove = data.lastMove || null; isAiThinking = false; cpuThinking.style.display = "none";
+                    
+                    modal.style.display = 'none';
+                    updateUI(); drawBoard(); clearInterval(timerInterval);
+                    if(chkTimer.checked && !gameOver) startTimer();
+                    alert("Partie úspěšně načtena!");
+                } catch (err) { alert("Chyba při načítání souboru."); }
+            };
+            reader.readAsText(file);
+            fileImportInput.value = ""; 
+        });
+
+        boardHistory.push(JSON.stringify(boardState));
+        renderLevelGrid();
+        renderFreeLevelGrid();
+        updateLevelBadge();
+        renderAchList();
+        // rowDifficulty hidden in HTML; freeMode toggle controls rowDifficultyFree
+        updateUI();
+        drawBoard();
+        showColorPicker();
+
+    </script>
+</body>
+</html>
