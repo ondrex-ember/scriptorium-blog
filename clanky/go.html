@@ -1140,11 +1140,7 @@
             updateUI();
             drawBoard();
             startTimer();
-            // Po každém tahu zkontroluj jestli má hrát AI
-            if (!gameOver && selCpu.value === 'cpu' && !isAiThinking) {
-                const _ac = playerColor === 1 ? 2 : 1;
-                if (currentPlayer === _ac) setTimeout(playAI, 10);
-            }
+
             return true;
         }
 
@@ -1249,7 +1245,10 @@
                 enterMarkingPhase();
             } else {
                 startTimer();
-                if (selCpu.value === 'cpu' && currentPlayer === 2 && !gameOver) playAI();
+                if (selCpu.value === 'cpu' && !gameOver) {
+                    const _acPass = playerColor === 1 ? 2 : 1;
+                    if (currentPlayer === _acPass) playAI();
+                }
             }
         });
 
@@ -1277,6 +1276,16 @@
             const gameStarted = boardHistory.length > 1 || turnCount > 0;
             if (selCpu.value === 'cpu' && !gameStarted && !gameOver) {
                 showColorPicker();
+
+        // ── AI POLLER ─────────────────────────────────────────────────────
+        // Nezávislý interval — každých 250ms zkontroluje jestli má hrát AI.
+        // Robustní vůči jakémukoliv timing problému v event chainu.
+        setInterval(() => {
+            if (gameOver || markingPhase || isAiThinking) return;
+            if (selCpu.value !== 'cpu') return;
+            const aiCol = playerColor === 1 ? 2 : 1;
+            if (currentPlayer === aiCol) playAI();
+        }, 250);
             } else {
                 if (chkTimer.checked && !gameOver) startTimer();
                 else clearInterval(timerInterval);
@@ -1351,6 +1360,16 @@
         updateUI();
         drawBoard();
         showColorPicker();
+
+        // ── AI POLLER ─────────────────────────────────────────────────────
+        // Nezávislý interval — každých 250ms zkontroluje jestli má hrát AI.
+        // Robustní vůči jakémukoliv timing problému v event chainu.
+        setInterval(() => {
+            if (gameOver || markingPhase || isAiThinking) return;
+            if (selCpu.value !== 'cpu') return;
+            const aiCol = playerColor === 1 ? 2 : 1;
+            if (currentPlayer === aiCol) playAI();
+        }, 250);
 
     </script>
 </body>
