@@ -244,6 +244,94 @@
   }
   .close-btn:hover { color: var(--gold); }
 
+  /* ── SETTINGS MODAL ── */
+  .settings-box {
+    max-width: 480px; margin: 0 auto;
+    background: var(--bg2);
+    border: 1px solid rgba(100,60,200,0.25);
+    border-radius: 5px; padding: 1.8rem;
+  }
+  .settings-box h2 {
+    font-family: 'Cinzel', serif; color: var(--gold); font-size: 1.1rem; font-weight: 600;
+    margin-bottom: 1.2rem; display: flex; justify-content: space-between; align-items: center;
+  }
+  .settings-section {
+    margin-bottom: 1.2rem;
+    padding-bottom: 1.2rem;
+    border-bottom: 1px solid rgba(100,60,200,0.12);
+  }
+  .settings-section:last-of-type { border-bottom: none; margin-bottom: 0.4rem; }
+  .settings-label {
+    font-family: 'Cinzel', serif; color: var(--ink-dim); font-size: 0.7rem;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    display: block; margin-bottom: 0.5rem;
+  }
+  .settings-desc {
+    font-size: 0.78rem; color: var(--ink-fnt); line-height: 1.5; margin-bottom: 0.6rem;
+  }
+  .toggle-row {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 0.5rem;
+  }
+  .toggle-row-label { font-size: 0.84rem; color: var(--ink); }
+  .toggle-row-sub   { font-size: 0.72rem; color: var(--ink-fnt); margin-top: 1px; }
+  /* Custom toggle switch */
+  .tog {
+    position: relative; width: 38px; height: 20px;
+    display: inline-block; flex-shrink: 0;
+  }
+  .tog input { opacity: 0; width: 0; height: 0; }
+  .tog-slider {
+    position: absolute; inset: 0; background: rgba(100,60,200,0.18);
+    border: 1px solid rgba(100,60,200,0.3); border-radius: 20px; cursor: pointer;
+    transition: 0.2s;
+  }
+  .tog-slider:before {
+    content: ''; position: absolute;
+    width: 14px; height: 14px; left: 2px; top: 2px;
+    background: var(--ink-fnt); border-radius: 50%; transition: 0.2s;
+  }
+  .tog input:checked + .tog-slider { background: rgba(200,168,75,0.22); border-color: var(--gold-gl); }
+  .tog input:checked + .tog-slider:before { transform: translateX(18px); background: var(--gold); }
+
+  .seg-row { display: flex; gap: 4px; flex-wrap: wrap; }
+  .seg-btn {
+    font-family: 'Cinzel', serif; font-size: 0.67rem; letter-spacing: 0.1em;
+    background: none; border: 1px solid rgba(100,60,200,0.2);
+    color: var(--ink-fnt); padding: 5px 12px; border-radius: 3px;
+    cursor: pointer; transition: all 0.16s;
+  }
+  .seg-btn:hover { border-color: rgba(200,168,75,0.3); color: var(--ink-dim); }
+  .seg-btn.active { background: var(--gold-dim); border-color: var(--gold-gl); color: var(--gold); font-weight: 600; }
+
+  .settings-apply {
+    font-family: 'Cinzel', serif; font-size: 0.78rem; letter-spacing: 0.1em;
+    background: var(--gold-dim); border: 1px solid var(--gold-gl);
+    color: var(--gold); padding: 9px 24px; border-radius: 3px;
+    cursor: pointer; transition: all 0.18s; width: 100%; margin-top: 0.8rem;
+  }
+  .settings-apply:hover { background: rgba(200,168,75,0.28); }
+
+  /* badge on settings button */
+  .set-badge {
+    display: inline-block; background: var(--gold); color: var(--bg);
+    font-family: 'Cinzel', serif; font-size: 0.55rem;
+    padding: 1px 5px; border-radius: 10px; margin-left: 5px;
+    vertical-align: middle; font-weight: 700; letter-spacing: 0.05em;
+  }
+
+  /* ── NOVICE HINT STRIP ── */
+  .novice-strip {
+    display: none;
+    width: 100%; max-width: 600px;
+    background: rgba(200,168,75,0.07);
+    border: 1px solid rgba(200,168,75,0.18);
+    border-radius: 3px; padding: 6px 14px;
+    font-size: 0.76rem; color: var(--gold);
+    margin-bottom: 0.4rem; line-height: 1.5;
+  }
+  .novice-strip.visible { display: block; }
+
   /* ── END BANNER ── */
   .end-banner {
     display: none; position: fixed; top: 50%; left: 50%;
@@ -306,8 +394,13 @@
   Zajmutí: součet hodnot <em>vašich</em> sousedů = hodnotě nepřátelské figurky
 </div>
 
+<div class="novice-strip" id="novice-strip">
+  💡 <strong>Novice režim:</strong> Ohrožené figurky blikají červeně. Zajmutí se provede automaticky po tahu. Cíl: získej <strong id="novice-goal-label">100 bodů</strong>.
+</div>
+
 <div class="action-row">
   <button class="act-btn" onclick="document.getElementById('rules').classList.add('open')">Pravidla & Tutorial</button>
+  <button class="act-btn" id="settings-btn" onclick="document.getElementById('settings').classList.add('open')">Nastavení <span class="set-badge" id="settings-badge" style="display:none">●</span></button>
   <button class="act-btn primary" onclick="R.newGame(R.difficulty)">Nová hra</button>
 </div>
 
@@ -336,17 +429,114 @@
       Příklad: váš Kruh(3) sousedí se soupeřovým Trojúhelníkem(9).<br>
       3 ≠ 9 → nic se nestane.
     </div>
-    <p style="margin-top:0.5rem;">Zanáší se všechny vaše sousední figurky — nejen ta, která právě táhla.</p>
+    <p style="margin-top:0.5rem;">Zanáší se všechny vaše sousední figurky — nejen ta, která právě táhla. Sousedí se ve všech 8 směrech.</p>
 
     <h3>Jak vyhrát</h3>
-    <p>Zajměte všechny soupeřovy <span style="color:var(--ring-tri)">trojúhelníky</span>, nebo nasbírejte <strong style="color:var(--gold)">100 bodů</strong> (součet hodnot zajatých figurek). Trojúhelníky jsou strategicky nejcennější.</p>
+    <p id="rules-victory-text">Zajměte všechny soupeřovy <span style="color:var(--ring-tri)">trojúhelníky</span>, nebo nasbírejte <strong style="color:var(--gold)">100 bodů</strong> (součet hodnot zajatých figurek). Trojúhelníky jsou strategicky nejcennější — AI je také prioritně brání.</p>
+
+    <h3>Tipy pro začátečníky</h3>
+    <p>🔵 Začněte pohybem <strong style="color:var(--ring-circ)">Kruhů</strong> — mají nejjednodušší pohyb a budují obklíčení.<br>
+    🔺 Chraňte svůj <strong style="color:var(--ring-tri)">Trojúhelník</strong> — pokud ho AI zajme, můžete prohrát přímo.<br>
+    ⚠️ Červeně blikající figurka = hrozí zajmutí. Ustupte nebo zaplňte mezeru spojencem.<br>
+    💡 Tip: klikněte na figurku a sledujte spodní lištu — ukáže její pohyb i možná zajmutí.</p>
+
+    <h3>Historické varianty zajmutí</h3>
+    <p>Původní hra z 11.–16. stol. zahrnovala až 7 metod zajmutí (rovnost, obklíčení, součet, rozdíl, součin, podíl, proporce). Tato verze používá <strong style="color:var(--gold)">součtové zajmutí</strong> jako hlavní mechaniku. Pokročilé metody lze aktivovat v Nastavení.</p>
 
     <h3>Obtížnosti AI</h3>
     <table class="diff-table">
       <tr><td>Snadná</td><td>Preferuje postup dopředu a trojúhelníky. Náhodná složka. Nezabíjí vědomě.</td></tr>
       <tr><td>Střední</td><td>Aktivně hledá příležitosti k zajmutí. Brání ohrožené figurky. Cílí na trojúhelníky hráče.</td></tr>
-      <tr><td>Těžká</td><td>Lookahead: simuluje tah + odpověď. Hodnotí materiál, pozici trojúhelníků a hrozby zajmutí. Výrazná výzva.</td></tr>
+      <tr><td>Těžká</td><td>Lookahead: simuluje tah + odpověď. Hodnotí materiál, pozici trojúhelníků a hrozby zajmutí.</td></tr>
     </table>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="overlay" id="settings">
+  <div class="settings-box">
+    <h2>Nastavení hry <button class="close-btn" onclick="document.getElementById('settings').classList.remove('open')">×</button></h2>
+
+    <!-- PRESET -->
+    <div class="settings-section">
+      <span class="settings-label">Preset obtížnosti pravidel</span>
+      <p class="settings-desc">Rychlý výběr kombinace nastavení. Změny níže přepíší preset na Vlastní.</p>
+      <div class="seg-row" id="preset-row">
+        <button class="seg-btn active" id="pre-novice" onclick="S.applyPreset('novice')">Nováček</button>
+        <button class="seg-btn" id="pre-standard" onclick="S.applyPreset('standard')">Standard</button>
+        <button class="seg-btn" id="pre-scholar" onclick="S.applyPreset('scholar')">Filosof</button>
+        <button class="seg-btn" id="pre-custom" onclick="S.applyPreset('custom')" style="display:none">Vlastní</button>
+      </div>
+    </div>
+
+    <!-- VICTORY CONDITION -->
+    <div class="settings-section">
+      <span class="settings-label">Vítězná podmínka</span>
+      <p class="settings-desc">Co rozhoduje o vítězi?</p>
+      <div class="seg-row" id="victory-row">
+        <button class="seg-btn active" id="vic-points" onclick="S.set('victory','points')">100 bodů</button>
+        <button class="seg-btn" id="vic-triangles" onclick="S.set('victory','triangles')">Všechny trojúhelníky</button>
+        <button class="seg-btn" id="vic-both" onclick="S.set('victory','both')">Obojí (první splní)</button>
+      </div>
+    </div>
+
+    <!-- TARGET SCORE -->
+    <div class="settings-section" id="score-section">
+      <span class="settings-label">Cílový počet bodů</span>
+      <p class="settings-desc">Kolik bodů (součet hodnot zajatých figurek) je potřeba k výhře.</p>
+      <div class="seg-row" id="score-row">
+        <button class="seg-btn" id="sc-50" onclick="S.set('targetScore',50)">50</button>
+        <button class="seg-btn active" id="sc-100" onclick="S.set('targetScore',100)">100</button>
+        <button class="seg-btn" id="sc-150" onclick="S.set('targetScore',150)">150</button>
+        <button class="seg-btn" id="sc-200" onclick="S.set('targetScore',200)">200</button>
+      </div>
+    </div>
+
+    <!-- CAPTURE METHOD -->
+    <div class="settings-section">
+      <span class="settings-label">Metody zajmutí</span>
+      <p class="settings-desc">Jaké matematické vztahy mohou způsobit zajmutí nepřátelské figurky.</p>
+      <div class="toggle-row">
+        <div><div class="toggle-row-label">Součtové zajmutí</div><div class="toggle-row-sub">Součet hodnot vašich sousedů = hodnotě nepřítele</div></div>
+        <label class="tog"><input type="checkbox" id="cap-sum" checked onchange="S.setCheck('capSum',this.checked)"><span class="tog-slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div><div class="toggle-row-label">Rovnost (Equality)</div><div class="toggle-row-sub">Jeden soused se stejnou hodnotou zajímá nepřítele (historická metoda)</div></div>
+        <label class="tog"><input type="checkbox" id="cap-equality" onchange="S.setCheck('capEquality',this.checked)"><span class="tog-slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div><div class="toggle-row-label">Obklíčení (Obsidio)</div><div class="toggle-row-sub">Nepřítel bez možnosti pohybu je automaticky zajat</div></div>
+        <label class="tog"><input type="checkbox" id="cap-obsidio" onchange="S.setCheck('capObsidio',this.checked)"><span class="tog-slider"></span></label>
+      </div>
+    </div>
+
+    <!-- DISPLAY / HINTS -->
+    <div class="settings-section">
+      <span class="settings-label">Nápovědy & zobrazení</span>
+      <div class="toggle-row">
+        <div><div class="toggle-row-label">Zvýraznění ohrožených figurek</div><div class="toggle-row-sub">Ohrožená figurka bliká červeně</div></div>
+        <label class="tog"><input type="checkbox" id="opt-threat" checked onchange="S.setCheck('showThreat',this.checked)"><span class="tog-slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div><div class="toggle-row-label">Informační lišta (hint bar)</div><div class="toggle-row-sub">Zobrazuje pohyb a tipy po výběru figurky</div></div>
+        <label class="tog"><input type="checkbox" id="opt-hints" checked onchange="S.setCheck('showHints',this.checked)"><span class="tog-slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div><div class="toggle-row-label">Zvýraznění platných tahů</div><div class="toggle-row-sub">Zelené tečky ukazují kam lze táhnout</div></div>
+        <label class="tog"><input type="checkbox" id="opt-moves" checked onchange="S.setCheck('showMoves',this.checked)"><span class="tog-slider"></span></label>
+      </div>
+    </div>
+
+    <!-- NUMERAL STYLE -->
+    <div class="settings-section">
+      <span class="settings-label">Styl čísel na figurkách</span>
+      <div class="seg-row">
+        <button class="seg-btn active" id="num-arabic" onclick="S.set('numerals','arabic')">Arabské (7)</button>
+        <button class="seg-btn" id="num-roman" onclick="S.set('numerals','roman')">Římské (VII)</button>
+      </div>
+    </div>
+
+    <button class="settings-apply" onclick="S.apply()">Použít a zahájit novou hru</button>
   </div>
 </div>
 
@@ -358,6 +548,143 @@
 </div>
 
 <script>
+/* ═══════════════════════════════════════
+   SETTINGS ENGINE
+═══════════════════════════════════════ */
+const S = {
+  // Current settings state
+  cfg: {
+    victory:     'both',      // 'points' | 'triangles' | 'both'
+    targetScore: 100,
+    capSum:      true,
+    capEquality: false,
+    capObsidio:  false,
+    showThreat:  true,
+    showHints:   true,
+    showMoves:   true,
+    numerals:    'arabic',
+    preset:      'novice'
+  },
+
+  PRESETS: {
+    novice: {
+      victory:'both', targetScore:100,
+      capSum:true, capEquality:false, capObsidio:false,
+      showThreat:true, showHints:true, showMoves:true, numerals:'arabic'
+    },
+    standard: {
+      victory:'both', targetScore:100,
+      capSum:true, capEquality:true, capObsidio:false,
+      showThreat:true, showHints:true, showMoves:true, numerals:'arabic'
+    },
+    scholar: {
+      victory:'both', targetScore:150,
+      capSum:true, capEquality:true, capObsidio:true,
+      showThreat:false, showHints:false, showMoves:false, numerals:'roman'
+    }
+  },
+
+  ROMAN: ['','I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV',
+    'XV','XVI','XVII','XVIII','XIX','XX','XXI','XXII','XXIII','XXIV','XXV',
+    'XXVI','XXVII','XXVIII','XXIX','XXX','XXXI','XXXII','XXXIII','XXXIV','XXXV','XXXVI'],
+
+  toDisplay(n) {
+    if (this.cfg.numerals === 'roman') {
+      return this.ROMAN[n] || n;
+    }
+    return n;
+  },
+
+  applyPreset(name) {
+    if (name === 'custom') return;
+    const p = this.PRESETS[name];
+    if (!p) return;
+    Object.assign(this.cfg, p, {preset: name});
+    this._syncUI();
+  },
+
+  set(key, val) {
+    this.cfg[key] = val;
+    this.cfg.preset = 'custom';
+    this._syncUI();
+    // Show/hide score section
+    const ss = document.getElementById('score-section');
+    if (ss) ss.style.display = (val === 'triangles') ? 'none' : '';
+  },
+
+  setCheck(key, val) {
+    this.cfg[key] = val;
+    this.cfg.preset = 'custom';
+    this._syncUI();
+  },
+
+  _syncUI() {
+    const c = this.cfg;
+    // Preset buttons
+    ['novice','standard','scholar'].forEach(p => {
+      const el = document.getElementById('pre-'+p);
+      if (el) el.classList.toggle('active', c.preset === p);
+    });
+    const customBtn = document.getElementById('pre-custom');
+    if (customBtn) {
+      customBtn.style.display = c.preset === 'custom' ? '' : 'none';
+      customBtn.classList.toggle('active', c.preset === 'custom');
+    }
+    // Victory
+    ['points','triangles','both'].forEach(v => {
+      const el = document.getElementById('vic-'+v);
+      if (el) el.classList.toggle('active', c.victory === v);
+    });
+    // Score section visibility
+    const ss = document.getElementById('score-section');
+    if (ss) ss.style.display = (c.victory === 'triangles') ? 'none' : '';
+    // Score buttons
+    [50,100,150,200].forEach(s => {
+      const el = document.getElementById('sc-'+s);
+      if (el) el.classList.toggle('active', c.targetScore === s);
+    });
+    // Checkboxes
+    ['capSum','capEquality','capObsidio','showThreat','showHints','showMoves'].forEach(k => {
+      const idMap = {capSum:'cap-sum',capEquality:'cap-equality',capObsidio:'cap-obsidio',
+                     showThreat:'opt-threat',showHints:'opt-hints',showMoves:'opt-moves'};
+      const el = document.getElementById(idMap[k]);
+      if (el) el.checked = c[k];
+    });
+    // Numerals
+    document.getElementById('num-arabic').classList.toggle('active', c.numerals==='arabic');
+    document.getElementById('num-roman').classList.toggle('active', c.numerals==='roman');
+
+    // Badge on settings button
+    const isModified = c.preset !== 'novice';
+    const badge = document.getElementById('settings-badge');
+    if (badge) badge.style.display = isModified ? '' : 'none';
+
+    // Novice strip
+    const strip = document.getElementById('novice-strip');
+    if (strip) strip.classList.toggle('visible', c.preset === 'novice');
+    const gl = document.getElementById('novice-goal-label');
+    if (gl) gl.textContent = c.victory === 'triangles' ? 'všechny trojúhelníky' : c.targetScore + ' bodů';
+
+    // hint-bar visibility
+    const hb = document.getElementById('hint-bar');
+    if (hb) hb.style.display = c.showHints ? '' : 'none';
+
+    // Rules modal victory text
+    const rvt = document.getElementById('rules-victory-text');
+    if (rvt) {
+      if (c.victory === 'points') rvt.innerHTML = `Nasbírejte <strong style="color:var(--gold)">${c.targetScore} bodů</strong> (součet hodnot zajatých figurek).`;
+      else if (c.victory === 'triangles') rvt.innerHTML = `Zajměte všechny soupeřovy <span style="color:var(--ring-tri)">trojúhelníky</span>.`;
+      else rvt.innerHTML = `Zajměte všechny soupeřovy <span style="color:var(--ring-tri)">trojúhelníky</span>, nebo nasbírejte <strong style="color:var(--gold)">${c.targetScore} bodů</strong>. Co nastane dříve.`;
+    }
+  },
+
+  apply() {
+    document.getElementById('settings').classList.remove('open');
+    this._syncUI();
+    R.newGame(R.difficulty);
+  }
+};
+
 /* ═══════════════════════════════════════
    RITHMOMACHIA — Enhanced
    Difficulty 1: greedy advance + triangles
@@ -482,25 +809,46 @@ const R = {
     const opp = side === 'white' ? 'black' : 'white';
     const dirs8 = [[0,-1],[0,1],[1,0],[-1,0],[1,-1],[1,1],[-1,-1],[-1,1]];
     const toRemove = [];
-    const myPieces = this._getPieces(side, boardRef);
+    const cfg = S.cfg;
 
-    // Find adjacent enemies
-    dirs8.forEach(([dx,dy]) => {
-      const nx = piece.x+dx, ny = piece.y+dy;
-      if (!this._inB(nx, ny)) return;
-      const t = boardRef[ny][nx];
-      if (!t || t.player !== opp) return;
-
-      // Sum of all friendly neighbors of that enemy
-      let sum = 0;
-      dirs8.forEach(([ddx,ddy]) => {
-        const ex = t.x+ddx, ey = t.y+ddy;
-        if (!this._inB(ex,ey)) return;
-        const ally = boardRef[ey][ex];
-        if (ally && ally.player === side) sum += ally.v;
+    // ── SUM CAPTURE ──────────────────
+    if (cfg.capSum) {
+      dirs8.forEach(([dx,dy]) => {
+        const nx = piece.x+dx, ny = piece.y+dy;
+        if (!this._inB(nx, ny)) return;
+        const t = boardRef[ny][nx];
+        if (!t || t.player !== opp) return;
+        let sum = 0;
+        dirs8.forEach(([ddx,ddy]) => {
+          const ex = t.x+ddx, ey = t.y+ddy;
+          if (!this._inB(ex,ey)) return;
+          const ally = boardRef[ey][ex];
+          if (ally && ally.player === side) sum += ally.v;
+        });
+        if (sum === t.v && !toRemove.find(p=>p===t)) toRemove.push(t);
       });
-      if (sum === t.v && !toRemove.find(p=>p===t)) toRemove.push(t);
-    });
+    }
+
+    // ── EQUALITY CAPTURE ─────────────
+    if (cfg.capEquality) {
+      dirs8.forEach(([dx,dy]) => {
+        const nx = piece.x+dx, ny = piece.y+dy;
+        if (!this._inB(nx, ny)) return;
+        const t = boardRef[ny][nx];
+        if (!t || t.player !== opp) return;
+        if (piece.v === t.v && !toRemove.find(p=>p===t)) toRemove.push(t);
+      });
+    }
+
+    // ── OBSIDIO (blockade) ───────────
+    if (cfg.capObsidio) {
+      const oppPieces = this._getPieces(opp, boardRef);
+      oppPieces.forEach(target => {
+        if (toRemove.find(p=>p===target)) return;
+        const moves = this._calcMoves(target, boardRef);
+        if (moves.length === 0 && !toRemove.find(p=>p===target)) toRemove.push(target);
+      });
+    }
 
     toRemove.forEach(p => {
       boardRef[p.y][p.x] = null;
@@ -576,13 +924,19 @@ const R = {
   /* ── WIN CHECK ────────────────────── */
   _checkVictory(side) {
     const opp = side === 'white' ? 'black' : 'white';
-    // All opponent triangles captured?
+    const cfg = S.cfg;
     const oppPieces = side === 'white' ? this.black : this.white;
     const tris = oppPieces.filter(p => p.t === 'triangle').length;
-    if (tris === 0) { this._endGame(side, `všechny ${opp === 'white' ? 'bílé' : 'černé'} trojúhelníky zajaty`); return true; }
-    // 100 points?
-    if (this.points.white >= 100) { this._endGame('white', '100 bodů dosaženo'); return true; }
-    if (this.points.black >= 100) { this._endGame('black', '100 bodů dosaženo'); return true; }
+
+    // Triangle condition
+    if ((cfg.victory === 'triangles' || cfg.victory === 'both') && tris === 0) {
+      this._endGame(side, `všechny ${opp === 'white' ? 'bílé' : 'černé'} trojúhelníky zajaty`); return true;
+    }
+    // Points condition
+    if (cfg.victory === 'points' || cfg.victory === 'both') {
+      if (this.points.white >= cfg.targetScore) { this._endGame('white', `${cfg.targetScore} bodů dosaženo`); return true; }
+      if (this.points.black >= cfg.targetScore) { this._endGame('black', `${cfg.targetScore} bodů dosaženo`); return true; }
+    }
     return false;
   },
 
@@ -605,9 +959,13 @@ const R = {
       setTimeout(() => this._aiTurn(), this.difficulty === 3 ? 80 : 50);
     } else {
       // Check if player is threatened
-      const threatened = this._findThreatenedPieces('white');
-      if (threatened.length > 0) {
-        this._setHint(`⚠️ Pozor! Vaše figurka <strong>${this.SHAPES[threatened[0].t].sym}${threatened[0].v}</strong> je ohrožena zajmutím!`, true);
+      if (S.cfg.showHints && S.cfg.showThreat) {
+        const threatened = this._findThreatenedPieces('white');
+        if (threatened.length > 0) {
+          this._setHint(`⚠️ Pozor! Vaše figurka <strong>${this.SHAPES[threatened[0].t].sym}${threatened[0].v}</strong> je ohrožena zajmutím!`, true);
+        } else {
+          this._setHint('Váš tah — vyberte figurku.');
+        }
       } else {
         this._setHint('Váš tah — vyberte figurku.');
       }
@@ -814,7 +1172,7 @@ const R = {
     const valSize = Math.round(pieceSize * 0.32);
 
     // Threatened pieces for visual feedback
-    const wThreats = this.gameActive ? this._findThreatenedPieces('white') : [];
+    const wThreats = (this.gameActive && S.cfg.showThreat) ? this._findThreatenedPieces('white') : [];
 
     boardEl.style.width = (cellSize * this.COLS + (this.COLS+1)*2) + 'px';
 
@@ -828,11 +1186,11 @@ const R = {
 
         let bg = (x+y)%2===0 ? 'var(--c-light)' : 'var(--c-dark)';
         if (isSel) bg = 'rgba(200,168,75,0.3)';
-        else if (isVT) bg = 'rgba(80,200,120,0.25)';
+        else if (isVT && S.cfg.showMoves) bg = 'rgba(80,200,120,0.25)';
 
         h += `<div class="cell${isThreat?' capture-threat':''}" style="background:${bg};width:${cellSize}px;height:${cellSize}px;" onclick="R.onCell(${x},${y})">`;
 
-        if (isVT && !piece) {
+        if (isVT && !piece && S.cfg.showMoves) {
           h += `<div style="width:8px;height:8px;border-radius:50%;background:rgba(80,200,120,0.6);"></div>`;
         }
 
@@ -842,7 +1200,7 @@ const R = {
           const selCls = isSel ? ' selected' : '';
           h += `<div class="piece ${piece.t}${selCls} ${isW?'white':'black'}" style="width:${pieceSize}px;height:${pieceSize}px;">`;
           h += `<span class="sym" style="font-size:${symSize}px;">${shape.sym}</span>`;
-          h += `<span class="val" style="font-size:${valSize}px;">${piece.v}</span>`;
+          h += `<span class="val" style="font-size:${valSize}px;">${S.toDisplay(piece.v)}</span>`;
           h += `</div>`;
         }
 
@@ -871,7 +1229,7 @@ const R = {
   }
 };
 
-window.addEventListener('load', () => R.newGame(1));
+window.addEventListener('load', () => { S._syncUI(); R.newGame(1); });
 window.addEventListener('resize', () => R._render());
 </script>
 </body>
