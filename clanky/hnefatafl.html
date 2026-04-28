@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hnefatafl — Vikingská hra</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
+
+  :root {
+    --gold:       #c8a84b;
+    --gold-dim:   rgba(200,168,75,0.18);
+    --gold-glow:  rgba(200,168,75,0.55);
+    --bg:         #0e0b06;
+    --bg2:        #1a1208;
+    --bg3:        #221a0a;
+    --ink:        #e8d5a3;
+    --ink-dim:    #a08860;
+    --ink-faint:  #6a5830;
+    --board-dark: #5a3d1e;
+    --board-light:#6b4c2a;
+    --throne:     #6b1a1a;
+    --corner:     #1e4a14;
+    --sel:        #8a6030;
+    --valid:      rgba(100,200,80,0.4);
+    --attacker:   #1a0a00;
+    --att-border: #6b3c14;
+    --defender:   #ddd8cc;
+    --def-border: #aaa49a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Crimson Text', Georgia, serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.5rem 1rem 3rem;
+    background-image:
+      radial-gradient(ellipse at 20% 0%, rgba(200,168,75,0.04) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 100%, rgba(93,58,26,0.08) 0%, transparent 50%);
+  }
+
+  /* ── HEADER ── */
+  .hdr {
+    text-align: center;
+    margin-bottom: 1.6rem;
+    width: 100%;
+    max-width: 560px;
+  }
+  .hdr-title {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(1.6rem, 5vw, 2.4rem);
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: 0.12em;
+    text-shadow: 0 0 40px rgba(200,168,75,0.25);
+    margin-bottom: 0.15rem;
+  }
+  .hdr-sub {
+    font-size: 0.75rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+  .hdr-divider {
+    width: 80px; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    margin: 0.6rem auto;
+  }
+
+  /* ── CONTROLS ── */
+  .controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    max-width: 560px;
+    margin-bottom: 0.9rem;
+  }
+  .diff-row {
+    display: flex;
+    gap: 0.5rem;
+  }
+  .diff-btn {
+    font-family: 'Cinzel', serif;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    background: none;
+    border: 1px solid rgba(200,168,75,0.22);
+    color: var(--ink-dim);
+    padding: 7px 16px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.18s;
+  }
+  .diff-btn:hover, .diff-btn.active {
+    background: var(--gold-dim);
+    border-color: var(--gold-glow);
+    color: var(--gold);
+  }
+  .diff-btn.active { font-weight: 600; }
+
+  /* ── STATUS ── */
+  .status {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    max-width: 560px;
+    padding: 7px 14px;
+    background: rgba(200,168,75,0.05);
+    border: 1px solid rgba(200,168,75,0.1);
+    border-radius: 3px;
+    font-size: 0.8rem;
+    margin-bottom: 0.7rem;
+  }
+  .status-side { color: var(--ink-dim); min-width: 90px; }
+  .status-side.right { text-align: right; }
+  .status-msg {
+    font-style: italic;
+    color: var(--gold);
+    font-size: 0.78rem;
+    text-align: center;
+    flex: 1;
+    padding: 0 8px;
+    min-height: 1.2em;
+  }
+
+  /* ── BOARD ── */
+  .board-wrap {
+    border: 2px solid #4a2e0e;
+    border-radius: 3px;
+    box-shadow:
+      0 0 0 1px rgba(200,168,75,0.08),
+      0 8px 40px rgba(0,0,0,0.6),
+      0 0 60px rgba(93,58,26,0.2);
+    overflow: hidden;
+    margin-bottom: 0.8rem;
+    position: relative;
+  }
+  .board-row { display: flex; }
+  .cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(0,0,0,0.18);
+    cursor: default;
+    transition: background 0.08s;
+    position: relative;
+  }
+  .cell.clickable { cursor: pointer; }
+  .cell.clickable:hover { filter: brightness(1.12); }
+
+  /* ── PIECES ── */
+  .piece {
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.1s, box-shadow 0.1s;
+    pointer-events: none;
+  }
+  .piece-king {
+    background: radial-gradient(circle at 35% 30%, #ffe566, #b8860b);
+    border: 2px solid #8B6914;
+    font-size: 0.85rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  }
+  .piece-def {
+    background: radial-gradient(circle at 35% 30%, #f0ece4, var(--defender));
+    border: 2px solid var(--def-border);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+  }
+  .piece-att {
+    background: radial-gradient(circle at 35% 30%, #3d2510, var(--attacker));
+    border: 2px solid var(--att-border);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.6);
+  }
+  .piece.selected {
+    box-shadow: 0 0 0 3px var(--gold), 0 0 12px var(--gold-glow) !important;
+    transform: scale(1.1);
+  }
+
+  /* ── CAPTURED LOG ── */
+  .captured-row {
+    display: flex;
+    gap: 3px;
+    align-items: center;
+    font-size: 0.68rem;
+    color: var(--ink-faint);
+    margin-bottom: 0.4rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .cap-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  /* ── LAST MOVE HIGHLIGHT ── */
+  .cell.last-from { background-color: rgba(200,168,75,0.12) !important; }
+  .cell.last-to   { background-color: rgba(200,168,75,0.22) !important; }
+
+  /* ── LEGEND ── */
+  .legend {
+    font-size: 0.68rem;
+    color: var(--ink-faint);
+    text-align: center;
+    max-width: 480px;
+    line-height: 1.7;
+    margin-bottom: 0.7rem;
+  }
+
+  /* ── ACTIONS ── */
+  .action-row {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .act-btn {
+    font-family: 'Crimson Text', serif;
+    font-size: 0.82rem;
+    letter-spacing: 0.06em;
+    background: none;
+    border: 1px solid rgba(200,168,75,0.22);
+    color: var(--ink-dim);
+    padding: 7px 18px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.18s;
+  }
+  .act-btn:hover { color: var(--gold); border-color: var(--gold-glow); background: var(--gold-dim); }
+  .act-btn.primary { border-color: rgba(200,168,75,0.4); color: var(--gold); }
+
+  /* ── THINKING INDICATOR ── */
+  .thinking {
+    display: none;
+    font-size: 0.72rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    text-align: center;
+    margin: 0.3rem 0;
+  }
+  .thinking.visible { display: block; animation: pulse 1.2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:0.4} 50%{opacity:1} }
+
+  /* ── RULES OVERLAY ── */
+  .overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(5,3,0,0.88);
+    z-index: 100;
+    overflow-y: auto;
+    padding: 2rem 1rem;
+  }
+  .overlay.open { display: block; }
+  .rules-box {
+    max-width: 520px;
+    margin: 0 auto;
+    background: var(--bg2);
+    border: 1px solid rgba(200,168,75,0.2);
+    border-radius: 5px;
+    padding: 1.8rem;
+    font-family: 'Crimson Text', serif;
+  }
+  .rules-box h2 {
+    font-family: 'Cinzel', serif;
+    color: var(--gold);
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .rules-box h3 {
+    font-family: 'Cinzel', serif;
+    color: var(--ink-dim);
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin: 1rem 0 0.3rem;
+    font-weight: 400;
+  }
+  .rules-box p { font-size: 0.9rem; line-height: 1.65; color: #907860; }
+  .rules-box .diff-table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; font-size: 0.82rem; }
+  .rules-box .diff-table td { padding: 5px 8px; border-bottom: 1px solid rgba(200,168,75,0.1); color: #907860; }
+  .rules-box .diff-table td:first-child { color: var(--gold); font-family: 'Cinzel', serif; font-size: 0.72rem; }
+  .close-btn {
+    background: none; border: none; color: var(--ink-faint);
+    font-size: 1.3rem; cursor: pointer; line-height: 1;
+  }
+  .close-btn:hover { color: var(--gold); }
+
+  /* ── END BANNER ── */
+  .end-banner {
+    display: none;
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--bg2);
+    border: 1px solid var(--gold);
+    border-radius: 6px;
+    padding: 2rem 2.5rem;
+    text-align: center;
+    z-index: 200;
+    box-shadow: 0 0 60px rgba(200,168,75,0.2);
+    min-width: 260px;
+  }
+  .end-banner.open { display: block; animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from{opacity:0;transform:translate(-50%,-54%)} to{opacity:1;transform:translate(-50%,-50%)} }
+  .end-banner h2 { font-family: 'Cinzel', serif; color: var(--gold); font-size: 1.3rem; margin-bottom: 0.5rem; }
+  .end-banner p  { color: var(--ink-dim); font-size: 0.85rem; margin-bottom: 1.2rem; }
+
+  /* ── AI DIFFICULTY BADGE ── */
+  .diff-badge {
+    font-family: 'Cinzel', serif;
+    font-size: 0.62rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 2px;
+    border: 1px solid rgba(200,168,75,0.3);
+    color: var(--gold);
+    background: rgba(200,168,75,0.08);
+  }
+
+  @media (max-width: 480px) {
+    body { padding: 1rem 0.5rem 2rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <h1 class="hdr-title">Hnefatafl</h1>
+  <p class="hdr-sub">Vikingové &nbsp;·&nbsp; 400–1100 n.l.</p>
+  <div class="hdr-divider"></div>
+</div>
+
+<div class="controls">
+  <div class="diff-row">
+    <button class="diff-btn active" id="d1" onclick="G.newGame(1)">Náhodná</button>
+    <button class="diff-btn" id="d2" onclick="G.newGame(2)">Taktická</button>
+    <button class="diff-btn" id="d3" onclick="G.newGame(3)">Minimax</button>
+  </div>
+</div>
+
+<div class="status">
+  <span class="status-side" id="s-def">⬜ Obránci: 13</span>
+  <span class="status-msg" id="s-msg">Vyberte obtížnost</span>
+  <span class="status-side right" id="s-att">⬛ Útočníci: 24</span>
+</div>
+
+<div class="thinking" id="thinking">AI přemýšlí…</div>
+
+<div class="captured-row" id="cap-row"></div>
+
+<div class="board-wrap" id="board-wrap"></div>
+
+<div class="legend">
+  🏰 Rohový cíl &nbsp;·&nbsp; ⊕ Trůn &nbsp;·&nbsp; 👑 Král &nbsp;·&nbsp; ⬜ Obránce (vy) &nbsp;·&nbsp; ⬛ Útočník (AI)
+</div>
+
+<div class="action-row">
+  <button class="act-btn" onclick="document.getElementById('rules').classList.add('open')">Pravidla</button>
+  <button class="act-btn primary" onclick="G.newGame(G.difficulty)">Nová hra</button>
+</div>
+
+<!-- RULES -->
+<div class="overlay" id="rules">
+  <div class="rules-box">
+    <h2>Hnefatafl <button class="close-btn" onclick="document.getElementById('rules').classList.remove('open')">×</button></h2>
+    <h3>Historie</h3>
+    <p>Hnefatafl ("taflová hra") hrávali Vikingové a germánské národy přibližně od 4. do 12. století, kdy ji vytlačily šachy. Varianta Tablut na desce 11×11.</p>
+    <h3>Cíl</h3>
+    <p><strong style="color:#c8a84b;">Obránci (vy, ⬜):</strong> dostaňte Krále do jednoho ze čtyř rohových polí.<br>
+    <strong style="color:#c8a84b;">Útočníci (AI, ⬛):</strong> obklíčte Krále ze čtyř stran (nebo tří + okraj).</p>
+    <h3>Pohyb</h3>
+    <p>Všechny figurky se pohybují jako věž — libovolně daleko v přímé linii. Trůn (střed) a rohová pole smí obsadit jen Král.</p>
+    <h3>Zajímání</h3>
+    <p>Kámen je zajat obklíčením ze dvou protilehlých stran. Rohové pole a trůn fungují jako pomocník při zajímání. Krále nelze zajmout takto — potřebuje obklíčení ze čtyř stran.</p>
+    <h3>Obtížnosti AI</h3>
+    <table class="diff-table">
+      <tr><td>Náhodná</td><td>AI volí tahy náhodně. Vhodné pro první hry a pochopení pravidel.</td></tr>
+      <tr><td>Taktická</td><td>Greedy: pronásleduje Krále, oceňuje zajmutí. Základní strategie bez hledání dopředu.</td></tr>
+      <tr><td>Minimax</td><td>Minimax s alpha-beta ořezáváním, hloubka 4. Hodnotí útočné dráhy ke Králi, blokádu rohů, počet zajatých kamenů a mobilitu. Skutečná výzva.</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- END BANNER -->
+<div class="end-banner" id="end-banner">
+  <h2 id="end-title">Konec hry</h2>
+  <p id="end-sub"></p>
+  <button class="act-btn primary" onclick="G.newGame(G.difficulty);document.getElementById('end-banner').classList.remove('open')">Hrát znovu</button>
+</div>
+
+<script>
+/* ═══════════════════════════════════════
+   HNEFATAFL — Enhanced AI (3 levels)
+   Difficulty 1: random
+   Difficulty 2: greedy (capture + king proximity)
+   Difficulty 3: minimax depth-4 with alpha-beta
+═══════════════════════════════════════ */
+const G = {
+  SIZE: 11,
+  THRONE: [5, 5],
+  CORNERS: [[0,0],[0,10],[10,0],[10,10]],
+  board: [],
+  gameActive: false,
+  currentTurn: 'player',
+  selectedCell: null,
+  difficulty: 1,
+  lastMove: null,
+  capturedDefs: 0,
+  capturedAtts: 0,
+
+  /* ── INIT ─────────────────────────── */
+  newGame(diff) {
+    this.difficulty = diff || 1;
+    this.gameActive = true;
+    this.currentTurn = 'player';
+    this.selectedCell = null;
+    this.lastMove = null;
+    this.capturedDefs = 0;
+    this.capturedAtts = 0;
+    this._initBoard();
+    this._updateDiffButtons();
+    this._render();
+    this._msg('Váš tah — vyberte obránce nebo Krále');
+    document.getElementById('end-banner').classList.remove('open');
+    document.getElementById('thinking').classList.remove('visible');
+  },
+
+  _initBoard() {
+    const S = this.SIZE;
+    this.board = Array(S).fill(null).map(() => Array(S).fill(null));
+    // Attackers (24)
+    [[0,3],[0,4],[0,5],[0,6],[0,7],[1,5],
+     [3,0],[4,0],[5,0],[6,0],[7,0],[5,1],
+     [3,10],[4,10],[5,10],[6,10],[7,10],[5,9],
+     [10,3],[10,4],[10,5],[10,6],[10,7],[9,5]]
+      .forEach(([r,c]) => this.board[r][c] = {type:'attacker', owner:'ai'});
+    // Defenders (12)
+    [[3,5],[4,5],[5,3],[5,4],[5,6],[5,7],[6,5],[7,5],[4,4],[4,6],[6,4],[6,6]]
+      .forEach(([r,c]) => this.board[r][c] = {type:'defender', owner:'player'});
+    // King
+    this.board[5][5] = {type:'king', owner:'player'};
+  },
+
+  _updateDiffButtons() {
+    [1,2,3].forEach(i => {
+      document.getElementById('d'+i).classList.toggle('active', i === this.difficulty);
+    });
+  },
+
+  /* ── PLAYER INPUT ─────────────────── */
+  onCellClick(row, col) {
+    if (!this.gameActive || this.currentTurn !== 'player') return;
+    const cell = this.board[row][col];
+
+    if (this.selectedCell) {
+      const [sr, sc] = this.selectedCell;
+      if (row === sr && col === sc) { this.selectedCell = null; this._render(); return; }
+
+      const mv = this.getMovesFor(sr, sc).find(m => m.toR === row && m.toC === col);
+      if (mv) { this._execMove(mv, 'player'); return; }
+
+      if (cell && cell.owner === 'player') { this.selectedCell = [row, col]; this._render(); return; }
+      this.selectedCell = null; this._render(); return;
+    }
+
+    if (cell && cell.owner === 'player') {
+      this.selectedCell = [row, col];
+      this._render();
+    }
+  },
+
+  /* ── MOVE GENERATION ──────────────── */
+  getMovesFor(row, col, board) {
+    board = board || this.board;
+    const piece = board[row][col]; if (!piece) return [];
+    const moves = [];
+    [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr, dc]) => {
+      let r = row+dr, c = col+dc;
+      while (this.inBounds(r, c)) {
+        if (board[r][c]) break;
+        if (r===this.THRONE[0] && c===this.THRONE[1] && piece.type!=='king') break;
+        if (this.isCorner(r, c) && piece.type!=='king') break;
+        moves.push({fromR:row, fromC:col, toR:r, toC:c});
+        r += dr; c += dc;
+      }
+    });
+    return moves;
+  },
+
+  getAllMoves(side, board) {
+    board = board || this.board;
+    const moves = [];
+    for (let r = 0; r < this.SIZE; r++)
+      for (let c = 0; c < this.SIZE; c++) {
+        const p = board[r][c];
+        if (p && p.owner === side) moves.push(...this.getMovesFor(r, c, board));
+      }
+    return moves;
+  },
+
+  /* ── MOVE EXECUTION ───────────────── */
+  _execMove(move, side, board, live) {
+    board = board || this.board;
+    live = live !== false; // default true
+    const {fromR, fromC, toR, toC} = move;
+    board[toR][toC] = board[fromR][fromC];
+    board[fromR][fromC] = null;
+    if (live) { this.selectedCell = null; this.lastMove = move; }
+    const caps = this._doCaptures(toR, toC, side, board);
+    if (live) {
+      if (side === 'player') this.capturedAtts += caps;
+      else this.capturedDefs += caps;
+    }
+    return caps;
+  },
+
+  _doCaptures(movedR, movedC, side, board) {
+    board = board || this.board;
+    const opp = side === 'player' ? 'ai' : 'player';
+    let count = 0;
+    [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr, dc]) => {
+      const mr = movedR+dr, mc = movedC+dc;
+      const br = movedR+dr*2, bc = movedC+dc*2;
+      if (!this.inBounds(mr, mc)) return;
+      const t = board[mr][mc];
+      if (!t || t.owner !== opp || t.type === 'king') return;
+      const far = this.inBounds(br, bc) && (
+        (board[br][bc] && board[br][bc].owner === side) ||
+        this.isCorner(br, bc) ||
+        (br === this.THRONE[0] && bc === this.THRONE[1])
+      );
+      const edge = !this.inBounds(br, bc);
+      if (far || edge) { board[mr][mc] = null; count++; }
+    });
+    return count;
+  },
+
+  isKingCaptured(kr, kc, board) {
+    board = board || this.board;
+    let s = 0;
+    [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr, dc]) => {
+      const r = kr+dr, c = kc+dc;
+      if (!this.inBounds(r, c)) { s++; return; }
+      const cell = board[r][c];
+      if ((cell && cell.owner==='ai') || this.isCorner(r,c) || (r===this.THRONE[0] && c===this.THRONE[1])) s++;
+    });
+    return s >= 4;
+  },
+
+  findKing(board) {
+    board = board || this.board;
+    for (let r = 0; r < this.SIZE; r++)
+      for (let c = 0; c < this.SIZE; c++)
+        if (board[r][c] && board[r][c].type === 'king') return [r, c];
+    return null;
+  },
+
+  /* ── WIN CHECK ────────────────────── */
+  _checkWin(toR, toC, side) {
+    const piece = this.board[toR][toC]; if (!piece) return false;
+    if (piece.type === 'king' && this.isCorner(toR, toC)) {
+      this._endGame('player'); return true;
+    }
+    const kp = this.findKing();
+    if (kp && this.isKingCaptured(kp[0], kp[1])) {
+      this._endGame('ai'); return true;
+    }
+    const next = side === 'player' ? 'ai' : 'player';
+    if (this.getAllMoves(next).length === 0) {
+      this._endGame(side === 'player' ? 'player' : 'ai'); return true;
+    }
+    return false;
+  },
+
+  _endGame(winner) {
+    this.gameActive = false;
+    const win = winner === 'player';
+    document.getElementById('end-title').textContent = win ? 'Obránci vítězí!' : 'Útočníci vítězí!';
+    document.getElementById('end-sub').textContent = win
+      ? 'Král dosáhl rohového pole a uprchl z ostrova.'
+      : 'Král byl obklíčen ze čtyř stran.';
+    document.getElementById('end-banner').classList.add('open');
+    this._msg(win ? '🎉 Král uprchl!' : '⚔️ Král zajat.');
+    this._render();
+  },
+
+  /* ── TURN MANAGEMENT ──────────────── */
+  _afterPlayerMove(toR, toC) {
+    if (this._checkWin(toR, toC, 'player')) { this._render(); return; }
+    this.currentTurn = 'ai';
+    this._msg('AI přemýšlí…');
+    this._render();
+    document.getElementById('thinking').classList.add('visible');
+    // Give browser time to paint before heavy computation
+    setTimeout(() => this._aiTurn(), this.difficulty === 3 ? 80 : 50);
+  },
+
+  _aiTurn() {
+    if (!this.gameActive || this.currentTurn !== 'ai') return;
+    document.getElementById('thinking').classList.remove('visible');
+    const moves = this.getAllMoves('ai');
+    if (!moves.length) { this._endGame('player'); this._render(); return; }
+
+    let chosen;
+    if (this.difficulty === 1) {
+      chosen = moves[Math.floor(Math.random() * moves.length)];
+    } else if (this.difficulty === 2) {
+      chosen = this._greedyMove(moves);
+    } else {
+      chosen = this._minimaxMove();
+    }
+
+    this._execMove(chosen, 'ai');
+    if (this._checkWin(chosen.toR, chosen.toC, 'ai')) { this._render(); return; }
+    this.currentTurn = 'player';
+    this._msg('Váš tah');
+    this._render();
+  },
+
+  /* ── AI LEVEL 2: GREEDY ───────────── */
+  _greedyMove(moves) {
+    const kp = this.findKing();
+    let best = null, bestScore = -Infinity;
+    moves.forEach(move => {
+      let score = 0;
+      // Proximity to king
+      if (kp) score += 14 - Math.abs(move.toR - kp[0]) - Math.abs(move.toC - kp[1]);
+      // Simulate captures
+      const saved = this._cloneBoard();
+      this.board[move.toR][move.toC] = this.board[move.fromR][move.fromC];
+      this.board[move.fromR][move.fromC] = null;
+      score += this._doCaptures(move.toR, move.toC, 'ai') * 8;
+      // Check immediate king capture
+      const kp2 = this.findKing();
+      if (kp2 && this.isKingCaptured(kp2[0], kp2[1])) score += 200;
+      // Prefer blocking corner escape routes
+      this.CORNERS.forEach(([cr,cc]) => {
+        if (!this.findKing()) return;
+        const k2 = this.findKing();
+        const distKingCorner = Math.abs(k2[0]-cr) + Math.abs(k2[1]-cc);
+        if (distKingCorner <= 3) score += 5;
+      });
+      this.board = saved;
+      if (score > bestScore) { bestScore = score; best = move; }
+    });
+    return best || moves[Math.floor(Math.random() * moves.length)];
+  },
+
+  /* ── AI LEVEL 3: MINIMAX ──────────── */
+  _minimaxMove() {
+    const moves = this.getAllMoves('ai');
+    let best = null, bestScore = -Infinity;
+    const alpha = -Infinity, beta = Infinity;
+
+    for (const move of moves) {
+      const saved = this._cloneBoard();
+      this._execMove(move, 'ai', this.board, false);
+      const caps = this._doCaptures(move.toR, move.toC, 'ai');
+      const score = this._minimax(3, false, -Infinity, Infinity);
+      this.board = saved;
+      // Add immediate capture bonus to differentiate at top level
+      const adjusted = score + caps * 2;
+      if (adjusted > bestScore) { bestScore = adjusted; best = move; }
+    }
+    return best || moves[0];
+  },
+
+  _minimax(depth, isAi, alpha, beta) {
+    // Terminal checks
+    const kp = this.findKing();
+    if (!kp) return 10000;                          // King captured → AI wins
+    if (this.isCorner(kp[0], kp[1])) return -10000; // King escaped → player wins
+    if (depth === 0) return this._evaluate();
+
+    const side = isAi ? 'ai' : 'player';
+    const moves = this.getAllMoves(side);
+    if (!moves.length) return isAi ? -9000 : 9000;
+
+    if (isAi) {
+      let best = -Infinity;
+      for (const move of moves) {
+        const saved = this._cloneBoard();
+        this._execMove(move, 'ai', this.board, false);
+        this._doCaptures(move.toR, move.toC, 'ai');
+        best = Math.max(best, this._minimax(depth - 1, false, alpha, beta));
+        this.board = saved;
+        alpha = Math.max(alpha, best);
+        if (beta <= alpha) break;
+      }
+      return best;
+    } else {
+      let best = Infinity;
+      for (const move of moves) {
+        const saved = this._cloneBoard();
+        this._execMove(move, 'player', this.board, false);
+        this._doCaptures(move.toR, move.toC, 'player');
+        best = Math.min(best, this._minimax(depth - 1, true, alpha, beta));
+        this.board = saved;
+        beta = Math.min(beta, best);
+        if (beta <= alpha) break;
+      }
+      return best;
+    }
+  },
+
+  /* ── EVALUATION FUNCTION ──────────── */
+  _evaluate() {
+    const kp = this.findKing();
+    if (!kp) return 10000;
+    const [kr, kc] = kp;
+
+    let score = 0;
+
+    // 1. King distance to nearest corner (AI wants king far from corners)
+    const minCornerDist = Math.min(...this.CORNERS.map(([cr,cc]) => Math.abs(kr-cr) + Math.abs(kc-cc)));
+    score += minCornerDist * 12;  // Higher = king farther from escape
+
+    // 2. How surrounded is the king (AI wants more surrounding)
+    let surround = 0;
+    [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr,dc]) => {
+      const r = kr+dr, c = kc+dc;
+      if (!this.inBounds(r,c)) { surround++; return; }
+      const cell = this.board[r][c];
+      if ((cell && cell.owner==='ai') || this.isCorner(r,c) || (r===this.THRONE[0] && c===this.THRONE[1])) surround++;
+    });
+    score += surround * 20;
+
+    // 3. Open corridors to corners (AI wants to block them)
+    this.CORNERS.forEach(([cr, cc]) => {
+      // Check if king has clear row/col path to corner
+      const sameRow = kr === cr;
+      const sameCol = kc === cc;
+      if (sameRow || sameCol) {
+        const dr = sameRow ? 0 : (cc > kc ? 1 : -1);
+        const dc = sameCol ? 0 : (cc > kc ? 1 : -1);
+        // Actually check direction from king to corner
+        const rdiff = cr > kr ? 1 : cr < kr ? -1 : 0;
+        const cdiff = cc > kc ? 1 : cc < kc ? -1 : 0;
+        if (rdiff === 0 || cdiff === 0) { // straight line possible
+          let blocked = false;
+          let r = kr + rdiff, c = kc + cdiff;
+          while (r !== cr || c !== cc) {
+            if (this.board[r][c]) { blocked = true; break; }
+            r += rdiff; c += cdiff;
+          }
+          if (!blocked) score -= 30; // Open escape route is bad for AI
+        }
+      }
+    });
+
+    // 4. Piece count balance
+    let aiCount = 0, playerCount = 0;
+    for (let r = 0; r < this.SIZE; r++)
+      for (let c = 0; c < this.SIZE; c++) {
+        const p = this.board[r][c];
+        if (!p) continue;
+        if (p.owner === 'ai') aiCount++;
+        else if (p.type !== 'king') playerCount++;
+      }
+    score += (aiCount - playerCount * 1.5) * 4;
+
+    // 5. AI mobility (more moves = more options)
+    score += this.getAllMoves('ai').length * 0.5;
+
+    return score;
+  },
+
+  /* ── HELPERS ──────────────────────── */
+  _cloneBoard() {
+    return this.board.map(row => row.map(cell => cell ? {...cell} : null));
+  },
+
+  isCorner(r, c) { return this.CORNERS.some(([cr,cc]) => cr===r && cc===c); },
+  inBounds(r, c) { return r >= 0 && r < this.SIZE && c >= 0 && c < this.SIZE; },
+
+  countPieces(side) {
+    let n = 0;
+    for (let r = 0; r < this.SIZE; r++)
+      for (let c = 0; c < this.SIZE; c++)
+        if (this.board[r][c] && this.board[r][c].owner === side) n++;
+    return n;
+  },
+
+  _msg(m) { const el = document.getElementById('s-msg'); if (el) el.textContent = m; },
+
+  /* ── RENDER ───────────────────────── */
+  _render() {
+    const wrap = document.getElementById('board-wrap');
+    if (!wrap) return;
+    const W = window.innerWidth;
+    const mobile = W <= 500;
+    const cs = Math.floor(Math.min((W - 40) / this.SIZE, mobile ? 30 : 46));
+    const ks = Math.round(cs * 0.75);
+    const ps = Math.round(cs * 0.66);
+
+    let h = '';
+    for (let r = 0; r < this.SIZE; r++) {
+      h += '<div class="board-row">';
+      for (let c = 0; c < this.SIZE; c++) {
+        const piece = this.board[r][c];
+        const isSel = this.selectedCell && this.selectedCell[0]===r && this.selectedCell[1]===c;
+        const isThrone = r===this.THRONE[0] && c===this.THRONE[1];
+        const isCorn = this.isCorner(r, c);
+        const isLastFrom = this.lastMove && this.lastMove.fromR===r && this.lastMove.fromC===c;
+        const isLastTo   = this.lastMove && this.lastMove.toR===r   && this.lastMove.toC===c;
+
+        let isVT = false;
+        if (this.selectedCell && this.currentTurn === 'player') {
+          const [sr, sc] = this.selectedCell;
+          isVT = this.getMovesFor(sr, sc).some(m => m.toR===r && m.toC===c);
+        }
+
+        let bg = (r+c)%2===0 ? 'var(--board-light)' : 'var(--board-dark)';
+        if (isThrone) bg = 'var(--throne)';
+        if (isCorn)   bg = 'var(--corner)';
+        if (isSel)    bg = 'var(--sel)';
+        else if (isVT) bg = 'var(--valid)';
+
+        const clickable = this.currentTurn === 'player' && this.gameActive;
+        const extraClass = [
+          clickable ? 'clickable' : '',
+          isLastFrom ? 'last-from' : '',
+          isLastTo   ? 'last-to'   : ''
+        ].filter(Boolean).join(' ');
+
+        h += `<div class="cell ${extraClass}" style="width:${cs}px;height:${cs}px;background:${bg};"`;
+        if (clickable) h += ` onclick="G.onCellClick(${r},${c})"`;
+        h += '>';
+
+        if (!piece) {
+          if (isThrone) h += `<span style="font-size:${Math.round(cs*0.35)}px;opacity:0.4;">⊕</span>`;
+          else if (isCorn) h += `<span style="font-size:${Math.round(cs*0.35)}px;opacity:0.5;">🏰</span>`;
+        }
+
+        if (piece) {
+          const selClass = isSel ? ' selected' : '';
+          if (piece.type === 'king')
+            h += `<div class="piece piece-king${selClass}" style="width:${ks}px;height:${ks}px;">👑</div>`;
+          else if (piece.type === 'defender')
+            h += `<div class="piece piece-def${selClass}" style="width:${ps}px;height:${ps}px;"></div>`;
+          else
+            h += `<div class="piece piece-att${selClass}" style="width:${ps}px;height:${ps}px;"></div>`;
+        }
+
+        h += '</div>';
+      }
+      h += '</div>';
+    }
+    wrap.innerHTML = h;
+
+    // Status counts
+    const nd = this.countPieces('player');
+    const na = this.countPieces('ai');
+    document.getElementById('s-def').textContent = `⬜ Obránci: ${nd}`;
+    document.getElementById('s-att').textContent = `⬛ Útočníci: ${na}`;
+
+    // Captured dots
+    let caps = '';
+    if (this.capturedAtts > 0) {
+      caps += `Zajato ⬛: `;
+      for(let i=0;i<Math.min(this.capturedAtts,12);i++) caps+=`<span class="cap-dot" style="background:var(--attacker);border:1px solid var(--att-border);"></span>`;
+      if (this.capturedAtts>12) caps+=` +${this.capturedAtts-12}`;
+      caps += `&nbsp;&nbsp;`;
+    }
+    if (this.capturedDefs > 0) {
+      caps += `Zajato ⬜: `;
+      for(let i=0;i<Math.min(this.capturedDefs,12);i++) caps+=`<span class="cap-dot" style="background:var(--defender);border:1px solid var(--def-border);"></span>`;
+      if (this.capturedDefs>12) caps+=` +${this.capturedDefs-12}`;
+    }
+    document.getElementById('cap-row').innerHTML = caps;
+  }
+};
+
+// Exec move with live=true wired to player/ai flow
+const _origExecMove = G._execMove.bind(G);
+G._execMove = function(move, side, board, live) {
+  if (board === undefined || board === G.board) {
+    // Live move
+    _origExecMove(move, side, G.board, true);
+    G._render();
+    if (side === 'player') G._afterPlayerMove(move.toR, move.toC);
+  } else {
+    _origExecMove(move, side, board, false);
+  }
+};
+
+// Start with difficulty 1 on load
+window.addEventListener('load', () => G.newGame(1));
+window.addEventListener('resize', () => G._render());
+</script>
+</body>
+</html>
