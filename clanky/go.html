@@ -823,7 +823,8 @@
                 ctx.textAlign = 'left';
             }
 
-            const isCpuTurn = (selCpu.value === 'cpu' && currentPlayer === 2);
+            const _aiC = playerColor === 1 ? 2 : 1;
+            const isCpuTurn = (selCpu.value === 'cpu' && currentPlayer === _aiC);
             if (!gameOver && !markingPhase && !isCpuTurn && !isAiThinking && hoverPos && boardState[hoverPos.r][hoverPos.c] === 0) {
                 drawSingleStone(hoverPos.r, hoverPos.c, currentPlayer, 0.4);
             }
@@ -1105,11 +1106,13 @@
                     diff,
                     selRules.value === 'chinese'
                 );
-                isAiThinking = false;
-                cpuThinking.style.display = "none";
                 if (move) {
+                    isAiThinking = false;
+                    cpuThinking.style.display = "none";
                     attemptMove(move.r, move.c);
                 } else {
+                    isAiThinking = false;
+                    cpuThinking.style.display = "none";
                     consecutivePasses++;
                     currentPlayer = playerColor; // return turn to human
                     updateUI();
