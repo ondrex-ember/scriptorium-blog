@@ -58,7 +58,7 @@
         canvas {
             background-color: var(--board-color);
             box-shadow: 0 20px 50px rgba(0,0,0,0.6), inset 0 0 50px rgba(139, 90, 43, 0.3); 
-            cursor: crosshair; border-radius: 4px; border: 2px solid #5c3a21;
+            cursor: crosshair; border-radius: 4px; border: 2px solid #5c3a21; will-change: transform; display: block; flex-shrink: 0;
         }
 
         #bottomPanel { display: flex; justify-content: space-between; width: 540px; margin-top: 20px; }
@@ -1149,32 +1149,37 @@
             const aiColor = playerColor === 1 ? 2 : 1;
             if (gameOver || currentPlayer !== aiColor || isAiThinking) return;
             isAiThinking = true;
-            cpuThinking.style.display = "block";
+            cpuThinking.style.visibility = "visible";
             statusDiv.innerText = "CPU na tahu...";
 
             // setTimeout(0) nechá prohlížeč překreslit UI (cpuThinking indikátor)
             // před spuštěním synchronního výpočtu
             setTimeout(() => {
-                // Level system: pokud je vybrán CPU mode, použij level difficulty
-                const diff = selCpu.value === 'cpu' ? getLevelDifficulty() : selDifficulty.value;
-                const move = computeAIMove(
-                    boardState,
-                    boardHistory,
-                    diff,
-                    selRules.value === 'chinese'
-                );
-                if (move) {
+                try {
+                    const diff = selCpu.value === 'cpu' ? getLevelDifficulty() : selDifficulty.value;
+                    const move = computeAIMove(
+                        boardState,
+                        boardHistory,
+                        diff,
+                        selRules.value === 'chinese'
+                    );
                     isAiThinking = false;
-                    cpuThinking.style.display = "none";
-                    attemptMove(move.r, move.c);
-                } else {
+                    cpuThinking.style.visibility = 'hidden';
+                    if (move) {
+                        attemptMove(move.r, move.c);
+                    } else {
+                        consecutivePasses++;
+                        currentPlayer = playerColor;
+                        updateUI();
+                        startTimer();
+                        if (consecutivePasses >= 2) { enterMarkingPhase(); }
+                    }
+                } catch(e) {
+                    console.error('AI error:', e);
                     isAiThinking = false;
-                    cpuThinking.style.display = "none";
-                    consecutivePasses++;
-                    currentPlayer = playerColor; // return turn to human
+                    cpuThinking.style.visibility = 'hidden';
+                    currentPlayer = playerColor;
                     updateUI();
-                    startTimer();
-                    if (consecutivePasses >= 2) { enterMarkingPhase(); }
                 }
             }, 0);
         }
@@ -1302,7 +1307,7 @@
             consecutivePasses = 0; gameOver = false;
             blackPrisoners = 0; whitePrisoners = 0;
             timeLeft = { 1: 300, 2: 300 }; lastMove = null;
-            isAiThinking = false; cpuThinking.style.display = "none";
+            isAiThinking = false; cpuThinking.style.visibility = "hidden";
             hoverPos = null; rafPending = false;
             markingPhase = false; deadStones = new Set();
             turnCount = 0; midgameScore = null; aiTurnCount = 0;
@@ -1339,7 +1344,7 @@
                     boardHistory = data.boardHistory; consecutivePasses = data.consecutivePasses || 0;
                     gameOver = data.gameOver || false; blackPrisoners = data.blackPrisoners || 0;
                     whitePrisoners = data.whitePrisoners || 0; timeLeft = data.timeLeft || { 1: 300, 2: 300 };
-                    lastMove = data.lastMove || null; isAiThinking = false; cpuThinking.style.display = "none";
+                    lastMove = data.lastMove || null; isAiThinking = false; cpuThinking.style.visibility = "hidden";
                     
                     modal.style.display = 'none';
                     updateUI(); drawBoard(); clearInterval(timerInterval);
