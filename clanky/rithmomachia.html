@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rithmomachia — Filozofická hra čísel</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
+
+  :root {
+    --gold:     #c8a84b;
+    --gold-dim: rgba(200,168,75,0.16);
+    --gold-gl:  rgba(200,168,75,0.5);
+    --bg:       #080610;
+    --bg2:      #100e1a;
+    --bg3:      #18152a;
+    --ink:      #ddd5f5;
+    --ink-dim:  #9080b8;
+    --ink-fnt:  #5a4878;
+    --c-light:  #2a2240;
+    --c-dark:   #1e1830;
+    /* Piece colors */
+    --white-bg: #f0ece4;
+    --white-bd: #c8a84b;
+    --white-tx: #1a1408;
+    --black-bg: #1a0e30;
+    --black-bd: #7060a8;
+    --black-tx: #c8b8f0;
+    /* Shape accent rings */
+    --ring-circ:  #4a9eff;
+    --ring-tri:   #ff6b4a;
+    --ring-sq:    #4aff9e;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Crimson Text', Georgia, serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.5rem 1rem 3rem;
+    background-image:
+      radial-gradient(ellipse at 30% 10%, rgba(100,60,200,0.06) 0%, transparent 55%),
+      radial-gradient(ellipse at 70% 90%, rgba(200,168,75,0.04) 0%, transparent 50%);
+  }
+
+  /* ── HEADER ── */
+  .hdr { text-align: center; margin-bottom: 1.4rem; width: 100%; max-width: 600px; }
+  .hdr-title {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(1.5rem, 4vw, 2.2rem);
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: 0.14em;
+    margin-bottom: 0.1rem;
+  }
+  .hdr-sub {
+    font-size: 0.73rem;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--ink-fnt);
+  }
+  .hdr-divider {
+    width: 70px; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    margin: 0.55rem auto;
+  }
+
+  /* ── CONTROLS ── */
+  .controls {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 0.5rem; width: 100%; max-width: 600px; margin-bottom: 0.8rem;
+  }
+  .diff-row { display: flex; gap: 0.45rem; }
+  .diff-btn {
+    font-family: 'Cinzel', serif; font-size: 0.7rem; letter-spacing: 0.12em;
+    background: none; border: 1px solid rgba(200,168,75,0.2);
+    color: var(--ink-dim); padding: 6px 14px; border-radius: 3px;
+    cursor: pointer; transition: all 0.18s;
+  }
+  .diff-btn:hover, .diff-btn.active {
+    background: var(--gold-dim); border-color: var(--gold-gl); color: var(--gold);
+  }
+  .diff-btn.active { font-weight: 600; }
+
+  /* ── STATUS ── */
+  .status {
+    display: flex; justify-content: space-between; align-items: center;
+    width: 100%; max-width: 600px;
+    padding: 7px 14px;
+    background: rgba(100,60,200,0.07);
+    border: 1px solid rgba(100,60,200,0.18);
+    border-radius: 3px; font-size: 0.8rem; margin-bottom: 0.5rem;
+  }
+  .status-side { color: var(--ink-dim); min-width: 100px; }
+  .status-side.right { text-align: right; }
+  .status-msg {
+    font-style: italic; color: var(--gold); font-size: 0.77rem;
+    text-align: center; flex: 1; padding: 0 6px;
+  }
+
+  /* ── CAPTURE HINT BAR ── */
+  .hint-bar {
+    width: 100%; max-width: 600px;
+    min-height: 2rem;
+    padding: 5px 12px;
+    font-size: 0.78rem;
+    color: var(--ink-dim);
+    line-height: 1.4;
+    margin-bottom: 0.4rem;
+    border-left: 2px solid rgba(100,60,200,0.3);
+    transition: opacity 0.2s;
+  }
+  .hint-bar.highlight {
+    border-left-color: var(--ring-tri);
+    color: var(--ink);
+  }
+  .hint-bar strong { color: var(--gold); }
+
+  /* ── BOARD ── */
+  .board-wrap {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 2px;
+    padding: 6px;
+    background: #0d0b18;
+    border: 1px solid rgba(100,60,200,0.2);
+    border-radius: 4px;
+    box-shadow: 0 0 40px rgba(80,40,160,0.12), 0 8px 30px rgba(0,0,0,0.5);
+    margin-bottom: 0.7rem;
+  }
+  .cell {
+    aspect-ratio: 1;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; border-radius: 2px;
+    transition: background 0.1s, box-shadow 0.1s;
+    position: relative;
+  }
+  .cell:hover { filter: brightness(1.12); }
+  .cell.capture-threat {
+    box-shadow: inset 0 0 0 2px var(--ring-tri);
+    animation: threat-pulse 1s infinite;
+  }
+  @keyframes threat-pulse { 0%,100%{opacity:1} 50%{opacity:0.7} }
+
+  /* ── PIECES ── */
+  .piece {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; border-radius: 50%;
+    transition: transform 0.1s, box-shadow 0.1s;
+    position: relative;
+    font-family: 'Cinzel', serif;
+  }
+  .piece.selected {
+    transform: scale(1.12);
+    box-shadow: 0 0 0 3px var(--gold), 0 0 14px rgba(200,168,75,0.5) !important;
+  }
+  .piece.white { background: var(--white-bg); color: var(--white-tx); border: 2px solid var(--white-bd); }
+  .piece.black { background: var(--black-bg); color: var(--black-tx); border: 2px solid var(--black-bd); }
+
+  /* Shape type rings */
+  .piece.circle { box-shadow: 0 0 0 2px var(--ring-circ); }
+  .piece.triangle { box-shadow: 0 0 0 2px var(--ring-tri); border-radius: 20% 20% 50% 50%; }
+  .piece.square { box-shadow: 0 0 0 2px var(--ring-sq); border-radius: 4px; }
+  .piece.selected.circle  { box-shadow: 0 0 0 3px var(--gold), 0 0 14px rgba(200,168,75,0.5), 0 0 0 5px var(--ring-circ) !important; }
+  .piece.selected.triangle{ box-shadow: 0 0 0 3px var(--gold), 0 0 14px rgba(200,168,75,0.5), 0 0 0 5px var(--ring-tri) !important; }
+  .piece.selected.square  { box-shadow: 0 0 0 3px var(--gold), 0 0 14px rgba(200,168,75,0.5), 0 0 0 5px var(--ring-sq) !important; }
+
+  .piece .sym { font-size: 0.75em; line-height: 1; }
+  .piece .val { font-size: 0.62em; line-height: 1; font-weight: 600; }
+
+  /* ── CAPTURED PANEL ── */
+  .captured-panel {
+    display: flex; gap: 1.5rem; justify-content: center;
+    width: 100%; max-width: 600px;
+    margin-bottom: 0.5rem; font-size: 0.72rem; color: var(--ink-fnt);
+    flex-wrap: wrap;
+  }
+  .cap-group { display: flex; flex-wrap: wrap; gap: 2px; align-items: center; }
+  .cap-chip {
+    font-family: 'Cinzel', serif; font-size: 0.58rem;
+    padding: 1px 4px; border-radius: 2px;
+    border: 1px solid rgba(200,168,75,0.25);
+    color: var(--gold);
+  }
+
+  /* ── LEGEND ── */
+  .legend {
+    font-size: 0.68rem; color: var(--ink-fnt);
+    text-align: center; max-width: 540px; line-height: 1.8; margin-bottom: 0.7rem;
+  }
+  .legend span { margin: 0 0.2rem; }
+  .lc { color: var(--ring-circ); } .lt { color: var(--ring-tri); } .ls { color: var(--ring-sq); }
+
+  /* ── ACTIONS ── */
+  .action-row { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center; }
+  .act-btn {
+    font-family: 'Crimson Text', serif; font-size: 0.82rem; letter-spacing: 0.06em;
+    background: none; border: 1px solid rgba(200,168,75,0.2);
+    color: var(--ink-dim); padding: 7px 18px; border-radius: 3px;
+    cursor: pointer; transition: all 0.18s;
+  }
+  .act-btn:hover { color: var(--gold); border-color: var(--gold-gl); background: var(--gold-dim); }
+  .act-btn.primary { border-color: rgba(200,168,75,0.4); color: var(--gold); }
+
+  /* ── TUTORIAL OVERLAY ── */
+  .overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(4,2,12,0.92); z-index: 100;
+    overflow-y: auto; padding: 2rem 1rem;
+  }
+  .overlay.open { display: block; }
+  .rules-box {
+    max-width: 540px; margin: 0 auto;
+    background: var(--bg2);
+    border: 1px solid rgba(100,60,200,0.25);
+    border-radius: 5px; padding: 1.8rem;
+  }
+  .rules-box h2 {
+    font-family: 'Cinzel', serif; color: var(--gold); font-size: 1.1rem; font-weight: 600;
+    margin-bottom: 1rem; display: flex; justify-content: space-between;
+  }
+  .rules-box h3 {
+    font-family: 'Cinzel', serif; color: var(--ink-dim); font-size: 0.75rem;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    margin: 1rem 0 0.3rem; font-weight: 400;
+  }
+  .rules-box p { font-size: 0.88rem; line-height: 1.65; color: #7060a0; }
+  .rules-box .example {
+    background: rgba(100,60,200,0.1); border: 1px solid rgba(100,60,200,0.2);
+    border-radius: 3px; padding: 8px 12px; margin-top: 0.5rem;
+    font-size: 0.82rem; color: var(--ink-dim); font-family: 'Cinzel', serif;
+  }
+  .rules-box .diff-table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; font-size: 0.82rem; }
+  .rules-box .diff-table td { padding: 5px 8px; border-bottom: 1px solid rgba(100,60,200,0.12); color: #7060a0; }
+  .rules-box .diff-table td:first-child { color: var(--gold); font-family: 'Cinzel', serif; font-size: 0.72rem; }
+  .close-btn {
+    background: none; border: none; color: var(--ink-fnt);
+    font-size: 1.3rem; cursor: pointer; line-height: 1;
+  }
+  .close-btn:hover { color: var(--gold); }
+
+  /* ── END BANNER ── */
+  .end-banner {
+    display: none; position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    background: var(--bg2); border: 1px solid var(--gold);
+    border-radius: 6px; padding: 2rem 2.5rem;
+    text-align: center; z-index: 200;
+    box-shadow: 0 0 60px rgba(100,60,200,0.2);
+    min-width: 260px;
+  }
+  .end-banner.open { display: block; animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from{opacity:0;transform:translate(-50%,-54%)} to{opacity:1;transform:translate(-50%,-50%)} }
+  .end-banner h2 { font-family: 'Cinzel', serif; color: var(--gold); font-size: 1.2rem; margin-bottom: 0.4rem; }
+  .end-banner p  { color: var(--ink-dim); font-size: 0.85rem; margin-bottom: 1.2rem; }
+
+  .thinking {
+    display: none; font-size: 0.7rem; color: var(--ink-fnt);
+    letter-spacing: 0.15em; text-transform: uppercase; text-align: center; margin: 0.2rem 0;
+  }
+  .thinking.visible { display: block; animation: pulse 1.2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:0.4} 50%{opacity:1} }
+
+  @media (max-width: 480px) { body { padding: 1rem 0.5rem 2rem; } }
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <h1 class="hdr-title">Rithmomachia</h1>
+  <p class="hdr-sub">Filozofická hra čísel &nbsp;·&nbsp; 11. stol.</p>
+  <div class="hdr-divider"></div>
+</div>
+
+<div class="controls">
+  <div class="diff-row">
+    <button class="diff-btn active" id="d1" onclick="R.newGame(1)">Snadná</button>
+    <button class="diff-btn" id="d2" onclick="R.newGame(2)">Střední</button>
+    <button class="diff-btn" id="d3" onclick="R.newGame(3)">Těžká</button>
+  </div>
+</div>
+
+<div class="status">
+  <span class="status-side" id="s-white">⬜ Vy: 0 bodů</span>
+  <span class="status-msg" id="s-msg">Vyberte figurku</span>
+  <span class="status-side right" id="s-black">⬛ AI: 0 bodů</span>
+</div>
+
+<div class="hint-bar" id="hint-bar">Klikněte na svou figurku (⬜) pro zobrazení možných tahů.</div>
+
+<div class="thinking" id="thinking">AI přemýšlí…</div>
+
+<div class="board-wrap" id="board"></div>
+
+<div class="captured-panel" id="cap-panel"></div>
+
+<div class="legend">
+  <span class="lc">●</span> Kruh: 1 krok ortogonálně &nbsp;
+  <span class="lt">▲</span> Trojúhelník: 2 kroky diagonálně &nbsp;
+  <span class="ls">■</span> Čtverec: 3 kroky libovolně<br>
+  Zajmutí: součet hodnot <em>vašich</em> sousedů = hodnotě nepřátelské figurky
+</div>
+
+<div class="action-row">
+  <button class="act-btn" onclick="document.getElementById('rules').classList.add('open')">Pravidla & Tutorial</button>
+  <button class="act-btn primary" onclick="R.newGame(R.difficulty)">Nová hra</button>
+</div>
+
+<!-- RULES / TUTORIAL -->
+<div class="overlay" id="rules">
+  <div class="rules-box">
+    <h2>Rithmomachia <button class="close-btn" onclick="document.getElementById('rules').classList.remove('open')">×</button></h2>
+
+    <h3>O hře</h3>
+    <p>Rithmomachia ("počtový boj") vznikla v 11. století jako pedagogická pomůcka pro výuku středověké aritmetiky. Hrávala se na univerzitách v Paříži a Oxfordu. Filozofové ji považovali za vznešenější než šachy.</p>
+
+    <h3>Figurky a pohyb</h3>
+    <p>Každá figurka má <strong style="color:var(--gold)">tvar</strong> a <strong style="color:var(--gold)">číselnou hodnotu</strong>. Tvar určuje způsob pohybu:</p>
+    <div class="example">
+      <span style="color:var(--ring-circ)">● Kruh</span> — pohyb o 1 pole ortogonálně (↑↓←→)<br>
+      <span style="color:var(--ring-tri)">▲ Trojúhelník</span> — pohyb o 2 pole diagonálně<br>
+      <span style="color:var(--ring-sq)">■ Čtverec</span> — pohyb o 3 pole libovolně
+    </div>
+    <p style="margin-top:0.5rem;">Figurky nemohou přeskakovat jiné figurky. Nelze vstoupit na pole obsazené vlastní figurkou.</p>
+
+    <h3>Jak probíhá zajmutí</h3>
+    <p>Po každém vašem pohybu se zkontroluje: jsou kolem nějaké soupeřovy figurky vaše figurky, jejichž <strong style="color:var(--gold)">součet hodnot</strong> se rovná hodnotě té soupeřovy? Pokud ano — je zajata.</p>
+    <div class="example">
+      Příklad: váš Kruh(6) a Kruh(4) sousedí se soupeřovým Čtvercem(10).<br>
+      6 + 4 = 10 → Čtverec je zajat. ✓<br><br>
+      Příklad: váš Kruh(3) sousedí se soupeřovým Trojúhelníkem(9).<br>
+      3 ≠ 9 → nic se nestane.
+    </div>
+    <p style="margin-top:0.5rem;">Zanáší se všechny vaše sousední figurky — nejen ta, která právě táhla.</p>
+
+    <h3>Jak vyhrát</h3>
+    <p>Zajměte všechny soupeřovy <span style="color:var(--ring-tri)">trojúhelníky</span>, nebo nasbírejte <strong style="color:var(--gold)">100 bodů</strong> (součet hodnot zajatých figurek). Trojúhelníky jsou strategicky nejcennější.</p>
+
+    <h3>Obtížnosti AI</h3>
+    <table class="diff-table">
+      <tr><td>Snadná</td><td>Preferuje postup dopředu a trojúhelníky. Náhodná složka. Nezabíjí vědomě.</td></tr>
+      <tr><td>Střední</td><td>Aktivně hledá příležitosti k zajmutí. Brání ohrožené figurky. Cílí na trojúhelníky hráče.</td></tr>
+      <tr><td>Těžká</td><td>Lookahead: simuluje tah + odpověď. Hodnotí materiál, pozici trojúhelníků a hrozby zajmutí. Výrazná výzva.</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- END BANNER -->
+<div class="end-banner" id="end-banner">
+  <h2 id="end-title">Konec hry</h2>
+  <p id="end-sub"></p>
+  <button class="act-btn primary" onclick="R.newGame(R.difficulty);document.getElementById('end-banner').classList.remove('open')">Hrát znovu</button>
+</div>
+
+<script>
+/* ═══════════════════════════════════════
+   RITHMOMACHIA — Enhanced
+   Difficulty 1: greedy advance + triangles
+   Difficulty 2: capture-aware + defense
+   Difficulty 3: 2-ply lookahead + full eval
+═══════════════════════════════════════ */
+const R = {
+  COLS: 8, ROWS: 8,
+  board: [],
+  white: [], black: [],
+  currentTurn: 'white',
+  selectedPiece: null,
+  validMoves: [],
+  points: {white: 0, black: 0},
+  captured: {white: [], black: []},
+  gameActive: false,
+  difficulty: 1,
+
+  /* Shape definitions */
+  SHAPES: {
+    circle:   {sym:'●', mv:1, dirs:[[0,-1],[0,1],[1,0],[-1,0]]},
+    triangle: {sym:'▲', mv:2, dirs:[[1,-1],[1,1],[-1,-1],[-1,1]]},
+    square:   {sym:'■', mv:3, dirs:[[0,-1],[0,1],[1,0],[-1,0],[1,-1],[1,1],[-1,-1],[-1,1]]}
+  },
+
+  /* Starting positions — 8×16 board compressed to 8×8 for playability */
+  SETUP: {
+    white: [
+      {t:'square',  v:4,  x:1,y:7},{t:'triangle',v:9,  x:2,y:7},
+      {t:'square',  v:9,  x:3,y:7},{t:'triangle',v:16, x:4,y:7},
+      {t:'square',  v:16, x:5,y:7},{t:'square',  v:25, x:6,y:7},
+      {t:'circle',  v:2,  x:0,y:6},{t:'circle',  v:4,  x:1,y:6},
+      {t:'circle',  v:6,  x:2,y:6},{t:'circle',  v:8,  x:3,y:6},
+      {t:'circle',  v:10, x:4,y:6},{t:'circle',  v:12, x:5,y:6},
+      {t:'circle',  v:14, x:6,y:6}
+    ],
+    black: [
+      {t:'square',  v:1,  x:1,y:0},{t:'triangle',v:9,  x:2,y:0},
+      {t:'square',  v:4,  x:3,y:0},{t:'triangle',v:25, x:4,y:0},
+      {t:'square',  v:9,  x:5,y:0},{t:'square',  v:36, x:6,y:0},
+      {t:'circle',  v:1,  x:0,y:1},{t:'circle',  v:3,  x:1,y:1},
+      {t:'circle',  v:5,  x:2,y:1},{t:'circle',  v:7,  x:3,y:1},
+      {t:'circle',  v:9,  x:4,y:1},{t:'circle',  v:11, x:5,y:1},
+      {t:'circle',  v:13, x:6,y:1}
+    ]
+  },
+
+  /* ── INIT ─────────────────────────── */
+  newGame(diff) {
+    this.difficulty = diff || 1;
+    this.gameActive = true;
+    this.currentTurn = 'white';
+    this.selectedPiece = null;
+    this.validMoves = [];
+    this.points = {white:0, black:0};
+    this.captured = {white:[], black:[]};
+    this.board = Array(this.ROWS).fill(null).map(() => Array(this.COLS).fill(null));
+
+    let wid = 0, bid = 0;
+    this.white = this.SETUP.white.map(d => ({...d, id:wid++, player:'white'}));
+    this.black = this.SETUP.black.map(d => ({...d, id:bid++, player:'black'}));
+    [...this.white, ...this.black].forEach(p => { this.board[p.y][p.x] = p; });
+
+    [1,2,3].forEach(i => document.getElementById('d'+i).classList.toggle('active', i===diff));
+    document.getElementById('end-banner').classList.remove('open');
+    document.getElementById('thinking').classList.remove('visible');
+    this._setHint('Klikněte na svou figurku (⬜) pro zobrazení možných tahů.');
+    this._msg('Váš tah — vyberte figurku');
+    this._render();
+  },
+
+  /* ── INPUT ────────────────────────── */
+  onCell(x, y) {
+    if (!this.gameActive || this.currentTurn !== 'white') return;
+    const piece = this.board[y][x];
+
+    if (this.selectedPiece) {
+      if (piece === this.selectedPiece) {
+        this.selectedPiece = null; this.validMoves = [];
+        this._setHint('Výběr zrušen.');
+        this._render(); return;
+      }
+      const mv = this.validMoves.find(m => m[0]===x && m[1]===y);
+      if (mv) {
+        this._doMove(this.selectedPiece, x, y, 'white', true);
+        return;
+      }
+    }
+
+    if (piece && piece.player === 'white') {
+      this.selectedPiece = piece;
+      this.validMoves = this._calcMoves(piece);
+      this._showSelectionHint(piece);
+      this._render(); return;
+    }
+
+    this.selectedPiece = null; this.validMoves = [];
+    this._render();
+  },
+
+  /* ── MOVE ─────────────────────────── */
+  _doMove(piece, tx, ty, side, live, boardRef) {
+    boardRef = boardRef || this.board;
+    const [ox, oy] = [piece.x, piece.y];
+    boardRef[oy][ox] = null;
+    piece.x = tx; piece.y = ty;
+    boardRef[ty][tx] = piece;
+
+    const caps = this._checkCaptures(piece, side, boardRef, live);
+
+    if (live) {
+      this.selectedPiece = null; this.validMoves = [];
+      if (this._checkVictory(side)) { this._render(); return; }
+      this._endTurn();
+    }
+    return caps;
+  },
+
+  /* ── CAPTURES ─────────────────────── */
+  _checkCaptures(piece, side, boardRef, live) {
+    boardRef = boardRef || this.board;
+    const opp = side === 'white' ? 'black' : 'white';
+    const dirs8 = [[0,-1],[0,1],[1,0],[-1,0],[1,-1],[1,1],[-1,-1],[-1,1]];
+    const toRemove = [];
+    const myPieces = this._getPieces(side, boardRef);
+
+    // Find adjacent enemies
+    dirs8.forEach(([dx,dy]) => {
+      const nx = piece.x+dx, ny = piece.y+dy;
+      if (!this._inB(nx, ny)) return;
+      const t = boardRef[ny][nx];
+      if (!t || t.player !== opp) return;
+
+      // Sum of all friendly neighbors of that enemy
+      let sum = 0;
+      dirs8.forEach(([ddx,ddy]) => {
+        const ex = t.x+ddx, ey = t.y+ddy;
+        if (!this._inB(ex,ey)) return;
+        const ally = boardRef[ey][ex];
+        if (ally && ally.player === side) sum += ally.v;
+      });
+      if (sum === t.v && !toRemove.find(p=>p===t)) toRemove.push(t);
+    });
+
+    toRemove.forEach(p => {
+      boardRef[p.y][p.x] = null;
+      if (live) {
+        const arr = p.player === 'white' ? this.white : this.black;
+        const idx = arr.findIndex(a => a.id === p.id);
+        if (idx >= 0) arr.splice(idx, 1);
+        this.captured[side === 'white' ? 'white' : 'black'].push(p);
+        this.points[side === 'white' ? 'white' : 'black'] += p.v;
+        this._setHint(`⚔️ Zajato: ${this.SHAPES[p.t].sym} ${p.v} (součet sousedů = ${p.v})`, true);
+      }
+    });
+
+    return toRemove.length;
+  },
+
+  _getPieces(side, boardRef) {
+    boardRef = boardRef || this.board;
+    const arr = [];
+    for (let y=0;y<this.ROWS;y++) for(let x=0;x<this.COLS;x++) {
+      const p = boardRef[y][x]; if(p&&p.player===side) arr.push(p);
+    }
+    return arr;
+  },
+
+  /* ── THREAT DETECTION (for hints) ── */
+  _findThreatenedPieces(side, boardRef) {
+    boardRef = boardRef || this.board;
+    const opp = side === 'white' ? 'black' : 'white';
+    const dirs8 = [[0,-1],[0,1],[1,0],[-1,0],[1,-1],[1,1],[-1,-1],[-1,1]];
+    const threatened = [];
+
+    this._getPieces(side, boardRef).forEach(target => {
+      let sum = 0;
+      dirs8.forEach(([dx,dy]) => {
+        const nx=target.x+dx, ny=target.y+dy;
+        if(!this._inB(nx,ny)) return;
+        const p=boardRef[ny][nx]; if(p&&p.player===opp) sum+=p.v;
+      });
+      if (sum === target.v) threatened.push(target);
+    });
+    return threatened;
+  },
+
+  /* ── MOVE GENERATION ──────────────── */
+  _calcMoves(piece, boardRef) {
+    boardRef = boardRef || this.board;
+    const shape = this.SHAPES[piece.t];
+    const moves = [];
+
+    shape.dirs.forEach(([dx, dy]) => {
+      for (let step = 1; step <= shape.mv; step++) {
+        const nx = piece.x + dx*step, ny = piece.y + dy*step;
+        if (!this._inB(nx, ny)) break;
+        if (boardRef[ny][nx]) break;
+        moves.push([nx, ny]);
+      }
+    });
+    return moves;
+  },
+
+  _allMoves(side, boardRef) {
+    boardRef = boardRef || this.board;
+    const result = [];
+    this._getPieces(side, boardRef).forEach(p => {
+      this._calcMoves(p, boardRef).forEach(([tx,ty]) => {
+        result.push({piece:p, tx, ty});
+      });
+    });
+    return result;
+  },
+
+  /* ── WIN CHECK ────────────────────── */
+  _checkVictory(side) {
+    const opp = side === 'white' ? 'black' : 'white';
+    // All opponent triangles captured?
+    const oppPieces = side === 'white' ? this.black : this.white;
+    const tris = oppPieces.filter(p => p.t === 'triangle').length;
+    if (tris === 0) { this._endGame(side, `všechny ${opp === 'white' ? 'bílé' : 'černé'} trojúhelníky zajaty`); return true; }
+    // 100 points?
+    if (this.points.white >= 100) { this._endGame('white', '100 bodů dosaženo'); return true; }
+    if (this.points.black >= 100) { this._endGame('black', '100 bodů dosaženo'); return true; }
+    return false;
+  },
+
+  _endGame(winner, reason) {
+    this.gameActive = false;
+    const win = winner === 'white';
+    document.getElementById('end-title').textContent = win ? 'Vyhráváte!' : 'AI vyhrála';
+    document.getElementById('end-sub').textContent = reason + ` (bílí: ${this.points.white} b., černí: ${this.points.black} b.)`;
+    document.getElementById('end-banner').classList.add('open');
+    this._msg(win ? '🎉 Vítězství!' : '⚔️ AI zvítězila');
+    this._render();
+  },
+
+  /* ── TURN MANAGEMENT ──────────────── */
+  _endTurn() {
+    this.currentTurn = this.currentTurn === 'white' ? 'black' : 'white';
+    this._render();
+    if (this.currentTurn === 'black') {
+      document.getElementById('thinking').classList.add('visible');
+      setTimeout(() => this._aiTurn(), this.difficulty === 3 ? 80 : 50);
+    } else {
+      // Check if player is threatened
+      const threatened = this._findThreatenedPieces('white');
+      if (threatened.length > 0) {
+        this._setHint(`⚠️ Pozor! Vaše figurka <strong>${this.SHAPES[threatened[0].t].sym}${threatened[0].v}</strong> je ohrožena zajmutím!`, true);
+      } else {
+        this._setHint('Váš tah — vyberte figurku.');
+      }
+    }
+  },
+
+  /* ── AI LEVEL 1: GREEDY ADVANCE ───── */
+  _aiL1() {
+    const moves = this._allMoves('black');
+    if (!moves.length) return;
+    moves.sort((a, b) => {
+      let sa = (7 - a.ty) * 2 + (a.piece.t === 'triangle' ? 6 : 0) + Math.random()*3;
+      let sb = (7 - b.ty) * 2 + (b.piece.t === 'triangle' ? 6 : 0) + Math.random()*3;
+      return sb - sa;
+    });
+    const m = moves[0];
+    this._doMove(m.piece, m.tx, m.ty, 'black', true);
+  },
+
+  /* ── AI LEVEL 2: CAPTURE-AWARE ────── */
+  _aiL2() {
+    const moves = this._allMoves('black');
+    if (!moves.length) return;
+
+    let best = null, bestScore = -Infinity;
+    moves.forEach(m => {
+      let score = 0;
+      // Clone state
+      const savedX = m.piece.x, savedY = m.piece.y;
+      const savedBoard = this.board[savedY][savedX];
+      const savedDest  = this.board[m.ty][m.tx];
+      this.board[savedY][savedX] = null;
+      m.piece.x = m.tx; m.piece.y = m.ty;
+      this.board[m.ty][m.tx] = m.piece;
+
+      // How many captures does this move yield?
+      const capCount = this._checkCaptures(m.piece, 'black', this.board, false);
+      score += capCount * 20;
+
+      // Advance toward white (higher y = closer to white start)
+      score += m.ty * 1.5;
+
+      // Protect triangles (don't move away from a defended triangle)
+      if (m.piece.t === 'triangle') score += 5;
+
+      // Avoid moving into capture threat
+      const threatened = this._findThreatenedPieces('black');
+      if (threatened.find(p => p.id === m.piece.id)) score -= 15;
+
+      // Is a white piece now threatened after this move?
+      const wThreats = this._findThreatenedPieces('white');
+      score += wThreats.length * 8;
+
+      // Restore
+      this.board[m.ty][m.tx] = savedDest;
+      this.board[savedY][savedX] = savedBoard;
+      m.piece.x = savedX; m.piece.y = savedY;
+
+      score += Math.random() * 1.5;
+      if (score > bestScore) { bestScore = score; best = m; }
+    });
+
+    if (best) this._doMove(best.piece, best.tx, best.ty, 'black', true);
+  },
+
+  /* ── AI LEVEL 3: LOOKAHEAD ─────────── */
+  _aiL3() {
+    const moves = this._allMoves('black');
+    if (!moves.length) return;
+
+    let best = null, bestScore = -Infinity;
+    moves.forEach(m => {
+      // Simulate black move
+      const state = this._saveState();
+      this._doMove(m.piece, m.tx, m.ty, 'black', false);
+      // Look at best white response
+      const whiteMoves = this._allMoves('white');
+      let worstWhiteOutcome = Infinity;
+      if (!whiteMoves.length) {
+        worstWhiteOutcome = this._evalState();
+      } else {
+        whiteMoves.forEach(wm => {
+          const state2 = this._saveState();
+          this._doMove(wm.piece, wm.tx, wm.ty, 'white', false);
+          const s = this._evalState();
+          this._restoreState(state2);
+          if (s < worstWhiteOutcome) worstWhiteOutcome = s;
+        });
+      }
+      this._restoreState(state);
+      if (worstWhiteOutcome > bestScore) { bestScore = worstWhiteOutcome; best = m; }
+    });
+
+    if (best) this._doMove(best.piece, best.tx, best.ty, 'black', true);
+  },
+
+  /* ── EVAL ─────────────────────────── */
+  _evalState() {
+    let score = 0;
+    // Material: black captured value (good for black)
+    const blackCaps = this.captured.black.reduce((s,p)=>s+p.v,0);
+    const whiteCaps = this.captured.white.reduce((s,p)=>s+p.v,0);
+    score += (blackCaps - whiteCaps) * 2;
+
+    // Triangle safety: black triangles still on board
+    const bTri = this._getPieces('black').filter(p=>p.t==='triangle').length;
+    const wTri = this._getPieces('white').filter(p=>p.t==='triangle').length;
+    score += (bTri - wTri) * 15;
+
+    // Advancement: black pieces advanced toward white
+    this._getPieces('black').forEach(p => score += p.y * 0.5);
+    this._getPieces('white').forEach(p => score -= (7-p.y) * 0.5);
+
+    // Threats
+    score += this._findThreatenedPieces('white').length * 6;
+    score -= this._findThreatenedPieces('black').length * 6;
+
+    return score;
+  },
+
+  /* ── STATE SAVE/RESTORE ───────────── */
+  _saveState() {
+    return {
+      board: this.board.map(row => row.map(c => c ? {...c} : null)),
+      white: this.white.map(p=>({...p})),
+      black: this.black.map(p=>({...p})),
+      points: {...this.points},
+      captured: {white:[...this.captured.white], black:[...this.captured.black]}
+    };
+  },
+  _restoreState(s) {
+    this.board = s.board;
+    this.white = s.white;
+    this.black = s.black;
+    this.points = s.points;
+    this.captured = s.captured;
+    // Relink board pieces to array entries
+    for(let y=0;y<this.ROWS;y++) for(let x=0;x<this.COLS;x++) {
+      const p = this.board[y][x];
+      if (!p) continue;
+      const arr = p.player==='white' ? this.white : this.black;
+      const real = arr.find(a=>a.id===p.id);
+      if (real) this.board[y][x] = real;
+    }
+  },
+
+  /* ── AI DISPATCHER ────────────────── */
+  _aiTurn() {
+    if (!this.gameActive || this.currentTurn !== 'black') return;
+    document.getElementById('thinking').classList.remove('visible');
+    if (this.difficulty === 1) this._aiL1();
+    else if (this.difficulty === 2) this._aiL2();
+    else this._aiL3();
+    if (this.gameActive) this._msg('Váš tah');
+  },
+
+  /* ── HELPERS ──────────────────────── */
+  _inB(x, y) { return x>=0 && x<this.COLS && y>=0 && y<this.ROWS; },
+  _msg(m)  { const el=document.getElementById('s-msg'); if(el) el.textContent=m; },
+  _setHint(m, highlight) {
+    const el = document.getElementById('hint-bar');
+    if (!el) return;
+    el.innerHTML = m;
+    el.classList.toggle('highlight', !!highlight);
+  },
+
+  _showSelectionHint(piece) {
+    const shape = this.SHAPES[piece.t];
+    const moves = this._calcMoves(piece);
+    const dirs8 = [[0,-1],[0,1],[1,0],[-1,0],[1,-1],[1,1],[-1,-1],[-1,1]];
+    // Find enemies this piece might help capture
+    const opp = piece.player === 'white' ? 'black' : 'white';
+    const cappable = [];
+    this._getPieces(opp).forEach(enemy => {
+      let sum = piece.v;
+      dirs8.forEach(([dx,dy]) => {
+        const nx=enemy.x+dx, ny=enemy.y+dy;
+        if(!this._inB(nx,ny)) return;
+        const ally=this.board[ny][nx];
+        if(ally && ally.player===piece.player && ally!==piece) sum+=ally.v;
+      });
+      // Could we be adjacent to this enemy from any valid move?
+      moves.forEach(([mx,my]) => {
+        const d = Math.max(Math.abs(mx-enemy.x), Math.abs(my-enemy.y));
+        if (d===1) cappable.push(enemy);
+      });
+    });
+
+    let hint = `<strong>${shape.sym}</strong> hodnota <strong>${piece.v}</strong> — pohyb: ${shape.mv} ${shape.mv===1?'krok':'kroky'} (${piece.t === 'circle' ? 'ortogonálně' : piece.t === 'triangle' ? 'diagonálně' : 'libovolně'}). `;
+    hint += `${moves.length} možný${moves.length===1?'':'ch'} tah${moves.length===1?'':'ů'}.`;
+    if (cappable.length) hint += ` ⚔️ Pohyb může přispět k zajmutí soupeřovy figurky!`;
+    this._setHint(hint, !!cappable.length);
+  },
+
+  /* ── RENDER ───────────────────────── */
+  _render() {
+    const boardEl = document.getElementById('board');
+    if (!boardEl) return;
+
+    const W = window.innerWidth;
+    const cellSize = Math.floor(Math.min((W - 40) / this.COLS, 66));
+    const pieceSize = Math.round(cellSize * 0.72);
+    const symSize = Math.round(pieceSize * 0.42);
+    const valSize = Math.round(pieceSize * 0.32);
+
+    // Threatened pieces for visual feedback
+    const wThreats = this.gameActive ? this._findThreatenedPieces('white') : [];
+
+    boardEl.style.width = (cellSize * this.COLS + (this.COLS+1)*2) + 'px';
+
+    let h = '';
+    for (let y = 0; y < this.ROWS; y++) {
+      for (let x = 0; x < this.COLS; x++) {
+        const piece = this.board[y][x];
+        const isSel = this.selectedPiece && this.selectedPiece === piece;
+        const isVT  = this.validMoves.some(([mx,my]) => mx===x && my===y);
+        const isThreat = piece && wThreats.find(p=>p===piece);
+
+        let bg = (x+y)%2===0 ? 'var(--c-light)' : 'var(--c-dark)';
+        if (isSel) bg = 'rgba(200,168,75,0.3)';
+        else if (isVT) bg = 'rgba(80,200,120,0.25)';
+
+        h += `<div class="cell${isThreat?' capture-threat':''}" style="background:${bg};width:${cellSize}px;height:${cellSize}px;" onclick="R.onCell(${x},${y})">`;
+
+        if (isVT && !piece) {
+          h += `<div style="width:8px;height:8px;border-radius:50%;background:rgba(80,200,120,0.6);"></div>`;
+        }
+
+        if (piece) {
+          const shape = this.SHAPES[piece.t];
+          const isW = piece.player === 'white';
+          const selCls = isSel ? ' selected' : '';
+          h += `<div class="piece ${piece.t}${selCls} ${isW?'white':'black'}" style="width:${pieceSize}px;height:${pieceSize}px;">`;
+          h += `<span class="sym" style="font-size:${symSize}px;">${shape.sym}</span>`;
+          h += `<span class="val" style="font-size:${valSize}px;">${piece.v}</span>`;
+          h += `</div>`;
+        }
+
+        h += '</div>';
+      }
+    }
+    boardEl.innerHTML = h;
+
+    // Score
+    document.getElementById('s-white').textContent = `⬜ Vy: ${this.points.white} b.`;
+    document.getElementById('s-black').textContent = `⬛ AI: ${this.points.black} b.`;
+
+    // Captured panel
+    let capH = '';
+    if (this.captured.white.length) {
+      capH += `<div class="cap-group"><span style="color:var(--ink-fnt);margin-right:3px;">Zajato vy:</span>`;
+      this.captured.white.forEach(p => capH += `<span class="cap-chip">${this.SHAPES[p.t].sym}${p.v}</span>`);
+      capH += `</div>`;
+    }
+    if (this.captured.black.length) {
+      capH += `<div class="cap-group"><span style="color:var(--ink-fnt);margin-right:3px;">Zajato AI:</span>`;
+      this.captured.black.forEach(p => capH += `<span class="cap-chip">${this.SHAPES[p.t].sym}${p.v}</span>`);
+      capH += `</div>`;
+    }
+    document.getElementById('cap-panel').innerHTML = capH;
+  }
+};
+
+window.addEventListener('load', () => R.newGame(1));
+window.addEventListener('resize', () => R._render());
+</script>
+</body>
+</html>
