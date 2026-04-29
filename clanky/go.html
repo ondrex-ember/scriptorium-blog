@@ -1168,9 +1168,12 @@
                     if (move) {
                         attemptMove(move.r, move.c);
                     } else {
+                        // AI pasuje
                         consecutivePasses++;
-                        currentPlayer = playerColor;
+                        lastMove = null;
+                        currentPlayer = playerColor; // vrátit tah hráči
                         updateUI();
+                        drawBoard();
                         startTimer();
                         if (consecutivePasses >= 2) { enterMarkingPhase(); }
                     }
@@ -1178,8 +1181,10 @@
                     console.error('AI error:', e);
                     isAiThinking = false;
                     cpuThinking.style.visibility = 'hidden';
-                    currentPlayer = playerColor;
+                    currentPlayer = playerColor; // vrátit tah hráči při chybě
+                    lastMove = null;
                     updateUI();
+                    drawBoard();
                 }
             }, 0);
         }
@@ -1367,7 +1372,7 @@
             if (selCpu.value !== 'cpu') return;
             const aiCol = playerColor === 1 ? 2 : 1;
             if (currentPlayer === aiCol) playAI();
-        }, 300);
+        }, 500);
 
     </script>
 </body>
