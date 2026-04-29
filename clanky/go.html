@@ -1284,15 +1284,6 @@
             if (selCpu.value === 'cpu' && !gameStarted && !gameOver) {
                 showColorPicker();
 
-        // ── AI POLLER ─────────────────────────────────────────────────────
-        // Nezávislý interval — každých 250ms zkontroluje jestli má hrát AI.
-        // Robustní vůči jakémukoliv timing problému v event chainu.
-        setInterval(() => {
-            if (gameOver || markingPhase || isAiThinking) return;
-            if (selCpu.value !== 'cpu') return;
-            const aiCol = playerColor === 1 ? 2 : 1;
-            if (currentPlayer === aiCol) playAI();
-        }, 250);
             } else {
                 if (chkTimer.checked && !gameOver) startTimer();
                 else clearInterval(timerInterval);
@@ -1368,15 +1359,15 @@
         drawBoard();
         showColorPicker();
 
-        // ── AI POLLER ─────────────────────────────────────────────────────
-        // Nezávislý interval — každých 250ms zkontroluje jestli má hrát AI.
-        // Robustní vůči jakémukoliv timing problému v event chainu.
+
+
+        // ── AI POLLER — jeden interval, spustí AI kdykoli je na tahu ──────
         setInterval(() => {
             if (gameOver || markingPhase || isAiThinking) return;
             if (selCpu.value !== 'cpu') return;
             const aiCol = playerColor === 1 ? 2 : 1;
             if (currentPlayer === aiCol) playAI();
-        }, 250);
+        }, 300);
 
     </script>
 </body>
