@@ -1230,8 +1230,10 @@
             if (gameOver || isAiThinking || (selCpu.value === 'cpu' && currentPlayer === _aiCol)) return;
             // Počítej souřadnice přímo z kliknutí (nezávisle na hoverPos)
             const clickRect = canvas.getBoundingClientRect();
-            const clickCol = Math.floor((event.clientX - clickRect.left - MARGIN + GRID_SIZE / 2) / GRID_SIZE);
-            const clickRow = Math.floor((event.clientY - clickRect.top - MARGIN + GRID_SIZE / 2) / GRID_SIZE);
+            const clickScaleX = canvas.width / clickRect.width;
+            const clickScaleY = canvas.height / clickRect.height;
+            const clickCol = Math.floor(((event.clientX - clickRect.left) * clickScaleX - MARGIN + GRID_SIZE / 2) / GRID_SIZE);
+            const clickRow = Math.floor(((event.clientY - clickRect.top) * clickScaleY - MARGIN + GRID_SIZE / 2) / GRID_SIZE);
             if (clickRow >= 0 && clickRow < BOARD_SIZE && clickCol >= 0 && clickCol < BOARD_SIZE) {
                 attemptMove(clickRow, clickCol); // playAI se zavolá automaticky z attemptMove
             }
