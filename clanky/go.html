@@ -404,6 +404,27 @@
     </div>
 
     <script>
+        // ── DEBUG LOGGER — musí být první, volá se odjinud ─────────────────
+        let debugEnabled = false;
+        let debugBuffer = [];
+        function dbg(msg, color) {
+            if (!debugEnabled) return;
+            const now = new Date();
+            const ts = `${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}.${now.getMilliseconds().toString().padStart(3,'0')}`;
+            debugBuffer.push(`<span style="color:#888">[${ts}]</span> <span style="color:${color||'#0f0'}">${msg}</span>`);
+            if (debugBuffer.length > 80) debugBuffer.shift();
+            const el = document.getElementById('debugLog');
+            if (el) { el.innerHTML = debugBuffer.join('<br>'); el.parentElement.scrollTop = 9999; }
+        }
+        document.addEventListener('keydown', e => {
+            if (e.key === 'd' || e.key === 'D') {
+                debugEnabled = !debugEnabled;
+                const ov = document.getElementById('debugOverlay');
+                if (ov) ov.style.display = debugEnabled ? 'block' : 'none';
+                dbg('Debug ON ✓', '#ff0');
+            }
+        });
+
         const canvas = document.getElementById('goBoard');
         const ctx = canvas.getContext('2d');
         const statusDiv = document.getElementById('status');
@@ -1122,6 +1143,7 @@
                 else whitePrisoners += capturedEnemies;
             }
 
+            dbg(`Tah[${row},${col}] ${currentPlayer===playerColor?'HUMAN':'AI'}`,'#ff0');
             playStoneSound();
             turnCount++;
             // midgame snapshot at turn 50 for comeback achievement
@@ -1166,10 +1188,22 @@
                     isAiThinking = false;
                     cpuThinking.style.visibility = 'hidden';
                     if (move) {
-                        attemptMove(move.r, move.c);
+                        dbg(`✓ AI → [${move.r},${move.c}]`,'#0f0');
+                        const ok = attemptMove(move.r, move.c);
+                        if (!ok) {
+                            dbg(`AI tah [${move.r},${move.c}] odmítnut → vynucený PAS`,'#f00');
+                            consecutivePasses++;
+                            lastMove = null;
+                            currentPlayer = playerColor;
+                            updateUI();
+                            drawBoard();
+                            startTimer();
+                            if (consecutivePasses >= 2) { enterMarkingPhase(); }
+                        }
                     } else {
                         // AI pasuje
                         consecutivePasses++;
+                        dbg(`AI PASUJE pasy=${consecutivePasses}`,'#f80');
                         lastMove = null;
                         currentPlayer = playerColor; // vrátit tah hráči
                         updateUI();
@@ -1179,6 +1213,7 @@
                     }
                 } catch(e) {
                     console.error('AI error:', e);
+                    dbg(`AI EXC: ${e.message}`,'#f00');
                     isAiThinking = false;
                     cpuThinking.style.visibility = 'hidden';
                     currentPlayer = playerColor; // vrátit tah hráči při chybě
@@ -1371,9 +1406,19 @@
             if (gameOver || markingPhase || isAiThinking) return;
             if (selCpu.value !== 'cpu') return;
             const aiCol = playerColor === 1 ? 2 : 1;
-            if (currentPlayer === aiCol) playAI();
+            if (currentPlayer === aiCol) { dbg(`POLLER→AI cp=${currentPlayer}`,'#f0f'); playAI(); }
         }, 500);
 
     </script>
+
+    <div id="debugOverlay" style="display:none;position:fixed;bottom:0;left:0;right:0;
+        background:rgba(0,0,0,.9);color:#0f0;font:11px/1.5 monospace;
+        padding:6px 10px;z-index:9999;max-height:160px;overflow-y:auto;
+        border-top:2px solid #0f0;pointer-events:none;">
+        <span style="color:#ff0;font-weight:bold;">🔍 DEBUG</span>
+        <span style="color:#888;float:right;">D = toggle</span>
+        <div id="debugLog"></div>
+    </div>
+
 </body>
 </html>
