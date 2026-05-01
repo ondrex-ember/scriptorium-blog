@@ -64,11 +64,18 @@ body{
   display:inline-flex;align-items:center;gap:2px;padding:1px 5px;
   font-size:10px;font-weight:700;
   background:rgba(139,0,0,.08);border:1px solid rgba(139,0,0,.2);
-  color:var(--paper);
+  color:var(--paper);transition:background .2s,border-color .2s;
 }
 .pill.warn{background:rgba(200,0,0,.15);color:#ff9999;border-color:rgba(200,0,0,.3);}
 .pill.ok{background:rgba(42,90,42,.2);color:#88cc88;border-color:rgba(42,90,42,.3);}
 .pill.gold{background:rgba(201,149,43,.12);color:var(--gold2);border-color:rgba(201,149,43,.25);}
+/* Flash on change */
+@keyframes pill-gain{0%{background:rgba(42,140,42,.5);box-shadow:0 0 6px rgba(42,200,42,.4);}100%{background:rgba(139,0,0,.08);box-shadow:none;}}
+@keyframes pill-lose{0%{background:rgba(180,0,0,.5);box-shadow:0 0 6px rgba(220,0,0,.4);}100%{background:rgba(139,0,0,.08);box-shadow:none;}}
+@keyframes pill-critical{0%,100%{box-shadow:0 0 0px rgba(220,0,0,0);}50%{box-shadow:0 0 7px rgba(220,0,0,.7);border-color:rgba(220,0,0,.6);}}
+.pill-flash-gain{animation:pill-gain .7s ease-out forwards;}
+.pill-flash-lose{animation:pill-lose .7s ease-out forwards;}
+.pill-critical{animation:pill-critical 1.4s ease-in-out infinite;}
 /* Bars */
 .bar-track{width:100%;height:6px;background:rgba(255,255,255,.05);overflow:hidden;}
 .bar-fill{height:100%;transition:width .3s;}
@@ -426,6 +433,30 @@ body{
 .stars{color:var(--gold);letter-spacing:-1px;font-size:11px;}
 /* Type wear bricks */
 .type-brick{flex:1;height:8px;border:1px solid #111;transition:background .3s;}
+/* ── FOOTER ── */
+.game-footer{
+  flex-shrink:0;padding:5px 14px;border-top:1px solid var(--border2);
+  background:var(--card);display:flex;align-items:center;justify-content:space-between;
+  font-size:9px;color:#333;letter-spacing:1.5px;position:relative;overflow:hidden;
+}
+.game-footer::before{
+  content:'';position:absolute;left:0;right:0;top:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--red),var(--gold),var(--red),transparent);
+  animation:footer-glow 4s ease-in-out infinite;
+}
+@keyframes footer-glow{0%,100%{opacity:.25;}50%{opacity:.9;}}
+/* ── ABOUT MODAL ── */
+.about-inner{max-width:400px;}
+.about-inner h4{color:var(--gold);font-size:9px;letter-spacing:2px;text-transform:uppercase;
+  margin:14px 0 4px;border-bottom:1px solid var(--border);padding-bottom:3px;}
+.about-inner p{font-size:11px;line-height:1.8;color:#aaa;margin-bottom:6px;}
+.about-inner .sigil{text-align:center;font-size:30px;margin-bottom:8px;}
+.about-inner .latin{text-align:center;font-style:italic;color:var(--red);
+  font-size:10px;letter-spacing:1.5px;margin-bottom:14px;}
+/* ── AUDIO INDICATOR ── */
+.audio-dot{width:6px;height:6px;border-radius:50%;background:#2a2a2a;
+  display:inline-block;margin-left:5px;transition:background .3s;}
+.audio-dot.on{background:#44aa44;box-shadow:0 0 5px #44aa44;}
 </style>
 </head>
 <body>
@@ -1237,7 +1268,7 @@ function initState(){
     help: false,
 
     // Economy
-    gold: 15,
+    gold: 25,
     prestige: 0,
     reputation: 5,    // 0-10 track, unlocks order types
 
@@ -1729,6 +1760,10 @@ function fulfillOrder(instanceId){
     G.gold += remaining;
     G.prestige += prestige;
     G.reputation = clamp(G.reputation + (quality>=4?1:0), 0, 10);
+    // Force gold pill flash by clearing prev value
+    if(typeof _prevPillVals!=="undefined") { delete _prevPillVals["gold"]; delete _prevPillVals["prestige"]; }
+    // Audio — print cycle + completion sounds
+    if(typeof AUDIO!=="undefined"){ AUDIO.printCycle(); setTimeout(()=>AUDIO.play('bellComplete'),1600); setTimeout(()=>AUDIO.play('coinClink'),1800); }
   }
   G.completedOrders++;
   G.orderIncome += fullReward;
@@ -1892,8 +1927,9 @@ function printRun(formatId){
     }
   }
 
-  // Output: fmt.outputMult books of this quality
-  const output=fmt.outputMult;
+  // Output: fmt.outputMult books + press level bonus
+  const pressOutputBonus=(G.pressLevel>=3?2:G.pressLevel>=2?1:0);
+  const output=fmt.outputMult+pressOutputBonus;
   const totalValue=fmt.baseValue*output;
   // Corrector lv3: +2 prestige on luxury
   const corrctPrestigeBonus=(corrctLv>=3&&fmt.id==="luxury")?2:0;
@@ -2290,7 +2326,9 @@ function makeFrisket(){
 function buyResource(key, qty, cost){
   if(G.gold < cost){ G.log.push(`__EVT__⛔ Not enough gold`); render(); return;}
   G.gold -= cost; G.res[key] = (G.res[key]||0)+qty;
-  G.log.push(`__ECO__🛒 ${qty}× ${key} bought (-${cost}g)`); render();
+  G.log.push(`__ECO__🛒 ${qty}× ${key} bought (-${cost}g)`);
+  if(typeof AUDIO!=="undefined") AUDIO.play('coinClink');
+  render();
 }
 
 // ── MARKET PRICE ENGINE ──────────────────────────────────────
@@ -2372,6 +2410,75 @@ function genMarketBuyers(){
     });
   }
   return buyers;
+}
+
+// ── PRESS UPGRADE SYSTEM ─────────────────────────────────────
+const PRESS_UPGRADES = {
+  2: {
+    cost_gold: 15,
+    cost_res: {lead:2, typemetal:1},
+    req_runin: 30,
+    en: "Iron-fitted screw press",
+    cs: "Kovem kovaný šroubový lis",
+    bonus_en: "+1 output per run · wear +5/round instead of +7",
+    bonus_cs: "+1 výstup za běh · opotřebení +5 místo +7",
+    outputBonus: 1,
+  },
+  3: {
+    cost_gold: 30,
+    cost_res: {typemetal:3},
+    req_runin: 70,
+    en: "Steel-geared press",
+    cs: "Ocelový ozubený lis",
+    bonus_en: "+2 total output per run · wear +3/round · unlock Duodecimo",
+    bonus_cs: "+2 celkový výstup za běh · opotřebení +3 · odemkne Duodecimo",
+    outputBonus: 2,
+  },
+};
+
+function upgradePress(){
+  const L=G.lang;
+  const curLv=G.pressLevel||1;
+  if(curLv>=3){
+    showToast(L==="en"?"Press Maxed":"Lis na max",
+      [L==="en"?"Your press is already at peak capability.":"Lis je již na maximální úrovni."]);
+    return;
+  }
+  const upg=PRESS_UPGRADES[curLv+1];
+  // Check run-in requirement
+  if((G.pressRunIn||0)<upg.req_runin){
+    showToast(L==="en"?"Not Ready":"Není připraven",
+      [L==="en"?`Press Run-In must be ≥${upg.req_runin}% (currently ${G.pressRunIn||0}%)`:
+       `Obeznámenost musí být ≥${upg.req_runin}% (nyní ${G.pressRunIn||0}%)`]);
+    return;
+  }
+  // Check gold
+  if(G.gold<upg.cost_gold){
+    showToast(L==="en"?"Not enough gold":"Nedostatek zlata",
+      [`${L==="en"?"Need":"Potřeba"} ${upg.cost_gold}g`]);
+    return;
+  }
+  // Check resources
+  for(const [res,qty] of Object.entries(upg.cost_res)){
+    if((G.res[res]||0)<qty){
+      showToast(L==="en"?"Missing materials":"Chybí materiál",
+        [`${L==="en"?"Need":"Potřeba"} ${qty}× ${res}`]);
+      return;
+    }
+  }
+  // All good — apply upgrade
+  G.gold -= upg.cost_gold;
+  for(const [res,qty] of Object.entries(upg.cost_res)){
+    G.res[res] = Math.max(0,(G.res[res]||0)-qty);
+  }
+  G.pressLevel = curLv+1;
+  G.press_wear = 0; // fresh press resets wear
+  G.log.push(`__PROD__⚙️ ${L==="en"?`Press upgraded to Lv${curLv+1}: ${upg.en}`:`Lis upgradován na Lv${curLv+1}: ${upg.cs}`} (-${upg.cost_gold}g)`);
+  if(typeof AUDIO!=="undefined"){ AUDIO.play('screwCrank'); setTimeout(()=>AUDIO.play('platten'),400); }
+  showToast(L==="en"?`Press Lv${curLv+1}`:`Lis Lv${curLv+1}`,
+    [L==="en"?upg.en:upg.cs, L==="en"?upg.bonus_en:upg.bonus_cs,
+     L==="en"?"Press wear reset to 0%":"Opotřebení lisu resetováno na 0%"]);
+  render();
 }
 
 // ── ADVANCE ROUND ────────────────────────────────────────────
@@ -2460,7 +2567,8 @@ function advanceRound(){
   const hasUcitel = p.workers.some(w=>w.traits?.includes("ucitel")&&w.task!=="idle");
   const wk = p.workers.map(w=>{
     const working=w.task!=="idle";
-    const fatGain = working ? (w.traits?.includes("vytrvalec")?0.04:0.08) : -0.12;
+    // Fatigue: working = +0.08/round (vytrvalec: +0.04), resting = −0.5/round (full recovery in ≤2 rounds)
+    const fatGain = working ? (w.traits?.includes("vytrvalec")?0.04:0.08) : -0.5;
     const newFat = clamp((w.fat||0)+fatGain, 0, 1);
     const xpGain = working ? (Math.round((w.lv*2+2)*(hasUcitel?1.25:1))) : 0;
     const newXp = (w.xp||0)+xpGain;
@@ -2518,7 +2626,9 @@ function advanceRound(){
     // Printer lv2: wear +5 instead of +7; lv5: no wear
     const bestPrinter=p.workers.filter(w=>w.prof==="printer"&&w.task!=="idle").sort((a,b)=>b.lv-a.lv)[0];
     const printerLv=bestPrinter?bestPrinter.lv:0;
-    const wearAdd=printerLv>=5?0:printerLv>=2?5:7;
+    // Press Lv3: +3/round, Lv2: +5/round, Lv1: +7/round (better press = less wear per run)
+    const pressLvWear=p.pressLevel>=3?3:p.pressLevel>=2?5:7;
+    const wearAdd=printerLv>=5?0:printerLv>=2?Math.max(3,pressLvWear-2):pressLvWear;
     G.press_wear = Math.min(100, (G.press_wear||0) + wearAdd);
     if(G.press_wear>=80 && G.press_wear<90){
       log.push(`__EVT__⚠️ ${L==="en"?"Press screw getting stiff — lubricate soon ("+G.press_wear+"%)":"Šroub lisu tuhnoucí — promazej brzy ("+G.press_wear+"%)"}`);
@@ -2664,10 +2774,29 @@ function h(tag,attrs,...kids){
   kids.flat(9).forEach(c=>{if(c!=null)el.append(typeof c==="string"||typeof c==="number"?document.createTextNode(c):c);});
   return el;
 }
+// Track previous pill values for flash detection
+const _prevPillVals = {};
+
 function pill(emoji,val,cls){return h("span",{class:"pill"+(cls?" "+cls:"")},emoji," ",h("strong",null,val));}
-function pillTip(emoji,val,cls,tipHtml){
+function pillTip(emoji,val,cls,tipHtml,flashKey){
   const w=h("span",{class:"pill-tip"});
-  w.append(h("span",{class:"pill"+(cls?" "+cls:"")},emoji," ",h("strong",null,val)));
+  // Determine flash class from value change
+  let extraCls = cls||"";
+  if(flashKey!==undefined){
+    const prev=_prevPillVals[flashKey];
+    const cur=typeof val==="string"?parseFloat(val)||0:val;
+    if(prev!==undefined && cur!==prev){
+      extraCls += (cur>prev?" pill-flash-gain":" pill-flash-lose");
+    }
+    _prevPillVals[flashKey]=cur;
+  }
+  // Critical pulse — low resources
+  if(flashKey==="paper"&&(typeof val==="number"?val:parseFloat(val)||0)<2) extraCls+=" pill-critical";
+  if(flashKey==="ink"  &&(typeof val==="number"?val:parseFloat(val)||0)<1) extraCls+=" pill-critical";
+  if(flashKey==="gold" &&(typeof val==="number"?val:parseFloat(val)||0)<3) extraCls+=" pill-critical";
+  if(flashKey==="letters"&&(typeof val==="number"?val:parseFloat(val)||0)<2) extraCls+=" pill-critical";
+  const pillEl=h("span",{class:"pill"+(extraCls?" "+extraCls.trim():"")},emoji," ",h("strong",null,val));
+  w.append(pillEl);
   if(tipHtml){const t=document.createElement("span");t.className="ptip";t.innerHTML=tipHtml;w.append(t);}
   return w;
 }
@@ -2882,14 +3011,14 @@ function render(){
   ecoRow.append(
     h("span",{class:"res-cat-label"},L==="en"?"Economy":"Ekonomika"),
     pillTip("💰",p.gold+"g", p.gold<5?"warn":"",
-      L==="en"?"Gold florins — pay wages, buy materials":"Zlaté florény — mzdy a nákupy"),
+      L==="en"?"Gold florins — pay wages, buy materials":"Zlaté florény — mzdy a nákupy","gold"),
     h("span",{class:"pill-sep"},"|"),
     pillTip("★",p.prestige,"gold",
-      L==="en"?"Prestige — reputation among patrons":"Prestiž — pověst u mecenášů"),
+      L==="en"?"Prestige — reputation among patrons":"Prestiž — pověst u mecenášů","prestige"),
     h("span",{class:"pill-sep"},"|"),
     pillTip("🏅",p.reputation+"/10","",
-      `${L==="en"?"Reputation — unlocks better orders":"Reputace — odemyká lepší zakázky"}<br>${p.reputation<4?(L==="en"?"&lt;4: No State/Luxury orders":"&lt;4: Žádné Státní/Luxusní"):p.reputation<7?(L==="en"?"&lt;7: No Luxury orders":"&lt;7: Žádné Luxusní"):(L==="en"?"All orders unlocked":"Vše odemčeno")}`),
-    p.debt>0?pillTip("💸","Debt "+p.debt+"g","warn",L==="en"?"Unpaid wages owed — loyalty drops":"Dluh na mzdách — loajalita klesá"):"");
+      `${L==="en"?"Reputation — unlocks better orders":"Reputace — odemyká lepší zakázky"}<br>${p.reputation<4?(L==="en"?"&lt;4: No State/Luxury orders":"&lt;4: Žádné Státní/Luxusní"):p.reputation<7?(L==="en"?"&lt;7: No Luxury orders":"&lt;7: Žádné Luxusní"):(L==="en"?"All orders unlocked":"Vše odemčeno")}`,"reputation"),
+    p.debt>0?pillTip("💸","Debt "+p.debt+"g","warn",L==="en"?"Unpaid wages owed — loyalty drops":"Dluh na mzdách — loajalita klesá","debt"):"");
   resBar.append(ecoRow);
 
   // Row 2: Raw materials
@@ -2897,21 +3026,21 @@ function render(){
   rawRow.append(
     h("span",{class:"res-cat-label"},L==="en"?"Raw":"Surové"),
     pillTip("🧻",G.res.rags, G.res.rags<2?"warn":"",
-      L==="en"?"Rags — make paper (4→1)":"Hadry — výroba papíru (4→1)"),
+      L==="en"?"Rags — make paper (4→1)":"Hadry — výroba papíru (4→1)","rags"),
     pillTip("🔩",G.res.lead, G.res.lead<2?"warn":"",
-      L==="en"?"Lead — type metal alloy (2 Pb+1 Sn→1 typemetal)":"Olovo — liteřina (2 Pb+1 Sn→1)"),
+      L==="en"?"Lead — type metal alloy (2 Pb+1 Sn→1 typemetal)":"Olovo — liteřina (2 Pb+1 Sn→1)","lead"),
     pillTip("🥈",G.res.tin||0, (G.res.tin||0)<1?"warn":"",
-      L==="en"?"Tin — type metal alloy (20% of mix)":"Cín — liteřina (20% slitiny)"),
+      L==="en"?"Tin — type metal alloy (20% of mix)":"Cín — liteřina (20% slitiny)","tin"),
     pillTip("⬜",G.res.antimony||0, "ok",
-      L==="en"?"Antimony — hardens type metal (optional, +quality)":"Antimon — tvrdí liteřinu (volitelné, +kvalita)"),
+      L==="en"?"Antimony — hardens type metal (optional, +quality)":"Antimon — tvrdí liteřinu (volitelné, +kvalita)","antimony"),
     pillTip("🖤",G.res.soot||0, (G.res.soot||0)<1?"warn":"",
-      L==="en"?"Soot (lampblack) — ink base (1 soot+1 oil→3 ink)":"Saze (lampblack) — základ inkoustu"),
+      L==="en"?"Soot (lampblack) — ink base (1 soot+1 oil→3 ink)":"Saze (lampblack) — základ inkoustu","soot"),
     pillTip("🫙",G.res.linseed_oil||0, (G.res.linseed_oil||0)<1?"warn":"",
-      L==="en"?"Linseed oil — ink varnish AND press lubricant":"Lněný olej — fermeže pro inkoust + mazivo lisu"),
+      L==="en"?"Linseed oil — ink varnish AND press lubricant":"Lněný olej — fermeže pro inkoust + mazivo lisu","linseed_oil"),
     pillTip("📜",G.res.vellum||0, (G.res.vellum||0)<1?"warn":"",
-      L==="en"?"Vellum/parchment — required for Luxury & State orders":"Pergamen — nutný pro Luxusní a Státní zakázky"),
+      L==="en"?"Vellum/parchment — required for Luxury & State orders":"Pergamen — nutný pro Luxusní a Státní zakázky","vellum"),
     (G.res.prepared_vellum||0)>0?pillTip("📜✨",G.res.prepared_vellum||0,"gold",
-      L==="en"?"Prepared vellum — ready for illumination":"Připravený pergamen — připraven k iluminaci"):"");
+      L==="en"?"Prepared vellum — ready for illumination":"Připravený pergamen — připraven k iluminaci","prepared_vellum"):"");
   resBar.append(rawRow);
 
   // Row 3: Processed
@@ -2919,15 +3048,15 @@ function render(){
   procRow.append(
     h("span",{class:"res-cat-label"},L==="en"?"Processed":"Zprac."),
     pillTip("📄",G.res.paper, G.res.paper<3?"warn":"",
-      L==="en"?"Paper — main printing material, needed for all orders":"Papír — hlavní tiskový materiál, nutný pro všechny zakázky"),
+      L==="en"?"Paper — main printing material, needed for all orders":"Papír — hlavní tiskový materiál, nutný pro všechny zakázky","paper"),
     pillTip("⬛",G.res.ink, G.res.ink<2?"warn":"",
-      L==="en"?"Printing ink — consumed per order":"Tiskařský inkoust — spotřeba při zakázce"),
+      L==="en"?"Printing ink — consumed per order":"Tiskařský inkoust — spotřeba při zakázce","ink"),
     pillTip("🔠",G.letters, G.letters<3?"warn":"",
-      `${L==="en"?"Letter sets — worn by printing":"Sady liter — opotřebovávají se tiskem"}<br>${L==="en"?"Wear":"Opotřebení"}: ${G.letterWear}%`),
+      `${L==="en"?"Letter sets — worn by printing":"Sady liter — opotřebovávají se tiskem"}<br>${L==="en"?"Wear":"Opotřebení"}: ${G.letterWear}%`,"letters"),
     pillTip("⚙️",G.res.typemetal||0,"",
-      L==="en"?"Type metal — cast into new letter sets (2→+2)":"Liteřina — odlití do liter (2→+2)"),
+      L==="en"?"Type metal — cast into new letter sets (2→+2)":"Liteřina — odlití do liter (2→+2)","typemetal"),
     (G.italic_type||0)>0 ? pillTip("🖊️",G.italic_type||0,"gold",
-      L==="en"?"Italic type — required for Octavo (8°) format":"Kurzívní litery — nutné pro formát Oktáv (8°)") : "");
+      L==="en"?"Italic type — required for Octavo (8°) format":"Kurzívní litery — nutné pro formát Oktáv (8°)","italic_type") : "");
   // Format row
   const fmtRow=h("div",{class:"res-row"});
   const currentFmt=BOOK_FORMATS[G.currentFormat||"folio"];
@@ -2963,12 +3092,13 @@ function render(){
 
   // ── Tabs ──
   const tabs=[
-    {id:"workshop", icon:"📋", en:"Workshop",   cs:"Dílna"},
-    {id:"orders",   icon:"📜", en:"Orders",     cs:"Zakázky"},
-    {id:"produce",  icon:"⚙️", en:"Produce",    cs:"Výroba"},
-    {id:"market",   icon:"🛒", en:"Market",     cs:"Trh"},
-    {id:"party",    icon:"👥", en:"Workers",    cs:"Parta"},
-    {id:"log",      icon:"📖", en:"Chronicle",  cs:"Kronika"},
+    {id:"workshop", icon:"📋", en:"Workshop",    cs:"Dílna"},
+    {id:"orders",   icon:"📜", en:"Orders",      cs:"Zakázky"},
+    {id:"produce",  icon:"⚙️", en:"Produce",     cs:"Výroba"},
+    {id:"market",   icon:"🛒", en:"Market",      cs:"Trh"},
+    {id:"party",    icon:"👥", en:"Workers",     cs:"Parta"},
+    {id:"tabularium",icon:"💰",en:"Tabularium",  cs:"Tabulárium"},
+    {id:"log",      icon:"📖", en:"Chronicle",   cs:"Kronika"},
     {id:"settings", icon:"⚙",  en:"Settings",   cs:"Nastavení"},
   ];
   const tabRow=h("div",{class:"tabs"});
@@ -3057,7 +3187,7 @@ function render(){
           done: p.workers.some(w=>w.task==="print"||w.task==="compose"),
           icon:"👤",
           en:"Worker assigned to press",    cs:"Dělník přiřazen k lisu",
-          hint_en:"Go to Produce tab → assign Compositor or Printer to a task",
+          hint_en:"Go to Produce tab → assign Compositor or Pressman to a task",
           hint_cs:"Jdi na Produce → přiřaď Sazeče nebo Tiskaře k úkolu",
         },
         {
@@ -3175,7 +3305,42 @@ function render(){
         title:L==="en"?"Engraver + 1 paper → frisket frame (−50% imposition risk, +quality)":"Rytec + 1 papír → frisket (−50% riziko impozice, +kvalita)",
         onClick:()=>makeFrisket()},
         L==="en"?"🖼️ Frisket":"🖼️ Frisket")));
-    pressSec.append(dash);
+    // Press upgrade button
+    const curLv=G.pressLevel||1;
+    if(curLv<3){
+      const upg=PRESS_UPGRADES[curLv+1];
+      const canUpgrade=G.gold>=upg.cost_gold
+        &&(G.pressRunIn||0)>=upg.req_runin
+        &&Object.entries(upg.cost_res).every(([r,q])=>(G.res[r]||0)>=q);
+      const resStr=Object.entries(upg.cost_res).map(([r,q])=>`${q}× ${r}`).join(" + ");
+      pressSec.append(h("div",{style:{
+        marginTop:"6px",padding:"7px 10px",
+        border:`1px solid ${canUpgrade?"rgba(201,149,43,.4)":"var(--border)"}`,
+        background:canUpgrade?"rgba(201,149,43,.05)":"transparent",
+      }},
+        h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",gap:"8px"}},
+          h("div",{style:{flex:1}},
+            h("div",{style:{fontSize:"10px",fontWeight:"700",color:canUpgrade?"var(--gold)":"#555",marginBottom:"2px"}},
+              `⬆ ${L==="en"?`Upgrade to Lv${curLv+1}`:`Upgradovat na Lv${curLv+1}`}: ${L==="en"?upg.en:upg.cs}`),
+            h("div",{style:{fontSize:"9px",color:"#555"}},
+              `${upg.cost_gold}g · ${resStr} · ${L==="en"?"Run-In":"Obeznámenost"} ≥${upg.req_runin}%`),
+            !canUpgrade&&(G.pressRunIn||0)<upg.req_runin?
+              h("div",{style:{fontSize:"9px",color:"#c9952b",marginTop:"2px"}},
+                `${L==="en"?"Run-In":"Obeznámenost"}: ${G.pressRunIn||0}% / ${upg.req_runin}% ${L==="en"?"needed":"potřeba"}`):""
+          ),
+          h("button",{
+            class:"btn btn-s"+(canUpgrade?" btn-p":""),
+            style:{flexShrink:0,opacity:canUpgrade?1:.4},
+            onClick:()=>upgradePress()},
+            L==="en"?"Upgrade":"Upgradovat"))));
+    } else {
+      pressSec.append(h("div",{style:{
+        marginTop:"6px",padding:"5px 10px",fontSize:"9px",
+        color:"var(--gold)",letterSpacing:"1px",
+        borderTop:"1px solid var(--border)"
+      }},`★ ${L==="en"?"Press at maximum level — Steel-geared":"Lis na maximální úrovni — Ocelový ozubený"}`));
+    }
+    content.append(pressSec);
 
     // ── LIVE PRESS VISUALIZATION ──
     const pressVizSec = h("div",{class:"sec"});
@@ -4347,6 +4512,153 @@ function render(){
     logSec.append(logBox);
     content.append(logSec);
 
+  // ── TAB: TABULARIUM ──
+  } else if(p.tab==="tabularium"){
+
+    // ── TREASURY ──
+    const treasSec=h("div",{class:"sec"});
+    treasSec.append(h("div",{class:"sec-title"},L==="en"?"Treasury":"Pokladna"));
+    const treasGrid=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"6px",marginBottom:"8px"}});
+    [{label_en:"Cash in hand",label_cs:"Hotovost",val:p.gold+"g",color:p.gold<5?"#cc4444":"var(--paper)"},
+     {label_en:"Debt",label_cs:"Dluh",val:p.debt>0?p.debt+"g":"—",color:p.debt>0?"#cc4444":"#555"},
+     {label_en:"Auto-repay",label_cs:"Auto-splátka",val:p.debt>0?(L==="en"?"up to 5g/round":"až 5g/kolo"):(L==="en"?"no debt":"bez dluhu"),color:"#888"},
+     {label_en:"Interest rate",label_cs:"Úroková sazba",val:"25%",color:"#c9952b"},
+    ].forEach(({label_en,label_cs,val,color})=>{
+      treasGrid.append(h("div",{style:{padding:"7px 10px",border:"1px solid var(--border2)",background:"var(--card2)"}},
+        h("div",{style:{fontSize:"9px",color:"#555",textTransform:"uppercase",letterSpacing:"1px",marginBottom:"3px"}},L==="en"?label_en:label_cs),
+        h("div",{style:{fontSize:"14px",fontWeight:"700",color}},(val))));
+    });
+    treasSec.append(treasGrid);
+
+    // Manual debt repay
+    if(p.debt>0){
+      const repayWrap=h("div",{style:{marginBottom:"8px"}});
+      repayWrap.append(h("div",{style:{fontSize:"10px",color:"#888",marginBottom:"5px"}},
+        L==="en"?"💸 Repay debt early:":"💸 Splatit dluh předčasně:"));
+      const repayBtns=h("div",{style:{display:"flex",gap:"4px",flexWrap:"wrap"}});
+      [{amt:10},{amt:20},{amt:Math.ceil(p.debt),label_en:"All",label_cs:"Vše"}].forEach(({amt,label_en,label_cs})=>{
+        if(amt<=0) return;
+        const canPay=p.gold>=amt;
+        const lbl=(label_en?L==="en"?label_en:label_cs:"")+amt+"g";
+        repayBtns.append(h("button",{
+          class:"btn btn-s"+(canPay?" btn-p":""),
+          style:{opacity:canPay?1:.35},
+          onClick:()=>{
+            if(!canPay) return;
+            const pay=Math.min(amt,p.debt,p.gold);
+            G.gold-=pay; G.debt=Math.max(0,G.debt-pay);
+            G.log.push(`__ECO__💸 ${L==="en"?`Debt repaid: ${pay}g`:`Dluh splacen: ${pay}g`}`);
+            render();
+          }},lbl));
+      });
+      repayWrap.append(repayBtns);
+      treasSec.append(repayWrap);
+    }
+
+    // Loans
+    const loanWrap=h("div",{style:{marginTop:"6px",paddingTop:"8px",borderTop:"1px solid var(--border)"}});
+    loanWrap.append(h("div",{style:{fontSize:"10px",color:"#888",marginBottom:"5px"}},
+      L==="en"?"🏦 Take a loan (+25% added as debt):":"🏦 Půjčka (+25% přidáno jako dluh):"));
+    const loanBtns=h("div",{style:{display:"flex",gap:"4px",flexWrap:"wrap"}});
+    [{net:15,total:19},{net:25,total:31},{net:40,total:50}].forEach(({net,total})=>{
+      loanBtns.append(h("button",{
+        class:"btn btn-s",
+        title:L==="en"?`Receive ${net}g, owe ${total}g`:`Dostaneš ${net}g, dluh +${total}g`,
+        onClick:()=>{
+          G.gold+=net; G.debt=(G.debt||0)+total;
+          G.log.push(`__ECO__🏦 ${L==="en"?`Loan: +${net}g (debt +${total}g)`:`Půjčka: +${net}g (dluh +${total}g)`}`);
+          render();
+        }},`+${net}g (+${total}g ${L==="en"?"debt":"dluh"})`));
+    });
+    loanWrap.append(loanBtns);
+    treasSec.append(loanWrap);
+    content.append(treasSec);
+
+    // ── NEXT ROUND EXPENSES ──
+    const expSec=h("div",{class:"sec"});
+    expSec.append(h("div",{class:"sec-title"},L==="en"?"Next Round Expenses":"Výdaje příštího kola"));
+    const activeWorkers=p.workers.filter(w=>w.task!=="idle");
+    const wageTotal=activeWorkers.reduce((s,w)=>s+(2+(w.wageMod||0)),0);
+    const expRows=[
+      {label:L==="en"?`Wages (${activeWorkers.length} workers)`:`Mzdy (${activeWorkers.length} dělníků)`, val:wageTotal+"g", color:"var(--paper)"},
+      {label:L==="en"?"Debt auto-repay (if gold>5)":"Auto-splátka dluhu (pokud gold>5)", val:p.debt>0?(L==="en"?"up to 5g":"až 5g"):(L==="en"?"none":"žádná"), color:"#888"},
+    ];
+    const expTotal=wageTotal+(p.debt>0&&p.gold>5?Math.min(5,p.gold-2,p.debt):0);
+    const expGrid=h("div",{style:{display:"flex",flexDirection:"column",gap:"3px",marginBottom:"6px"}});
+    expRows.forEach(({label,val,color})=>{
+      expGrid.append(h("div",{style:{display:"flex",justifyContent:"space-between",padding:"4px 8px",
+        border:"1px solid var(--border)",fontSize:"11px"}},
+        h("span",{style:{color:"#888"}},label),
+        h("span",{style:{color,fontWeight:"700"}},val)));
+    });
+    expGrid.append(h("div",{style:{display:"flex",justifyContent:"space-between",padding:"5px 8px",
+      borderTop:"1px solid var(--border2)",borderBottom:"1px solid var(--border2)",
+      background:"rgba(255,255,255,.02)",fontSize:"12px",fontWeight:"700"}},
+      h("span",{style:{color:"#888"}},L==="en"?"Total outflow":"Celkem výdaje"),
+      h("span",{style:{color:expTotal>p.gold?"#cc4444":"var(--paper)"}},expTotal+"g")));
+    // Per-worker breakdown
+    if(activeWorkers.length>0){
+      const workerBreak=h("div",{style:{marginTop:"6px"}});
+      workerBreak.append(h("div",{style:{fontSize:"9px",color:"#555",marginBottom:"4px",
+        textTransform:"uppercase",letterSpacing:"1px"}},L==="en"?"Worker wages":"Mzdy dělníků"));
+      activeWorkers.forEach(w=>{
+        const wage=2+(w.wageMod||0);
+        workerBreak.append(h("div",{style:{display:"flex",justifyContent:"space-between",
+          fontSize:"10px",color:"#666",padding:"2px 8px"}},
+          h("span",null,w.name),
+          h("span",{style:{color:wage>2?"#c9952b":wage<2?"#88cc88":"#888"}},wage+"g")));
+      });
+      expGrid.append(workerBreak);
+    }
+    expSec.append(expGrid);
+    content.append(expSec);
+
+    // ── DEBT PROJECTION ──
+    if(p.debt>0){
+      const projSec=h("div",{class:"sec"});
+      projSec.append(h("div",{class:"sec-title"},L==="en"?"Debt Projection (no income)":"Projekce dluhu (bez příjmů)"));
+      const projGrid=h("div",{style:{display:"flex",flexDirection:"column",gap:"2px"}});
+      let projGold=p.gold, projDebt=p.debt;
+      for(let i=1;i<=4;i++){
+        projGold-=wageTotal;
+        if(projDebt>0&&projGold>5){const pay=Math.min(5,projGold-2,projDebt);projGold-=pay;projDebt-=pay;}
+        else if(projGold<0){projDebt+=Math.abs(projGold);projGold=0;}
+        const isWorse=projDebt>p.debt;
+        projGrid.append(h("div",{style:{
+          display:"flex",justifyContent:"space-between",alignItems:"center",
+          padding:"4px 8px",fontSize:"10px",
+          border:"1px solid var(--border)",
+          background:isWorse?"rgba(139,0,0,.06)":"rgba(42,90,42,.04)",
+        }},
+          h("span",{style:{color:"#666"}},`${L==="en"?"Round":"Kolo"} +${i}`),
+          h("span",{style:{color:isWorse?"#cc4444":"#88cc88",fontWeight:"700"}},
+            `${isWorse?"↑":"↓"} ${projDebt}g ${L==="en"?"debt":"dluh"} · ${Math.max(0,projGold)}g ${L==="en"?"cash":"hotovost"}`)));
+      }
+      projSec.append(projGrid);
+      projSec.append(h("div",{style:{fontSize:"9px",color:"#555",marginTop:"6px",fontStyle:"italic"}},
+        L==="en"?"Projection assumes no order income, current workforce.":"Projekce předpokládá žádné příjmy ze zakázek, stávající parta."));
+      content.append(projSec);
+    }
+
+    // ── RECENT INCOME ──
+    const incSec=h("div",{class:"sec"});
+    incSec.append(h("div",{class:"sec-title"},L==="en"?"Recent Income":"Nedávné příjmy"));
+    const ecoLogs=p.log.filter(l=>l.startsWith("__ECO__")).slice(-12).reverse();
+    if(ecoLogs.length===0){
+      incSec.append(h("div",{style:{fontSize:"11px",color:"#555",fontStyle:"italic"}},
+        L==="en"?"No transactions yet.":"Žádné transakce zatím."));
+    } else {
+      ecoLogs.forEach(l=>{
+        const txt=l.replace("__ECO__","");
+        const isPos=txt.includes("+")&&!txt.includes("debt")&&!txt.includes("dluh");
+        incSec.append(h("div",{style:{
+          fontSize:"10px",padding:"3px 6px",borderBottom:"1px solid var(--border)",
+          color:isPos?"#88cc88":"#888",
+        }},txt));
+      });
+    }
+    content.append(incSec);
+
   // ── TAB: SETTINGS ──
   } else if(p.tab==="settings"){
     const setsSec=h("div",{class:"sec"});
@@ -4378,6 +4690,57 @@ function render(){
           localStorage.removeItem("kt_v1");G=initState();G.availOrders=genOrderPool(1,5);render();
         }
       }},L==="en"?"Reset":"Smazat")));
+    // ── AUDIO ──
+    const audioSec=h("div",{class:"sec"});
+    audioSec.append(h("div",{class:"sec-title"},L==="en"?"Audio":"Zvuk"));
+    audioSec.append(h("div",{class:"settings-row"},
+      h("div",{class:"settings-label"},
+        L==="en"?"Sound effects & ambient":"Zvukové efekty a ambient",
+        h("span",{class:"audio-dot"+(AUDIO.enabled?" on":""),id:"audioDot"})),
+      h("div",{style:{display:"flex",gap:"4px"}},
+        h("button",{
+          class:"btn btn-s"+(AUDIO.enabled?" btn-active":""),
+          onClick:()=>{AUDIO.enable();render();}},
+          L==="en"?"ON":"ZAP"),
+        h("button",{
+          class:"btn btn-s"+(!AUDIO.enabled?" btn-active":""),
+          onClick:()=>{AUDIO.disable();render();}},
+          L==="en"?"OFF":"VYP"))));
+    if(AUDIO.enabled){
+      audioSec.append(h("div",{class:"settings-row"},
+        h("div",{class:"settings-label"},L==="en"?"Volume":"Hlasitost"),
+        h("input",{type:"range",min:"0",max:"1",step:"0.05",value:"0.7",
+          style:{width:"100px",accentColor:"var(--gold)"},
+          onInput:e=>AUDIO.setVolume(parseFloat(e.target.value))})));
+    }
+    setsSec.append(audioSec);
+
+    // ── SAVE / LOAD ──
+    const saveSec=h("div",{class:"sec"});
+    saveSec.append(h("div",{class:"sec-title"},L==="en"?"Save & Load":"Uložit a načíst"));
+    saveSec.append(h("div",{class:"settings-row"},
+      h("div",{class:"settings-label"},L==="en"?"Save game to file":"Uložit hru do souboru"),
+      h("button",{class:"btn btn-s btn-p",onClick:()=>saveGame()},
+        L==="en"?"💾 Save":"💾 Uložit")));
+    saveSec.append(h("div",{class:"settings-row"},
+      h("div",{class:"settings-label"},L==="en"?"Load game from file":"Načíst hru ze souboru"),
+      h("button",{class:"btn btn-s",onClick:()=>loadGame()},
+        L==="en"?"📂 Load":"📂 Načíst")));
+    saveSec.append(h("div",{style:{fontSize:"9px",color:"#444",marginTop:"4px",padding:"0 2px"}},
+      L==="en"?"Game auto-saves to browser on every round. Export JSON for backup.":
+               "Hra se automaticky ukládá do prohlížeče každé kolo. JSON export pro zálohu."));
+    content.append(saveSec);
+
+    // ── ABOUT ──
+    const aboutSec=h("div",{class:"sec"});
+    aboutSec.append(h("div",{class:"sec-title"},L==="en"?"About":"O hře"));
+    aboutSec.append(h("div",{class:"settings-row"},
+      h("div",{class:"settings-label"},L==="en"?"About the game":"Informace o hře"),
+      h("button",{class:"btn btn-s",onClick:()=>showAbout()},
+        L==="en"?"ℹ️ About":"ℹ️ O hře")));
+    content.append(aboutSec);
+
+    setsSec.append(audioSec);
     content.append(setsSec);
 
     // Stats
@@ -4456,6 +4819,19 @@ function render(){
 
   const _newContent=app.querySelector(".content");
   if(_newContent&&_scrollTop)_newContent.scrollTop=_scrollTop;
+
+  // Footer
+  renderFooter(app);
+
+  // About modal
+  if(p._showAbout) renderAboutModal(app);
+
+  // Audio hooks — play sounds on key actions
+  if(AUDIO.enabled){
+    // Patch printRun to play print cycle
+    const printBtns=app.querySelectorAll('[data-audio="print"]');
+    // Sound triggers are called directly from game functions via AUDIO.play()
+  }
 }
 
 // ── INIT ──────────────────────────────────────────────────────
@@ -4477,6 +4853,252 @@ updateMarketPrices();
 
 window.addEventListener("resize",()=>render());
 render();
+
+// ── PRINTSHOP AUDIO ENGINE ────────────────────────────────
+class PrintshopAudio {
+  constructor(){
+    this.enabled=false; // off by default, user enables in Settings
+    this._ctx=null;
+  }
+  _init(){
+    if(this._ctx) return;
+    this._ctx=new(window.AudioContext||window.webkitAudioContext)();
+    this.master=this._ctx.createGain();
+    this.master.gain.value=0.7;
+    this.limiter=this._ctx.createDynamicsCompressor();
+    this.limiter.threshold.setValueAtTime(-3,this._ctx.currentTime);
+    this.limiter.ratio.setValueAtTime(12,this._ctx.currentTime);
+    this.limiter.attack.setValueAtTime(0.003,this._ctx.currentTime);
+    this.limiter.release.setValueAtTime(0.15,this._ctx.currentTime);
+    this.master.connect(this.limiter);
+    this.limiter.connect(this._ctx.destination);
+    this.reverbBus=this._ctx.createGain();
+    this.reverbBus.gain.value=0.18;
+    this.reverb=this._ctx.createConvolver();
+    this._buildReverb();
+    this.reverbBus.connect(this.reverb);
+    this.reverb.connect(this.master);
+    this._ambientRunning=false;
+    this._ambientTimer=null;
+  }
+  _buildReverb(){
+    const sr=this._ctx.sampleRate,len=Math.floor(sr*0.6);
+    const buf=this._ctx.createBuffer(2,len,sr);
+    for(let c=0;c<2;c++){const d=buf.getChannelData(c);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,4);}
+    this.reverb.buffer=buf;
+  }
+  _resume(){if(this._ctx&&this._ctx.state==='suspended')this._ctx.resume();}
+  _noise(dur){const sr=this._ctx.sampleRate,s=Math.floor(sr*dur),buf=this._ctx.createBuffer(1,s,sr),d=buf.getChannelData(0);for(let i=0;i<s;i++)d[i]=Math.random()*2-1;const src=this._ctx.createBufferSource();src.buffer=buf;return src;}
+  _osc(type,freq){const o=this._ctx.createOscillator();o.type=type;o.frequency.setValueAtTime(freq,this._ctx.currentTime);return o;}
+  _gain(val){const g=this._ctx.createGain();g.gain.setValueAtTime(val,this._ctx.currentTime);return g;}
+  _filt(type,freq,q){const f=this._ctx.createBiquadFilter();f.type=type;f.frequency.setValueAtTime(freq,this._ctx.currentTime);if(q!==undefined)f.Q.setValueAtTime(q,this._ctx.currentTime);return f;}
+
+  play(name){
+    if(!this.enabled) return;
+    this._init(); this._resume();
+    try{ this['_'+name]&&this['_'+name](); }catch(e){}
+  }
+
+  _screwCrank(){
+    const t=this._ctx.currentTime;
+    const noise=this._noise(0.4),filt=this._filt('bandpass',320,8),env=this._gain(0);
+    env.gain.linearRampToValueAtTime(0.6,t+0.02);env.gain.setValueAtTime(0.6,t+0.15);env.gain.exponentialRampToValueAtTime(0.001,t+0.4);
+    filt.frequency.setValueAtTime(320,t);filt.frequency.linearRampToValueAtTime(180,t+0.4);
+    noise.connect(filt);filt.connect(env);env.connect(this.master);env.connect(this.reverbBus);
+    noise.start(t);noise.stop(t+0.4);
+    const osc=this._osc('sawtooth',95),ov=this._gain(0),olf=this._filt('lowpass',400);
+    ov.gain.linearRampToValueAtTime(0.25,t+0.01);ov.gain.exponentialRampToValueAtTime(0.001,t+0.35);
+    osc.frequency.exponentialRampToValueAtTime(70,t+0.35);
+    osc.connect(olf);olf.connect(ov);ov.connect(this.master);osc.start(t);osc.stop(t+0.35);
+  }
+  _platten(){
+    const t=this._ctx.currentTime;
+    const kick=this._osc('sine',140),kv=this._gain(0);
+    kv.gain.linearRampToValueAtTime(0.9,t+0.004);kv.gain.exponentialRampToValueAtTime(0.001,t+0.18);
+    kick.frequency.exponentialRampToValueAtTime(45,t+0.18);
+    kick.connect(kv);kv.connect(this.master);kick.start(t);kick.stop(t+0.2);
+    const pn=this._noise(0.25),pf=this._filt('bandpass',3500,2),pv=this._gain(0);
+    pv.gain.linearRampToValueAtTime(0.12,t+0.07);pv.gain.exponentialRampToValueAtTime(0.001,t+0.3);
+    pn.connect(pf);pf.connect(pv);pv.connect(this.master);pn.start(t+0.04);pn.stop(t+0.3);
+  }
+  _carriageSlide(){
+    const t=this._ctx.currentTime;
+    const sn=this._noise(0.5),sf=this._filt('bandpass',1200,3),sv=this._gain(0);
+    sv.gain.linearRampToValueAtTime(0.25,t+0.03);sv.gain.setValueAtTime(0.25,t+0.3);sv.gain.exponentialRampToValueAtTime(0.001,t+0.5);
+    sf.frequency.setValueAtTime(1200,t);sf.frequency.linearRampToValueAtTime(600,t+0.5);
+    sn.connect(sf);sf.connect(sv);sv.connect(this.master);sn.start(t);sn.stop(t+0.5);
+  }
+  _inkBallDab(){
+    const t=this._ctx.currentTime;
+    const n=this._noise(0.15),f=this._filt('lowpass',800),v=this._gain(0);
+    v.gain.linearRampToValueAtTime(0.35,t+0.008);v.gain.exponentialRampToValueAtTime(0.001,t+0.15);
+    n.connect(f);f.connect(v);v.connect(this.master);n.start(t);n.stop(t+0.15);
+  }
+  _coinClink(){
+    const t=this._ctx.currentTime;
+    [[0,1320],[0.07,1540],[0.14,1180]].forEach(([d,fr])=>{
+      const o=this._osc('sine',fr),v=this._gain(0);
+      v.gain.linearRampToValueAtTime(0.3,t+d+0.003);v.gain.exponentialRampToValueAtTime(0.001,t+d+0.4);
+      o.connect(v);v.connect(this.master);v.connect(this.reverbBus);o.start(t+d);o.stop(t+d+0.45);
+    });
+  }
+  _bellComplete(){
+    const t=this._ctx.currentTime;
+    [[523.25,1.0],[1440.0,0.6],[2825.0,0.3]].forEach(([freq,amp],i)=>{
+      const o=this._osc('sine',freq),v=this._gain(0);
+      v.gain.linearRampToValueAtTime(amp*0.35,t+0.01);v.gain.exponentialRampToValueAtTime(0.001,t+2.5-i*0.4);
+      o.connect(v);v.connect(this.master);v.connect(this.reverbBus);o.start(t);o.stop(t+2.8);
+    });
+  }
+  _typeCase(){
+    const t=this._ctx.currentTime;
+    const num=3+Math.floor(Math.random()*4);
+    for(let i=0;i<num;i++){
+      const d=i*(0.06+Math.random()*0.04),fr=900+Math.random()*600;
+      const n=this._noise(0.04),f=this._filt('bandpass',fr,5),v=this._gain(0);
+      v.gain.linearRampToValueAtTime(0.18,t+d+0.003);v.gain.exponentialRampToValueAtTime(0.001,t+d+0.05);
+      n.connect(f);f.connect(v);v.connect(this.master);n.start(t+d);n.stop(t+d+0.06);
+    }
+  }
+  _woodCreak(){
+    const t=this._ctx.currentTime,dur=0.8+Math.random()*0.6,freq=80+Math.random()*60;
+    const o=this._osc('sawtooth',freq),f=this._filt('lowpass',300),v=this._gain(0);
+    v.gain.linearRampToValueAtTime(0.1,t+dur*0.3);v.gain.setValueAtTime(0.1,t+dur*0.6);v.gain.exponentialRampToValueAtTime(0.001,t+dur);
+    o.frequency.setValueAtTime(freq,t);o.frequency.linearRampToValueAtTime(freq*1.3,t+dur*0.4);o.frequency.linearRampToValueAtTime(freq*0.85,t+dur);
+    o.connect(f);f.connect(v);v.connect(this.master);o.start(t);o.stop(t+dur+0.05);
+  }
+  _paperFeed(){
+    const t=this._ctx.currentTime,dur=0.3+Math.random()*0.2;
+    const n=this._noise(dur),f=this._filt('bandpass',4500,1.5),v=this._gain(0);
+    v.gain.linearRampToValueAtTime(0.13,t+0.04);v.gain.exponentialRampToValueAtTime(0.001,t+dur);
+    f.frequency.setValueAtTime(4500,t);f.frequency.linearRampToValueAtTime(3000,t+dur);
+    n.connect(f);f.connect(v);v.connect(this.master);n.start(t);n.stop(t+dur+0.05);
+  }
+  printCycle(){
+    if(!this.enabled)return;
+    this._init();this._resume();
+    this._inkBallDab();
+    setTimeout(()=>this._carriageSlide&&this.play('carriageSlide'),350);
+    setTimeout(()=>this.play('screwCrank'),650);
+    setTimeout(()=>this.play('platten'),900);
+    setTimeout(()=>this.play('screwCrank'),1150);
+    setTimeout(()=>{this.play('carriageSlide');this.play('paperFeed');},1400);
+  }
+
+  _scheduleAmbient(){
+    if(!this._ambientRunning)return;
+    const events=[
+      {w:4,n:'woodCreak'},{w:2,n:'typeCase'},{w:1,n:'paperFeed'},
+    ];
+    const total=events.reduce((s,e)=>s+e.w,0);let r=Math.random()*total;
+    for(const e of events){r-=e.w;if(r<=0){this.play(e.n);break;}}
+    this._ambientTimer=setTimeout(()=>this._scheduleAmbient(),2500+Math.random()*4000);
+  }
+  startAmbient(){if(this._ambientRunning)return;this._init();this._resume();this._ambientRunning=true;this._scheduleAmbient();}
+  stopAmbient(){this._ambientRunning=false;clearTimeout(this._ambientTimer);}
+  setVolume(v){if(this.master)this.master.gain.setValueAtTime(Math.max(0,Math.min(1,v)),this._ctx.currentTime);}
+  enable(){this.enabled=true;this._init();this._resume();this.startAmbient();}
+  disable(){this.enabled=false;this.stopAmbient();}
+}
+
+const AUDIO = new PrintshopAudio();
+
+// Hook audio into game actions
+const _origPrintRun=printRun;
+// printCycle called from within printRun via hook below
+const _origAdvanceRound=advanceRound;
+
+// ── SAVE / LOAD ───────────────────────────────────────────
+function saveGame(){
+  try{
+    const data=JSON.stringify(G);
+    localStorage.setItem('kt_v1', data);
+    // Also offer file download
+    const blob=new Blob([data],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;
+    a.download=`ThePressOlomouc_${G.gameYear||1468}_R${G.round+1}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast(G.lang==="en"?"Game Saved":"Hra uložena",
+      [G.lang==="en"?"Saved to browser + downloaded as JSON":"Uloženo do prohlížeče + staženo jako JSON"]);
+  }catch(e){ showToast("Error",["Save failed: "+e.message]); }
+}
+
+function loadGame(){
+  const input=document.createElement('input');
+  input.type='file';
+  input.accept='.json';
+  input.onchange=e=>{
+    const file=e.target.files[0];
+    if(!file)return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      try{
+        const parsed=JSON.parse(ev.target.result);
+        if(parsed&&parsed.gameYear){
+          Object.assign(G,parsed);
+          render();
+          showToast(G.lang==="en"?"Game Loaded":"Hra načtena",
+            [`${G.lang==="en"?"Year":"Rok"} ${G.gameYear} · ${G.lang==="en"?"Round":"Kolo"} ${G.round+1}`]);
+        }else throw new Error("Invalid save file");
+      }catch(err){ showToast("Error",["Load failed: "+err.message]); }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+function showAbout(){
+  G._showAbout=true;
+  render();
+}
+
+// ── FOOTER RENDER ─────────────────────────────────────────
+function renderFooter(app){
+  const L=G.lang;
+  const footer=h("div",{class:"game-footer"});
+  footer.append(
+    h("span",null,"THE PRESS · OLOMOUC 1468"),
+    h("span",{style:{color:"#2a2018",letterSpacing:"1px"}},
+      L==="en"?"Veritas vos liberabit":"Pravda vás osvobodí"),
+    h("span",null,"v0.9-alpha"));
+  app.append(footer);
+}
+
+// ── ABOUT MODAL ───────────────────────────────────────────
+function renderAboutModal(app){
+  const L=G.lang;
+  const modal=h("div",{class:"modal-bg",onClick:()=>{G._showAbout=false;render();}},
+    h("div",{class:"modal about-inner",onClick:ev=>ev.stopPropagation()},
+      h("div",{class:"sigil"},"🖨️"),
+      h("div",{class:"latin"},'"Veritas vos liberabit"'),
+      h("h4",null,L==="en"?"The Game":"Hra"),
+      h("p",null,L==="en"
+        ?"The Press is a single-player strategy game set in Olomouc, 1468 — the year the first printing press arrived in Moravia. You run a print shop: hire workers, gather materials, fulfill orders, and survive the pressures of the Reformation, censorship, and debt."
+        :"The Press je singleplayerová strategická hra zasazená do Olomouce roku 1468 — roku, kdy na Moravu přišel první tiskařský lis. Vedeš tiskárnu: najímáš dělníky, sbíráš materiál, plníš zakázky a přežíváš tlak reformace, cenzury a dluhů."),
+      h("h4",null,L==="en"?"When & Where":"Kdy a kde"),
+      h("p",null,L==="en"
+        ?"Olomouc, Kingdom of Bohemia, 1468–1530. The Holy Roman Empire. Gutenberg's revolution is spreading across Europe — and you are part of it."
+        :"Olomouc, Království České, 1468–1530. Svatá říše římská. Gutenbergova revoluce se šíří Evropou — a ty jsi její součástí."),
+      h("h4",null,L==="en"?"Who":"Kdo"),
+      h("p",null,L==="en"
+        ?"A project by a history enthusiast and game designer. Built with vanilla JS and Web Audio API — no frameworks, no engines. Historical sources: Theodore Low De Vinne, The Invention of Printing (1876)."
+        :"Projekt historického nadšence a herního designéra. Postaveno na vanilla JS a Web Audio API — žádné frameworky, žádné enginy. Historické zdroje: Theodore Low De Vinne, Vynález tisku (1876)."),
+      h("h4",null,L==="en"?"How to Play":"Jak hrát"),
+      h("p",null,L==="en"
+        ?"Each year has 12 rounds split between Prep (gather & cast) and Press (print & sell). Hire workers, upgrade your press, manage debt in the Tabularium, and watch the market prices shift with the seasons."
+        :"Každý rok má 12 kol rozdělených mezi Přípravou (sběr a odlévání) a Tiskem (tisk a prodej). Najímej dělníky, upgraduj lis, spravuj dluh v Tabuláriu a sleduj jak tržní ceny kolísají se sezonami."),
+      h("div",{style:{marginTop:"16px",paddingTop:"10px",borderTop:"1px solid var(--border)",
+        fontSize:"9px",color:"#444",textAlign:"center",letterSpacing:"1px"}},
+        "THE PRESS · OLOMOUC 1468 · v0.9-alpha · Web Audio API + Vanilla JS"),
+      h("button",{class:"btn btn-p",style:{width:"100%",marginTop:"12px",letterSpacing:"1px"},
+        onClick:()=>{G._showAbout=false;render();}},
+        L==="en"?"Close":"Zavřít")));
+  app.append(modal);
+}
+
 </script>
 </body>
 </html>
