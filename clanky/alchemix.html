@@ -1,0 +1,7452 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlchemiX — Alchymistická dílna</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=MedievalSharp&family=Cinzel:wght@400;600;700&family=IM+Fell+English:ital@0;1&display=swap');
+
+:root {
+  --bg:        #0d0a06;
+  --bg2:       #1a1208;
+  --bg3:       #241a0e;
+  --border:    #5c3d1a;
+  --border2:   #7a5128;
+  --gold:      #c8961e;
+  --gold2:     #f0c040;
+  --gold3:     #ffe88a;
+  --text:      #e8d5a3;
+  --text2:     #b5945a;
+  --text3:     #7a5f35;
+  --red:       #c0392b;
+  --green:     #2ecc71;
+  --blue:      #3498db;
+  --purple:    #8e44ad;
+  --danger:    #e74c3c;
+  --safe:      #27ae60;
+  --warm:      #e67e22;
+  --cool:      #2980b9;
+  --glow:      0 0 20px rgba(200,150,30,0.3);
+  --glow2:     0 0 40px rgba(200,150,30,0.5);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'IM Fell English', serif;
+  min-height: 100vh;
+  background-image:
+    radial-gradient(ellipse at 20% 0%, rgba(120,60,10,0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 100%, rgba(60,20,80,0.1) 0%, transparent 50%),
+    url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.01'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  overflow-x: hidden;
+}
+
+/* ── HEADER ── */
+header {
+  text-align: center;
+  padding: 24px 20px 16px;
+  border-bottom: 2px solid var(--border);
+  background: linear-gradient(180deg, rgba(30,18,6,0.95) 0%, transparent 100%);
+  position: sticky; top: 0; z-index: 100;
+  backdrop-filter: blur(8px);
+}
+header h1 {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(1.6rem, 4vw, 2.8rem);
+  color: var(--gold2);
+  text-shadow: var(--glow2), 0 0 60px rgba(200,150,30,0.3);
+  letter-spacing: 4px;
+}
+header p {
+  color: var(--text3);
+  font-style: italic;
+  font-size: 0.85rem;
+  margin-top: 4px;
+}
+.stats-bar {
+  display: flex;
+  justify-content: center;
+  gap: 28px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+.stat { 
+  display: flex; align-items: center; gap: 6px;
+  font-family: 'Cinzel', serif;
+  font-size: 0.8rem;
+  color: var(--text2);
+}
+.stat .val { color: var(--gold2); font-weight: 600; }
+.stat .ico { font-size: 1rem; }
+
+/* ── ASTROLOGY TOOLTIP ── */
+.astro-tooltip {
+  position: relative;
+  cursor: help;
+}
+.astro-tooltip:hover::after {
+  content: attr(data-desc);
+  position: absolute;
+  top: 100%; left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg2);
+  border: 1px solid var(--gold);
+  color: var(--text);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-family: 'IM Fell English', serif;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  z-index: 200;
+  margin-top: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+/* ── MAIN LAYOUT ── */
+.layout {
+  display: grid;
+  grid-template-columns: 280px 1fr 300px;
+  gap: 0;
+  min-height: calc(100vh - 100px);
+}
+@media (max-width: 1000px) {
+  .layout { grid-template-columns: 1fr; }
+  .panel { border-right: none !important; border-bottom: 1px solid var(--border); }
+}
+
+.panel {
+  border-right: 1px solid var(--border);
+  padding: 16px;
+  overflow-y: auto;
+  max-height: calc(100vh - 100px);
+}
+.panel:last-child { border-right: none; }
+
+.panel-title {
+  font-family: 'Cinzel', serif;
+  font-size: 0.75rem;
+  letter-spacing: 3px;
+  color: var(--gold);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── INGREDIENT LIST ── */
+.filter-bar {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.filter-btn {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-family: 'Cinzel', serif;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.filter-btn:hover, .filter-btn.active {
+  background: var(--border2);
+  color: var(--gold2);
+  border-color: var(--gold);
+}
+.search-box {
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-family: 'IM Fell English', serif;
+  font-size: 0.85rem;
+  margin-bottom: 8px;
+  outline: none;
+}
+.search-box:focus { border-color: var(--gold); }
+.search-box::placeholder { color: var(--text3); }
+
+.ing-list { display: flex; flex-direction: column; gap: 3px; }
+.ing-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: transparent;
+}
+.ing-item:hover { background: var(--bg3); border-color: var(--border); }
+.ing-item.selected { background: rgba(200,150,30,0.1); border-color: var(--gold); }
+.ing-item.locked { opacity: 0.35; cursor: not-allowed; }
+.ing-item.has-stock { font-weight: 500; }
+
+.ing-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.ing-info { flex: 1; min-width: 0; }
+.ing-name { font-size: 0.82rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ing-lat  { font-size: 0.68rem; color: var(--text3); font-style: italic; }
+.ing-count {
+  font-size: 0.72rem;
+  color: var(--text3);
+  font-family: 'Cinzel', serif;
+  min-width: 24px;
+  text-align: right;
+}
+
+/* ── WORKBENCH (CENTER) ── */
+.workbench {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+}
+
+.cauldron-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.cauldron-visual {
+  position: relative;
+  width: 180px;
+  height: 140px;
+  cursor: default;
+}
+.cauldron-visual svg { width: 100%; height: 100%; }
+
+.slot-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 500px;
+}
+.slot {
+  width: 72px; height: 72px;
+  border: 2px dashed var(--border2);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--bg3);
+  position: relative;
+  text-align: center;
+  padding: 4px;
+}
+.slot:hover { border-color: var(--gold); background: rgba(200,150,30,0.05); }
+.slot.filled {
+  border-style: solid;
+  border-color: var(--border2);
+}
+.slot.filled:hover { border-color: var(--danger); }
+.slot-icon { font-size: 1.3rem; }
+.slot-name { font-size: 0.55rem; color: var(--text2); line-height: 1.2; margin-top: 2px; }
+.slot-remove {
+  position: absolute;
+  top: -6px; right: -6px;
+  width: 16px; height: 16px;
+  background: var(--danger);
+  border-radius: 50%;
+  font-size: 0.6rem;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+}
+.slot.filled:hover .slot-remove { display: flex; }
+
+.process-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.proc-btn {
+  padding: 8px 18px;
+  border: 1px solid var(--border2);
+  background: var(--bg3);
+  color: var(--text2);
+  font-family: 'Cinzel', serif;
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.proc-btn:hover, .proc-btn.active {
+  background: var(--border2);
+  color: var(--gold2);
+  border-color: var(--gold);
+  box-shadow: var(--glow);
+}
+.proc-btn .proc-ico { font-size: 1rem; }
+
+.brew-btn {
+  padding: 12px 40px;
+  background: linear-gradient(135deg, #7a4a10, #c8961e);
+  border: 2px solid var(--gold);
+  color: var(--gold3);
+  font-family: 'Cinzel', serif;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 3px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  box-shadow: var(--glow), inset 0 1px 0 rgba(255,255,255,0.1);
+}
+.brew-btn:hover {
+  background: linear-gradient(135deg, #8a5a20, #e0a820);
+  box-shadow: var(--glow2), inset 0 1px 0 rgba(255,255,255,0.2);
+  transform: translateY(-1px);
+}
+.brew-btn:disabled {
+  background: var(--bg3);
+  border-color: var(--border);
+  color: var(--text3);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ── RESULT AREA ── */
+.result-box {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  background: var(--bg2);
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  transition: all 0.3s;
+}
+.result-box.success { border-color: var(--gold); box-shadow: var(--glow); }
+.result-box.procedural { border-color: var(--purple); box-shadow: 0 0 20px rgba(142,68,173,0.3); }
+.result-box.failure { border-color: var(--danger); }
+
+.result-icon { font-size: 2.5rem; margin-bottom: 8px; }
+.result-name { font-family: 'Cinzel', serif; font-size: 1.1rem; color: var(--gold2); }
+.result-lat  { font-style: italic; color: var(--text3); font-size: 0.8rem; }
+.result-effect { color: var(--text2); font-size: 0.85rem; margin-top: 8px; line-height: 1.5; }
+.result-tags { display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; margin-top: 8px; }
+.tag {
+  font-size: 0.65rem;
+  padding: 2px 8px;
+  border-radius: 20px;
+  border: 1px solid;
+  font-family: 'Cinzel', serif;
+  letter-spacing: 0.5px;
+}
+
+.sell-btn {
+  margin-top: 12px;
+  padding: 8px 24px;
+  background: linear-gradient(135deg, var(--bg3), var(--bg2));
+  border: 1px solid var(--green);
+  color: var(--green);
+  font-family: 'Cinzel', serif;
+  font-size: 0.85rem;
+  letter-spacing: 2px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.sell-btn:hover {
+  background: rgba(46,204,113,0.1);
+  box-shadow: 0 0 20px rgba(46,204,113,0.3);
+  transform: translateY(-1px);
+}
+
+.vector-display {
+  display: flex;
+  gap: 12px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.vec-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.vec-label { font-size: 0.6rem; color: var(--text3); font-family: 'Cinzel', serif; }
+.vec-track {
+  width: 6px;
+  height: 60px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  position: relative;
+  overflow: hidden;
+}
+.vec-fill {
+  position: absolute;
+  left: 0; right: 0;
+  border-radius: 3px;
+  transition: all 0.5s;
+}
+.vec-val { font-size: 0.65rem; color: var(--text2); font-family: 'Cinzel', serif; }
+
+/* ── JOURNAL (RIGHT) ── */
+.journal-list { display: flex; flex-direction: column; gap: 6px; }
+.journal-entry {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg2);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.journal-entry:hover { border-color: var(--gold); background: var(--bg3); }
+.journal-entry.unknown { opacity: 0.5; }
+.j-name { font-family: 'Cinzel', serif; font-size: 0.78rem; color: var(--gold2); }
+.j-cat  { font-size: 0.65rem; color: var(--text3); }
+.j-dot  {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 4px;
+}
+
+/* ── NOTIFICATIONS ── */
+#notif {
+  position: fixed;
+  top: 80px; right: 20px;
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+  max-width: 280px;
+}
+.notif-item {
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  border-left: 3px solid;
+  animation: slideIn 0.3s ease, fadeOut 0.5s ease 3.5s forwards;
+  backdrop-filter: blur(10px);
+}
+.notif-item.success { background: rgba(39,174,96,0.15); border-color: var(--green); }
+.notif-item.info    { background: rgba(52,152,219,0.15); border-color: var(--blue); }
+.notif-item.warn    { background: rgba(230,126,34,0.15); border-color: var(--warm); }
+.notif-item.error   { background: rgba(231,76,60,0.15);  border-color: var(--danger); }
+
+@keyframes slideIn { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+
+/* ── SHOP MODAL ── */
+.modal-bg {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.8);
+  z-index: 200;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+.modal-bg.open { display: flex; }
+.modal {
+  background: var(--bg2);
+  border: 2px solid var(--border2);
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 800px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 0 60px rgba(0,0,0,0.8);
+}
+.modal h2 {
+  font-family: 'Cinzel', serif;
+  color: var(--gold2);
+  margin-bottom: 16px;
+  font-size: 1.2rem;
+}
+.modal-close {
+  float: right;
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text2);
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+.shop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px;
+}
+.shop-item {
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg3);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.shop-item:hover { border-color: var(--gold); }
+.shop-item:disabled, .shop-item.cant-afford { opacity: 0.4; cursor: not-allowed; }
+.shop-name { font-size: 0.78rem; color: var(--text); font-family: 'Cinzel', serif; }
+.shop-lat  { font-size: 0.65rem; color: var(--text3); font-style: italic; }
+.shop-price {
+  font-size: 0.75rem;
+  color: var(--gold2);
+  margin-top: 4px;
+  font-family: 'Cinzel', serif;
+}
+.shop-qty { float: right; color: var(--text3); }
+
+/* ── INGREDIENT DETAIL ── */
+.detail-box {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  background: var(--bg2);
+  margin-top: 12px;
+  font-size: 0.8rem;
+}
+.detail-box h3 { font-family: 'Cinzel', serif; font-size: 0.85rem; color: var(--gold2); margin-bottom: 8px; }
+.prop-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+.prop-key { color: var(--text3); }
+.prop-val { color: var(--text); }
+
+.type-Herb    { color: #7dbd8a; }
+.type-Mineral { color: #a8c0d6; }
+.type-Resin   { color: #c8a870; }
+.type-Liquid  { color: #5dade2; }
+.type-Animal  { color: #e59866; }
+
+/* ── MISC ── */
+.section-divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 16px 0;
+}
+.empty-state {
+  text-align: center;
+  color: var(--text3);
+  font-style: italic;
+  font-size: 0.82rem;
+  padding: 20px;
+}
+.save-load-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+.icon-btn {
+  flex: 1;
+  padding: 6px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  font-family: 'Cinzel', serif;
+  font-size: 0.7rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.icon-btn:hover { border-color: var(--gold); color: var(--gold2); }
+.shop-btn {
+  width: 100%;
+  padding: 8px;
+  background: linear-gradient(135deg, var(--bg3), var(--bg2));
+  border: 1px solid var(--gold);
+  color: var(--gold2);
+  font-family: 'Cinzel', serif;
+  font-size: 0.78rem;
+  letter-spacing: 2px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 10px;
+}
+.shop-btn:hover { background: rgba(200,150,30,0.1); box-shadow: var(--glow); }
+
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border2); }
+
+/* Brew animation */
+@keyframes brew-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+.brewing { animation: brew-pulse 0.6s ease infinite; }
+
+/* Tier badges */
+.tier-badge {
+  display: inline-block;
+  font-size: 0.6rem;
+  padding: 1px 6px;
+  border-radius: 20px;
+  font-family: 'Cinzel', serif;
+  margin-left: 4px;
+}
+.tier-1 { background: rgba(39,174,96,0.2); color: #2ecc71; border: 1px solid #27ae60; }
+.tier-2 { background: rgba(52,152,219,0.2); color: #3498db; border: 1px solid #2980b9; }
+.tier-3 { background: rgba(142,68,173,0.2); color: #9b59b6; border: 1px solid #8e44ad; }
+.tier-4 { background: rgba(200,150,30,0.2); color: var(--gold2); border: 1px solid var(--gold); }
+
+/* ── POTION STORAGE ── */
+.potion-storage-item {
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg2);
+  margin-bottom: 8px;
+  transition: all 0.15s;
+}
+.potion-storage-item:hover { border-color: var(--gold); background: var(--bg3); }
+
+.potion-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.potion-icon { font-size: 1.2rem; }
+.potion-name {
+  font-family: 'Cinzel', serif;
+  font-size: 0.82rem;
+  color: var(--gold2);
+  flex: 1;
+}
+
+.potion-stats {
+  display: flex;
+  gap: 10px;
+  font-size: 0.75rem;
+  margin-bottom: 8px;
+  font-family: 'Cinzel', serif;
+}
+
+.potion-actions {
+  display: flex;
+  gap: 6px;
+}
+.potion-btn {
+  flex: 1;
+  padding: 4px 8px;
+  font-size: 0.7rem;
+  font-family: 'Cinzel', serif;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: 1px solid var(--border);
+}
+.potion-btn.drink {
+  background: var(--bg3);
+  color: var(--green);
+  border-color: var(--green);
+}
+.potion-btn.drink:hover {
+  background: rgba(46,204,113,0.1);
+}
+.potion-btn.sell {
+  background: var(--bg3);
+  color: var(--gold2);
+  border-color: var(--gold);
+}
+.potion-btn.sell:hover {
+  background: rgba(200,150,30,0.1);
+}
+
+.result-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.result-btn {
+  padding: 8px 16px;
+  font-size: 0.75rem;
+  font-family: 'Cinzel', serif;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+.result-btn.drink {
+  background: linear-gradient(135deg, #2d5016, #27ae60);
+  border-color: var(--green);
+  color: white;
+}
+.result-btn.drink:hover {
+  box-shadow: 0 0 20px rgba(46,204,113,0.4);
+  transform: translateY(-1px);
+}
+.result-btn.store {
+  background: linear-gradient(135deg, #7a5128, #c8961e);
+  border-color: var(--gold);
+  color: var(--gold3);
+}
+.result-btn.store:hover {
+  box-shadow: var(--glow);
+  transform: translateY(-1px);
+}
+.result-btn.sell {
+  background: linear-gradient(135deg, #8e44ad, #9b59b6);
+  border-color: var(--purple);
+  color: white;
+}
+.result-btn.sell:hover {
+  box-shadow: 0 0 20px rgba(142,68,173,0.4);
+  transform: translateY(-1px);
+}
+
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⚗ AlchemiX</h1>
+  <p>Alchymistická dílna · Středověká farmacie</p>
+  <div class="stats-bar">
+    <div class="stat"><span class="ico">🪙</span>Zlato: <span class="val" id="statGold">150</span></div>
+    <div class="stat astro-tooltip" id="moonStatContainer"><span class="ico" id="statMoonIco">🌒</span>Luna: <span class="val" id="statMoonName">Dorůstající</span></div>
+    <div class="stat"><span class="ico">⚗</span>Uvařeno: <span class="val" id="statBrewed">0</span></div>
+    <div class="stat"><span class="ico">📖</span>Objeveno: <span class="val" id="statDiscovered">0</span> / <span id="statTotal">0</span></div>
+    <div class="stat"><span class="ico">☠</span>Max toxicita: <span class="val" id="statMaxTox">0</span></div>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- LEFT: Ingredients -->
+  <div class="panel" id="leftPanel">
+    <div class="panel-title">📦 Sklad ingrediencí</div>
+    <button class="shop-btn" onclick="openShop()">🛒 Navštívit trh</button>
+    <input class="search-box" id="searchBox" placeholder="Hledat ingredienci..." oninput="renderIngredients()">
+    <div class="filter-bar" id="filterBar"></div>
+    <div class="ing-list" id="ingList"></div>
+    <div class="detail-box" id="detailBox" style="display:none"></div>
+  </div>
+
+  <!-- CENTER: Workbench -->
+  <div class="panel workbench">
+    <div class="panel-title" style="text-align:center">⚗ Pracovní stůl</div>
+
+    <div class="cauldron-area">
+      <!-- Cauldron SVG -->
+      <div class="cauldron-visual">
+        <svg viewBox="0 0 180 140" xmlns="http://www.w3.org/2000/svg">
+          <!-- legs -->
+          <line x1="55" y1="110" x2="45" y2="135" stroke="#5c3d1a" stroke-width="6" stroke-linecap="round"/>
+          <line x1="90" y1="115" x2="90" y2="138" stroke="#5c3d1a" stroke-width="6" stroke-linecap="round"/>
+          <line x1="125" y1="110" x2="135" y2="135" stroke="#5c3d1a" stroke-width="6" stroke-linecap="round"/>
+          <!-- fire -->
+          <ellipse cx="90" cy="128" rx="30" ry="6" fill="rgba(200,80,20,0.3)"/>
+          <g id="fireGroup" opacity="0.8">
+            <ellipse cx="80" cy="120" rx="8" ry="14" fill="#e74c3c" opacity="0.6"/>
+            <ellipse cx="90" cy="115" rx="10" ry="18" fill="#f39c12" opacity="0.7"/>
+            <ellipse cx="100" cy="120" rx="8" ry="14" fill="#e74c3c" opacity="0.6"/>
+            <ellipse cx="90" cy="110" rx="6" ry="12" fill="#f1c40f" opacity="0.9"/>
+          </g>
+          <!-- cauldron body -->
+          <path d="M45 75 Q40 105 55 110 Q90 120 125 110 Q140 105 135 75 Z" fill="#2c1a08" stroke="#5c3d1a" stroke-width="2"/>
+          <ellipse cx="90" cy="75" rx="48" ry="18" fill="#241208" stroke="#5c3d1a" stroke-width="2"/>
+          <!-- liquid -->
+          <ellipse cx="90" cy="75" rx="44" ry="15" fill="#1a3320" id="cauldronLiquid"/>
+          <!-- bubbles -->
+          <circle cx="78" cy="73" r="3" fill="rgba(100,200,100,0.4)" id="b1"/>
+          <circle cx="95" cy="71" r="2" fill="rgba(100,200,100,0.3)" id="b2"/>
+          <circle cx="105" cy="74" r="2.5" fill="rgba(100,200,100,0.4)" id="b3"/>
+          <!-- handles -->
+          <path d="M42 80 Q30 75 35 62 Q40 50 52 58" fill="none" stroke="#5c3d1a" stroke-width="5" stroke-linecap="round"/>
+          <path d="M138 80 Q150 75 145 62 Q140 50 128 58" fill="none" stroke="#5c3d1a" stroke-width="5" stroke-linecap="round"/>
+          <!-- shine -->
+          <ellipse cx="75" cy="68" rx="12" ry="5" fill="rgba(255,255,255,0.05)" transform="rotate(-20 75 68)"/>
+        </svg>
+      </div>
+
+      <div class="slot-row" id="slotRow">
+        <!-- slots rendered by JS -->
+      </div>
+
+      <div class="process-row">
+        <button class="proc-btn" data-proc="Mix" onclick="setProcess(this)">
+          <span class="proc-ico">🥄</span> Smíchat
+        </button>
+        <button class="proc-btn" data-proc="Grind" onclick="setProcess(this)">
+          <span class="proc-ico">🪨</span> Drtit
+        </button>
+        <button class="proc-btn" data-proc="Boil" onclick="setProcess(this)">
+          <span class="proc-ico">🔥</span> Vařit
+        </button>
+        <button class="proc-btn" data-proc="Distill" onclick="setProcess(this)">
+          <span class="proc-ico">💧</span> Destilovat
+        </button>
+      </div>
+
+      <button class="brew-btn" id="brewBtn" onclick="brew()" disabled>
+        UVAŘ!
+      </button>
+    </div>
+
+    <!-- Result -->
+    <div class="result-box" id="resultBox">
+      <div class="empty-state">Přidej ingredience a zvol postup...</div>
+    </div>
+
+    <!-- Vector display -->
+    <div id="vectorArea" style="display:none">
+      <div class="panel-title" style="text-align:center">Humorální vektory</div>
+      <div class="vector-display" id="vectorDisplay"></div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Journal -->
+  <div class="panel">
+        <div class="panel-title">📦 Sklad lektvarů (<span id="storageCount">0</span>/50)</div>
+    <div id="potionStorageList" style="max-height: 300px; overflow-y: auto; margin-bottom: 16px;">
+      <div class="empty-state">Skladě je prázdný...</div>
+    </div>
+    <hr class="section-divider">
+    
+    <div class="panel-title">📖 Grimoire — Objevené lektvary</div>
+    <div class="save-load-row">
+      <button class="icon-btn" onclick="openSettings()">⚙ Nastavení</button>
+    </div>
+    <hr class="section-divider">
+    <div class="journal-list" id="journalList"></div>
+  </div>
+</div>
+
+<!-- Shop Modal -->
+<div class="modal-bg" id="shopModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeShop()">✕ Zavřít</button>
+    <h2>🛒 Trh s ingrediencemi</h2>
+    <p style="font-size:0.8rem;color:var(--text3);margin-bottom:16px;font-style:italic">
+      Klikni na ingredienci pro nákup. Máš <span id="shopGold" style="color:var(--gold2)"></span> zlatých.
+    </p>
+    <div class="shop-grid" id="shopGrid"></div>
+  </div>
+</div>
+<!-- Settings Modal -->
+<div class="modal-bg" id="settingsModal">
+  <div class="modal" style="max-width: 400px;">
+    <button class="modal-close" onclick="closeSettings()">✕ Zavřít</button>
+    <h2>⚙ Nastavení</h2>
+    <p style="font-size:0.8rem;color:var(--text3);margin-bottom:16px;">Správa uložené pozice a export dat.</p>
+    
+    <div style="display:flex; flex-direction:column; gap:10px;">
+      <button class="shop-btn" onclick="saveGame()">💾 Uložit (Local Storage)</button>
+      <button class="shop-btn" onclick="exportGameJSON()">📤 Exportovat Hru (JSON)</button>
+      
+      <div style="position: relative; overflow: hidden; display: inline-block;">
+        <button class="shop-btn" style="width: 100%; margin: 0;">📥 Importovat Hru (JSON)</button>
+        <input type="file" accept=".json" onchange="importGameJSON(event)" style="position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; height: 100%; width: 100%;">
+      </div>
+      
+      <hr class="section-divider">
+      <button class="shop-btn" onclick="resetGame()" style="color:var(--danger); border-color:var(--danger);">🗑 Smazat postup (Reset)</button>
+    </div>
+  </div>
+</div>
+
+<div id="notif"></div>
+
+<script>
+// ══════════════════════════════════════════════════════
+//  INLINE DATA - ALL 110 INGREDIENTS & 100 RECIPES
+// ══════════════════════════════════════════════════════
+
+const INGREDIENTS_RAW = [
+  {
+    "id": "ING01",
+    "name_lat": "Aqua",
+    "name_cz": "Voda",
+    "type": "Liquid",
+    "thermal": -2,
+    "moisture": 4,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": -1,
+    "satiety": 4
+  },
+  {
+    "id": "ING02",
+    "name_lat": "Vinum",
+    "name_cz": "Víno",
+    "type": "Liquid",
+    "thermal": 2,
+    "moisture": 2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING03",
+    "name_lat": "Acetum",
+    "name_cz": "Ocet",
+    "type": "Liquid",
+    "thermal": -2,
+    "moisture": -2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": -1,
+    "satiety": 1
+  },
+  {
+    "id": "ING04",
+    "name_lat": "Mel",
+    "name_cz": "Med",
+    "type": "Liquid",
+    "thermal": 2,
+    "moisture": 2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 2,
+    "satiety": 3
+  },
+  {
+    "id": "ING05",
+    "name_lat": "Oleum Olivae",
+    "name_cz": "Olivový olej",
+    "type": "Liquid",
+    "thermal": 1,
+    "moisture": 2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 0,
+    "satiety": 4
+  },
+  {
+    "id": "ING06",
+    "name_lat": "Papaver somniferum",
+    "name_cz": "Mák setý",
+    "type": "Herb",
+    "thermal": -4,
+    "moisture": -2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": -2,
+    "satiety": 0
+  },
+  {
+    "id": "ING07",
+    "name_lat": "Mandragora officinarum",
+    "name_cz": "Mandragora",
+    "type": "Herb",
+    "thermal": -4,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": -2,
+    "satiety": 0
+  },
+  {
+    "id": "ING08",
+    "name_lat": "Hyoscyamus niger",
+    "name_cz": "Blín černý",
+    "type": "Herb",
+    "thermal": -4,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": -2,
+    "satiety": 0
+  },
+  {
+    "id": "ING09",
+    "name_lat": "Belladonna",
+    "name_cz": "Rulík zlomocný",
+    "type": "Herb",
+    "thermal": -4,
+    "moisture": -4,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": -2,
+    "satiety": 0
+  },
+  {
+    "id": "ING10",
+    "name_lat": "Salix alba",
+    "name_cz": "Vrbová kůra",
+    "type": "Herb",
+    "thermal": -2,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": -1,
+    "satiety": 0
+  },
+  {
+    "id": "ING11",
+    "name_lat": "Aloe vera",
+    "name_cz": "Aloe",
+    "type": "Herb",
+    "thermal": -2,
+    "moisture": 2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": -1,
+    "satiety": 1
+  },
+  {
+    "id": "ING12",
+    "name_lat": "Chelidonium majus",
+    "name_cz": "Vlaštovičník",
+    "type": "Herb",
+    "thermal": 3,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING13",
+    "name_lat": "Valeriana officinalis",
+    "name_cz": "Kozlík lékařský",
+    "type": "Herb",
+    "thermal": 2,
+    "moisture": 1,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING14",
+    "name_lat": "Allium sativum",
+    "name_cz": "Česnek",
+    "type": "Herb",
+    "thermal": 4,
+    "moisture": -4,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 2,
+    "satiety": 0
+  },
+  {
+    "id": "ING15",
+    "name_lat": "Euphrasia",
+    "name_cz": "Světlík",
+    "type": "Herb",
+    "thermal": 1,
+    "moisture": -2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 0,
+    "satiety": 0
+  },
+  {
+    "id": "ING16",
+    "name_lat": "Rosmarinus",
+    "name_cz": "Rozmarýn",
+    "type": "Herb",
+    "thermal": 3,
+    "moisture": -2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING17",
+    "name_lat": "Salvia",
+    "name_cz": "Šalvěj",
+    "type": "Herb",
+    "thermal": 2,
+    "moisture": -2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING18",
+    "name_lat": "Hypericum",
+    "name_cz": "Třezalka",
+    "type": "Herb",
+    "thermal": 2,
+    "moisture": -2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING19",
+    "name_lat": "Rosa",
+    "name_cz": "Růže",
+    "type": "Herb",
+    "thermal": -1,
+    "moisture": 2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 0,
+    "satiety": 1
+  },
+  {
+    "id": "ING20",
+    "name_lat": "Borago",
+    "name_cz": "Brutnák",
+    "type": "Herb",
+    "thermal": 1,
+    "moisture": 2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 0,
+    "satiety": 1
+  },
+  {
+    "id": "ING21",
+    "name_lat": "Melissa",
+    "name_cz": "Meduňka",
+    "type": "Herb",
+    "thermal": 2,
+    "moisture": 1,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 2,
+    "satiety": 3
+  },
+  {
+    "id": "ING22",
+    "name_lat": "Crocus sativus",
+    "name_cz": "Šafrán",
+    "type": "Herb",
+    "thermal": 2,
+    "moisture": -2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING23",
+    "name_lat": "Piper",
+    "name_cz": "Pepř černý",
+    "type": "Herb",
+    "thermal": 4,
+    "moisture": -4,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 2,
+    "satiety": 0
+  },
+  {
+    "id": "ING24",
+    "name_lat": "Zingiber",
+    "name_cz": "Zázvor",
+    "type": "Herb",
+    "thermal": 3,
+    "moisture": 1,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING25",
+    "name_lat": "Cinnamomum",
+    "name_cz": "Skořice",
+    "type": "Herb",
+    "thermal": 3,
+    "moisture": -2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING26",
+    "name_lat": "Myrrha",
+    "name_cz": "Myrha",
+    "type": "Resin",
+    "thermal": 2,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING27",
+    "name_lat": "Olibanum",
+    "name_cz": "Kadidlo",
+    "type": "Resin",
+    "thermal": 2,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING28",
+    "name_lat": "Styrax",
+    "name_cz": "Storax",
+    "type": "Resin",
+    "thermal": 1,
+    "moisture": -2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 0,
+    "satiety": 0
+  },
+  {
+    "id": "ING29",
+    "name_lat": "Mastix",
+    "name_cz": "Masticha",
+    "type": "Resin",
+    "thermal": 2,
+    "moisture": -2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING30",
+    "name_lat": "Camphora",
+    "name_cz": "Kafr",
+    "type": "Resin",
+    "thermal": -3,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": -1,
+    "satiety": 0
+  },
+  {
+    "id": "ING31",
+    "name_lat": "Sanguis draconis",
+    "name_cz": "Dračí krev",
+    "type": "Resin",
+    "thermal": -1,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 0,
+    "satiety": 0
+  },
+  {
+    "id": "ING32",
+    "name_lat": "Gummi arabicum",
+    "name_cz": "Arabská guma",
+    "type": "Resin",
+    "thermal": 1,
+    "moisture": 2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 0,
+    "satiety": 1
+  },
+  {
+    "id": "ING33",
+    "name_lat": "Cera flava",
+    "name_cz": "Včelí vosk",
+    "type": "Animal",
+    "thermal": 1,
+    "moisture": 2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 0,
+    "satiety": 2
+  },
+  {
+    "id": "ING34",
+    "name_lat": "Albumen Ovi",
+    "name_cz": "Vaječný bílek",
+    "type": "Animal",
+    "thermal": -2,
+    "moisture": 3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": -1,
+    "satiety": 3
+  },
+  {
+    "id": "ING35",
+    "name_lat": "Cantharides",
+    "name_cz": "Španělské mušky",
+    "type": "Animal",
+    "thermal": 4,
+    "moisture": -4,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 2,
+    "satiety": 1
+  },
+  {
+    "id": "ING36",
+    "name_lat": "Sepia",
+    "name_cz": "Sépiová kost",
+    "type": "Animal",
+    "thermal": -1,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 0,
+    "satiety": 1
+  },
+  {
+    "id": "ING37",
+    "name_lat": "Castoreum",
+    "name_cz": "Bobrovina",
+    "type": "Animal",
+    "thermal": 3,
+    "moisture": -2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 1
+  },
+  {
+    "id": "ING38",
+    "name_lat": "Cornus cervi",
+    "name_cz": "Pálený jelení roh",
+    "type": "Animal",
+    "thermal": -1,
+    "moisture": -4,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 0,
+    "satiety": 1
+  },
+  {
+    "id": "ING39",
+    "name_lat": "Margaritae",
+    "name_cz": "Perly (drcené)",
+    "type": "Mineral",
+    "thermal": -2,
+    "moisture": -2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": -1,
+    "satiety": 0
+  },
+  {
+    "id": "ING40",
+    "name_lat": "Corallium rubrum",
+    "name_cz": "Červený korál",
+    "type": "Mineral",
+    "thermal": -1,
+    "moisture": -2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 0,
+    "satiety": 0
+  },
+  {
+    "id": "ING41",
+    "name_lat": "Galla quercina",
+    "name_cz": "Dubová hálka",
+    "type": "Herb",
+    "thermal": -2,
+    "moisture": -4,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": -1,
+    "satiety": 0
+  },
+  {
+    "id": "ING42",
+    "name_lat": "Alumen",
+    "name_cz": "Kamenec",
+    "type": "Mineral",
+    "thermal": -2,
+    "moisture": -4,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": -1,
+    "satiety": 0
+  },
+  {
+    "id": "ING43",
+    "name_lat": "Cinnabaris",
+    "name_cz": "Rumělka",
+    "type": "Mineral",
+    "thermal": 2,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING44",
+    "name_lat": "Aerugo",
+    "name_cz": "Měděnka",
+    "type": "Mineral",
+    "thermal": 3,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING45",
+    "name_lat": "Lapis Lazuli",
+    "name_cz": "Lazurit",
+    "type": "Mineral",
+    "thermal": -2,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": -1,
+    "satiety": 0
+  },
+  {
+    "id": "ING46",
+    "name_lat": "Aurum foliatum",
+    "name_cz": "Plátkové zlato",
+    "type": "Mineral",
+    "thermal": 2,
+    "moisture": 1,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING47",
+    "name_lat": "Smaragdus",
+    "name_cz": "Smaragd (drcený)",
+    "type": "Mineral",
+    "thermal": -3,
+    "moisture": -2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": -1,
+    "satiety": 0
+  },
+  {
+    "id": "ING48",
+    "name_lat": "Bolus Armeniacus",
+    "name_cz": "Arménský jíl",
+    "type": "Mineral",
+    "thermal": -2,
+    "moisture": -4,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": -1,
+    "satiety": 0
+  },
+  {
+    "id": "ING49",
+    "name_lat": "Lapis Haematites",
+    "name_cz": "Krevhel",
+    "type": "Mineral",
+    "thermal": -1,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 0,
+    "satiety": 0
+  },
+  {
+    "id": "ING50",
+    "name_lat": "Spongia",
+    "name_cz": "Mořská houba",
+    "type": "Animal",
+    "thermal": -1,
+    "moisture": 2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 0,
+    "satiety": 2
+  },
+  {
+    "id": "ING51",
+    "name_lat": "Minium",
+    "name_cz": "Suřík (olovo)",
+    "type": "Mineral",
+    "thermal": 1,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 0,
+    "satiety": 0
+  },
+  {
+    "id": "ING52",
+    "name_lat": "Auripigmentum",
+    "name_cz": "Auripigment (arsen)",
+    "type": "Mineral",
+    "thermal": 3,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING53",
+    "name_lat": "Plumbum album",
+    "name_cz": "Olovnatá běloba",
+    "type": "Mineral",
+    "thermal": -2,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": -1,
+    "satiety": 0
+  },
+  {
+    "id": "ING54",
+    "name_lat": "Oleum lini",
+    "name_cz": "Lněný olej",
+    "type": "Liquid",
+    "thermal": 2,
+    "moisture": 2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 4
+  },
+  {
+    "id": "ING55",
+    "name_lat": "Spiritus Vini",
+    "name_cz": "Vinný destilát",
+    "type": "Liquid",
+    "thermal": 4,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 2,
+    "satiety": 1
+  },
+  {
+    "id": "ING56",
+    "name_lat": "Artemisia absinthium",
+    "name_cz": "Pelyněk pravý",
+    "type": "Herb",
+    "thermal": 3,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING57",
+    "name_lat": "Chamomilla",
+    "name_cz": "Heřmánek",
+    "type": "Herb",
+    "thermal": 1,
+    "moisture": -1,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 0,
+    "satiety": 0
+  },
+  {
+    "id": "ING58",
+    "name_lat": "Mentha piperita",
+    "name_cz": "Máta peprná",
+    "type": "Herb",
+    "thermal": 2,
+    "moisture": -2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING59",
+    "name_lat": "Plantago",
+    "name_cz": "Jitrocel",
+    "type": "Herb",
+    "thermal": -2,
+    "moisture": -2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": -1,
+    "satiety": 0
+  },
+  {
+    "id": "ING60",
+    "name_lat": "Symphytum officinale",
+    "name_cz": "Kostival",
+    "type": "Herb",
+    "thermal": -1,
+    "moisture": 2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 0,
+    "satiety": 1
+  },
+  {
+    "id": "ING61",
+    "name_lat": "Millefolium",
+    "name_cz": "Řebříček",
+    "type": "Herb",
+    "thermal": -1,
+    "moisture": -2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 0,
+    "satiety": 0
+  },
+  {
+    "id": "ING62",
+    "name_lat": "Betonica",
+    "name_cz": "Bukvice",
+    "type": "Herb",
+    "thermal": 2,
+    "moisture": -2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING63",
+    "name_lat": "Ruta graveolens",
+    "name_cz": "Routa vonná",
+    "type": "Herb",
+    "thermal": 3,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING64",
+    "name_lat": "Foeniculum",
+    "name_cz": "Fenykl",
+    "type": "Herb",
+    "thermal": 2,
+    "moisture": -2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING65",
+    "name_lat": "Anisum",
+    "name_cz": "Anýz",
+    "type": "Herb",
+    "thermal": 2,
+    "moisture": -2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING66",
+    "name_lat": "Senna",
+    "name_cz": "Senna (list)",
+    "type": "Herb",
+    "thermal": 2,
+    "moisture": -2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING67",
+    "name_lat": "Rheum",
+    "name_cz": "Rebarbora (kořen)",
+    "type": "Herb",
+    "thermal": -1,
+    "moisture": -2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 0,
+    "satiety": 0
+  },
+  {
+    "id": "ING68",
+    "name_lat": "Urtica",
+    "name_cz": "Kopřiva",
+    "type": "Herb",
+    "thermal": 2,
+    "moisture": -2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING69",
+    "name_lat": "Dictamnus",
+    "name_cz": "Třemdava",
+    "type": "Herb",
+    "thermal": 3,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING70",
+    "name_lat": "Helleborus niger",
+    "name_cz": "Čemeřice černá",
+    "type": "Herb",
+    "thermal": 3,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING71",
+    "name_lat": "Aconitum",
+    "name_cz": "Oměj šalamounek",
+    "type": "Herb",
+    "thermal": 4,
+    "moisture": -4,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 2,
+    "satiety": 0
+  },
+  {
+    "id": "ING72",
+    "name_lat": "Colchicum",
+    "name_cz": "Ocún",
+    "type": "Herb",
+    "thermal": 2,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING73",
+    "name_lat": "Asafoetida",
+    "name_cz": "Čertovo hovno (Asafoetida)",
+    "type": "Resin",
+    "thermal": 4,
+    "moisture": -4,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 2,
+    "satiety": 0
+  },
+  {
+    "id": "ING74",
+    "name_lat": "Galbanum",
+    "name_cz": "Galbanum",
+    "type": "Resin",
+    "thermal": 3,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING75",
+    "name_lat": "Tragacantha",
+    "name_cz": "Tragant",
+    "type": "Resin",
+    "thermal": 1,
+    "moisture": 2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 0,
+    "satiety": 1
+  },
+  {
+    "id": "ING76",
+    "name_lat": "Terebinthina",
+    "name_cz": "Terpentýn (pryskyřice)",
+    "type": "Resin",
+    "thermal": 3,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING77",
+    "name_lat": "Benzoinum",
+    "name_cz": "Benzoe",
+    "type": "Resin",
+    "thermal": 2,
+    "moisture": -2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING78",
+    "name_lat": "Aloe Socotrina",
+    "name_cz": "Sokotrská aloe (pryskyřice)",
+    "type": "Resin",
+    "thermal": 1,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 0,
+    "satiety": 0
+  },
+  {
+    "id": "ING79",
+    "name_lat": "Mumia",
+    "name_cz": "Mumia (mleté mumie)",
+    "type": "Animal",
+    "thermal": 2,
+    "moisture": -2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 1
+  },
+  {
+    "id": "ING80",
+    "name_lat": "Moschus",
+    "name_cz": "Pižmo",
+    "type": "Animal",
+    "thermal": 3,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 1
+  },
+  {
+    "id": "ING81",
+    "name_lat": "Ambra Grisea",
+    "name_cz": "Ambra",
+    "type": "Animal",
+    "thermal": 2,
+    "moisture": -2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 1
+  },
+  {
+    "id": "ING82",
+    "name_lat": "Cornu Unicornu",
+    "name_cz": "Roh jednorožce (narval)",
+    "type": "Animal",
+    "thermal": -2,
+    "moisture": -2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": -1,
+    "satiety": 1
+  },
+  {
+    "id": "ING83",
+    "name_lat": "Hirudo",
+    "name_cz": "Pijavice (sušené)",
+    "type": "Animal",
+    "thermal": -2,
+    "moisture": 2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": -1,
+    "satiety": 2
+  },
+  {
+    "id": "ING84",
+    "name_lat": "Adeps Suillus",
+    "name_cz": "Vepřové sádlo (čištěné)",
+    "type": "Animal",
+    "thermal": 1,
+    "moisture": 3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 0,
+    "satiety": 3
+  },
+  {
+    "id": "ING85",
+    "name_lat": "Adeps Ursi",
+    "name_cz": "Medvědí sádlo",
+    "type": "Animal",
+    "thermal": 2,
+    "moisture": 3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 2,
+    "satiety": 3
+  },
+  {
+    "id": "ING86",
+    "name_lat": "Cera Alba",
+    "name_cz": "Bílý vosk (bělený)",
+    "type": "Animal",
+    "thermal": 1,
+    "moisture": 1,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 0,
+    "satiety": 1
+  },
+  {
+    "id": "ING87",
+    "name_lat": "Sal Gemmae",
+    "name_cz": "Kamenná sůl",
+    "type": "Mineral",
+    "thermal": 2,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING88",
+    "name_lat": "Sal Ammoniacum",
+    "name_cz": "Salmiak",
+    "type": "Mineral",
+    "thermal": 4,
+    "moisture": -4,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 2,
+    "satiety": 0
+  },
+  {
+    "id": "ING89",
+    "name_lat": "Sulphur",
+    "name_cz": "Síra",
+    "type": "Mineral",
+    "thermal": 3,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING90",
+    "name_lat": "Vitriolum viride",
+    "name_cz": "Zelená skalice (železitá)",
+    "type": "Mineral",
+    "thermal": 3,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING91",
+    "name_lat": "Vitriolum caeruleum",
+    "name_cz": "Modrá skalice (měďnatá)",
+    "type": "Mineral",
+    "thermal": 3,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING92",
+    "name_lat": "Antimonium",
+    "name_cz": "Antimon (Kohl)",
+    "type": "Mineral",
+    "thermal": -2,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": -1,
+    "satiety": 0
+  },
+  {
+    "id": "ING93",
+    "name_lat": "Lapis Calaminaris",
+    "name_cz": "Kalamín (zinek)",
+    "type": "Mineral",
+    "thermal": -1,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 0,
+    "satiety": 0
+  },
+  {
+    "id": "ING94",
+    "name_lat": "Realgar",
+    "name_cz": "Realgar (červený arsen)",
+    "type": "Mineral",
+    "thermal": 4,
+    "moisture": -4,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 2,
+    "satiety": 0
+  },
+  {
+    "id": "ING95",
+    "name_lat": "Pumex",
+    "name_cz": "Pemza",
+    "type": "Mineral",
+    "thermal": -2,
+    "moisture": -4,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": -1,
+    "satiety": 0
+  },
+  {
+    "id": "ING96",
+    "name_lat": "Creta",
+    "name_cz": "Křída",
+    "type": "Mineral",
+    "thermal": -2,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": -1,
+    "satiety": 0
+  },
+  {
+    "id": "ING97",
+    "name_lat": "Lapis Specularis",
+    "name_cz": "Slída",
+    "type": "Mineral",
+    "thermal": -1,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 0,
+    "satiety": 0
+  },
+  {
+    "id": "ING98",
+    "name_lat": "Cinis",
+    "name_cz": "Dřevěný popel",
+    "type": "Mineral",
+    "thermal": 2,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING99",
+    "name_lat": "Pix Liquida",
+    "name_cz": "Dehet / Smola",
+    "type": "Resin",
+    "thermal": 3,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING100",
+    "name_lat": "Fuligo",
+    "name_cz": "Saze (Lamp black)",
+    "type": "Mineral",
+    "thermal": 2,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING101",
+    "name_lat": "Cervisia",
+    "name_cz": "Pivo (Ale)",
+    "type": "Liquid",
+    "thermal": 1,
+    "moisture": 3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 0,
+    "satiety": 3
+  },
+  {
+    "id": "ING102",
+    "name_lat": "Lac",
+    "name_cz": "Mléko",
+    "type": "Liquid",
+    "thermal": -1,
+    "moisture": 3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 0,
+    "satiety": 3
+  },
+  {
+    "id": "ING103",
+    "name_lat": "Urina",
+    "name_cz": "Moč (pro alchymii a laky)",
+    "type": "Liquid",
+    "thermal": 2,
+    "moisture": 2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 2
+  },
+  {
+    "id": "ING104",
+    "name_lat": "Aqua Fortis (Raw)",
+    "name_cz": "Kyselina dusičná (surová)",
+    "type": "Liquid",
+    "thermal": 4,
+    "moisture": -4,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 2,
+    "satiety": 1
+  },
+  {
+    "id": "ING105",
+    "name_lat": "Cydonia",
+    "name_cz": "Kdoule",
+    "type": "Herb",
+    "thermal": -2,
+    "moisture": -2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": -1,
+    "satiety": 0
+  },
+  {
+    "id": "ING106",
+    "name_lat": "Prunus amygdalus",
+    "name_cz": "Mandle (hořké)",
+    "type": "Herb",
+    "thermal": 1,
+    "moisture": -2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 0,
+    "satiety": 0
+  },
+  {
+    "id": "ING107",
+    "name_lat": "Glycyrrhiza",
+    "name_cz": "Lékořice",
+    "type": "Herb",
+    "thermal": 1,
+    "moisture": 2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 0,
+    "satiety": 1
+  },
+  {
+    "id": "ING108",
+    "name_lat": "Caryophyllus",
+    "name_cz": "Hřebíček",
+    "type": "Herb",
+    "thermal": 3,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING109",
+    "name_lat": "Nux Moschata",
+    "name_cz": "Muškátový oříšek",
+    "type": "Herb",
+    "thermal": 3,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING110",
+    "name_lat": "Macis",
+    "name_cz": "Muškátový květ",
+    "type": "Herb",
+    "thermal": 3,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING111",
+    "name_lat": "Hyssopus officinalis",
+    "name_cz": "Yzop",
+    "type": "Herb",
+    "thermal": 3,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING112",
+    "name_lat": "Sambucus nigra",
+    "name_cz": "Bez černý",
+    "type": "Herb",
+    "thermal": 1,
+    "moisture": 2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 0,
+    "satiety": 1
+  },
+  {
+    "id": "ING113",
+    "name_lat": "Tilia",
+    "name_cz": "Lípa (květ)",
+    "type": "Herb",
+    "thermal": 1,
+    "moisture": 1,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 0,
+    "satiety": 0
+  },
+  {
+    "id": "ING114",
+    "name_lat": "Juniperus communis",
+    "name_cz": "Jalovec",
+    "type": "Herb",
+    "thermal": 3,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING115",
+    "name_lat": "Lavandula",
+    "name_cz": "Levandule",
+    "type": "Herb",
+    "thermal": 2,
+    "moisture": -2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING116",
+    "name_lat": "Viola odorata",
+    "name_cz": "Violka (Fialka)",
+    "type": "Herb",
+    "thermal": -2,
+    "moisture": 2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": -1,
+    "satiety": 1
+  },
+  {
+    "id": "ING117",
+    "name_lat": "Althaea officinalis",
+    "name_cz": "Ibišek (kořen)",
+    "type": "Herb",
+    "thermal": -1,
+    "moisture": 3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 0,
+    "satiety": 2
+  },
+  {
+    "id": "ING118",
+    "name_lat": "Coriandrum",
+    "name_cz": "Koriandr",
+    "type": "Herb",
+    "thermal": -1,
+    "moisture": -2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 0,
+    "satiety": 0
+  },
+  {
+    "id": "ING119",
+    "name_lat": "Sinapis",
+    "name_cz": "Hořčice (semeno)",
+    "type": "Herb",
+    "thermal": 4,
+    "moisture": -4,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 2,
+    "satiety": 0
+  },
+  {
+    "id": "ING120",
+    "name_lat": "Laurus nobilis",
+    "name_cz": "Vavřín (Bobkový list)",
+    "type": "Herb",
+    "thermal": 3,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING121",
+    "name_lat": "Agaricus",
+    "name_cz": "Modřínovec (houba)",
+    "type": "Herb",
+    "thermal": 1,
+    "moisture": -2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 0,
+    "satiety": 0
+  },
+  {
+    "id": "ING122",
+    "name_lat": "Opopanax",
+    "name_cz": "Opopanax (pryskyřice)",
+    "type": "Resin",
+    "thermal": 3,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING123",
+    "name_lat": "Sagapenum",
+    "name_cz": "Sagapenum (pryskyřice)",
+    "type": "Resin",
+    "thermal": 3,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING124",
+    "name_lat": "Succinum",
+    "name_cz": "Jantar",
+    "type": "Mineral",
+    "thermal": 2,
+    "moisture": -2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING125",
+    "name_lat": "Tutia",
+    "name_cz": "Tutie (nečistý zinek)",
+    "type": "Mineral",
+    "thermal": -2,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": -1,
+    "satiety": 0
+  },
+  {
+    "id": "ING126",
+    "name_lat": "Carbo Ligni",
+    "name_cz": "Dřevěné uhlí",
+    "type": "Mineral",
+    "thermal": 1,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 0,
+    "satiety": 0
+  },
+  {
+    "id": "ING127",
+    "name_lat": "Nitrum",
+    "name_cz": "Ledek (Dusičnan draselný)",
+    "type": "Mineral",
+    "thermal": -3,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": -1,
+    "satiety": 0
+  },
+  {
+    "id": "ING128",
+    "name_lat": "Borax",
+    "name_cz": "Borax",
+    "type": "Mineral",
+    "thermal": -1,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 0,
+    "satiety": 0
+  },
+  {
+    "id": "ING129",
+    "name_lat": "Sapo",
+    "name_cz": "Mýdlo (základní)",
+    "type": "Material",
+    "thermal": 2,
+    "moisture": -2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING130",
+    "name_lat": "Cinis Clavellatus",
+    "name_cz": "Potaš",
+    "type": "Mineral",
+    "thermal": 3,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING131",
+    "name_lat": "Resina Pini",
+    "name_cz": "Borovicová pryskyřice",
+    "type": "Resin",
+    "thermal": 3,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING132",
+    "name_lat": "Sandaraca",
+    "name_cz": "Sandarak (pryskyřice)",
+    "type": "Resin",
+    "thermal": 2,
+    "moisture": -2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING133",
+    "name_lat": "Ichthyocolla",
+    "name_cz": "Vyzina (rybí klíh)",
+    "type": "Animal",
+    "thermal": -1,
+    "moisture": 2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 0,
+    "satiety": 2
+  },
+  {
+    "id": "ING134",
+    "name_lat": "Indigo",
+    "name_cz": "Indigo (barvivo)",
+    "type": "Mineral",
+    "thermal": -2,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": -1,
+    "satiety": 0
+  },
+  {
+    "id": "ING135",
+    "name_lat": "Reseda luteola",
+    "name_cz": "Rýt barvířský",
+    "type": "Herb",
+    "thermal": 1,
+    "moisture": -2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 0,
+    "satiety": 0
+  },
+  {
+    "id": "ING136",
+    "name_lat": "Rhamnus cathartica",
+    "name_cz": "Řešetlák počistivý",
+    "type": "Herb",
+    "thermal": 2,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  },
+  {
+    "id": "ING137",
+    "name_lat": "Argentum foliatum",
+    "name_cz": "Plátkové stříbro",
+    "type": "Mineral",
+    "thermal": -2,
+    "moisture": 1,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": -1,
+    "satiety": 0
+  },
+  {
+    "id": "ING138",
+    "name_lat": "Tartarus",
+    "name_cz": "Vinný kámen",
+    "type": "Mineral",
+    "thermal": -2,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": -1,
+    "satiety": 0
+  },
+  {
+    "id": "ING139",
+    "name_lat": "Tela Aranearum",
+    "name_cz": "Pavučina (čistá)",
+    "type": "Animal",
+    "thermal": -1,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 0,
+    "satiety": 1
+  },
+  {
+    "id": "ING140",
+    "name_lat": "Album Graecum",
+    "name_cz": "Bílý psí trus",
+    "type": "Animal",
+    "thermal": -2,
+    "moisture": -4,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": -1,
+    "satiety": 1
+  },
+  {
+    "id": "ING141",
+    "name_lat": "Cera Nigra",
+    "name_cz": "Černý vosk",
+    "type": "Animal",
+    "thermal": 1,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 0,
+    "satiety": 1
+  },
+  {
+    "id": "ING142",
+    "name_lat": "Prunus domestica",
+    "name_cz": "Švestka (sušená)",
+    "type": "Herb",
+    "thermal": -1,
+    "moisture": 2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 0,
+    "satiety": 1
+  },
+  {
+    "id": "ING143",
+    "name_lat": "Fragaria",
+    "name_cz": "Jahodník",
+    "type": "Herb",
+    "thermal": -1,
+    "moisture": 2,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 0,
+    "satiety": 1
+  },
+  {
+    "id": "ING144",
+    "name_lat": "Bismuthum",
+    "name_cz": "Bismut (Markazit)",
+    "type": "Mineral",
+    "thermal": -2,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": -1,
+    "satiety": 0
+  },
+  {
+    "id": "ING145",
+    "name_lat": "Lignum Vitae",
+    "name_cz": "Guajakové dřevo",
+    "type": "Herb",
+    "thermal": 3,
+    "moisture": -3,
+    "toxicity": 0,
+    "potency": 1,
+    "tags": [],
+    "price": 5,
+    "shelf_days": 180,
+    "color": "#888888",
+    "vigor": 1,
+    "satiety": 0
+  }
+];
+
+const RECIPES_RAW = [
+  {
+    "id": "POT01",
+    "name_lat": "Aqua Ardens",
+    "name_cz": "Aqua Ardens",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Distill",
+    "base": "ING02",
+    "req_ing": [],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT02",
+    "name_lat": "Aqua Vitae",
+    "name_cz": "Aqua Vitae",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Distill",
+    "base": "POT01",
+    "req_ing": [],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT03",
+    "name_lat": "Aqua Euphrasiae",
+    "name_cz": "Aqua Euphrasiae",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Boil",
+    "base": "ING01",
+    "req_ing": [
+      "ING15"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT04",
+    "name_lat": "Aqua Rosarum",
+    "name_cz": "Aqua Rosarum",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Distill",
+    "base": "ING01",
+    "req_ing": [
+      "ING19"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT05",
+    "name_lat": "Oxymel",
+    "name_cz": "Oxymel",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Boil",
+    "base": "ING04",
+    "req_ing": [
+      "ING03"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT06",
+    "name_lat": "Syrupus Papaveris",
+    "name_cz": "Syrupus Papaveris",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Boil",
+    "base": "POT05",
+    "req_ing": [
+      "ING06"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT07",
+    "name_lat": "Mellitum de Rosis",
+    "name_cz": "Mellitum de Rosis",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING04",
+    "req_ing": [
+      "ING19"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT08",
+    "name_lat": "Vinum Absinthiatum",
+    "name_cz": "Vinum Absinthiatum",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING02",
+    "req_ing": [
+      "ING12"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT09",
+    "name_lat": "Potio Vulneraria",
+    "name_cz": "Potio Vulneraria",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Boil",
+    "base": "ING02",
+    "req_ing": [
+      "ING18",
+      "ING10"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT10",
+    "name_lat": "Potio Memorativa",
+    "name_cz": "Potio Memorativa",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Boil",
+    "base": "ING04",
+    "req_ing": [
+      "ING16",
+      "ING17"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT11",
+    "name_lat": "Potio Anti-melancholica",
+    "name_cz": "Potio Anti-melancholica",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING02",
+    "req_ing": [
+      "ING20",
+      "ING21"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT12",
+    "name_lat": "Elixir Proprietatis",
+    "name_cz": "Elixir Proprietatis",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING55",
+    "req_ing": [
+      "ING11",
+      "ING26"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT13",
+    "name_lat": "Acetum Destillatum",
+    "name_cz": "Acetum Destillatum",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Distill",
+    "base": "ING03",
+    "req_ing": [],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT14",
+    "name_lat": "Tinctura Myrrhae",
+    "name_cz": "Tinctura Myrrhae",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING55",
+    "req_ing": [
+      "ING26"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT15",
+    "name_lat": "Laudanum (Tinctura Opii)",
+    "name_cz": "Laudanum (Tinctura Opii)",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING55",
+    "req_ing": [
+      "ING06",
+      "ING22"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT16",
+    "name_lat": "Spiritus Camphorae",
+    "name_cz": "Spiritus Camphorae",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING55",
+    "req_ing": [
+      "ING30"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT17",
+    "name_lat": "Venenum Tofana",
+    "name_cz": "Venenum Tofana",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Distill",
+    "base": "ING01",
+    "req_ing": [
+      "ING09",
+      "ING52"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT18",
+    "name_lat": "Spongia Somnifera",
+    "name_cz": "Spongia Somnifera",
+    "category": "Material",
+    "tier": 1,
+    "process": "Boil",
+    "base": "ING01",
+    "req_ing": [
+      "ING50",
+      "ING06"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT19",
+    "name_lat": "Unguentum Aureum",
+    "name_cz": "Unguentum Aureum",
+    "category": "Ointment",
+    "tier": 1,
+    "process": "Boil",
+    "base": "ING33",
+    "req_ing": [
+      "ING22",
+      "ING05"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT20",
+    "name_lat": "Unguentum Populeum",
+    "name_cz": "Unguentum Populeum",
+    "category": "Ointment",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING33",
+    "req_ing": [
+      "ING08",
+      "ING07"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT21",
+    "name_lat": "Unguentum Aegiptiacum",
+    "name_cz": "Unguentum Aegiptiacum",
+    "category": "Ointment",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING04",
+    "req_ing": [
+      "ING03",
+      "ING44"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT22",
+    "name_lat": "Unguentum Album",
+    "name_cz": "Unguentum Album",
+    "category": "Ointment",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING33",
+    "req_ing": [
+      "ING19",
+      "ING53"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT23",
+    "name_lat": "Oleum Hyperici",
+    "name_cz": "Oleum Hyperici",
+    "category": "Ointment",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING05",
+    "req_ing": [
+      "ING18"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT24",
+    "name_lat": "Oleum Rosatum",
+    "name_cz": "Oleum Rosatum",
+    "category": "Ointment",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING05",
+    "req_ing": [
+      "ING19"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT25",
+    "name_lat": "Emplastrum Meliloti",
+    "name_cz": "Emplastrum Meliloti",
+    "category": "Ointment",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING33",
+    "req_ing": [
+      "ING32"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT26",
+    "name_lat": "Electuarium de Gemmis",
+    "name_cz": "Electuarium de Gemmis",
+    "category": "Electuary",
+    "tier": 1,
+    "process": "Mix",
+    "base": "POT07",
+    "req_ing": [
+      "ING45",
+      "ING39"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT27",
+    "name_lat": "Theriaca Andromachi",
+    "name_cz": "Theriaca Andromachi",
+    "category": "Electuary",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING04",
+    "req_ing": [
+      "ING06",
+      "ING31"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT28",
+    "name_lat": "Mithridatium",
+    "name_cz": "Mithridatium",
+    "category": "Electuary",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING04",
+    "req_ing": [
+      "ING14",
+      "ING26"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT29",
+    "name_lat": "Pulvis Contra Pestem",
+    "name_cz": "Pulvis Contra Pestem",
+    "category": "Powder",
+    "tier": 1,
+    "process": "Grind",
+    "base": "ING38",
+    "req_ing": [
+      "ING27",
+      "ING11"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT30",
+    "name_lat": "Pulvis Stomachicus",
+    "name_cz": "Pulvis Stomachicus",
+    "category": "Powder",
+    "tier": 1,
+    "process": "Grind",
+    "base": "ING24",
+    "req_ing": [
+      "ING25",
+      "ING23"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT31",
+    "name_lat": "Electuarium Sennae",
+    "name_cz": "Electuarium Sennae",
+    "category": "Electuary",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING04",
+    "req_ing": [
+      "ING11",
+      "ING24"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT32",
+    "name_lat": "Confectio Alkermes",
+    "name_cz": "Confectio Alkermes",
+    "category": "Electuary",
+    "tier": 1,
+    "process": "Mix",
+    "base": "POT07",
+    "req_ing": [
+      "ING46",
+      "ING39"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT33",
+    "name_lat": "Diamargariton",
+    "name_cz": "Diamargariton",
+    "category": "Powder",
+    "tier": 1,
+    "process": "Grind",
+    "base": "ING39",
+    "req_ing": [
+      "ING38",
+      "ING24"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT34",
+    "name_lat": "Diarrhodon",
+    "name_cz": "Diarrhodon",
+    "category": "Powder",
+    "tier": 1,
+    "process": "Grind",
+    "base": "ING19",
+    "req_ing": [
+      "ING25",
+      "ING28"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT35",
+    "name_lat": "Atramentum (Ink)",
+    "name_cz": "Atramentum (Ink)",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Boil",
+    "base": "ING01",
+    "req_ing": [
+      "ING41",
+      "ING42"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT36",
+    "name_lat": "Chrysographia",
+    "name_cz": "Chrysographia",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING34",
+    "req_ing": [
+      "ING46",
+      "ING32"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT37",
+    "name_lat": "Encustum",
+    "name_cz": "Encustum",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Boil",
+    "base": "ING01",
+    "req_ing": [
+      "ING41",
+      "ING44"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT38",
+    "name_lat": "Vernix (Varnish)",
+    "name_cz": "Vernix (Varnish)",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Boil",
+    "base": "ING54",
+    "req_ing": [
+      "ING29",
+      "ING28"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT39",
+    "name_lat": "Pellicula Purificata",
+    "name_cz": "Pellicula Purificata",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING01",
+    "req_ing": [
+      "ING42",
+      "ING36"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT40",
+    "name_lat": "Viride Aes (Pigment)",
+    "name_cz": "Viride Aes (Pigment)",
+    "category": "Material",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING03",
+    "req_ing": [
+      "ING44",
+      "ING04"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT41",
+    "name_lat": "Minium Pigmentum",
+    "name_cz": "Minium Pigmentum",
+    "category": "Material",
+    "tier": 1,
+    "process": "Grind",
+    "base": "ING34",
+    "req_ing": [
+      "ING51",
+      "ING32"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT42",
+    "name_lat": "Azuritum Pigmentum",
+    "name_cz": "Azuritum Pigmentum",
+    "category": "Material",
+    "tier": 1,
+    "process": "Grind",
+    "base": "ING34",
+    "req_ing": [
+      "ING45",
+      "ING32"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT43",
+    "name_lat": "Aurum Musivum",
+    "name_cz": "Aurum Musivum",
+    "category": "Material",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING34",
+    "req_ing": [
+      "ING52",
+      "ING42"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT44",
+    "name_lat": "Glair (Pojivo)",
+    "name_cz": "Glair (Pojivo)",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING01",
+    "req_ing": [
+      "ING34",
+      "ING03"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT45",
+    "name_lat": "Rubrica (Pigment)",
+    "name_cz": "Rubrica (Pigment)",
+    "category": "Material",
+    "tier": 1,
+    "process": "Grind",
+    "base": "ING34",
+    "req_ing": [
+      "ING49",
+      "ING32"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT46",
+    "name_lat": "Cinnabaris Pigmentum",
+    "name_cz": "Cinnabaris Pigmentum",
+    "category": "Material",
+    "tier": 1,
+    "process": "Grind",
+    "base": "ING34",
+    "req_ing": [
+      "ING43",
+      "ING32"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT47",
+    "name_lat": "Sanguis Draconis Pigmentum",
+    "name_cz": "Sanguis Draconis Pigmentum",
+    "category": "Material",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING55",
+    "req_ing": [
+      "ING31",
+      "ING32"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT48",
+    "name_lat": "Aqua Fortis",
+    "name_cz": "Aqua Fortis",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Distill",
+    "base": "ING03",
+    "req_ing": [
+      "ING42",
+      "ING44"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT49",
+    "name_lat": "Oleum Camphoratum",
+    "name_cz": "Oleum Camphoratum",
+    "category": "Ointment",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING05",
+    "req_ing": [
+      "ING30"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT50",
+    "name_lat": "Pulvis Dentifricius",
+    "name_cz": "Pulvis Dentifricius",
+    "category": "Powder",
+    "tier": 1,
+    "process": "Grind",
+    "base": "ING36",
+    "req_ing": [
+      "ING29",
+      "ING26"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT51",
+    "name_lat": "Unguentum Basilicon",
+    "name_cz": "Unguentum Basilicon",
+    "category": "Ointment",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING84",
+    "req_ing": [
+      "ING76",
+      "ING99"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT52",
+    "name_lat": "Unguentum Dialthaea",
+    "name_cz": "Unguentum Dialthaea",
+    "category": "Ointment",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING84",
+    "req_ing": [
+      "ING60",
+      "ING19"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT53",
+    "name_lat": "Unguentum Rosatum",
+    "name_cz": "Unguentum Rosatum",
+    "category": "Ointment",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING84",
+    "req_ing": [
+      "ING19",
+      "ING05"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT54",
+    "name_lat": "Unguentum Diapompholygos",
+    "name_cz": "Unguentum Diapompholygos",
+    "category": "Ointment",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING84",
+    "req_ing": [
+      "ING53",
+      "ING86"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT55",
+    "name_lat": "Emplastrum Diachylon",
+    "name_cz": "Emplastrum Diachylon",
+    "category": "Ointment",
+    "tier": 1,
+    "process": "Boil",
+    "base": "ING05",
+    "req_ing": [
+      "ING53",
+      "ING01"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT56",
+    "name_lat": "Pilulae de Aloe",
+    "name_cz": "Pilulae de Aloe",
+    "category": "Pill",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING78",
+    "req_ing": [
+      "ING32",
+      "ING01"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT57",
+    "name_lat": "Pilulae Cochiae",
+    "name_cz": "Pilulae Cochiae",
+    "category": "Pill",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING78",
+    "req_ing": [
+      "ING67",
+      "ING70"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT58",
+    "name_lat": "Pilulae sine Quibus",
+    "name_cz": "Pilulae sine Quibus",
+    "category": "Pill",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING78",
+    "req_ing": [
+      "ING66",
+      "ING24"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT59",
+    "name_lat": "Electuarium de Senna",
+    "name_cz": "Electuarium de Senna",
+    "category": "Electuary",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING04",
+    "req_ing": [
+      "ING66",
+      "ING67"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT60",
+    "name_lat": "Confectio Hamech",
+    "name_cz": "Confectio Hamech",
+    "category": "Electuary",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING04",
+    "req_ing": [
+      "ING70",
+      "ING66"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT61",
+    "name_lat": "Philonium Romanum",
+    "name_cz": "Philonium Romanum",
+    "category": "Electuary",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING04",
+    "req_ing": [
+      "ING06",
+      "ING23"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT62",
+    "name_lat": "Diascordium",
+    "name_cz": "Diascordium",
+    "category": "Electuary",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING04",
+    "req_ing": [
+      "ING69",
+      "ING06"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT63",
+    "name_lat": "Pulvis Digestivus",
+    "name_cz": "Pulvis Digestivus",
+    "category": "Powder",
+    "tier": 1,
+    "process": "Grind",
+    "base": "ING64",
+    "req_ing": [
+      "ING65",
+      "ING107"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT64",
+    "name_lat": "Pulvis Contra Vermes",
+    "name_cz": "Pulvis Contra Vermes",
+    "category": "Powder",
+    "tier": 1,
+    "process": "Grind",
+    "base": "ING56",
+    "req_ing": [
+      "ING63",
+      "ING87"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT65",
+    "name_lat": "Pulvis Sympatheticus",
+    "name_cz": "Pulvis Sympatheticus",
+    "category": "Powder",
+    "tier": 1,
+    "process": "Grind",
+    "base": "ING90",
+    "req_ing": [
+      "ING79",
+      "ING41"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT66",
+    "name_lat": "Sal Fluens",
+    "name_cz": "Sal Fluens",
+    "category": "Powder",
+    "tier": 1,
+    "process": "Distill",
+    "base": "ING88",
+    "req_ing": [
+      "ING87"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT67",
+    "name_lat": "Oleum Sulphuris",
+    "name_cz": "Oleum Sulphuris",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Distill",
+    "base": "ING89",
+    "req_ing": [],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT68",
+    "name_lat": "Oleum Vitrioli",
+    "name_cz": "Oleum Vitrioli",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Distill",
+    "base": "ING90",
+    "req_ing": [],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT69",
+    "name_lat": "Oleum Terebinthinae",
+    "name_cz": "Oleum Terebinthinae",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Distill",
+    "base": "ING76",
+    "req_ing": [],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT70",
+    "name_lat": "Oleum Philosophorum",
+    "name_cz": "Oleum Philosophorum",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Distill",
+    "base": "ING95",
+    "req_ing": [
+      "ING05"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT71",
+    "name_lat": "Aqua Mirabilis",
+    "name_cz": "Aqua Mirabilis",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Distill",
+    "base": "ING55",
+    "req_ing": [
+      "ING108",
+      "ING109"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT72",
+    "name_lat": "Aqua Theriacalis",
+    "name_cz": "Aqua Theriacalis",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Distill",
+    "base": "ING55",
+    "req_ing": [
+      "POT27"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT73",
+    "name_lat": "Aqua Mellis",
+    "name_cz": "Aqua Mellis",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Distill",
+    "base": "ING04",
+    "req_ing": [],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT74",
+    "name_lat": "Syrupus de Absinthio",
+    "name_cz": "Syrupus de Absinthio",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Boil",
+    "base": "ING04",
+    "req_ing": [
+      "ING56",
+      "ING01"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT75",
+    "name_lat": "Syrupus de Mentha",
+    "name_cz": "Syrupus de Mentha",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Boil",
+    "base": "ING04",
+    "req_ing": [
+      "ING58",
+      "ING01"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT76",
+    "name_lat": "Syrupus de Cydonia",
+    "name_cz": "Syrupus de Cydonia",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Boil",
+    "base": "ING04",
+    "req_ing": [
+      "ING105",
+      "ING01"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT77",
+    "name_lat": "Vinum Hippocraticum",
+    "name_cz": "Vinum Hippocraticum",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING02",
+    "req_ing": [
+      "ING25",
+      "ING24"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT78",
+    "name_lat": "Vinum Stibiatum",
+    "name_cz": "Vinum Stibiatum",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING02",
+    "req_ing": [
+      "ING92"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT79",
+    "name_lat": "Atramentum Fuliginis",
+    "name_cz": "Atramentum Fuliginis",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING100",
+    "req_ing": [
+      "ING32",
+      "ING01"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT80",
+    "name_lat": "Atramentum Rubrum",
+    "name_cz": "Atramentum Rubrum",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING43",
+    "req_ing": [
+      "ING34",
+      "ING03"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT81",
+    "name_lat": "Atramentum Viride",
+    "name_cz": "Atramentum Viride",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING44",
+    "req_ing": [
+      "ING34",
+      "ING03"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT82",
+    "name_lat": "Encaustum",
+    "name_cz": "Encaustum",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Boil",
+    "base": "ING91",
+    "req_ing": [
+      "ING41",
+      "ING01"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT83",
+    "name_lat": "Lacca (Red Lake)",
+    "name_cz": "Lacca (Red Lake)",
+    "category": "Material",
+    "tier": 1,
+    "process": "Boil",
+    "base": "ING42",
+    "req_ing": [
+      "ING103",
+      "ING31"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT84",
+    "name_lat": "Lacca Coerulea",
+    "name_cz": "Lacca Coerulea",
+    "category": "Material",
+    "tier": 1,
+    "process": "Boil",
+    "base": "ING42",
+    "req_ing": [
+      "ING103",
+      "ING12"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT85",
+    "name_lat": "Viride Appianum",
+    "name_cz": "Viride Appianum",
+    "category": "Material",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING93",
+    "req_ing": [
+      "ING44",
+      "ING04"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT86",
+    "name_lat": "Aurum Musicum",
+    "name_cz": "Aurum Musicum",
+    "category": "Material",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING88",
+    "req_ing": [
+      "ING89",
+      "ING51"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT87",
+    "name_lat": "Pummice Powder (Pounce)",
+    "name_cz": "Pummice Powder (Pounce)",
+    "category": "Powder",
+    "tier": 1,
+    "process": "Grind",
+    "base": "ING95",
+    "req_ing": [
+      "ING96"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT88",
+    "name_lat": "Gesso (Podklad pro zlato)",
+    "name_cz": "Gesso (Podklad pro zlato)",
+    "category": "Material",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING96",
+    "req_ing": [
+      "ING86",
+      "ING34"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT89",
+    "name_lat": "Bolus Preparatus",
+    "name_cz": "Bolus Preparatus",
+    "category": "Material",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING48",
+    "req_ing": [
+      "ING34"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT90",
+    "name_lat": "Vernix Clara",
+    "name_cz": "Vernix Clara",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING54",
+    "req_ing": [
+      "ING75"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT91",
+    "name_lat": "Vernix Pinguis",
+    "name_cz": "Vernix Pinguis",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING54",
+    "req_ing": [
+      "ING76",
+      "ING29"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT92",
+    "name_lat": "Aqua Gummata",
+    "name_cz": "Aqua Gummata",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING32",
+    "req_ing": [
+      "ING01"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT93",
+    "name_lat": "Aqua Aluminosa",
+    "name_cz": "Aqua Aluminosa",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Boil",
+    "base": "ING42",
+    "req_ing": [
+      "ING01"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT94",
+    "name_lat": "Succus Chelidonii",
+    "name_cz": "Succus Chelidonii",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING12",
+    "req_ing": [
+      "ING01"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT95",
+    "name_lat": "Succus Plantaginis",
+    "name_cz": "Succus Plantaginis",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING59",
+    "req_ing": [
+      "ING01"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT96",
+    "name_lat": "Emplastrum ad Rupturas",
+    "name_cz": "Emplastrum ad Rupturas",
+    "category": "Ointment",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING33",
+    "req_ing": [
+      "ING60",
+      "ING31"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT97",
+    "name_lat": "Ceratum Galeni",
+    "name_cz": "Ceratum Galeni",
+    "category": "Ointment",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING86",
+    "req_ing": [
+      "ING05",
+      "ING01"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT98",
+    "name_lat": "Pilulae Pestilentiales",
+    "name_cz": "Pilulae Pestilentiales",
+    "category": "Pill",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING78",
+    "req_ing": [
+      "ING26",
+      "ING22"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT99",
+    "name_lat": "Decoctum Sennae",
+    "name_cz": "Decoctum Sennae",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Boil",
+    "base": "ING01",
+    "req_ing": [
+      "ING66",
+      "ING67"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT100",
+    "name_lat": "Theriaca Diatessaron",
+    "name_cz": "Theriaca Diatessaron",
+    "category": "Electuary",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING04",
+    "req_ing": [
+      "ING69",
+      "ING26"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT101",
+    "name_lat": "Aqua Cinnamomi",
+    "name_cz": "Aqua Cinnamomi",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Distill",
+    "base": "ING01",
+    "req_ing": [
+      "ING25"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT102",
+    "name_lat": "Aqua Boraginis",
+    "name_cz": "Aqua Boraginis",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Distill",
+    "base": "ING01",
+    "req_ing": [
+      "ING20"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT103",
+    "name_lat": "Aqua Salviae",
+    "name_cz": "Aqua Salviae",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Distill",
+    "base": "ING01",
+    "req_ing": [
+      "ING17"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT104",
+    "name_lat": "Aqua Sambuci",
+    "name_cz": "Aqua Sambuci",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Distill",
+    "base": "ING01",
+    "req_ing": [
+      "ING112"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT105",
+    "name_lat": "Aqua Tiliae",
+    "name_cz": "Aqua Tiliae",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Distill",
+    "base": "ING01",
+    "req_ing": [
+      "ING113"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT106",
+    "name_lat": "Aqua Juniperi",
+    "name_cz": "Aqua Juniperi",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Distill",
+    "base": "ING01",
+    "req_ing": [
+      "ING114"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT107",
+    "name_lat": "Aqua Hyssopi",
+    "name_cz": "Aqua Hyssopi",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Distill",
+    "base": "ING01",
+    "req_ing": [
+      "ING111"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT108",
+    "name_lat": "Aqua Rorismarini",
+    "name_cz": "Aqua Rorismarini",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Distill",
+    "base": "ING01",
+    "req_ing": [
+      "ING16"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT109",
+    "name_lat": "Aqua Lavandulae",
+    "name_cz": "Aqua Lavandulae",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Distill",
+    "base": "ING01",
+    "req_ing": [
+      "ING115"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT110",
+    "name_lat": "Aqua Fragariae",
+    "name_cz": "Aqua Fragariae",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Distill",
+    "base": "ING01",
+    "req_ing": [
+      "ING143"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT111",
+    "name_lat": "Syrupus Violaceus",
+    "name_cz": "Syrupus Violaceus",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Boil",
+    "base": "ING04",
+    "req_ing": [
+      "ING116",
+      "ING01"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT112",
+    "name_lat": "Syrupus Hyssopi",
+    "name_cz": "Syrupus Hyssopi",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Boil",
+    "base": "ING04",
+    "req_ing": [
+      "ING111",
+      "ING01"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT113",
+    "name_lat": "Syrupus Sambuci",
+    "name_cz": "Syrupus Sambuci",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Boil",
+    "base": "ING04",
+    "req_ing": [
+      "ING112",
+      "ING01"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT114",
+    "name_lat": "Syrupus Cinnamomi",
+    "name_cz": "Syrupus Cinnamomi",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Boil",
+    "base": "ING04",
+    "req_ing": [
+      "ING25",
+      "ING01"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT115",
+    "name_lat": "Syrupus Altheae",
+    "name_cz": "Syrupus Altheae",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Boil",
+    "base": "ING04",
+    "req_ing": [
+      "ING117",
+      "ING01"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT116",
+    "name_lat": "Syrupus de Symphyto",
+    "name_cz": "Syrupus de Symphyto",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Boil",
+    "base": "ING04",
+    "req_ing": [
+      "ING60",
+      "ING01"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT117",
+    "name_lat": "Syrupus de Croco",
+    "name_cz": "Syrupus de Croco",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Boil",
+    "base": "ING04",
+    "req_ing": [
+      "ING22",
+      "ING01"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT118",
+    "name_lat": "Syrupus de Glycyrrhiza",
+    "name_cz": "Syrupus de Glycyrrhiza",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Boil",
+    "base": "ING04",
+    "req_ing": [
+      "ING107",
+      "ING01"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT119",
+    "name_lat": "Syrupus Menthaceus",
+    "name_cz": "Syrupus Menthaceus",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Boil",
+    "base": "ING04",
+    "req_ing": [
+      "ING58",
+      "ING01"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT120",
+    "name_lat": "Syrupus de Tilia",
+    "name_cz": "Syrupus de Tilia",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Boil",
+    "base": "ING04",
+    "req_ing": [
+      "ING113",
+      "ING01"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT121",
+    "name_lat": "Oleum Amygdalarum",
+    "name_cz": "Oleum Amygdalarum",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING05",
+    "req_ing": [
+      "ING106"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT122",
+    "name_lat": "Oleum Sambuci",
+    "name_cz": "Oleum Sambuci",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING05",
+    "req_ing": [
+      "ING112"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT123",
+    "name_lat": "Oleum Juniperi",
+    "name_cz": "Oleum Juniperi",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Distill",
+    "base": "ING114",
+    "req_ing": [],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT124",
+    "name_lat": "Oleum Absinthii",
+    "name_cz": "Oleum Absinthii",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING05",
+    "req_ing": [
+      "ING56"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT125",
+    "name_lat": "Oleum Rutaceum",
+    "name_cz": "Oleum Rutaceum",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING05",
+    "req_ing": [
+      "ING63"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT126",
+    "name_lat": "Oleum Nardinum",
+    "name_cz": "Oleum Nardinum",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING05",
+    "req_ing": [
+      "ING115",
+      "ING25"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT127",
+    "name_lat": "Oleum Chamomillae",
+    "name_cz": "Oleum Chamomillae",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING05",
+    "req_ing": [
+      "ING57"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT128",
+    "name_lat": "Oleum Liliorum",
+    "name_cz": "Oleum Liliorum",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING05",
+    "req_ing": [
+      "ING116"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT129",
+    "name_lat": "Oleum Mastichinum",
+    "name_cz": "Oleum Mastichinum",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING05",
+    "req_ing": [
+      "ING29"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT130",
+    "name_lat": "Oleum Myrrhae",
+    "name_cz": "Oleum Myrrhae",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING05",
+    "req_ing": [
+      "ING26"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT131",
+    "name_lat": "Pilulae Aureae",
+    "name_cz": "Pilulae Aureae",
+    "category": "Pill",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING78",
+    "req_ing": [
+      "ING22",
+      "ING19"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT132",
+    "name_lat": "Pilulae de Rhabarbaro",
+    "name_cz": "Pilulae de Rhabarbaro",
+    "category": "Pill",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING78",
+    "req_ing": [
+      "ING67",
+      "ING118"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT133",
+    "name_lat": "Pilulae de Hiera Picra",
+    "name_cz": "Pilulae de Hiera Picra",
+    "category": "Pill",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING78",
+    "req_ing": [
+      "ING25",
+      "ING29"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT134",
+    "name_lat": "Pilulae Stomachicae",
+    "name_cz": "Pilulae Stomachicae",
+    "category": "Pill",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING78",
+    "req_ing": [
+      "ING24",
+      "ING64"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT135",
+    "name_lat": "Pilulae Aggregativae",
+    "name_cz": "Pilulae Aggregativae",
+    "category": "Pill",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING78",
+    "req_ing": [
+      "ING66",
+      "ING121"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT136",
+    "name_lat": "Pilulae de Agarico",
+    "name_cz": "Pilulae de Agarico",
+    "category": "Pill",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING78",
+    "req_ing": [
+      "ING121",
+      "ING64"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT137",
+    "name_lat": "Pilulae de Opopanace",
+    "name_cz": "Pilulae de Opopanace",
+    "category": "Pill",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING78",
+    "req_ing": [
+      "ING122",
+      "ING26"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT138",
+    "name_lat": "Pilulae de Sagapeno",
+    "name_cz": "Pilulae de Sagapeno",
+    "category": "Pill",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING78",
+    "req_ing": [
+      "ING123",
+      "ING26"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT139",
+    "name_lat": "Pilulae de Myrrha",
+    "name_cz": "Pilulae de Myrrha",
+    "category": "Pill",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING78",
+    "req_ing": [
+      "ING26",
+      "ING22"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT140",
+    "name_lat": "Pilulae de Succino",
+    "name_cz": "Pilulae de Succino",
+    "category": "Pill",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING78",
+    "req_ing": [
+      "ING124",
+      "ING29"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT141",
+    "name_lat": "Pulvis ad Casum",
+    "name_cz": "Pulvis ad Casum",
+    "category": "Powder",
+    "tier": 1,
+    "process": "Grind",
+    "base": "ING60",
+    "req_ing": [
+      "ING48",
+      "ING31"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT142",
+    "name_lat": "Pulvis Sennae Compositus",
+    "name_cz": "Pulvis Sennae Compositus",
+    "category": "Powder",
+    "tier": 1,
+    "process": "Grind",
+    "base": "ING66",
+    "req_ing": [
+      "ING64",
+      "ING107"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT143",
+    "name_lat": "Pulvis Hali",
+    "name_cz": "Pulvis Hali",
+    "category": "Powder",
+    "tier": 1,
+    "process": "Grind",
+    "base": "ING64",
+    "req_ing": [
+      "ING24",
+      "ING108"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT144",
+    "name_lat": "Pulvis Letificans",
+    "name_cz": "Pulvis Letificans",
+    "category": "Powder",
+    "tier": 1,
+    "process": "Grind",
+    "base": "ING39",
+    "req_ing": [
+      "ING45",
+      "ING22"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT145",
+    "name_lat": "Pulvis de Nuce Moschata",
+    "name_cz": "Pulvis de Nuce Moschata",
+    "category": "Powder",
+    "tier": 1,
+    "process": "Grind",
+    "base": "ING109",
+    "req_ing": [
+      "ING110",
+      "ING25"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT146",
+    "name_lat": "Pulvis Contra Tussim",
+    "name_cz": "Pulvis Contra Tussim",
+    "category": "Powder",
+    "tier": 1,
+    "process": "Grind",
+    "base": "ING107",
+    "req_ing": [
+      "ING117",
+      "ING65"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT147",
+    "name_lat": "Pulvis ad Oculos",
+    "name_cz": "Pulvis ad Oculos",
+    "category": "Powder",
+    "tier": 1,
+    "process": "Grind",
+    "base": "ING125",
+    "req_ing": [
+      "ING39",
+      "ING48"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT148",
+    "name_lat": "Pulvis Contra Venenum",
+    "name_cz": "Pulvis Contra Venenum",
+    "category": "Powder",
+    "tier": 1,
+    "process": "Grind",
+    "base": "ING82",
+    "req_ing": [
+      "ING47",
+      "ING38"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT149",
+    "name_lat": "Pulvis Dentifricius Nigrum",
+    "name_cz": "Pulvis Dentifricius Nigrum",
+    "category": "Powder",
+    "tier": 1,
+    "process": "Grind",
+    "base": "ING126",
+    "req_ing": [
+      "ING26",
+      "ING58"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT150",
+    "name_lat": "Pulvis Sternutatorius",
+    "name_cz": "Pulvis Sternutatorius",
+    "category": "Powder",
+    "tier": 1,
+    "process": "Grind",
+    "base": "ING70",
+    "req_ing": [
+      "ING23",
+      "ING119"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT151",
+    "name_lat": "Unguentum Pectorale",
+    "name_cz": "Unguentum Pectorale",
+    "category": "Ointment",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING84",
+    "req_ing": [
+      "ING111",
+      "ING115"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT152",
+    "name_lat": "Unguentum Nervinum",
+    "name_cz": "Unguentum Nervinum",
+    "category": "Ointment",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING84",
+    "req_ing": [
+      "ING16",
+      "ING17"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT153",
+    "name_lat": "Unguentum Resinosum",
+    "name_cz": "Unguentum Resinosum",
+    "category": "Ointment",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING84",
+    "req_ing": [
+      "ING131",
+      "ING33"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT154",
+    "name_lat": "Unguentum de Althea",
+    "name_cz": "Unguentum de Althea",
+    "category": "Ointment",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING84",
+    "req_ing": [
+      "ING117",
+      "ING33"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT155",
+    "name_lat": "Unguentum de Tutia",
+    "name_cz": "Unguentum de Tutia",
+    "category": "Ointment",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING84",
+    "req_ing": [
+      "ING125",
+      "ING19"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT156",
+    "name_lat": "Unguentum Ophthalmicum",
+    "name_cz": "Unguentum Ophthalmicum",
+    "category": "Ointment",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING84",
+    "req_ing": [
+      "ING125",
+      "ING48"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT157",
+    "name_lat": "Unguentum Contra Scabiem",
+    "name_cz": "Unguentum Contra Scabiem",
+    "category": "Ointment",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING84",
+    "req_ing": [
+      "ING89",
+      "ING140"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT158",
+    "name_lat": "Emplastrum Oxycroceum",
+    "name_cz": "Emplastrum Oxycroceum",
+    "category": "Ointment",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING33",
+    "req_ing": [
+      "ING22",
+      "ING03"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT159",
+    "name_lat": "Emplastrum de Mastiche",
+    "name_cz": "Emplastrum de Mastiche",
+    "category": "Ointment",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING33",
+    "req_ing": [
+      "ING29",
+      "ING131"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT160",
+    "name_lat": "Emplastrum ad Ossium Fracturas",
+    "name_cz": "Emplastrum ad Ossium Fracturas",
+    "category": "Ointment",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING33",
+    "req_ing": [
+      "ING60",
+      "ING31"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT161",
+    "name_lat": "Electuarium de Baccis Lauri",
+    "name_cz": "Electuarium de Baccis Lauri",
+    "category": "Electuary",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING04",
+    "req_ing": [
+      "ING120",
+      "ING63"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT162",
+    "name_lat": "Electuarium Diacarthamum",
+    "name_cz": "Electuarium Diacarthamum",
+    "category": "Electuary",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING04",
+    "req_ing": [
+      "ING121",
+      "ING66"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT163",
+    "name_lat": "Electuarium Diaprunum",
+    "name_cz": "Electuarium Diaprunum",
+    "category": "Electuary",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING04",
+    "req_ing": [
+      "ING142",
+      "ING66"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT164",
+    "name_lat": "Electuarium Letificans",
+    "name_cz": "Electuarium Letificans",
+    "category": "Electuary",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING04",
+    "req_ing": [
+      "ING39",
+      "ING137"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT165",
+    "name_lat": "Confectio Anisi",
+    "name_cz": "Confectio Anisi",
+    "category": "Electuary",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING04",
+    "req_ing": [
+      "ING65",
+      "ING64"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT166",
+    "name_lat": "Confectio Coriandri",
+    "name_cz": "Confectio Coriandri",
+    "category": "Electuary",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING04",
+    "req_ing": [
+      "ING118",
+      "ING25"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT167",
+    "name_lat": "Conserva Rosarum",
+    "name_cz": "Conserva Rosarum",
+    "category": "Electuary",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING04",
+    "req_ing": [
+      "ING19"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT168",
+    "name_lat": "Conserva Violarum",
+    "name_cz": "Conserva Violarum",
+    "category": "Electuary",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING04",
+    "req_ing": [
+      "ING116"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT169",
+    "name_lat": "Conserva Boraginis",
+    "name_cz": "Conserva Boraginis",
+    "category": "Electuary",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING04",
+    "req_ing": [
+      "ING20"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT170",
+    "name_lat": "Conserva Prunorum",
+    "name_cz": "Conserva Prunorum",
+    "category": "Electuary",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING04",
+    "req_ing": [
+      "ING142",
+      "ING66"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT171",
+    "name_lat": "Tinctura Croci",
+    "name_cz": "Tinctura Croci",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING55",
+    "req_ing": [
+      "ING22"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT172",
+    "name_lat": "Tinctura Absinthii",
+    "name_cz": "Tinctura Absinthii",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING55",
+    "req_ing": [
+      "ING56"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT173",
+    "name_lat": "Tinctura Castorei",
+    "name_cz": "Tinctura Castorei",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING55",
+    "req_ing": [
+      "ING37"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT174",
+    "name_lat": "Tinctura Asae Foetidae",
+    "name_cz": "Tinctura Asae Foetidae",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING55",
+    "req_ing": [
+      "ING73"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT175",
+    "name_lat": "Spiritus Juniperi",
+    "name_cz": "Spiritus Juniperi",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Distill",
+    "base": "ING55",
+    "req_ing": [
+      "ING114"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT176",
+    "name_lat": "Spiritus Lavandulae",
+    "name_cz": "Spiritus Lavandulae",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Distill",
+    "base": "ING55",
+    "req_ing": [
+      "ING115"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT177",
+    "name_lat": "Spiritus Rosmarini",
+    "name_cz": "Spiritus Rosmarini",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Distill",
+    "base": "ING55",
+    "req_ing": [
+      "ING16"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT178",
+    "name_lat": "Elixir Vitae",
+    "name_cz": "Elixir Vitae",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING55",
+    "req_ing": [
+      "ING145",
+      "ING26"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT179",
+    "name_lat": "Balsamus Sulphuris",
+    "name_cz": "Balsamus Sulphuris",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Boil",
+    "base": "ING05",
+    "req_ing": [
+      "ING89"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT180",
+    "name_lat": "Balsamus Peruvianus",
+    "name_cz": "Balsamus Peruvianus",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING55",
+    "req_ing": [
+      "ING77",
+      "ING132"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT181",
+    "name_lat": "Atramentum Purpureum",
+    "name_cz": "Atramentum Purpureum",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING01",
+    "req_ing": [
+      "ING134",
+      "ING43"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT182",
+    "name_lat": "Atramentum Argenteum",
+    "name_cz": "Atramentum Argenteum",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING34",
+    "req_ing": [
+      "ING137",
+      "ING32"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT183",
+    "name_lat": "Pigmentum Luteum",
+    "name_cz": "Pigmentum Luteum",
+    "category": "Material",
+    "tier": 1,
+    "process": "Boil",
+    "base": "ING135",
+    "req_ing": [
+      "ING42",
+      "ING96"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT184",
+    "name_lat": "Pigmentum Viride Rhamni",
+    "name_cz": "Pigmentum Viride Rhamni",
+    "category": "Material",
+    "tier": 1,
+    "process": "Boil",
+    "base": "ING136",
+    "req_ing": [
+      "ING42",
+      "ING01"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT185",
+    "name_lat": "Pigmentum Indicum",
+    "name_cz": "Pigmentum Indicum",
+    "category": "Material",
+    "tier": 1,
+    "process": "Grind",
+    "base": "ING134",
+    "req_ing": [
+      "ING34",
+      "ING32"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT186",
+    "name_lat": "Vernix Sandaracae",
+    "name_cz": "Vernix Sandaracae",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Boil",
+    "base": "ING54",
+    "req_ing": [
+      "ING132"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT187",
+    "name_lat": "Vernix Masticina",
+    "name_cz": "Vernix Masticina",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING55",
+    "req_ing": [
+      "ING29"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT188",
+    "name_lat": "Aqua ad Pergamenum",
+    "name_cz": "Aqua ad Pergamenum",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING01",
+    "req_ing": [
+      "ING42",
+      "ING139"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT189",
+    "name_lat": "Colla Piscium",
+    "name_cz": "Colla Piscium",
+    "category": "Material",
+    "tier": 1,
+    "process": "Boil",
+    "base": "ING01",
+    "req_ing": [
+      "ING133",
+      "ING03"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT190",
+    "name_lat": "Albumen Preparatum",
+    "name_cz": "Albumen Preparatum",
+    "category": "Material",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING34",
+    "req_ing": [
+      "ING03"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT191",
+    "name_lat": "Pulvis Pyrius",
+    "name_cz": "Pulvis Pyrius",
+    "category": "Powder",
+    "tier": 1,
+    "process": "Grind",
+    "base": "ING127",
+    "req_ing": [
+      "ING89",
+      "ING126"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT192",
+    "name_lat": "Ignis Graecus",
+    "name_cz": "Ignis Graecus",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING99",
+    "req_ing": [
+      "ING89",
+      "ING127"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT193",
+    "name_lat": "Aqua Regia",
+    "name_cz": "Aqua Regia",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING104",
+    "req_ing": [
+      "ING88"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT194",
+    "name_lat": "Sal Petrae Purificatum",
+    "name_cz": "Sal Petrae Purificatum",
+    "category": "Material",
+    "tier": 1,
+    "process": "Boil",
+    "base": "ING127",
+    "req_ing": [
+      "ING01",
+      "ING130"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT195",
+    "name_lat": "Borax Preparatus",
+    "name_cz": "Borax Preparatus",
+    "category": "Material",
+    "tier": 1,
+    "process": "Boil",
+    "base": "ING128",
+    "req_ing": [
+      "ING01"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT196",
+    "name_lat": "Sapo Castiliensis",
+    "name_cz": "Sapo Castiliensis",
+    "category": "Material",
+    "tier": 1,
+    "process": "Boil",
+    "base": "ING05",
+    "req_ing": [
+      "ING130",
+      "ING01"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT197",
+    "name_lat": "Sapo Mollis",
+    "name_cz": "Sapo Mollis",
+    "category": "Material",
+    "tier": 1,
+    "process": "Boil",
+    "base": "ING84",
+    "req_ing": [
+      "ING130",
+      "ING01"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT198",
+    "name_lat": "Lixivium",
+    "name_cz": "Lixivium",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING01",
+    "req_ing": [
+      "ING98"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT199",
+    "name_lat": "Acetum Rosatum",
+    "name_cz": "Acetum Rosatum",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING03",
+    "req_ing": [
+      "ING19"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  },
+  {
+    "id": "POT200",
+    "name_lat": "Acetum Rutaceum",
+    "name_cz": "Acetum Rutaceum",
+    "category": "Liquid",
+    "tier": 1,
+    "process": "Mix",
+    "base": "ING03",
+    "req_ing": [
+      "ING63"
+    ],
+    "effect": "",
+    "tags": [],
+    "value": 10,
+    "color": "#888888"
+  }
+];
+
+// ══════════════════════════════════════════════════════
+//  ENGINE CONFIG
+// ══════════════════════════════════════════════════════
+
+const PROCESS_MODIFIERS = {
+  Mix:     { thermal:0, moisture:0, tox_mult:1.0, vigor_delta:0, satiety_mult:1.0 },
+  Grind:   { thermal:0, moisture:-1, tox_mult:1.0, vigor_delta:0, satiety_mult:0.8 },
+  Boil:    { thermal:1, moisture:-1, tox_mult:1.1, vigor_delta:-1, satiety_mult:0.6 },
+  Distill: { thermal:1, moisture:-2, tox_mult:1.5, vigor_delta:+2, satiety_mult:0.2 },
+};
+
+const MOON_PHASES = [
+  { name: "Dorůstající", icon: "🌒", effect: "waxing", desc: "Stabilní energie. Normální procesy." },
+  { name: "Úplněk", icon: "🌕", effect: "full", desc: "Magie na vrcholu! Lektvary mají o 50 % vyšší hodnotu, ale toxicita roste." },
+  { name: "Ubývající", icon: "🌖", effect: "waning", desc: "Fáze rozkladu. Masivně zvyšuje toxicitu (+50 %). Ideální pro jedy." },
+  { name: "Novoluní", icon: "🌑", effect: "void", desc: "Void of Course. Zrušení magie. Veškeré vaření skončí jalovým odvarem." }
+];
+
+const PROCESS_ICONS = { Mix:"🥄", Grind:"🪨", Boil:"🔥", Distill:"💧" };
+const TYPE_ICONS    = { Herb:"🌿", Mineral:"💎", Resin:"🟤", Liquid:"🫗", Animal:"🦴" };
+const TIER_LABELS   = ["", "Základní","Pokročilý","Mistr","Legenda"];
+
+// ══════════════════════════════════════════════════════
+//  GAME STATE
+// ══════════════════════════════════════════════════════
+
+let state = {
+  gold: 150,
+  inventory: {},
+  slots: [],
+  process: "Mix",
+  discovered: {},
+  brewed: 0,
+  maxToxSeen: 0,
+  lastBrewResult: null,
+  moonIndex: 0,
+  brewedThisPhase: 0,
+  
+  // ✨ NOVÉ: Player stats
+  vigor: 100,           // 0 (vyčerpán) - 100 (plný energie)
+  hunger: 0,            // 0 (sytý) - 100 (hladový)
+  potionStorage: []     // Skladované lektvary
+};
+
+const ingMap = {};
+INGREDIENTS_RAW.forEach(i => ingMap[i.id] = i);
+
+const recMap = {};
+RECIPES_RAW.forEach(r => recMap[r.id] = r);
+
+let activeFilter = "All";
+
+// ══════════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════════
+
+function init() {
+  // 1. DYNAMICKÁ EKONOMIKA: Přepočet cen podle vlastností
+  INGREDIENTS_RAW.forEach(i => {
+    let statValue = Math.abs(i.thermal) + Math.abs(i.moisture);
+    let calculatedPrice = 2; // Absolutní základ (např. Voda)
+    
+    // Čím silnější a extrémnější ingredience, tím dražší
+    calculatedPrice += (i.potency * 5); 
+    calculatedPrice += (statValue * 2);
+    
+    // Jedy a vzácné věci jsou drahé
+    if (i.toxicity > 20) calculatedPrice += 15;
+    if (i.toxicity > 50) calculatedPrice += 30;
+    if (i.tags && i.tags.includes("rare")) calculatedPrice += 50;
+    
+    i.price = calculatedPrice;
+  });
+
+  // 2. BEZPEČNÉ NAČTENÍ HRY
+  // loadGame samo o sobě aktualizuje stav, pokud nějaký najde
+  loadGame();
+
+  // 3. STARTOVNÍ INGREDIENCE POUZE PRO NOVOU HRU
+  // Zkontrolujeme, jestli po načtení hry náhodou nezůstal inventář prázdný
+  if (Object.keys(state.inventory).length === 0) {
+    ["ING01","ING02","ING04","ING03","ING05","ING19"].forEach(id => {
+      state.inventory[id] = 3;
+    });
+  }
+  
+  // 4. VYRENDEROVÁNÍ CELÉHO ROZHRANÍ
+  updateMoonUI();
+  renderFilterBar();
+  renderIngredients();
+  renderSlots();
+  renderJournal();
+  updateStats();
+  
+  document.querySelector('[data-proc="Mix"]').classList.add('active');
+  
+  // ✨ NOVÉ: Automatický vigor/hunger decay (každých 30s)
+  // Pro vypnutí zakomentuj níže
+  setInterval(() => {
+    state.vigor = Math.max(0, state.vigor - 1);
+    state.hunger = Math.min(100, state.hunger + 2);
+    
+    updateStats();
+    
+    // Warnings
+    if (state.vigor < 20 && state.vigor % 5 === 0) {
+      notify('⚠️ Jsi vyčerpán! Potřebuješ odpočinek nebo stimulans.', 'warn');
+    }
+    if (state.hunger > 80 && state.hunger % 10 === 0) {
+      notify('⚠️ Umíráš hlady! Potřebuješ jídlo.', 'warn');
+    }
+  }, 30000); // Každých 30 sekund
+  document.getElementById('statTotal').textContent = RECIPES_RAW.length;
+}
+
+function updateMoonUI() {
+  const phase = MOON_PHASES[state.moonIndex];
+  document.getElementById('statMoonIco').textContent = phase.icon;
+  document.getElementById('statMoonName').textContent = phase.name;
+  document.getElementById('moonStatContainer').setAttribute('data-desc', phase.desc);
+}
+
+// ══════════════════════════════════════════════════════
+//  RENDER FUNCTIONS
+// ══════════════════════════════════════════════════════
+
+function renderFilterBar() {
+  const types = ["All", ...new Set(INGREDIENTS_RAW.map(i => i.type))];
+  const bar = document.getElementById('filterBar');
+  bar.innerHTML = types.map(t =>
+    `<button class="filter-btn ${t===activeFilter?'active':''}" onclick="setFilter('${t}')">${t}</button>`
+  ).join('');
+}
+
+function setFilter(t) {
+  activeFilter = t;
+  renderFilterBar();
+  renderIngredients();
+}
+
+function renderIngredients() {
+  const q = document.getElementById('searchBox').value.toLowerCase();
+  let list = INGREDIENTS_RAW.filter(i => {
+    const matchType = activeFilter === "All" || i.type === activeFilter;
+    const matchQ = !q || i.name_cz.toLowerCase().includes(q) || i.name_lat.toLowerCase().includes(q) || i.tags.some(t=>t.includes(q));
+    return matchType && matchQ;
+  });
+  
+  // SORT: First by inventory (has stock > no stock), then alphabetically by Czech name
+  list.sort((a, b) => {
+    const qtyA = state.inventory[a.id] || 0;
+    const qtyB = state.inventory[b.id] || 0;
+    
+    if (qtyA > 0 && qtyB === 0) return -1;
+    if (qtyA === 0 && qtyB > 0) return 1;
+    
+    return a.name_cz.localeCompare(b.name_cz, 'cs');
+  });
+  
+  const el = document.getElementById('ingList');
+  el.innerHTML = list.map(i => {
+    const qty = state.inventory[i.id] || 0;
+    const inSlot = state.slots.includes(i.id);
+    return `<div class="ing-item ${inSlot?'selected':''} ${qty===0?'locked':''} ${qty>0?'has-stock':''}"
+      onclick="addToSlot('${i.id}')"
+      onmouseenter="showDetail('${i.id}')"
+      onmouseleave="hideDetail()">
+      <div class="ing-dot" style="background:${i.color}"></div>
+      <div class="ing-info">
+        <div class="ing-name">${i.name_cz}</div>
+        <div class="ing-lat">${i.name_lat}</div>
+      </div>
+      <div class="ing-count">${qty>0?qty:'✗'}</div>
+    </div>`;
+  }).join('');
+}
+
+function showDetail(id) {
+  const i = ingMap[id];
+  if (!i) return;
+  const box = document.getElementById('detailBox');
+  const thermalLabel = i.thermal > 0 ? `Teplo +${i.thermal}` : i.thermal < 0 ? `Chlad ${i.thermal}` : 'Neutrální';
+  const moistLabel   = i.moisture > 0 ? `Vlhkost +${i.moisture}` : i.moisture < 0 ? `Suchost ${i.moisture}` : 'Neutrální';
+  box.style.display = 'block';
+  box.innerHTML = `
+    <h3>${i.name_cz} <small style="color:var(--text3);font-size:0.7em">${i.name_lat}</small></h3>
+    <div class="prop-row"><span class="prop-key">Typ:</span><span class="prop-val type-${i.type}">${i.type}</span></div>
+    <div class="prop-row"><span class="prop-key">Teplo/Chlad:</span><span class="prop-val" style="color:${i.thermal>0?'#e67e22':i.thermal<0?'#3498db':'#888'}">${thermalLabel}</span></div>
+    <div class="prop-row"><span class="prop-key">Vlhkost/Suchost:</span><span class="prop-val" style="color:${i.moisture>0?'#2ecc71':i.moisture<0?'#c8a870':'#888'}">${moistLabel}</span></div>
+    <div class="prop-row"><span class="prop-key">Toxicita:</span><span class="prop-val" style="color:${i.toxicity>50?'#e74c3c':i.toxicity>20?'#e67e22':'#2ecc71'}">${i.toxicity}</span></div>
+    <div class="prop-row"><span class="prop-key">Síla:</span><span class="prop-val">${'★'.repeat(i.potency)}${'☆'.repeat(4-i.potency)}</span></div>
+    <div style="margin-top:6px;font-size:0.68rem;color:var(--text3)">${i.tags.join(' · ')}</div>
+  `;
+}
+
+function hideDetail() {
+  document.getElementById('detailBox').style.display = 'none';
+}
+
+function renderSlots() {
+  const MAX = 6;
+  let html = '';
+  for (let i = 0; i < MAX; i++) {
+    const id = state.slots[i];
+    if (id) {
+      const ing = ingMap[id];
+      html += `<div class="slot filled" onclick="removeFromSlot(${i})">
+        <span class="slot-remove">✕</span>
+        <span class="slot-icon">${TYPE_ICONS[ing.type]||'?'}</span>
+        <span class="slot-name">${ing.name_cz}</span>
+        <div style="width:100%;height:3px;border-radius:2px;margin-top:2px;background:${ing.color}"></div>
+      </div>`;
+    } else {
+      html += `<div class="slot"><span style="color:var(--text3);font-size:1.5rem">+</span></div>`;
+    }
+  }
+  document.getElementById('slotRow').innerHTML = html;
+  
+  const hasSlots = state.slots.length > 0;
+  document.getElementById('brewBtn').disabled = !hasSlots;
+  
+  updateVectorPreview();
+}
+
+function updateVectorPreview() {
+  const area = document.getElementById('vectorArea');
+  if (state.slots.length === 0) { area.style.display = 'none'; return; }
+  area.style.display = 'block';
+  
+  const v = computeVector(state.slots, state.process);
+  renderVector(v);
+}
+
+function renderVector(v) {
+  const disp = document.getElementById('vectorDisplay');
+  
+  const bars = [
+    { key:'thermal', label:'TEPLO/CHLAD', min:-4, max:4, posColor:'#e67e22', negColor:'#3498db' },
+    { key:'moisture', label:'VLHKOST/SUCHO', min:-4, max:4, posColor:'#2ecc71', negColor:'#c8a870' },
+    { key:'toxicity', label:'TOXICITA', min:0, max:100, posColor:'#e74c3c', negColor:'#e74c3c' },
+  ];
+  
+  disp.innerHTML = bars.map(b => {
+    const val = v[b.key];
+    const pct = b.key === 'toxicity'
+      ? (val / 100) * 100
+      : ((val - b.min) / (b.max - b.min)) * 100;
+    const color = val >= 0 ? b.posColor : b.negColor;
+    const midPct = ((0 - b.min) / (b.max - b.min)) * 100;
+    
+    let fillStyle;
+    if (b.key === 'toxicity') {
+      fillStyle = `bottom:0;height:${pct}%;background:${color};`;
+    } else if (val >= 0) {
+      fillStyle = `bottom:${midPct}%;height:${pct - midPct}%;background:${color};`;
+    } else {
+      fillStyle = `bottom:${pct}%;height:${midPct - pct}%;background:${color};`;
+    }
+    
+    return `<div class="vec-bar">
+      <div class="vec-label">${b.label}</div>
+      <div class="vec-track">
+        <div class="vec-fill" style="${fillStyle}"></div>
+      </div>
+      <div class="vec-val" style="color:${color}">${val > 0 ? '+' : ''}${typeof val === 'number' ? val.toFixed(1) : val}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderJournal() {
+  const el = document.getElementById('journalList');
+  if (Object.keys(state.discovered).length === 0) {
+    el.innerHTML = `<div class="empty-state">Ještě jsi nic neobjevil...<br><br>Začni míchat! 🧪</div>`;
+    return;
+  }
+  el.innerHTML = RECIPES_RAW.filter(r => state.discovered[r.id]).map(r => `
+    <div class="journal-entry" onclick="showRecipeDetail('${r.id}')">
+      <div class="j-name">
+        <span class="j-dot" style="background:${r.color}"></span>
+        ${r.name_cz}
+        <span class="tier-badge tier-${r.tier}">${TIER_LABELS[r.tier]}</span>
+      </div>
+      <div class="j-cat">${r.category} · ${r.process} · 💰 ${r.value}</div>
+    </div>
+  `).join('');
+}
+
+function updateStats() {
+  document.getElementById('statGold').textContent = state.gold;
+  document.getElementById('statBrewed').textContent = state.brewed;
+  document.getElementById('statDiscovered').textContent = Object.keys(state.discovered).length;
+  document.getElementById('statMaxTox').textContent = state.maxToxSeen;
+  
+  // ✨ NOVÉ: Update vigor/hunger
+  const vigorEl = document.getElementById('statVigor');
+  const hungerEl = document.getElementById('statHunger');
+  
+  if (vigorEl) {
+    vigorEl.textContent = state.vigor;
+    vigorEl.style.color = state.vigor > 70 ? 'var(--green)' : state.vigor > 30 ? 'var(--gold2)' : 'var(--danger)';
+  }
+  
+  if (hungerEl) {
+    hungerEl.textContent = state.hunger;
+    hungerEl.style.color = state.hunger < 30 ? 'var(--green)' : state.hunger < 70 ? 'var(--gold2)' : 'var(--danger)';
+  }
+  
+  // Update storage count
+  renderPotionStorage();
+}
+
+// ══════════════════════════════════════════════════════
+//  SLOT MANAGEMENT
+// ══════════════════════════════════════════════════════
+
+function addToSlot(id) {
+  const qty = state.inventory[id] || 0;
+  if (qty === 0) { notify("Nemáš tuto ingredienci!", "warn"); return; }
+  if (state.slots.length >= 6) { notify("Stůl je plný! (max 6 ingrediencí)", "warn"); return; }
+  if (state.slots.includes(id)) { notify("Tato ingredience už je na stole.", "info"); return; }
+  
+  state.slots.push(id);
+  renderSlots();
+  renderIngredients();
+}
+
+function removeFromSlot(idx) {
+  state.slots.splice(idx, 1);
+  renderSlots();
+  renderIngredients();
+}
+
+function setProcess(btn) {
+  document.querySelectorAll('.proc-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  state.process = btn.dataset.proc;
+  updateVectorPreview();
+}
+
+// ══════════════════════════════════════════════════════
+//  CORE ENGINE
+// ══════════════════════════════════════════════════════
+function computeVector(slots, process) {
+  const mod = PROCESS_MODIFIERS[process];
+  const phase = MOON_PHASES[state.moonIndex];
+  
+  let thermal  = slots.reduce((s,id) => s + (ingMap[id]?.thermal||0), 0);
+  let moisture = slots.reduce((s,id) => s + (ingMap[id]?.moisture||0), 0);
+  let toxicity = slots.reduce((s,id) => s + (ingMap[id]?.toxicity||0), 0);
+  
+  // ✨ NOVÉ: Vigor & Satiety
+  let vigor   = slots.reduce((s,id) => s + (ingMap[id]?.vigor||0), 0);
+  let satiety = slots.reduce((s,id) => s + (ingMap[id]?.satiety||0), 0);
+  
+  thermal  = Math.max(-8, Math.min(8, thermal + mod.thermal));
+  moisture = Math.max(-8, Math.min(8, moisture + mod.moisture));
+  
+  // ✨ NOVÉ: Process modifikace vigor/satiety
+  vigor += mod.vigor_delta || 0;
+  satiety = Math.round(satiety * (mod.satiety_mult || 1.0));
+  
+  // Modifikátory Měsíce
+  let tox_mult = mod.tox_mult;
+  if (phase.effect === 'full') {
+    tox_mult *= 1.2;
+    vigor = Math.round(vigor * 1.2); // Úplněk zvyšuje energii
+  }
+  if (phase.effect === 'waning') tox_mult *= 1.5; 
+  if (phase.effect === 'void') {
+    tox_mult *= 0;
+    vigor = 0;    // Novoluní = vyčerpání
+    satiety = 0;  // Žádná výživa
+  }
+
+  toxicity = Math.min(100, Math.round(toxicity * tox_mult));
+  
+  // Novoluní zruší humorální vektory
+  if (phase.effect === 'void') { thermal = 0; moisture = 0; }
+  
+  // ✨ NOVÉ: Clamp vigor/satiety
+  vigor = Math.max(-12, Math.min(12, vigor));
+  satiety = Math.max(0, Math.min(12, satiety));
+  
+  return { thermal, moisture, toxicity, vigor, satiety };
+}
+
+function brew() {
+  if (state.slots.length === 0) return;
+  
+  const btn = document.getElementById('brewBtn');
+  btn.disabled = true;
+  btn.textContent = "Vaří se...";
+  btn.classList.add('brewing');
+  
+  const liquid = document.getElementById('cauldronLiquid');
+  const randomColor = state.slots.map(id => ingMap[id]?.color).filter(Boolean)[0] || '#1a3320';
+  liquid.setAttribute('fill', randomColor+'88');
+  
+  setTimeout(() => {
+    btn.classList.remove('brewing');
+    btn.textContent = "UVAŘ!";
+    btn.disabled = false;
+    liquid.setAttribute('fill', '#1a3320');
+    
+    const vec = computeVector(state.slots, state.process);
+    const phase = MOON_PHASES[state.moonIndex];
+    let result = phase1Match(state.slots, state.process);
+    let isExact = !!result;
+    
+    // Zásah Void of Course (Novoluní)
+    if (phase.effect === 'void') {
+      isExact = false;
+      result = {
+        id: null, name_cz: "Jalový odvar (Novoluní)", name_lat: "Aqua Inanis", category: "Znehodnoceno",
+        tier: 0, effect: "Měsíc ve fázi Void of Course vyrušil veškerou energii. Výsledek je jalový a bezcenný.",
+        color: "#555555", tags: ["void"], value: 0, procedural: true
+      };
+    } else if (!result) {
+      result = phase2Procedural(vec);
+    }
+    
+    // Bonus Úplňku k hodnotě
+    if (phase.effect === 'full' && isExact) {
+      result.value = Math.round(result.value * 1.5);
+      result.effect += " (Zesíleno energií Úplňku)";
+    }
+    
+    state.slots.forEach(id => {
+      if (state.inventory[id] > 0) state.inventory[id]--;
+    });
+    
+    state.brewed++;
+    state.maxToxSeen = Math.max(state.maxToxSeen, vec.toxicity);
+    
+    if (isExact && result.id && !state.discovered[result.id]) {
+      state.discovered[result.id] = true;
+      notify(`✨ Nový objev: ${result.name_cz}!`, "success");
+    }
+    
+    state.lastBrewResult = result;
+    showResult(result, vec, isExact);
+    
+    state.slots = [];
+    
+    // Posun času (Měsíční fáze se změní po 4 uvařených lektvarech)
+    state.brewedThisPhase++;
+    if (state.brewedThisPhase >= 4) {
+      state.brewedThisPhase = 0;
+      state.moonIndex = (state.moonIndex + 1) % MOON_PHASES.length;
+      updateMoonUI();
+      notify(`Měsíc přešel do fáze: ${MOON_PHASES[state.moonIndex].name}`, "info");
+    }
+
+    renderSlots();
+    renderIngredients();
+    renderJournal();
+    updateStats();
+  }, 800);
+}
+
+function phase1Match(slots, process) {
+  const sorted = [...slots].sort();
+  
+  for (const r of RECIPES_RAW) {
+    const expected = [r.base, ...r.req_ing].sort();
+    if (r.process !== process) continue;
+    if (expected.length !== sorted.length) continue;
+    if (expected.every((v,i) => v === sorted[i])) return r;
+  }
+  return null;
+}
+
+function phase2Procedural(vec) {
+  const { thermal, moisture, toxicity } = vec;
+  
+  let name, effect, color, tags = [];
+  
+  const thermalWord = thermal > 2 ? "Hořký" : thermal > 0 ? "Hřejivý" : thermal < -2 ? "Mrazivý" : thermal < 0 ? "Chladivý" : "Neutrální";
+  const moistWord   = moisture > 2 ? "Vlhký" : moisture > 0 ? "Zvlhčující" : moisture < -2 ? "Vysušující" : moisture < 0 ? "Suchý" : "";
+  
+  if (toxicity > 70) {
+    name = "Jedovatý odvar"; color = "#8e1010"; tags = ["poison","dangerous"];
+    effect = `Vysoce toxická směs (tox: ${toxicity}). ${thermalWord} charakter. Nebezpečné!`;
+  } else if (toxicity > 40) {
+    name = `${thermalWord} toxický lektvar`; color = "#c0392b"; tags = ["toxic"];
+    effect = `Středně toxická směs. Tep. ${thermal > 0 ? '+' : ''}${thermal}, Vlhk. ${moisture > 0 ? '+' : ''}${moisture}, Tox. ${toxicity}.`;
+  } else if (thermal < -2 && toxicity < 30) {
+    name = `${thermalWord} chladivý obklad`; color = "#2980b9"; tags = ["cooling","analgesic"];
+    effect = `Chlazení a útlum bolesti. Tepl. ${thermal}, Vlhk. ${moisture}.`;
+  } else if (thermal > 2 && toxicity < 20) {
+    name = `${thermalWord} zahřívací elixír`; color = "#e67e22"; tags = ["warming","tonic"];
+    effect = `Zahřívá a stimuluje. Tepl. ${thermal}, Vlhk. ${moisture}.`;
+  } else if (Math.abs(thermal) <= 1 && Math.abs(moisture) <= 1) {
+    name = "Nevýrazný odvar"; color = "#7f8c8d"; tags = ["neutral"];
+    effect = "Humorální vektory se navzájem vyrušily. Slabý, nezaměřený účinek.";
+  } else {
+    name = `${thermalWord}${moistWord?' '+moistWord:''} odvar`; color = "#8e44ad"; tags = ["procedural"];
+    effect = `Neznámý procedurální lektvar. Tepl. ${thermal > 0 ? '+' : ''}${thermal}, Vlhk. ${moisture > 0 ? '+' : ''}${moisture}, Tox. ${toxicity}.`;
+  }
+  
+  return { id: null, name_cz: name, name_lat: "Compositum Ignotum", category: "Unknown",
+           tier: 0, effect, color, tags, value: Math.max(2, 10 - toxicity/10 + Math.abs(thermal) + Math.abs(moisture)), procedural: true };
+}
+
+
+function showResult(result, vec, isExact) {
+  const box = document.getElementById('resultBox');
+  box.className = `result-box ${isExact ? 'success' : result.procedural ? 'procedural' : 'failure'}`;
+  
+  const tagColors = {
+    dangerous: '#e74c3c', poison: '#8e1010', narcotic: '#8e44ad', rare: '#f39c12',
+    wound: '#27ae60', analgesic: '#3498db', cooling: '#2980b9', warming: '#e67e22',
+    tonic: '#2ecc71', antiseptic: '#1abc9c', sedative: '#9b59b6', healing: '#27ae60',
+    memory: '#9b59b6', mood: '#3498db', aromatic: '#d4a843',
+  };
+  
+  const tagsHtml = (result.tags||[]).map(t => {
+    const c = tagColors[t] || 'var(--text3)';
+    return `<span class="tag" style="color:${c};border-color:${c}44">${t}</span>`;
+  }).join('');
+  
+  const tierBadge = result.tier > 0
+    ? `<span class="tier-badge tier-${result.tier}">${TIER_LABELS[result.tier]}</span>` : '';
+  
+  // ✨ NOVÉ: Vigor/Satiety display
+  const vigorClass = vec.vigor > 0 ? 'green' : vec.vigor < 0 ? 'red' : 'text3';
+  const vigorSign = vec.vigor > 0 ? '+' : '';
+  const metabolicStats = `
+    <div style="display:flex;gap:16px;justify-content:center;margin-top:12px;font-family:'Cinzel',serif;font-size:0.85rem;">
+      <span style="color:var(--${vigorClass})">⚡ Vigor: ${vigorSign}${vec.vigor || 0}</span>
+      <span style="color:var(--green)">🍖 Sytost: ${vec.satiety || 0}</span>
+    </div>
+  `;
+  
+  box.innerHTML = `
+    <div class="result-icon">${isExact ? '⚗' : result.procedural ? '🌀' : '💀'}</div>
+    <div class="result-name">${result.name_cz} ${tierBadge}</div>
+    <div class="result-lat">${result.name_lat}</div>
+    <div class="result-effect">${result.effect}</div>
+    <div class="result-tags">${tagsHtml}</div>
+    ${metabolicStats}
+    ${result.value ? `<div style="margin-top:8px;font-size:0.75rem;color:var(--gold2);font-family:'Cinzel',serif">💰 Hodnota: ${Math.round(result.value)} zlatých</div>` : ''}
+    ${isExact ? '<div style="margin-top:8px;font-size:0.7rem;color:var(--green);font-style:italic">✓ Přesný recept!</div>' : ''}
+    ${result.procedural ? '<div style="margin-top:8px;font-size:0.7rem;color:var(--purple);font-style:italic">~ Procedurální výsledek (vektorový engine)</div>' : ''}
+    
+    <div class="result-actions">
+      <button class="result-btn drink" onclick="consumePotionFromResult()">🍷 Vypít</button>
+      <button class="result-btn store" onclick="storePotionFromResult()">📦 Uložit</button>
+      <button class="result-btn sell" onclick="sellPotionFromResult()">💰 Prodat</button>
+    </div>
+  `;
+  
+  // Store the result globally for action buttons
+  state.lastBrewResult = { ...result, ...vec };
+  
+  renderVector(vec);
+  document.getElementById('vectorArea').style.display = 'block';
+}
+
+// Action button handlers
+function consumePotionFromResult() {
+  if (!state.lastBrewResult) return;
+  consumePotion(state.lastBrewResult);
+  state.lastBrewResult = null;
+  document.getElementById('resultBox').innerHTML = '<div class="empty-state">Lektvar vypitý! Přidej ingredience a zvol postup...</div>';
+  document.getElementById('vectorArea').style.display = 'none';
+}
+
+function storePotionFromResult() {
+  if (!state.lastBrewResult) return;
+  if (state.potionStorage.length >= 50) {
+    notify('📦 Sklad je plný! (max 50 lektvarů)', 'error');
+    return;
+  }
+  storePotion(state.lastBrewResult);
+  state.lastBrewResult = null;
+  document.getElementById('resultBox').innerHTML = '<div class="empty-state">Lektvar uložen! Přidej ingredience a zvol postup...</div>';
+  document.getElementById('vectorArea').style.display = 'none';
+}
+
+function sellPotionFromResult() {
+  if (!state.lastBrewResult) return;
+  const value = state.lastBrewResult.value || 10;
+  state.gold += value;
+  updateStats();
+  notify(`💰 Prodal jsi ${state.lastBrewResult.name_cz} za ${value} zlatých`, 'success');
+  state.lastBrewResult = null;
+  document.getElementById('resultBox').innerHTML = '<div class="empty-state">Lektvar prodán! Přidej ingredience a zvol postup...</div>';
+  document.getElementById('vectorArea').style.display = 'none';
+}
+
+function sellPotion() {
+  if (!state.lastBrewResult) return;
+  const value = Math.round(state.lastBrewResult.value || 0);
+  if (value <= 0) {
+    notify("Tento lektvar nemá žádnou hodnotu!", "warn");
+    return;
+  }
+  
+  state.gold += value;
+  notify(`Prodáno! +${value} zlatých`, "success");
+  updateStats();
+  
+  state.lastBrewResult = null;
+  document.getElementById('resultBox').innerHTML = '<div class="empty-state">Přidej ingredience a zvol postup...</div>';
+  document.getElementById('vectorArea').style.display = 'none';
+}
+
+function showRecipeDetail(id) {
+  const r = recMap[id];
+  if (!r) return;
+  const allIng = [r.base, ...r.req_ing].map(i => ingMap[i]?.name_cz || i).join(', ');
+  notify(`${r.name_cz}: ${allIng} → ${r.process}`, "info");
+}
+
+// ══════════════════════════════════════════════════════
+//  SHOP
+// ══════════════════════════════════════════════════════
+
+function openShop() {
+  document.getElementById('shopGold').textContent = state.gold;
+  const grid = document.getElementById('shopGrid');
+  
+  // Sort ingredients: first by type, then alphabetically
+  const sortedIngs = [...INGREDIENTS_RAW].sort((a, b) => {
+    if (a.type !== b.type) return a.type.localeCompare(b.type);
+    return a.name_cz.localeCompare(b.name_cz, 'cs');
+  });
+  
+  grid.innerHTML = sortedIngs.map(i => {
+    const qty = state.inventory[i.id] || 0;
+    const cant = state.gold < i.price;
+    return `<div class="shop-item ${cant?'cant-afford':''}" onclick="buyIng('${i.id}')">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+        <div style="width:8px;height:8px;border-radius:50%;background:${i.color};flex-shrink:0"></div>
+        <div style="flex:1">
+          <div class="shop-name">${i.name_cz}</div>
+          <div class="shop-lat">${i.name_lat}</div>
+        </div>
+      </div>
+      <div class="shop-price">🪙 ${i.price} <span class="shop-qty">Skladem: ${qty}</span></div>
+    </div>`;
+  }).join('');
+  document.getElementById('shopModal').classList.add('open');
+}
+
+function closeShop() {
+  document.getElementById('shopModal').classList.remove('open');
+  renderIngredients();
+}
+
+function buyIng(id) {
+  const i = ingMap[id];
+  if (state.gold < i.price) { notify("Nemáš dost zlatých!", "error"); return; }
+  state.gold -= i.price;
+  state.inventory[id] = (state.inventory[id] || 0) + 1;
+  notify(`Zakoupeno: ${i.name_cz}`, "success");
+  updateStats();
+  document.getElementById('shopGold').textContent = state.gold;
+  openShop();
+}
+
+// ══════════════════════════════════════════════════════
+//  SAVE / LOAD
+// ══════════════════════════════════════════════════════
+
+// ══════════════════════════════════════════════════════
+//  SETTINGS, SAVE / LOAD & JSON EXPORT
+// ══════════════════════════════════════════════════════
+
+function openSettings() {
+  document.getElementById('settingsModal').classList.add('open');
+}
+
+function closeSettings() {
+  document.getElementById('settingsModal').classList.remove('open');
+}
+
+// -- Local Storage --
+function saveGame() {
+  try {
+    localStorage.setItem('alchemix_save', JSON.stringify(state));
+    notify("Hra uložena do Local Storage! 💾", "success");
+  } catch(e) { 
+    notify("Uložení selhalo. Použij Export do JSON.", "error"); 
+  }
+}
+
+function loadGame() {
+  try {
+    const saved = localStorage.getItem('alchemix_save');
+    if (!saved) return; // Silent return pro nové hráče
+    const data = JSON.parse(saved);
+    Object.assign(state, data, { slots: [], lastBrewResult: null });
+    
+    updateMoonUI();
+    renderSlots();
+    renderIngredients();
+    renderJournal();
+    updateStats();
+  } catch(e) { 
+    notify("Načtení z Local Storage selhalo.", "error"); 
+  }
+}
+
+// -- JSON Export / Import --
+function exportGameJSON() {
+  try {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state));
+    const downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", "alchemix_save.json");
+    document.body.appendChild(downloadAnchorNode);
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+    notify("Hra exportována do JSON. 📤", "success");
+  } catch(e) {
+    notify("Export selhal.", "error");
+  }
+}
+
+function importGameJSON(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const importedState = JSON.parse(e.target.result);
+      Object.assign(state, importedState, { slots: [], lastBrewResult: null });
+      
+      saveGame(); // Rovnou uložíme do localStorage
+      updateMoonUI();
+      renderSlots();
+      renderIngredients();
+      renderJournal();
+      updateStats();
+      closeSettings();
+      notify("Hra úspěšně načtena z JSON! 📥", "success");
+    } catch(err) {
+      notify("Chyba při čtení JSON souboru.", "error");
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = ''; // Reset inputu
+}
+
+// -- Reset --
+function resetGame() {
+  if (!confirm("Opravdu chceš resetovat hru? Tento krok nelze vzít zpět!")) return;
+  localStorage.removeItem('alchemix_save');
+  
+  // Reset do továrního nastavení
+  state = { 
+    gold: 150, 
+    inventory: {}, 
+    slots: [], 
+    process: "Mix", 
+    discovered: {}, 
+    brewed: 0, 
+    maxToxSeen: 0, 
+    lastBrewResult: null, 
+    moonIndex: 0, 
+    brewedThisPhase: 0 
+  };
+  
+  ["ING01","ING02","ING04","ING03","ING05","ING19"].forEach(id => state.inventory[id] = 3);
+  
+  updateMoonUI();
+  renderSlots();
+  renderIngredients();
+  renderJournal();
+  updateStats();
+  
+  document.getElementById('resultBox').innerHTML = '<div class="empty-state">Přidej ingredience a zvol postup...</div>';
+  document.getElementById('vectorArea').style.display = 'none';
+  closeSettings();
+  notify("Hra byla resetována.", "info");
+}
+
+// ══════════════════════════════════════════════════════
+//  NOTIFICATIONS
+// ══════════════════════════════════════════════════════
+
+function notify(msg, type="info") {
+  const el = document.createElement('div');
+  el.className = `notif-item ${type}`;
+  el.textContent = msg;
+  document.getElementById('notif').appendChild(el);
+  setTimeout(() => el.remove(), 4200);
+}
+
+// ══════════════════════════════════════════════════════
+//  POTION STORAGE SYSTEM
+// ══════════════════════════════════════════════════════
+
+function storePotion(potion) {
+  state.potionStorage.push({
+    id: 'STORED_' + Date.now(),
+    ...potion,
+    storedAt: Date.now()
+  });
+  updateStats();
+  notify('📦 Lektvar uložen do skladu!', 'success');
+}
+
+function consumePotion(potionOrIndex) {
+  let potion;
+  let index = -1;
+  
+  if (typeof potionOrIndex === 'number') {
+    index = potionOrIndex;
+    potion = state.potionStorage[index];
+  } else {
+    potion = potionOrIndex;
+  }
+  
+  if (!potion) return;
+  
+  const oldVigor = state.vigor;
+  state.vigor = Math.max(0, Math.min(100, state.vigor + (potion.vigor || 0)));
+  const vigorDelta = state.vigor - oldVigor;
+  
+  const oldHunger = state.hunger;
+  state.hunger = Math.max(0, state.hunger - (potion.satiety || 0) * 8);
+  const hungerDelta = oldHunger - state.hunger;
+  
+  if (potion.toxicity > 50) {
+    state.vigor = Math.max(0, state.vigor - 15);
+    notify('☠️ Toxický lektvar tě vyčerpal!', 'warn');
+  }
+  
+  if (index >= 0) {
+    state.potionStorage.splice(index, 1);
+  }
+  
+  updateStats();
+  
+  let msg = 'Vypil jsi ' + potion.name_cz;
+  if (vigorDelta > 0) msg += ' (⚡+' + vigorDelta + ')';
+  if (vigorDelta < 0) msg += ' (⚡' + vigorDelta + ')';
+  if (hungerDelta > 0) msg += ' (🍖-' + Math.round(hungerDelta) + ')';
+  notify(msg, 'success');
+}
+
+function sellPotion(index) {
+  const potion = state.potionStorage[index];
+  if (!potion) return;
+  
+  state.gold += potion.value || 10;
+  state.potionStorage.splice(index, 1);
+  
+  updateStats();
+  notify('💰 Prodal jsi ' + potion.name_cz + ' za ' + (potion.value || 10) + ' zlatých', 'success');
+}
+
+function renderPotionStorage() {
+  const list = document.getElementById('potionStorageList');
+  if (!list) return;
+  
+  const countEl = document.getElementById('storageCount');
+  if (countEl) countEl.textContent = state.potionStorage.length;
+  
+  if (state.potionStorage.length === 0) {
+    list.innerHTML = '<div class="empty-state">Sklad je prázdný...<br><br>Uvař lektvar a ulož ho! 📦</div>';
+    return;
+  }
+  
+  list.innerHTML = state.potionStorage.map((p, idx) => {
+    const vigorClass = p.vigor > 0 ? 'green' : p.vigor < 0 ? 'red' : 'text3';
+    const vigorSign = p.vigor > 0 ? '+' : '';
+    
+    return '<div class="potion-storage-item">' +
+      '<div class="potion-header">' +
+        '<span class="potion-icon">🧪</span>' +
+        '<div class="potion-name">' + p.name_cz + '</div>' +
+      '</div>' +
+      '<div class="potion-stats">' +
+        '<span style="color:var(--' + vigorClass + ')">⚡' + vigorSign + (p.vigor || 0) + '</span>' +
+        '<span style="color:var(--green)">🍖' + (p.satiety || 0) + '</span>' +
+        '<span style="color:' + (p.toxicity > 50 ? 'var(--danger)' : 'var(--text3)') + '">☠' + (p.toxicity || 0) + '</span>' +
+        '<span style="color:var(--gold2)">💰' + (p.value || 10) + '</span>' +
+      '</div>' +
+      '<div class="potion-actions">' +
+        '<button class="potion-btn drink" onclick="consumePotion(' + idx + ')">🍷 Vypít</button>' +
+        '<button class="potion-btn sell" onclick="sellPotion(' + idx + ')">💰 Prodat</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+
+// ══════════════════════════════════════════════════════
+//  FIRE ANIMATION
+// ══════════════════════════════════════════════════════
+
+(function animateFire() {
+  const b1 = document.getElementById('b1');
+  const b2 = document.getElementById('b2');
+  const b3 = document.getElementById('b3');
+  let t = 0;
+  setInterval(() => {
+    t += 0.08;
+    if (b1) b1.setAttribute('cy', 73 + Math.sin(t) * 2);
+    if (b2) b2.setAttribute('cy', 71 + Math.sin(t*1.3+1) * 2);
+    if (b3) b3.setAttribute('cy', 74 + Math.sin(t*0.9+2) * 2);
+  }, 60);
+})();
+
+// ══════════════════════════════════════════════════════
+//  START
+// ══════════════════════════════════════════════════════
+
+init();
+</script>
+</body>
+</html>
