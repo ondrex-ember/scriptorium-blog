@@ -3348,136 +3348,259 @@ function render(){
     const pw = G.press_wear||0;
     const pl = G.pressLevel||1;
     const hasFrisketViz = (G.frisket||0)>0 && (G.frisketWear||0)>0;
-    const screwCol  = pw>=90?"#cc2222":pw>=60?"#c9952b":"#7a6a4a";
-    const woodCol   = pl>=3?"#3a2a1a":pl>=2?"#4a3520":"#5a4028";
-    const metalCol  = pl>=2?"#5a5555":"#4a4040";
-    const frisketCol= hasFrisketViz?"#c9952b":"#2a2a2a";
+    const screwCol   = pw>=90?"#cc2222":pw>=60?"#c9952b":"#7a6a4a";
+    const screwLight = pw>=90?"#ff6666":pw>=60?"#e8b84b":"#a08a5a";
+    const woodBase   = pl>=3?"#2e1e0e":pl>=2?"#3c2a12":"#4a3418";
+    const woodLight  = pl>=3?"#5a3a1a":pl>=2?"#6a4a22":"#7a5a30";
+    const woodDark   = pl>=3?"#1a0e06":pl>=2?"#241508":"#2e1a08";
+    const metalBase  = pl>=2?"#5a5a5a":"#3e3838";
+    const metalLight = pl>=2?"#8a8a8a":"#6a5e5e";
+    const metalDark  = pl>=2?"#2a2a2a":"#222020";
+    const frisketCol = hasFrisketViz?"#c9952b":"#1a1a1a";
     const hasPrinter = G.workers.some(w=>w.prof==="printer"&&w.task!=="idle");
-    const animDur    = hasPrinter?"2.2s":"0s";
+    const animDur    = hasPrinter?"2.4s":"0s";
     const vizWrap    = h("div",{style:{position:"relative",width:"100%"}});
     vizWrap.innerHTML = `
 <style>
-@keyframes p-carriage-anim{0%,100%{transform:translateX(0);}30%,70%{transform:translateX(48px);}}
-@keyframes p-platen-anim{0%,35%,100%{transform:translateY(0);}45%,65%{transform:translateY(20px);}}
-@keyframes p-lever-anim{0%,100%{transform:rotate(0deg);}40%,60%{transform:rotate(-36deg);}}
-@keyframes p-ball-anim{0%,100%{transform:translateY(0);}42%,58%{transform:translateY(7px);}}
-@keyframes p-paper-anim{0%,20%{opacity:0;transform:translateX(16px);}35%,82%{opacity:1;transform:translateX(0);}93%,100%{opacity:0;transform:translateX(-10px);}}
+@keyframes p-carriage-anim{0%,100%{transform:translateX(0);}28%,72%{transform:translateX(52px);}}
+@keyframes p-platen-anim{0%,32%,100%{transform:translateY(0);}44%,62%{transform:translateY(22px);}}
+@keyframes p-lever-anim{0%,100%{transform:rotate(0deg);}40%,60%{transform:rotate(-38deg);}}
+@keyframes p-ball-anim{0%,100%{transform:translateY(0);}41%,59%{transform:translateY(8px);}}
+@keyframes p-paper-anim{0%,18%{opacity:0;transform:translateX(18px);}33%,80%{opacity:1;transform:translateX(0);}92%,100%{opacity:0;transform:translateX(-12px);}}
 @keyframes p-screw-anim{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
+@keyframes p-ink-anim{0%,38%{opacity:0;}48%,68%{opacity:1;}80%,100%{opacity:0;}}
+@keyframes p-shadow-anim{0%,32%,100%{transform:scaleY(1);opacity:.15;}44%,62%{transform:scaleY(1.8);opacity:.3;}}
 .pa-carriage{animation:p-carriage-anim ${animDur} ease-in-out infinite;}
-.pa-platen{animation:p-platen-anim ${animDur} ease-in-out infinite;transform-origin:160px 82px;}
-.pa-lever{animation:p-lever-anim ${animDur} ease-in-out infinite;transform-origin:172px 90px;}
-.pa-ball-l{animation:p-ball-anim ${animDur} ease-in-out infinite;transform-origin:118px 118px;}
-.pa-ball-r{animation:p-ball-anim ${animDur} ease-in-out infinite;transform-origin:202px 118px;animation-delay:.12s;}
+.pa-platen{animation:p-platen-anim ${animDur} ease-in-out infinite;transform-origin:170px 112px;}
+.pa-lever{animation:p-lever-anim ${animDur} ease-in-out infinite;transform-origin:175px 90px;}
+.pa-ball-l{animation:p-ball-anim ${animDur} ease-in-out infinite;}
+.pa-ball-r{animation:p-ball-anim ${animDur} ease-in-out infinite;animation-delay:.14s;}
 .pa-paper{animation:p-paper-anim ${animDur} ease-in-out infinite;}
-.pa-screw{animation:p-screw-anim ${animDur} linear infinite;transform-origin:160px 50px;}
+.pa-screw{animation:p-screw-anim ${animDur} linear infinite;transform-origin:170px 52px;}
+.pa-ink{animation:p-ink-anim ${animDur} ease-in-out infinite;}
+.pa-platen-shadow{animation:p-shadow-anim ${animDur} ease-in-out infinite;transform-origin:170px 140px;}
 </style>
-<svg width="100%" viewBox="0 0 360 262" xmlns="http://www.w3.org/2000/svg" style="display:block;max-height:300px">
-  <!-- BASE SLAB -->
-  <rect x="70" y="230" width="200" height="14" rx="2" fill="${woodCol}" stroke="#2a1a08" stroke-width="1.5"/>
-  <!-- LEG BRACES -->
-  <polygon points="78,230 92,230 100,182 86,182" fill="${woodCol}" stroke="#2a1a08" stroke-width="1"/>
-  <polygon points="250,230 236,230 228,182 242,182" fill="${woodCol}" stroke="#2a1a08" stroke-width="1"/>
-  <!-- LEFT PILLAR -->
-  <rect x="86" y="26" width="18" height="204" rx="2" fill="${woodCol}" stroke="#2a1a08" stroke-width="1.5"/>
-  <!-- RIGHT PILLAR -->
-  <rect x="236" y="26" width="18" height="204" rx="2" fill="${woodCol}" stroke="#2a1a08" stroke-width="1.5"/>
-  <!-- TOP CROSSBAR -->
-  <rect x="80" y="20" width="180" height="20" rx="3" fill="${woodCol}" stroke="#2a1a08" stroke-width="1.5"/>
-  <!-- CAP BALLS -->
-  <circle cx="95" cy="20" r="7" fill="${woodCol}" stroke="#2a1a08" stroke-width="1.5"/>
-  <circle cx="245" cy="20" r="7" fill="${woodCol}" stroke="#2a1a08" stroke-width="1.5"/>
-  <!-- MID CROSSBAR (hose) -->
-  <rect x="86" y="130" width="168" height="11" rx="2" fill="${woodCol}" stroke="#2a1a08" stroke-width="1"/>
+<svg width="100%" viewBox="0 0 360 272" xmlns="http://www.w3.org/2000/svg" style="display:block;max-height:320px">
+<defs>
+  <linearGradient id="wg-left" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0%" stop-color="${woodDark}"/>
+    <stop offset="30%" stop-color="${woodLight}"/>
+    <stop offset="55%" stop-color="${woodBase}"/>
+    <stop offset="85%" stop-color="${woodLight}" stop-opacity=".7"/>
+    <stop offset="100%" stop-color="${woodDark}" stop-opacity=".9"/>
+  </linearGradient>
+  <linearGradient id="wg-vert" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="${woodLight}"/>
+    <stop offset="45%" stop-color="${woodBase}"/>
+    <stop offset="100%" stop-color="${woodDark}"/>
+  </linearGradient>
+  <linearGradient id="mg-horiz" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0%" stop-color="${metalDark}"/>
+    <stop offset="35%" stop-color="${metalLight}"/>
+    <stop offset="65%" stop-color="${metalBase}"/>
+    <stop offset="100%" stop-color="${metalDark}"/>
+  </linearGradient>
+  <linearGradient id="mg-vert" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="${metalLight}"/>
+    <stop offset="50%" stop-color="${metalBase}"/>
+    <stop offset="100%" stop-color="${metalDark}"/>
+  </linearGradient>
+  <linearGradient id="sg-screw" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0%" stop-color="${woodDark}"/>
+    <stop offset="28%" stop-color="${screwLight}"/>
+    <stop offset="55%" stop-color="${screwCol}"/>
+    <stop offset="78%" stop-color="${screwLight}" stop-opacity=".6"/>
+    <stop offset="100%" stop-color="${woodDark}"/>
+  </linearGradient>
+  <linearGradient id="pg-paper" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0%" stop-color="#d8d0b4"/>
+    <stop offset="40%" stop-color="#ede5cb"/>
+    <stop offset="100%" stop-color="#ddd4b8"/>
+  </linearGradient>
+  <radialGradient id="rg-ball" cx="32%" cy="32%" r="60%">
+    <stop offset="0%" stop-color="#2a1a08"/>
+    <stop offset="100%" stop-color="#060300"/>
+  </radialGradient>
+</defs>
 
-  <!-- SCREW NUT HOUSING (fixed to crossbar) -->
-  <rect x="146" y="28" width="48" height="18" rx="3" fill="${metalCol}" stroke="#222" stroke-width="1.5"/>
-  <!-- SCREW SHAFT -->
-  <rect x="153" y="44" width="34" height="70" rx="1" fill="${screwCol}" stroke="#1a1a1a" stroke-width="1"/>
-  ${[54,62,70,78,86,94,102,110].map(y=>`<line x1="153" y1="${y}" x2="187" y2="${y}" stroke="#1a1a0a" stroke-width=".8" opacity=".55"/>`).join("")}
-  <!-- SCREW HEAD (rotates) -->
-  <g class="pa-screw">
-    <circle cx="160" cy="50" r="11" fill="${metalCol}" stroke="#111" stroke-width="1.5"/>
-    <line x1="149" y1="50" x2="171" y2="50" stroke="#111" stroke-width="2.5"/>
-    <line x1="160" y1="39" x2="160" y2="61" stroke="#111" stroke-width="2.5"/>
-  </g>
+<!-- GROUND SHADOW -->
+<ellipse cx="170" cy="247" rx="108" ry="5" fill="#000" opacity=".22"/>
 
-  <!-- LEVER ARM + HANDLE -->
-  <g class="pa-lever">
-    <rect x="168" y="86" width="14" height="22" rx="2" fill="${metalCol}" stroke="#222" stroke-width="1"/>
-    <path d="M175 96 Q212 88 252 72" fill="none" stroke="${woodCol}" stroke-width="8" stroke-linecap="round"/>
-    <path d="M175 96 Q212 88 252 72" fill="none" stroke="#2a1a08" stroke-width="1.2" stroke-linecap="round"/>
-    <ellipse cx="254" cy="71" rx="11" ry="6" fill="${metalCol}" stroke="#222" stroke-width="1.5"/>
-    <ellipse cx="254" cy="71" rx="5" ry="3" fill="#333" stroke="#111" stroke-width="1"/>
-  </g>
+<!-- BASE SLAB -->
+<rect x="68" y="233" width="204" height="14" rx="3" fill="url(#wg-vert)" stroke="${woodDark}" stroke-width="1.5"/>
+<line x1="70" y1="233" x2="270" y2="233" stroke="${woodLight}" stroke-width=".8" opacity=".4"/>
+<line x1="90" y1="235" x2="90" y2="246" stroke="${woodDark}" stroke-width=".5" opacity=".25"/>
+<line x1="140" y1="234" x2="138" y2="246" stroke="${woodDark}" stroke-width=".4" opacity=".2"/>
+<line x1="200" y1="234" x2="202" y2="246" stroke="${woodDark}" stroke-width=".5" opacity=".25"/>
 
-  <!-- PLATEN (pressing block, animated down) -->
-  <g class="pa-platen">
-    <rect x="104" y="112" width="132" height="22" rx="2" fill="${metalCol}" stroke="#3a3a3a" stroke-width="1.5"/>
-    <rect x="108" y="115" width="124" height="16" rx="1" fill="#0d0d0d" stroke="#222" stroke-width=".5"/>
-    <line x1="116" y1="119" x2="224" y2="119" stroke="#282818" stroke-width="1.5" opacity=".8"/>
-    <line x1="116" y1="124" x2="210" y2="124" stroke="#282818" stroke-width="1" opacity=".6"/>
-    <line x1="116" y1="129" x2="218" y2="129" stroke="#282818" stroke-width="1" opacity=".5"/>
-    <!-- FRISKET FRAME (visible when active) -->
-    ${hasFrisketViz?`
-    <rect x="104" y="108" width="132" height="4" rx="1" fill="${frisketCol}" stroke="#8a6820" stroke-width="1" opacity=".9"/>
-    <rect x="104" y="108" width="6" height="26" rx="1" fill="${frisketCol}" stroke="#8a6820" stroke-width="1" opacity=".9"/>
-    <rect x="230" y="108" width="6" height="26" rx="1" fill="${frisketCol}" stroke="#8a6820" stroke-width="1" opacity=".9"/>
-    `:""}
-  </g>
+<!-- LEG BRACES -->
+<polygon points="76,233 92,233 102,182 86,182" fill="url(#wg-left)" stroke="${woodDark}" stroke-width="1.2"/>
+<line x1="76" y1="233" x2="102" y2="182" stroke="${woodLight}" stroke-width=".6" opacity=".35"/>
+<polygon points="264,233 248,233 238,182 254,182" fill="url(#wg-left)" stroke="${woodDark}" stroke-width="1.2"/>
+<line x1="264" y1="233" x2="238" y2="182" stroke="${woodLight}" stroke-width=".6" opacity=".35"/>
 
-  <!-- INK BALLS (tampons on sticks) -->
-  <g class="pa-ball-l">
-    <line x1="118" y1="88" x2="118" y2="116" stroke="${woodCol}" stroke-width="5" stroke-linecap="round"/>
-    <ellipse cx="118" cy="118" rx="15" ry="9" fill="#18100a" stroke="#0a0a0a" stroke-width="1.5"/>
-    <ellipse cx="118" cy="117" rx="10" ry="6" fill="#0d0800" opacity=".5"/>
-  </g>
-  <g class="pa-ball-r">
-    <line x1="222" y1="88" x2="222" y2="116" stroke="${woodCol}" stroke-width="5" stroke-linecap="round"/>
-    <ellipse cx="222" cy="118" rx="15" ry="9" fill="#18100a" stroke="#0a0a0a" stroke-width="1.5"/>
-    <ellipse cx="222" cy="117" rx="10" ry="6" fill="#0d0800" opacity=".5"/>
-  </g>
+<!-- LEFT PILLAR -->
+<rect x="84" y="26" width="20" height="207" rx="2" fill="url(#wg-left)" stroke="${woodDark}" stroke-width="1.5"/>
+<rect x="87" y="28" width="5" height="203" rx="1" fill="${woodLight}" opacity=".18"/>
+<line x1="91" y1="42" x2="89" y2="225" stroke="${woodDark}" stroke-width=".4" opacity=".2"/>
+<line x1="97" y1="36" x2="99" y2="222" stroke="${woodDark}" stroke-width=".35" opacity=".15"/>
+<line x1="103" y1="26" x2="103" y2="233" stroke="${woodDark}" stroke-width="1.5" opacity=".35"/>
 
-  <!-- CARRIAGE (bed + tympan, slides out) -->
-  <g class="pa-carriage">
-    <!-- Carriage bed -->
-    <rect x="92" y="178" width="156" height="48" rx="2" fill="${woodCol}" stroke="#2a1a08" stroke-width="1.5"/>
-    <!-- Stone/type form surface -->
-    <rect x="98" y="182" width="144" height="40" rx="1" fill="#1a1612" stroke="#2a2a2a" stroke-width="1"/>
-    <!-- Paper sheet (animated appear) -->
-    <g class="pa-paper">
-      <rect x="102" y="184" width="136" height="36" rx="1" fill="#e8e0cc" stroke="#c9b48a" stroke-width=".8"/>
-      <line x1="110" y1="191" x2="230" y2="191" stroke="#888" stroke-width=".7" opacity=".5"/>
-      <line x1="110" y1="196" x2="230" y2="196" stroke="#888" stroke-width=".7" opacity=".4"/>
-      <line x1="110" y1="201" x2="222" y2="201" stroke="#888" stroke-width=".7" opacity=".35"/>
-      <line x1="110" y1="206" x2="226" y2="206" stroke="#888" stroke-width=".7" opacity=".3"/>
-      <line x1="110" y1="211" x2="214" y2="211" stroke="#888" stroke-width=".7" opacity=".25"/>
+<!-- RIGHT PILLAR -->
+<rect x="236" y="26" width="20" height="207" rx="2" fill="url(#wg-left)" stroke="${woodDark}" stroke-width="1.5"/>
+<rect x="239" y="28" width="5" height="203" rx="1" fill="${woodLight}" opacity=".18"/>
+<line x1="243" y1="42" x2="241" y2="225" stroke="${woodDark}" stroke-width=".4" opacity=".2"/>
+<line x1="249" y1="36" x2="251" y2="222" stroke="${woodDark}" stroke-width=".35" opacity=".15"/>
+<line x1="236" y1="26" x2="236" y2="233" stroke="${woodLight}" stroke-width=".8" opacity=".28"/>
+
+<!-- TOP CROSSBAR -->
+<rect x="78" y="20" width="184" height="22" rx="3" fill="url(#wg-vert)" stroke="${woodDark}" stroke-width="1.5"/>
+<line x1="80" y1="21" x2="260" y2="21" stroke="${woodLight}" stroke-width="1" opacity=".4"/>
+<line x1="105" y1="22" x2="103" y2="41" stroke="${woodDark}" stroke-width=".4" opacity=".2"/>
+<line x1="165" y1="22" x2="167" y2="41" stroke="${woodDark}" stroke-width=".4" opacity=".2"/>
+<line x1="220" y1="22" x2="218" y2="41" stroke="${woodDark}" stroke-width=".4" opacity=".2"/>
+
+<!-- CAP BALLS -->
+<circle cx="94" cy="21" r="10" fill="url(#wg-vert)" stroke="${woodDark}" stroke-width="1.5"/>
+<circle cx="92" cy="18" r="3.5" fill="${woodLight}" opacity=".3"/>
+<circle cx="246" cy="21" r="10" fill="url(#wg-vert)" stroke="${woodDark}" stroke-width="1.5"/>
+<circle cx="244" cy="18" r="3.5" fill="${woodLight}" opacity=".3"/>
+
+<!-- MID CROSSBAR -->
+<rect x="84" y="130" width="172" height="13" rx="2" fill="url(#wg-vert)" stroke="${woodDark}" stroke-width="1"/>
+<line x1="86" y1="131" x2="254" y2="131" stroke="${woodLight}" stroke-width=".7" opacity=".3"/>
+
+<!-- SCREW NUT HOUSING -->
+<rect x="144" y="28" width="52" height="21" rx="4" fill="url(#mg-horiz)" stroke="${metalDark}" stroke-width="1.5"/>
+<line x1="146" y1="30" x2="194" y2="30" stroke="${metalLight}" stroke-width=".8" opacity=".55"/>
+<line x1="146" y1="47" x2="194" y2="47" stroke="${metalDark}" stroke-width=".5" opacity=".4"/>
+<circle cx="153" cy="37" r="3.5" fill="${metalBase}" stroke="${metalDark}" stroke-width="1"/>
+<line x1="150" y1="37" x2="156" y2="37" stroke="${metalLight}" stroke-width=".8"/>
+<circle cx="187" cy="37" r="3.5" fill="${metalBase}" stroke="${metalDark}" stroke-width="1"/>
+<line x1="184" y1="37" x2="190" y2="37" stroke="${metalLight}" stroke-width=".8"/>
+
+<!-- SCREW SHAFT -->
+<rect x="152" y="47" width="36" height="72" rx="1" fill="url(#sg-screw)" stroke="${woodDark}" stroke-width="1"/>
+<line x1="152" y1="57" x2="188" y2="57" stroke="${woodDark}" stroke-width=".9" opacity=".5"/>
+<line x1="152" y1="65" x2="188" y2="65" stroke="${woodDark}" stroke-width=".9" opacity=".5"/>
+<line x1="152" y1="73" x2="188" y2="73" stroke="${woodDark}" stroke-width=".9" opacity=".5"/>
+<line x1="152" y1="81" x2="188" y2="81" stroke="${woodDark}" stroke-width=".9" opacity=".5"/>
+<line x1="152" y1="89" x2="188" y2="89" stroke="${woodDark}" stroke-width=".9" opacity=".5"/>
+<line x1="152" y1="97" x2="188" y2="97" stroke="${woodDark}" stroke-width=".9" opacity=".5"/>
+<line x1="152" y1="105" x2="188" y2="105" stroke="${woodDark}" stroke-width=".9" opacity=".5"/>
+<line x1="152" y1="113" x2="188" y2="113" stroke="${woodDark}" stroke-width=".9" opacity=".5"/>
+<line x1="158" y1="47" x2="158" y2="119" stroke="${screwLight}" stroke-width="1" opacity=".25"/>
+
+<!-- SCREW HEAD -->
+<g class="pa-screw">
+  <circle cx="170" cy="52" r="14" fill="url(#mg-horiz)" stroke="${metalDark}" stroke-width="1.5"/>
+  <circle cx="170" cy="52" r="9" fill="${metalBase}" stroke="${metalDark}" stroke-width=".5"/>
+  <circle cx="166" cy="48" r="3.5" fill="${metalLight}" opacity=".35"/>
+  <line x1="156" y1="52" x2="184" y2="52" stroke="${metalDark}" stroke-width="2.5"/>
+  <line x1="170" y1="38" x2="170" y2="66" stroke="${metalDark}" stroke-width="2.5"/>
+</g>
+
+<!-- LEVER ARM -->
+<g class="pa-lever">
+  <rect x="166" y="85" width="18" height="25" rx="3" fill="url(#mg-horiz)" stroke="${metalDark}" stroke-width="1.2"/>
+  <line x1="168" y1="87" x2="182" y2="87" stroke="${metalLight}" stroke-width=".7" opacity=".45"/>
+  <path d="M175 97 Q216 87 260 69" fill="none" stroke="${woodBase}" stroke-width="10" stroke-linecap="round"/>
+  <path d="M175 97 Q216 87 260 69" fill="none" stroke="${woodLight}" stroke-width="2" stroke-linecap="round" opacity=".22"/>
+  <path d="M175 97 Q216 87 260 69" fill="none" stroke="${woodDark}" stroke-width="1" stroke-linecap="round" opacity=".45"/>
+  <ellipse cx="262" cy="68" rx="14" ry="8" fill="url(#mg-horiz)" stroke="${metalDark}" stroke-width="1.5"/>
+  <ellipse cx="260" cy="66" rx="5" ry="3" fill="${metalLight}" opacity=".3"/>
+  <ellipse cx="262" cy="68" rx="7" ry="4" fill="${metalBase}" stroke="${metalDark}" stroke-width=".5"/>
+</g>
+
+<!-- PLATEN SHADOW -->
+<ellipse class="pa-platen-shadow" cx="170" cy="180" rx="66" ry="4" fill="#000" opacity=".15"/>
+
+<!-- PLATEN -->
+<g class="pa-platen">
+  <rect x="104" y="112" width="132" height="25" rx="2" fill="url(#mg-vert)" stroke="${metalDark}" stroke-width="1.5"/>
+  <line x1="106" y1="113" x2="234" y2="113" stroke="${metalLight}" stroke-width="1" opacity=".5"/>
+  <rect x="108" y="116" width="124" height="18" rx="1" fill="#0a0a0a" stroke="#1a1a1a" stroke-width=".5"/>
+  <line x1="116" y1="120" x2="224" y2="120" stroke="#282818" stroke-width="1.8" opacity=".9"/>
+  <line x1="116" y1="125" x2="208" y2="125" stroke="#282818" stroke-width="1.2" opacity=".7"/>
+  <line x1="116" y1="130" x2="218" y2="130" stroke="#282818" stroke-width="1" opacity=".6"/>
+  <rect x="108" y="116" width="124" height="4" rx="1" fill="${screwCol}" opacity=".05"/>
+  <circle cx="112" cy="114" r="2.5" fill="${metalBase}" stroke="${metalDark}" stroke-width=".8"/>
+  <circle cx="228" cy="114" r="2.5" fill="${metalBase}" stroke="${metalDark}" stroke-width=".8"/>
+  <circle cx="112" cy="135" r="2.5" fill="${metalBase}" stroke="${metalDark}" stroke-width=".8"/>
+  <circle cx="228" cy="135" r="2.5" fill="${metalBase}" stroke="${metalDark}" stroke-width=".8"/>
+</g>
+
+<!-- INK BALLS -->
+<g class="pa-ball-l">
+  <line x1="118" y1="85" x2="118" y2="114" stroke="${woodBase}" stroke-width="7" stroke-linecap="round"/>
+  <line x1="117" y1="85" x2="117" y2="114" stroke="${woodLight}" stroke-width="1.2" stroke-linecap="round" opacity=".25"/>
+  <ellipse cx="118" cy="116" rx="17" ry="10" fill="url(#rg-ball)" stroke="#040200" stroke-width="1.5"/>
+  <ellipse cx="113" cy="112" rx="5" ry="3" fill="#2a1808" opacity=".45"/>
+</g>
+<g class="pa-ball-r">
+  <line x1="222" y1="85" x2="222" y2="114" stroke="${woodBase}" stroke-width="7" stroke-linecap="round"/>
+  <line x1="221" y1="85" x2="221" y2="114" stroke="${woodLight}" stroke-width="1.2" stroke-linecap="round" opacity=".25"/>
+  <ellipse cx="222" cy="116" rx="17" ry="10" fill="url(#rg-ball)" stroke="#040200" stroke-width="1.5"/>
+  <ellipse cx="217" cy="112" rx="5" ry="3" fill="#2a1808" opacity=".45"/>
+</g>
+
+<!-- CARRIAGE -->
+<g class="pa-carriage">
+  <rect x="90" y="178" width="160" height="51" rx="3" fill="url(#wg-vert)" stroke="${woodDark}" stroke-width="1.5"/>
+  <line x1="92" y1="179" x2="248" y2="179" stroke="${woodLight}" stroke-width=".8" opacity=".3"/>
+  <line x1="112" y1="180" x2="110" y2="227" stroke="${woodDark}" stroke-width=".5" opacity=".25"/>
+  <line x1="160" y1="179" x2="162" y2="228" stroke="${woodDark}" stroke-width=".4" opacity=".2"/>
+  <line x1="210" y1="180" x2="208" y2="227" stroke="${woodDark}" stroke-width=".5" opacity=".25"/>
+  <rect x="96" y="182" width="148" height="43" rx="1" fill="#181410" stroke="#222018" stroke-width="1"/>
+  <line x1="112" y1="185" x2="114" y2="223" stroke="#201c18" stroke-width=".6" opacity=".5"/>
+  <line x1="165" y1="183" x2="163" y2="224" stroke="#201c18" stroke-width=".5" opacity=".4"/>
+  <line x1="218" y1="184" x2="220" y2="223" stroke="#201c18" stroke-width=".6" opacity=".5"/>
+  <g class="pa-paper">
+    <rect x="100" y="184" width="140" height="39" rx="1" fill="url(#pg-paper)" stroke="#c0a870" stroke-width=".8"/>
+    <line x1="100" y1="184" x2="100" y2="223" stroke="#b09060" stroke-width="1" opacity=".35"/>
+    <line x1="108" y1="191" x2="232" y2="191" stroke="#555" stroke-width=".9" opacity=".5"/>
+    <line x1="108" y1="196" x2="232" y2="196" stroke="#555" stroke-width=".9" opacity=".45"/>
+    <line x1="108" y1="201" x2="224" y2="201" stroke="#555" stroke-width=".8" opacity=".38"/>
+    <line x1="108" y1="206" x2="228" y2="206" stroke="#555" stroke-width=".8" opacity=".32"/>
+    <line x1="108" y1="211" x2="218" y2="211" stroke="#555" stroke-width=".7" opacity=".28"/>
+    <line x1="108" y1="216" x2="226" y2="216" stroke="#555" stroke-width=".7" opacity=".22"/>
+    <rect x="108" y="190" width="9" height="14" rx="1" fill="#444" opacity=".45"/>
+    <g class="pa-ink">
+      <line x1="108" y1="191" x2="232" y2="191" stroke="#111" stroke-width="1.6" opacity=".85"/>
+      <line x1="108" y1="196" x2="232" y2="196" stroke="#111" stroke-width="1.4" opacity=".75"/>
+      <line x1="108" y1="201" x2="224" y2="201" stroke="#111" stroke-width="1.2" opacity=".65"/>
+      <line x1="108" y1="206" x2="228" y2="206" stroke="#111" stroke-width="1" opacity=".55"/>
+      <rect x="108" y="190" width="9" height="14" rx="1" fill="#111" opacity=".75"/>
     </g>
-    <!-- Tympan hinge bracket -->
-    <rect x="92" y="168" width="14" height="14" rx="2" fill="${metalCol}" stroke="#222" stroke-width="1"/>
-    <!-- Tympan frame (folded up) -->
-    <path d="M92 168 L92 150 L108 150 L108 168" fill="none" stroke="${woodCol}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-    <rect x="88" y="146" width="22" height="8" rx="2" fill="${woodCol}" stroke="#2a1a08" stroke-width="1"/>
-    <!-- Carriage rollers -->
-    <circle cx="106" cy="227" r="6" fill="${metalCol}" stroke="#222" stroke-width="1.5"/>
-    <circle cx="106" cy="227" r="2" fill="#111"/>
-    <circle cx="234" cy="227" r="6" fill="${metalCol}" stroke="#222" stroke-width="1.5"/>
-    <circle cx="234" cy="227" r="2" fill="#111"/>
   </g>
+  <rect x="90" y="168" width="16" height="15" rx="2" fill="url(#mg-horiz)" stroke="${metalDark}" stroke-width="1"/>
+  <line x1="92" y1="170" x2="104" y2="170" stroke="${metalLight}" stroke-width=".6" opacity=".4"/>
+  <path d="M90 168 L90 148 L108 148 L108 168" fill="none" stroke="${woodBase}" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M90 168 L90 148 L108 148 L108 168" fill="none" stroke="${woodLight}" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" opacity=".25"/>
+  <rect x="87" y="144" width="23" height="8" rx="2" fill="url(#wg-vert)" stroke="${woodDark}" stroke-width="1"/>
+  <circle cx="104" cy="229" r="7" fill="url(#mg-horiz)" stroke="${metalDark}" stroke-width="1.5"/>
+  <circle cx="104" cy="229" r="3" fill="${metalBase}" stroke="${metalDark}" stroke-width=".8"/>
+  <circle cx="102" cy="227" r="1.2" fill="${metalLight}" opacity=".45"/>
+  <circle cx="236" cy="229" r="7" fill="url(#mg-horiz)" stroke="${metalDark}" stroke-width="1.5"/>
+  <circle cx="236" cy="229" r="3" fill="${metalBase}" stroke="${metalDark}" stroke-width=".8"/>
+  <circle cx="234" cy="227" r="1.2" fill="${metalLight}" opacity=".45"/>
+  <line x1="111" y1="229" x2="229" y2="229" stroke="${metalDark}" stroke-width="1" opacity=".25"/>
+</g>
 
-  <!-- WEAR BAR (right margin) -->
-  <rect x="294" y="36" width="11" height="92" rx="3" fill="rgba(0,0,0,.3)" stroke="#222" stroke-width=".5"/>
-  <rect x="294" y="${36+92-Math.round((100-pw)*0.92)}" width="11" height="${Math.round((100-pw)*0.92)}" rx="2" fill="${screwCol}" opacity=".85"/>
-  <text x="299" y="32" text-anchor="middle" font-size="7" fill="${screwCol}" font-family="'Palatino Linotype',Georgia,serif" font-weight="700">${pw}%</text>
-  <text x="299" y="140" text-anchor="middle" font-size="7" fill="#555" font-family="'Palatino Linotype',Georgia,serif">${L==="en"?"wear":"opotř."}</text>
+<!-- WEAR BAR -->
+<rect x="298" y="34" width="12" height="96" rx="3" fill="rgba(0,0,0,.4)" stroke="#1a1a1a" stroke-width=".8"/>
+<rect x="298" y="${34+96-Math.round((100-pw)*0.96)}" width="12" height="${Math.round((100-pw)*0.96)}" rx="2" fill="${screwCol}" opacity=".9"/>
+<line x1="299" y1="${34+96-Math.round((100-pw)*0.96)+1}" x2="299" y2="${34+96}" stroke="${screwLight}" stroke-width="1" opacity=".28"/>
+<text x="304" y="30" text-anchor="middle" font-size="7" fill="${screwCol}" font-family="'Palatino Linotype',Georgia,serif" font-weight="700">${pw}%</text>
+<text x="304" y="143" text-anchor="middle" font-size="7" fill="#444" font-family="'Palatino Linotype',Georgia,serif">${L==="en"?"wear":"opotř."}</text>
 
-  <!-- STATUS LABEL -->
-  <text x="180" y="254" text-anchor="middle" font-size="8" fill="#555" font-family="'Palatino Linotype',Georgia,serif" letter-spacing="1">
-    ${L==="en"?"LVL":"ÚR."} ${pl} · ${pw>=90?(L==="en"?"⚠ CRITICAL":"⚠ KRITICKÝ"):pw>=60?(L==="en"?"SERVICE":"SERVIS"):(L==="en"?"GOOD":"OK")} · ${hasPrinter?(L==="en"?"RUNNING":"V PROVOZU"):(L==="en"?"IDLE":"NEČINNÝ")}
-  </text>
-  <!-- Press type label -->
-  <text x="10" y="18" font-size="7" fill="#444" font-family="'Palatino Linotype',Georgia,serif">
-    ${pl===1?(L==="en"?"Wooden screw press":"Dřevěný šroubový lis"):pl===2?(L==="en"?"Iron-fitted press":"Kovem kovaný lis"):(L==="en"?"Steel-geared press":"Ocelový ozubený lis")}
-  </text>
+<!-- STATUS -->
+<text x="180" y="261" text-anchor="middle" font-size="8" fill="#4a4038" font-family="'Palatino Linotype',Georgia,serif" letter-spacing="1.2">
+  ${L==="en"?"LVL":"ÚR."} ${pl} · ${pw>=90?(L==="en"?"⚠ CRITICAL":"⚠ KRITICKÝ"):pw>=60?(L==="en"?"SERVICE":"SERVIS"):(L==="en"?"GOOD":"OK")} · ${hasPrinter?(L==="en"?"RUNNING":"V PROVOZU"):(L==="en"?"IDLE":"NEČINNÝ")}
+</text>
+<text x="10" y="16" font-size="7" fill="#3a3028" font-family="'Palatino Linotype',Georgia,serif" letter-spacing=".5">
+  ${pl===1?(L==="en"?"Wooden screw press":"Dřevěný šroubový lis"):pl===2?(L==="en"?"Iron-fitted press":"Kovem kovaný lis"):(L==="en"?"Steel-geared press":"Ocelový ozubený lis")}
+</text>
 </svg>`;
     pressVizSec.append(vizWrap);
     content.append(pressVizSec);
