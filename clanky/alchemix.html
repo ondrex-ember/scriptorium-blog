@@ -673,6 +673,215 @@ header p {
 }
 .shop-btn:hover { background: rgba(200,150,30,0.1); box-shadow: var(--glow); }
 
+/* ── LOYALTY CUSTOMERS ── */
+.loyal-card {
+  border:1px solid var(--border); border-radius:10px;
+  padding:10px 12px; background:var(--bg2); margin-bottom:7px;
+  transition:border-color 0.2s;
+}
+.loyal-card:hover { border-color:var(--gold); }
+.loyal-card.vip { border-color:var(--gold); background:rgba(200,150,30,0.05); }
+.loyal-header { display:flex; align-items:center; gap:8px; margin-bottom:5px; }
+.loyal-name   { font-family:'Cinzel',serif; font-size:0.82rem; color:var(--gold2); flex:1; }
+.loyal-stars  { color:#f1c40f; font-size:0.75rem; letter-spacing:1px; }
+.loyal-stats  { display:flex; gap:10px; font-size:0.65rem; color:var(--text3); margin-bottom:5px; flex-wrap:wrap; }
+.loyal-stat-val { color:var(--text2); }
+.loyal-chain  { font-size:0.7rem; color:var(--warm); font-style:italic; margin-top:3px; }
+.loyal-chain.complete { color:var(--green); }
+
+/* ── BARTEX ── */
+.bartex-card {
+  border:1px solid var(--gold); border-radius:10px;
+  padding:12px; background:rgba(200,150,30,0.05); margin-bottom:8px;
+}
+.bartex-title { font-family:'Cinzel',serif; font-size:0.8rem; color:var(--gold2); margin-bottom:6px; }
+.bartex-offer { font-size:0.78rem; color:var(--text2); line-height:1.5; margin-bottom:8px; }
+.bartex-btn { padding:6px 14px; background:linear-gradient(135deg,#7a4a10,#c8961e);
+  border:1px solid var(--gold); color:var(--gold3); font-family:'Cinzel',serif;
+  font-size:0.72rem; border-radius:6px; cursor:pointer; transition:all 0.15s; }
+.bartex-btn:hover { background:linear-gradient(135deg,#8a5a20,#e0a820); }
+.bartex-btn:disabled { opacity:0.4; cursor:not-allowed; }
+
+/* ── TECH TREE ── */
+.tech-node {
+  border:1px solid var(--border); border-radius:8px;
+  padding:8px 10px; background:var(--bg2); margin-bottom:5px;
+  display:flex; align-items:center; gap:8px;
+}
+.tech-node.unlocked { border-color:var(--green); background:rgba(46,204,113,0.05); }
+.tech-node.available { border-color:var(--gold); cursor:pointer; }
+.tech-node.available:hover { background:rgba(200,150,30,0.08); }
+.tech-icon { font-size:1.2rem; flex-shrink:0; }
+.tech-info { flex:1; }
+.tech-name { font-family:'Cinzel',serif; font-size:0.75rem; color:var(--text2); }
+.tech-req  { font-size:0.62rem; color:var(--text3); margin-top:2px; }
+.tech-node.unlocked .tech-name { color:var(--green); }
+.tech-progress { font-size:0.68rem; color:var(--gold2); font-family:'Cinzel',serif; }
+
+/* ── TUTORIAL ── */
+.tutorial-overlay {
+  position:fixed; inset:0; z-index:800;
+  background:rgba(0,0,0,0.7); backdrop-filter:blur(3px);
+  display:flex; align-items:flex-end; justify-content:center;
+  padding-bottom:80px; pointer-events:none;
+}
+.tutorial-bubble {
+  max-width:460px; width:90%;
+  background:var(--bg2); border:2px solid var(--gold);
+  border-radius:14px; padding:16px 18px;
+  box-shadow:0 0 40px rgba(200,150,30,0.4);
+  pointer-events:all; position:relative;
+}
+.tutorial-step { font-family:'Cinzel',serif; font-size:0.62rem; color:var(--text3); margin-bottom:6px; letter-spacing:2px; }
+.tutorial-text { font-size:0.85rem; color:var(--text); line-height:1.6; margin-bottom:12px; }
+.tutorial-actions { display:flex; gap:8px; justify-content:flex-end; }
+.tutorial-btn { padding:7px 18px; background:linear-gradient(135deg,#7a4a10,#c8961e);
+  border:1px solid var(--gold); color:var(--gold3); font-family:'Cinzel',serif;
+  font-size:0.72rem; border-radius:6px; cursor:pointer; }
+.tutorial-skip { padding:7px 14px; background:transparent;
+  border:1px solid var(--border); color:var(--text3); font-family:'Cinzel',serif;
+  font-size:0.68rem; border-radius:6px; cursor:pointer; }
+.tutorial-skip:hover { border-color:var(--danger); color:var(--danger); }
+@media (max-width:600px) { .tutorial-overlay { padding-bottom:70px; } }
+
+/* ── SEASON BANNER ── */
+.season-banner {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-family: 'Cinzel', serif;
+  font-size: 0.68rem;
+  border: 1px solid;
+  margin-left: 8px;
+  transition: all 0.5s;
+}
+.season-spring { color:#7dbd8a; border-color:#7dbd8a44; background:rgba(125,189,138,0.08); }
+#canonicalHour [title] { cursor:default; border-bottom:1px dotted var(--text3); }
+.season-summer { color:#f1c40f; border-color:#f1c40f44; background:rgba(241,196,15,0.08); }
+.season-autumn { color:#e67e22; border-color:#e67e2244; background:rgba(230,126,34,0.08); }
+.season-winter { color:#3498db; border-color:#3498db44; background:rgba(52,152,219,0.08); }
+
+/* ── TIME PAUSE ── */
+.time-pause-indicator {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%,-50%);
+  background: rgba(13,10,6,0.92);
+  border: 2px solid var(--gold);
+  border-radius: 12px;
+  padding: 8px 20px;
+  font-family: 'Cinzel', serif;
+  font-size: 0.8rem;
+  color: var(--gold2);
+  letter-spacing: 2px;
+  z-index: 500;
+  pointer-events: none;
+}
+.time-pause-indicator.visible { display: block; }
+.pause-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg2);
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-bottom: 10px;
+}
+.pause-toggle:hover { border-color: var(--gold); }
+.pause-toggle.active { border-color: var(--warm); background: rgba(230,126,34,0.06); }
+.toggle-label { font-family:'Cinzel',serif; font-size:0.78rem; color:var(--text2); }
+.toggle-desc  { font-size:0.65rem; color:var(--text3); margin-top:2px; }
+.toggle-switch {
+  width: 36px; height: 20px;
+  border-radius: 10px;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  position: relative;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.toggle-switch.on { background: var(--warm); }
+.toggle-knob {
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--text3);
+  transition: all 0.2s;
+}
+.toggle-switch.on .toggle-knob { left: 18px; background: white; }
+
+/* ── FACTION BARS ── */
+.faction-section { margin-bottom:12px; }
+.faction-row { margin-bottom:8px; }
+.faction-header { display:flex; justify-content:space-between; font-size:0.72rem; margin-bottom:3px; font-family:'Cinzel',serif; }
+.faction-name { color:var(--text2); }
+.faction-val  { color:var(--gold2); }
+.faction-track { height:6px; background:var(--bg3); border-radius:3px; overflow:hidden; border:1px solid var(--border); }
+.faction-fill  { height:100%; border-radius:3px; transition:width 0.4s; }
+.faction-bonus { font-size:0.62rem; color:var(--text3); margin-top:2px; font-style:italic; }
+
+/* ── DEMAND INDICATOR ── */
+.demand-up   { color:#e74c3c; font-size:0.7rem; margin-left:3px; }
+.demand-down { color:#2ecc71; font-size:0.7rem; margin-left:3px; }
+
+/* ── CENTER SUBTABS ── */
+.subtab-row {
+  display: flex;
+  gap: 3px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+}
+.subtab-btn {
+  flex: 1;
+  padding: 5px 6px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text3);
+  font-family: 'Cinzel', serif;
+  font-size: 0.65rem;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+  margin-bottom: -9px; /* overlap border */
+}
+.subtab-btn:hover { color: var(--text2); }
+.subtab-btn.active { color: var(--gold2); border-bottom-color: var(--gold); }
+
+/* ── ECONOMY PANEL ── */
+.eco-section { margin-bottom: 14px; }
+.eco-title { font-family:'Cinzel',serif; font-size:0.68rem; color:var(--text3); letter-spacing:2px; text-transform:uppercase; margin-bottom:6px; padding-bottom:4px; border-bottom:1px solid var(--border); }
+.eco-row { display:flex; justify-content:space-between; align-items:center; padding:4px 0; border-bottom:1px solid rgba(92,61,26,0.3); font-size:0.75rem; }
+.eco-row:last-child { border-bottom:none; }
+.eco-key { color:var(--text3); }
+.eco-val { color:var(--text2); font-family:'Cinzel',serif; }
+.eco-val.positive { color:var(--green); }
+.eco-val.negative { color:var(--danger); }
+.eco-val.gold     { color:var(--gold2); }
+.inv-value-bar { height:4px; background:var(--bg3); border-radius:2px; margin-top:8px; overflow:hidden; }
+.inv-value-fill { height:100%; background:linear-gradient(90deg,var(--gold),var(--gold2)); border-radius:2px; transition:width 0.5s; }
+
+/* ── SHOP FILTERS ── */
+.shop-filter-row { display:flex; gap:5px; flex-wrap:wrap; margin-bottom:8px; }
+.shop-filter-btn { padding:3px 10px; background:var(--bg3); border:1px solid var(--border); color:var(--text3); font-family:'Cinzel',serif; font-size:0.65rem; border-radius:20px; cursor:pointer; transition:all 0.15s; }
+.shop-filter-btn.active, .shop-filter-btn:hover { background:var(--border2); color:var(--gold2); border-color:var(--gold); }
+.shop-search { width:100%; background:var(--bg3); border:1px solid var(--border); color:var(--text); padding:5px 10px; border-radius:6px; font-family:'IM Fell English',serif; font-size:0.82rem; margin-bottom:8px; outline:none; }
+.shop-search:focus { border-color:var(--gold); }
+.shop-search::placeholder { color:var(--text3); }
+.sell-price { font-size:0.62rem; color:var(--green); margin-top:2px; }
+.shop-item .sell-btn { margin-top:4px; padding:2px 8px; background:rgba(46,204,113,0.1); border:1px solid var(--green); color:var(--green); font-family:'Cinzel',serif; font-size:0.6rem; border-radius:4px; cursor:pointer; width:100%; transition:all 0.15s; }
+.shop-item .sell-btn:hover { background:rgba(46,204,113,0.2); }
+
 /* ── GREMIUM ── */
 .apprentice-card {
   border: 1px solid var(--border);
@@ -1050,9 +1259,15 @@ header p {
       <div class="vital-track"><div class="vital-fill" id="suspicionFill" style="width:0%;background:#e74c3c"></div></div>
       <span class="vital-val" id="statSuspicion">0</span>
     </div>
-    <div class="vital"><span>📅 Den:</span><span class="vital-val" id="statDay">0</span></div>
+    <div class="vital">
+      <span id="canonicalHour" style="font-family:'Cinzel',serif;font-size:0.72rem;color:var(--gold2)">🌅 Prima</span>
+    </div>
+    <div class="vital">
+      <span id="seasonBanner" class="season-banner season-spring">🌱 Jaro · Rok I</span>
+    </div>
   </div>
 </header>
+<div class="time-pause-indicator" id="timePauseIndicator">⏸ ČAS ZASTAVEN</div>
 
 <div class="layout">
 
@@ -1068,8 +1283,16 @@ header p {
 
   <!-- CENTER: Workbench -->
   <div class="panel workbench" id="centerPanel">
-    <div class="panel-title" style="text-align:center">⚗ Pracovní stůl</div>
+    <!-- Center subtab row -->
+    <div class="subtab-row">
+      <button class="subtab-btn active" id="csubtab-bench"   onclick="switchCenterTab('bench')">⚗ Stůl</button>
+      <button class="subtab-btn"        id="csubtab-economy" onclick="switchCenterTab('economy')">📊 Ekonomika</button>
+      <button class="subtab-btn"        id="csubtab-upgrades" onclick="switchCenterTab('upgrades')">🔨 Dílna</button>
+      <button class="subtab-btn"        id="csubtab-settings" onclick="switchCenterTab('settings')">⚙ Nastavení</button>
+    </div>
 
+    <!-- SUBTAB: Workbench -->
+    <div id="cspanel-bench">
     <div class="cauldron-area">
       <!-- Cauldron SVG -->
       <div class="cauldron-visual">
@@ -1137,17 +1360,68 @@ header p {
       <div class="panel-title" style="text-align:center">Humorální vektory</div>
       <div class="vector-display" id="vectorDisplay"></div>
     </div>
+    </div><!-- /cspanel-bench -->
+
+    <!-- SUBTAB: Economy -->
+    <div id="cspanel-economy" style="display:none">
+      <div id="economyContent"></div>
+    </div>
+
+    <!-- SUBTAB: Upgrades (moved from right panel) -->
+    <div id="cspanel-upgrades" style="display:none">
+      <div class="panel-title">🔨 Vylepšení dílny</div>
+      <div id="upgradeListCenter"></div>
+      <hr class="section-divider" style="margin:14px 0">
+      <div class="panel-title">🔬 Alchymistický výzkum</div>
+      <div style="font-size:0.72rem;color:var(--text3);font-style:italic;margin-bottom:8px">Používej suroviny → odemykej nové recepty.</div>
+      <div id="techTreeList"></div>
+    </div>
+
+    <!-- SUBTAB: Settings (moved from right panel) -->
+    <div id="cspanel-settings" style="display:none">
+      <div class="panel-title">⚙ Nastavení & Statistiky</div>
+      <div style="padding:8px 0;border-bottom:1px solid var(--border);margin-bottom:12px">
+        <div style="font-size:0.72rem;color:var(--text3);margin-bottom:10px;font-style:italic">Postup hry</div>
+        <div class="prop-row"><span class="prop-key">📅 Herní den:</span><span class="prop-val" id="stDayVal">0</span></div>
+        <div class="prop-row"><span class="prop-key">⚗ Uvařeno:</span><span class="prop-val" id="stBrewedVal">0</span></div>
+        <div class="prop-row"><span class="prop-key">📜 Zakázky splněny:</span><span class="prop-val" id="stQuestsVal">0</span></div>
+        <div class="prop-row"><span class="prop-key">📖 Objeveno receptů:</span><span class="prop-val" id="stDiscVal">0</span></div>
+        <div class="prop-row"><span class="prop-key">☠ Max toxicita:</span><span class="prop-val" id="stToxVal">0</span></div>
+        <div class="prop-row"><span class="prop-key">👁 Podezření:</span><span class="prop-val" id="stSuspVal">0</span></div>
+      </div>
+      <div style="font-size:0.72rem;color:var(--text3);margin-bottom:8px;font-style:italic">Uložení hry</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+        <button class="shop-btn" onclick="saveGame()">💾 Uložit hru</button>
+        <button class="shop-btn" onclick="loadGame()">📂 Načíst hru</button>
+        <button class="shop-btn" style="border-color:var(--danger);color:var(--danger)" onclick="resetGame()">🗑 Reset hry</button>
+      </div>
+      <div style="font-size:0.72rem;color:var(--text3);margin-bottom:8px;font-style:italic">Řízení času</div>
+      <div class="pause-toggle" id="pauseToggle" onclick="toggleTimePause()">
+        <div>
+          <div class="toggle-label">⏸ Zastavit čas</div>
+          <div class="toggle-desc">Herní čas neplyne — vaření a výpravy fungují normálně.</div>
+        </div>
+        <div class="toggle-switch" id="pauseSwitch"><div class="toggle-knob"></div></div>
+      </div>
+      <div style="font-size:0.72rem;color:var(--text3);margin-bottom:8px;font-style:italic;margin-top:4px">Frakce</div>
+      <div class="faction-section" id="factionBars"></div>
+      <div style="font-size:0.72rem;color:var(--text3);margin-bottom:8px;font-style:italic">Aktivní stavy</div>
+      <div id="settingsAilments2" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px"></div>
+      <div style="font-size:0.68rem;color:var(--text3);line-height:1.6">
+        AlchemiX v0.6 · Středověká alchymie<br>
+        <span style="color:var(--border2)">⚗ Omnia in mensura et numero et pondere</span>
+      </div>
+    </div>
   </div>
 
   <!-- RIGHT: Tabbed panel -->
   <div class="panel" id="rightPanel">
     <div class="tab-row">
-      <button class="tab-btn active" onclick="switchTab('quests')" id="tab-quests">📜 Zakázky</button>
-      <button class="tab-btn" onclick="switchTab('forage')" id="tab-forage">🗺 Výpravy</button>
-      <button class="tab-btn" onclick="switchTab('upgrades')" id="tab-upgrades">🔨 Dílna</button>
+      <button class="tab-btn active" onclick="switchTab('quests')"  id="tab-quests">📜 Zakázky</button>
+      <button class="tab-btn" onclick="switchTab('forage')"  id="tab-forage">🗺 Výpravy</button>
       <button class="tab-btn" onclick="switchTab('grimoire')" id="tab-grimoire">📖 Grimoire</button>
-      <button class="tab-btn" onclick="switchTab('settings')" id="tab-settings">⚙ Nastavení</button>
-      <button class="tab-btn" id="tab-gremium" onclick="switchTab('gremium')" style="display:none">👥 Gremium</button>
+      <button class="tab-btn" onclick="switchTab('loyal')"   id="tab-loyal">👤 Zákazníci</button>
+      <button class="tab-btn" id="tab-gremium" onclick="switchTab('gremium')">👥 Gremium</button>
     </div>
 
     <!-- QUESTS TAB -->
@@ -1161,12 +1435,6 @@ header p {
       <div class="panel-title">🗺 Výpravy za surovinami</div>
       <div style="font-size:0.72rem;color:var(--text3);font-style:italic;margin-bottom:8px">Výpravy stojí Vigor a Hlad. Naber sílu jídlem z trhu.</div>
       <div id="forageList"></div>
-    </div>
-
-    <!-- UPGRADES TAB -->
-    <div id="panel-upgrades" style="display:none">
-      <div class="panel-title">🔨 Vylepšení dílny</div>
-      <div id="upgradeList"></div>
     </div>
 
     <!-- GRIMOIRE TAB -->
@@ -1201,39 +1469,19 @@ header p {
       <div id="grimRecipeDetail" style="display:none;margin-top:8px;padding:10px;border:1px solid var(--gold);border-radius:8px;background:var(--bg2)"></div>
     </div>
 
+    <!-- LOYAL CUSTOMERS TAB -->
+    <div id="panel-loyal" style="display:none">
+      <div class="panel-title">👤 Stálí zákazníci</div>
+      <div style="font-size:0.72rem;color:var(--text3);font-style:italic;margin-bottom:8px">Zákazníci se vracejí po splněných zakázkách.</div>
+      <div id="loyalList"></div>
+    </div>
+
     <!-- GREMIUM TAB -->
     <div id="panel-gremium" style="display:none">
       <div class="panel-title">👥 Gremium — Správa učedníků</div>
       <div id="gremiumContent"></div>
     </div>
 
-    <!-- SETTINGS TAB -->
-    <div id="panel-settings" style="display:none">
-      <div class="panel-title">⚙ Nastavení & Statistiky</div>
-      <div style="padding:8px 0;border-bottom:1px solid var(--border);margin-bottom:12px">
-        <div style="font-size:0.72rem;color:var(--text3);margin-bottom:10px;font-style:italic">Postup hry</div>
-        <div class="prop-row"><span class="prop-key">📅 Herní den:</span><span class="prop-val" id="stDayVal">0</span></div>
-        <div class="prop-row"><span class="prop-key">⚗ Uvařeno:</span><span class="prop-val" id="stBrewedVal">0</span></div>
-        <div class="prop-row"><span class="prop-key">📜 Zakázky splněny:</span><span class="prop-val" id="stQuestsVal">0</span></div>
-        <div class="prop-row"><span class="prop-key">📖 Objeveno receptů:</span><span class="prop-val" id="stDiscVal">0</span></div>
-        <div class="prop-row"><span class="prop-key">☠ Max toxicita:</span><span class="prop-val" id="stToxVal">0</span></div>
-        <div class="prop-row"><span class="prop-key">👁 Podezření:</span><span class="prop-val" id="stSuspVal">0</span></div>
-      </div>
-      <div style="font-size:0.72rem;color:var(--text3);margin-bottom:8px;font-style:italic">Uložení hry</div>
-      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
-        <button class="shop-btn" onclick="saveGame()">💾 Uložit hru</button>
-        <button class="shop-btn" onclick="loadGame()">📂 Načíst hru</button>
-        <button class="shop-btn" style="border-color:var(--danger);color:var(--danger)" onclick="resetGame()">🗑 Reset hry</button>
-      </div>
-      <div style="font-size:0.72rem;color:var(--text3);margin-bottom:8px;font-style:italic">Aktivní stavy</div>
-      <div id="settingsAilments" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px"></div>
-      <div style="font-size:0.72rem;color:var(--text3);margin-bottom:8px;font-style:italic">O hře</div>
-      <div style="font-size:0.68rem;color:var(--text3);line-height:1.6">
-        AlchemiX v0.4 · Středověká alchymie<br>
-        Humorální systém dle Galéna · Galénova farmacie<br>
-        <span style="color:var(--border2)">⚗ Omnia in mensura et numero et pondere</span>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -1251,9 +1499,9 @@ header p {
     <span class="mnav-ico">📜</span>
     <span>Panel</span>
   </button>
-  <button class="mobile-nav-btn" id="mnav-settings" onclick="mobileSwitch('right');switchTab('settings')">
+  <button class="mobile-nav-btn" id="mnav-settings" onclick="mobileSwitch('center');switchCenterTab('settings')">
     <span class="mnav-ico">⚙️</span>
-    <span>Nastav.</span>
+    <span>Nastavení</span>
   </button>
 </nav>
 
@@ -1261,18 +1509,71 @@ header p {
 <div class="modal-bg" id="shopModal">
   <div class="modal">
     <button class="modal-close" onclick="closeShop()">✕ Zavřít</button>
-    <h2>🛒 Trh s ingrediencemi</h2>
-    <p style="font-size:0.8rem;color:var(--text3);margin-bottom:16px;font-style:italic">
-      Klikni na ingredienci pro nákup. Máš <span id="shopGold" style="color:var(--gold2)"></span> zlatých.
+    <h2>🛒 Trh</h2>
+    <p style="font-size:0.8rem;color:var(--text3);margin-bottom:6px;font-style:italic">
+      Zlato: <span id="shopGold" style="color:var(--gold2)"></span>
+      <span id="bartexBadge" style="display:none;margin-left:10px;padding:2px 8px;background:rgba(200,150,30,0.15);border:1px solid var(--gold);border-radius:12px;font-size:0.68rem;color:var(--gold2);cursor:pointer" onclick="openBartex()">🔄 Bartex nabídka!</span>
     </p>
-    <div class="shop-section-title">🌿 Ingredience</div>
-    <div class="shop-grid" id="shopGrid"></div>
-    <div class="shop-section-title">🍞 Potraviny (obnoví Vigor)</div>
-    <div class="shop-grid" id="shopFoodGrid"></div>
+    <!-- Shop mode tabs -->
+    <div class="shop-filter-row" style="margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:8px">
+      <button class="shop-filter-btn active" id="shopmode-buy" onclick="setShopMode('buy')">🛒 Koupit</button>
+      <button class="shop-filter-btn" id="shopmode-sell" onclick="setShopMode('sell')">📤 Prodat</button>
+      <button class="shop-filter-btn" id="shopmode-food" onclick="setShopMode('food')">🍞 Potraviny</button>
+      <button class="shop-filter-btn" id="shopmode-black" onclick="setShopMode('black')" style="display:none">🌑 Černý trh</button>
+    </div>
+    <!-- BUY panel -->
+    <div id="shoppanel-buy">
+      <input class="shop-search" id="shopSearch" placeholder="Hledat ingredienci..." oninput="renderShopGrid()">
+      <div class="shop-filter-row" id="shopTypeFilters">
+        <button class="shop-filter-btn active" onclick="setShopFilter('All')">Vše</button>
+        <button class="shop-filter-btn" onclick="setShopFilter('Herb')">🌿 Byliny</button>
+        <button class="shop-filter-btn" onclick="setShopFilter('Mineral')">💎 Minerály</button>
+        <button class="shop-filter-btn" onclick="setShopFilter('Resin')">🟤 Pryskyřice</button>
+        <button class="shop-filter-btn" onclick="setShopFilter('Liquid')">🫗 Tekutiny</button>
+        <button class="shop-filter-btn" onclick="setShopFilter('Animal')">🦴 Živočišné</button>
+      </div>
+      <div class="shop-grid" id="shopGrid"></div>
+    </div>
+    <!-- SELL panel -->
+    <div id="shoppanel-sell" style="display:none">
+      <p style="font-size:0.72rem;color:var(--text3);margin-bottom:8px;font-style:italic">Prodávej za 60% nákupní ceny. Zobrazeny pouze zásoby které máš.</p>
+      <div class="shop-grid" id="shopSellGrid"></div>
+    </div>
+    <!-- FOOD panel -->
+    <div id="shoppanel-food" style="display:none">
+      <div class="shop-grid" id="shopFoodGrid"></div>
+    </div>
+    <!-- BLACK MARKET panel -->
+    <div id="shoppanel-black" style="display:none">
+      <p style="font-size:0.72rem;color:var(--danger);margin-bottom:8px">⚠ Každý nákup +3 podezření Inkvizice.</p>
+      <div class="shop-grid" id="shopBlackGrid"></div>
+    </div>
   </div>
 </div>
 
 <div id="notif"></div>
+
+<!-- Tutorial Overlay -->
+<div class="tutorial-overlay" id="tutorialOverlay" style="display:none">
+  <div class="tutorial-bubble">
+    <div class="tutorial-step" id="tutStep"></div>
+    <div class="tutorial-text" id="tutText"></div>
+    <div class="tutorial-actions">
+      <button class="tutorial-skip" onclick="skipTutorial()">Přeskočit vše</button>
+      <button class="tutorial-btn"  onclick="nextTutStep()">Rozumím →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bartex Modal -->
+<div class="modal-bg" id="bartexModal">
+  <div class="modal" style="max-width:400px">
+    <button class="modal-close" onclick="closeBartex()">✕ Zavřít</button>
+    <h2>🔄 Bartex — Směnný obchod</h2>
+    <p style="font-size:0.78rem;color:var(--text3);margin-bottom:14px;font-style:italic">Zákazník nabízí výměnu místo zlata.</p>
+    <div id="bartexContent"></div>
+  </div>
+</div>
 
 <!-- Apprentice Return Modal -->
 <div class="modal-bg" id="returnModal">
@@ -1386,6 +1687,52 @@ const INGREDIENTS_RAW = [
   {id:"ING58",name_lat:"Mentha piperita",name_cz:"Máta peprná",type:"Herb",thermal:2,moisture:-2,toxicity:0,potency:2,tags:["cooling","digestive","aromatic"],price:4,shelf_days:30,color:"#2ecc71"},
   {id:"ING59",name_lat:"Plantago",name_cz:"Jitrocel",type:"Herb",thermal:-2,moisture:-2,toxicity:0,potency:1,tags:["wound","cooling","astringent"],price:3,shelf_days:14,color:"#a8c090"},
   {id:"ING60",name_lat:"Symphytum officinale",name_cz:"Kostival",type:"Herb",thermal:-1,moisture:2,toxicity:5,potency:2,tags:["bone","wound","healing"],price:6,shelf_days:30,color:"#7d9e4e"},
+
+  // ── BYLINY / HERBS ──
+  {id:"ING61",name_lat:"Lavandula",name_cz:"Levandule",type:"Herb",thermal:1,moisture:-2,toxicity:0,potency:2,tags:["calming","aromatic","anti-spasm","sleep"],price:6,shelf_days:180,color:"#967bb6"},
+  {id:"ING62",name_lat:"Foeniculum vulgare",name_cz:"Fenykl",type:"Herb",thermal:2,moisture:1,toxicity:0,potency:1,tags:["digestive","aromatic","nausea","eye"],price:4,shelf_days:180,color:"#a8c840"},
+  {id:"ING63",name_lat:"Pimpinella anisum",name_cz:"Anýz",type:"Herb",thermal:2,moisture:1,toxicity:0,potency:1,tags:["digestive","aromatic","expectorant"],price:5,shelf_days:365,color:"#c8e08a"},
+  {id:"ING64",name_lat:"Mentha crispa",name_cz:"Máta kadeřavá",type:"Herb",thermal:1,moisture:-1,toxicity:0,potency:1,tags:["cooling","digestive","aromatic","head"],price:3,shelf_days:30,color:"#2ecc71"},
+  {id:"ING65",name_lat:"Satureja hortensis",name_cz:"Saturejka",type:"Herb",thermal:3,moisture:-2,toxicity:0,potency:2,tags:["warming","antiseptic","digestive"],price:4,shelf_days:120,color:"#6b8e23"},
+  {id:"ING66",name_lat:"Hyssopus officinalis",name_cz:"Yzop",type:"Herb",thermal:2,moisture:-2,toxicity:5,potency:2,tags:["expectorant","wound","aromatic","anti-plague"],price:5,shelf_days:120,color:"#5d86c0"},
+  {id:"ING67",name_lat:"Origanum majorana",name_cz:"Majoránka",type:"Herb",thermal:2,moisture:-1,toxicity:0,potency:1,tags:["calming","digestive","aromatic","head"],price:4,shelf_days:120,color:"#8fbc8f"},
+  {id:"ING68",name_lat:"Verbascum thapsus",name_cz:"Divizna",type:"Herb",thermal:1,moisture:2,toxicity:0,potency:1,tags:["expectorant","wound","cooling","lung"],price:4,shelf_days:90,color:"#f1c40f"},
+  {id:"ING69",name_lat:"Achillea millefolium",name_cz:"Řebříček",type:"Herb",thermal:1,moisture:-2,toxicity:0,potency:2,tags:["wound","anti-fever","astringent","blood"],price:4,shelf_days:90,color:"#f8f9fa"},
+  {id:"ING70",name_lat:"Arctium lappa",name_cz:"Lopuch",type:"Herb",thermal:-1,moisture:1,toxicity:0,potency:1,tags:["skin","liver","cooling","purgative"],price:3,shelf_days:14,color:"#8b6914"},
+  {id:"ING71",name_lat:"Sempervivum tectorum",name_cz:"Netřesk",type:"Herb",thermal:-2,moisture:3,toxicity:0,potency:1,tags:["cooling","wound","skin","ear"],price:3,shelf_days:7,color:"#7dbd8a"},
+  {id:"ING72",name_lat:"Cannabis sativa",name_cz:"Konopí",type:"Herb",thermal:1,moisture:-1,toxicity:10,potency:2,tags:["analgesic","calming","anti-spasm","fiber"],price:8,shelf_days:180,color:"#6b8e23"},
+  {id:"ING73",name_lat:"Conium maculatum",name_cz:"Bolehlav plamatý",type:"Herb",thermal:-3,moisture:-2,toxicity:80,potency:4,tags:["poison","sedative","narcotic","rare"],price:35,shelf_days:90,color:"#2c6e2c"},
+  {id:"ING74",name_lat:"Atropa stramonium",name_cz:"Durman obecný",type:"Herb",thermal:-3,moisture:-3,toxicity:75,potency:4,tags:["narcotic","poison","rare","surgical"],price:40,shelf_days:90,color:"#4a235a"},
+  {id:"ING75",name_lat:"Verbena officinalis",name_cz:"Sporýš lékařský",type:"Herb",thermal:1,moisture:-1,toxicity:0,potency:1,tags:["wound","liver","anti-demon","mood"],price:5,shelf_days:90,color:"#9b59b6"},
+  {id:"ING76",name_lat:"Silybum marianum",name_cz:"Ostropestřec",type:"Herb",thermal:1,moisture:-2,toxicity:0,potency:2,tags:["liver","digestive","bitter"],price:6,shelf_days:180,color:"#8e44ad"},
+  {id:"ING77",name_lat:"Cnicus benedictus",name_cz:"Benedikt lékařský",type:"Herb",thermal:2,moisture:-2,toxicity:5,potency:2,tags:["bitter","digestive","anti-fever","tonic"],price:7,shelf_days:180,color:"#f39c12"},
+  {id:"ING78",name_lat:"Linaria vulgaris",name_cz:"Lnice obecná",type:"Herb",thermal:2,moisture:-1,toxicity:10,potency:1,tags:["liver","skin","purgative","bitter"],price:4,shelf_days:90,color:"#f1c40f"},
+  // ── MINERÁLY / MINERALS ──
+  {id:"ING79",name_lat:"Sulphur",name_cz:"Síra",type:"Mineral",thermal:3,moisture:-3,toxicity:20,potency:2,tags:["antiseptic","skin","anti-demon","alchemical"],price:8,shelf_days:365,color:"#f4d03f"},
+  {id:"ING80",name_lat:"Vitriolum caeruleum",name_cz:"Modrý vitriol",type:"Mineral",thermal:2,moisture:-3,toxicity:70,potency:3,tags:["poison","antiseptic","pigment","mordant"],price:18,shelf_days:365,color:"#3498db"},
+  {id:"ING81",name_lat:"Sal ammoniacum",name_cz:"Salmiak",type:"Mineral",thermal:1,moisture:-2,toxicity:20,potency:2,tags:["solvent","alchemical","mordant","tincture"],price:12,shelf_days:365,color:"#ecf0f1"},
+  {id:"ING82",name_lat:"Magnesia alba",name_cz:"Magnézie",type:"Mineral",thermal:-1,moisture:-2,toxicity:0,potency:1,tags:["cooling","digestive","astringent","anti-acid"],price:10,shelf_days:365,color:"#f0f0f0"},
+  {id:"ING83",name_lat:"Crystallus",name_cz:"Křemen",type:"Mineral",thermal:-1,moisture:-3,toxicity:0,potency:1,tags:["cooling","precious","alchemical","purifying"],price:15,shelf_days:365,color:"#d6eaf8"},
+  {id:"ING84",name_lat:"Pyrites",name_cz:"Pyrit",type:"Mineral",thermal:2,moisture:-3,toxicity:10,potency:1,tags:["warming","alchemical","fire","pigment"],price:8,shelf_days:365,color:"#d4ac0d"},
+  {id:"ING85",name_lat:"Galena",name_cz:"Galenit",type:"Mineral",thermal:-1,moisture:-4,toxicity:75,potency:2,tags:["poison","pigment","mordant"],price:14,shelf_days:365,color:"#808b96"},
+  {id:"ING86",name_lat:"Stibium",name_cz:"Antimon",type:"Mineral",thermal:1,moisture:-3,toxicity:60,potency:3,tags:["poison","purgative","alchemical","pigment"],price:22,shelf_days:365,color:"#2c3e50"},
+  // ── PRYSKYŘICE / RESINS ──
+  {id:"ING87",name_lat:"Benzoe",name_cz:"Benzoe",type:"Resin",thermal:1,moisture:-2,toxicity:5,potency:1,tags:["aromatic","antiseptic","binder","incense"],price:14,shelf_days:365,color:"#d4a843"},
+  {id:"ING88",name_lat:"Galbanum",name_cz:"Galbanum",type:"Resin",thermal:2,moisture:-2,toxicity:5,potency:2,tags:["aromatic","anti-spasm","wound","rare"],price:20,shelf_days:365,color:"#7dbd8a"},
+  {id:"ING89",name_lat:"Opopanax",name_cz:"Opopanax",type:"Resin",thermal:2,moisture:-2,toxicity:10,potency:2,tags:["anti-spasm","aromatic","warming","anti-plague"],price:18,shelf_days:365,color:"#c8a870"},
+  {id:"ING90",name_lat:"Asafoetida",name_cz:"Asafoetida",type:"Resin",thermal:3,moisture:-3,toxicity:5,potency:2,tags:["digestive","anti-spasm","anti-demon","pungent"],price:12,shelf_days:365,color:"#c09060"},
+  {id:"ING91",name_lat:"Lacca",name_cz:"Lakmus",type:"Resin",thermal:1,moisture:-2,toxicity:0,potency:1,tags:["pigment","binder","craft","aromatic"],price:16,shelf_days:365,color:"#e74c3c"},
+  // ── ŽIVOČIŠNÉ / ANIMAL ──
+  {id:"ING92",name_lat:"Pellis serpentis",name_cz:"Hadí kůže",type:"Animal",thermal:-1,moisture:-3,toxicity:5,potency:1,tags:["skin","astringent","anti-poison","rare"],price:20,shelf_days:365,color:"#6b8e23"},
+  {id:"ING93",name_lat:"Adeps ranae",name_cz:"Žabí tuk",type:"Animal",thermal:-2,moisture:2,toxicity:5,potency:1,tags:["cooling","skin","wound","ointment"],price:8,shelf_days:30,color:"#2ecc71"},
+  {id:"ING94",name_lat:"Atramentum sepiae",name_cz:"Sépie (inkoust)",type:"Animal",thermal:-1,moisture:-1,toxicity:0,potency:1,tags:["pigment","craft","ink","astringent"],price:10,shelf_days:180,color:"#2c3e50"},
+  {id:"ING95",name_lat:"Hirudo medicinalis",name_cz:"Pijavice",type:"Animal",thermal:-2,moisture:3,toxicity:5,potency:2,tags:["blood","cooling","surgical","anti-fever"],price:15,shelf_days:7,color:"#2c6e2c"},
+  // ── TEKUTINY / LIQUIDS ──
+  {id:"ING96",name_lat:"Aqua pluvialis",name_cz:"Dešťová voda",type:"Liquid",thermal:-1,moisture:4,toxicity:0,potency:1,tags:["solvent","base","cooling","pure"],price:1,shelf_days:30,color:"#aed6f1"},
+  {id:"ING97",name_lat:"Aqua marina",name_cz:"Mořská voda",type:"Liquid",thermal:-1,moisture:3,toxicity:5,potency:1,tags:["astringent","preservative","base","salt"],price:3,shelf_days:365,color:"#1a5276"},
+  {id:"ING98",name_lat:"Urina",name_cz:"Moč (lidská)",type:"Liquid",thermal:2,moisture:1,toxicity:5,potency:1,tags:["mordant","tincture","alchemical","purgative"],price:1,shelf_days:3,color:"#f4d03f"},
+  {id:"ING99",name_lat:"Hydrargyrum",name_cz:"Rtuť",type:"Liquid",thermal:1,moisture:-3,toxicity:95,potency:4,tags:["poison","alchemical","rare","pigment"],price:60,shelf_days:365,color:"#808b96"},
+  {id:"ING100",name_lat:"Acetum destillatum",name_cz:"Destilovaný ocet",type:"Liquid",thermal:-1,moisture:-2,toxicity:10,potency:2,tags:["astringent","preservative","solvent","mordant"],price:8,shelf_days:365,color:"#e8d5a3"},
 ];
 
 const RECIPES_RAW = [
@@ -1418,6 +1765,65 @@ const RECIPES_RAW = [
   {id:"POT35",name_lat:"Atramentum",name_cz:"Středověký inkoust",category:"Liquid",tier:1,process:"Boil",base:"ING01",req_ing:["ING41","ING42","ING02"],effect:"Trvanlivý železo-duběnkový inkoust pro písaře.",tags:["pigment","ink","craft"],value:10,color:"#1a1a2e"},
   {id:"POT49",name_lat:"Oleum Camphoratum",name_cz:"Kafr v oleji",category:"Ointment",tier:1,process:"Mix",base:"ING05",req_ing:["ING30"],effect:"Chladivá mast na bolesti svalů, revma a dýchání.",tags:["cooling","analgesic","anti-spasm"],value:20,color:"#d5f5e3"},
   {id:"POT50",name_lat:"Pulvis Dentifricius",name_cz:"Zubní prach",category:"Powder",tier:1,process:"Grind",base:"ING36",req_ing:["ING29","ING26"],effect:"Středověká zubní pasta. Čistí zuby a desinfikuje dásně.",tags:["dental","antiseptic","aromatic"],value:12,color:"#ecf0f1"},
+
+  // ── TIER 2: BYLINY & NOVÉ SUROVINY ──
+  {id:"POT51",name_lat:"Aqua Lavandulae",name_cz:"Levandulová voda",category:"Liquid",tier:1,process:"Distill",base:"ING01",req_ing:["ING61"],effect:"Uklidňuje a dezinfikuje pokožku. Pomáhá při nespavosti.",tags:["calming","aromatic","antiseptic"],value:18,color:"#967bb6"},
+  {id:"POT52",name_lat:"Oleum Lavandulae",name_cz:"Levandulový olej",category:"Ointment",tier:1,process:"Mix",base:"ING05",req_ing:["ING61"],effect:"Masážní olej pro uvolnění svalů a nervů.",tags:["calming","analgesic","aromatic"],value:22,color:"#967bb6"},
+  {id:"POT53",name_lat:"Spiritus Foeniculi",name_cz:"Fenyklový destilát",category:"Liquid",tier:1,process:"Distill",base:"ING02",req_ing:["ING62"],effect:"Léčí nadýmání, kojeneckou koliku. Fenyklová voda.",tags:["digestive","calming","anti-spasm"],value:14,color:"#a8c840"},
+  {id:"POT54",name_lat:"Aqua Anisi",name_cz:"Anýzová voda",category:"Liquid",tier:1,process:"Boil",base:"ING01",req_ing:["ING63"],effect:"Zklidňuje kašel, podporuje trávení, čistí dech.",tags:["expectorant","digestive","aromatic"],value:12,color:"#c8e08a"},
+  {id:"POT55",name_lat:"Unguentum Sulfuratum",name_cz:"Sirná mast",category:"Ointment",tier:2,process:"Mix",base:"ING05",req_ing:["ING79"],effect:"Léčí svrab, lupy a plísňové infekce kůže.",tags:["antiseptic","skin","anti-parasitic"],value:28,color:"#f4d03f"},
+  {id:"POT56",name_lat:"Spiritus Sulphuris",name_cz:"Sirný duch",category:"Liquid",tier:2,process:"Distill",base:"ING55",req_ing:["ING79"],effect:"Silné antiseptikum a fumigans. Čistí vzduch při moru.",tags:["antiseptic","anti-plague","purifying"],value:40,color:"#e8d840"},
+  {id:"POT57",name_lat:"Aqua Hyssopi",name_cz:"Yzopová voda",category:"Liquid",tier:1,process:"Boil",base:"ING01",req_ing:["ING66"],effect:"Hlenolytikum na kašel a bronchitidu. Historicky proslulá.",tags:["expectorant","lung","anti-plague"],value:16,color:"#5d86c0"},
+  {id:"POT58",name_lat:"Tinctura Cannabis",name_cz:"Konopná tinktura",category:"Liquid",tier:2,process:"Mix",base:"ING55",req_ing:["ING72"],effect:"Analgetikum a antispasmodikum. Středověké použití.",tags:["analgesic","anti-spasm","calming"],value:35,color:"#6b8e23"},
+  {id:"POT59",name_lat:"Potio Hepatica",name_cz:"Jaterní lektvar",category:"Liquid",tier:2,process:"Boil",base:"ING02",req_ing:["ING76","ING78"],effect:"Pročišťuje játra a žluč. Hořký, ale účinný.",tags:["liver","bitter","purgative"],value:32,color:"#8e44ad"},
+  {id:"POT60",name_lat:"Elixir Benedictum",name_cz:"Benediktový elixír",category:"Liquid",tier:2,process:"Boil",base:"ING04",req_ing:["ING77","ING56"],effect:"Hořký tonikum na horečku a slabost. Klášterní recept.",tags:["tonic","anti-fever","bitter"],value:38,color:"#f39c12"},
+  // ── TIER 2-3: MINERÁLNÍ PŘÍPRAVKY ──
+  {id:"POT61",name_lat:"Aqua Fortis Minor",name_cz:"Slabá leptavá voda",category:"Liquid",tier:2,process:"Distill",base:"ING03",req_ing:["ING81"],effect:"Slabší kyselina na čištění kovů a rozpouštění pigmentů.",tags:["acid","craft","solvent"],value:30,color:"#e8d840"},
+  {id:"POT62",name_lat:"Spiritus Salis",name_cz:"Solný duch",category:"Liquid",tier:2,process:"Distill",base:"ING97",req_ing:["ING81"],effect:"Kyselina chlorovodíková — testuje kovy, čistí rány.",tags:["acid","antiseptic","alchemical"],value:45,color:"#ecf0f1"},
+  {id:"POT63",name_lat:"Magnesium Compositum",name_cz:"Magnéziový prach",category:"Powder",tier:1,process:"Grind",base:"ING82",req_ing:["ING24"],effect:"Zklidňuje žaludeční kyselost, projímadlo.",tags:["digestive","anti-acid","cooling"],value:20,color:"#f0f0f0"},
+  {id:"POT64",name_lat:"Unguentum Vitrioli",name_cz:"Vitriolová mast",category:"Ointment",tier:3,process:"Mix",base:"ING05",req_ing:["ING80","ING26"],effect:"Silné antiseptikum na gangrénu. TOXICKÉ — pouze vnější!",tags:["antiseptic","wound","dangerous","toxic"],value:65,color:"#2980b9"},
+  {id:"POT65",name_lat:"Pulvis Antimonii",name_cz:"Antimonový prach",category:"Powder",tier:3,process:"Grind",base:"ING86",req_ing:["ING42"],effect:"Silné purgativum a emetikum. Historicky kontroverzní.",tags:["purgative","toxic","dangerous"],value:55,color:"#2c3e50"},
+  {id:"POT66",name_lat:"Stibium Nigrum",name_cz:"Černý antimon",category:"Material",tier:2,process:"Grind",base:"ING86",req_ing:["ING79"],effect:"Alchymistický pigment a metalurgická přísada.",tags:["pigment","alchemical","craft"],value:35,color:"#1a1a2e"},
+  // ── TIER 2-3: PRYSKYŘIČNÉ A VONNÉ ──
+  {id:"POT67",name_lat:"Pastillus Aromaticus",name_cz:"Aromatická pastilka",category:"Electuary",tier:2,process:"Mix",base:"ING04",req_ing:["ING87","ING61"],effect:"Vonná pastilka pro osvěžení dechu a čištění vzduchu.",tags:["aromatic","antiseptic","anti-plague"],value:28,color:"#d4a843"},
+  {id:"POT68",name_lat:"Fumus Plagae",name_cz:"Morový dým",category:"Material",tier:3,process:"Boil",base:"ING27",req_ing:["ING89","ING90"],effect:"Kouřová směs pro fumigaci prostoru při moru.",tags:["anti-plague","purifying","aromatic"],value:70,color:"#8b7355"},
+  {id:"POT69",name_lat:"Unguentum Galbani",name_cz:"Galbanová mast",category:"Ointment",tier:2,process:"Mix",base:"ING33",req_ing:["ING88","ING26"],effect:"Uvolňuje křeče a záněty kloubů. Záhadná vůně.",tags:["anti-spasm","anti-inflammatory","aromatic"],value:50,color:"#7dbd8a"},
+  {id:"POT70",name_lat:"Asafoetida Composita",name_cz:"Složená asafoetida",category:"Electuary",tier:2,process:"Mix",base:"ING04",req_ing:["ING90","ING57"],effect:"Léčí hysterii a záchvaty. Odpuzuje zly duchy (a sousedy).",tags:["anti-spasm","anti-demon","calming","pungent"],value:30,color:"#c09060"},
+  // ── TIER 2-3: ŽIVOČIŠNÉ A CHIRURGICKÉ ──
+  {id:"POT71",name_lat:"Unguentum Ranarum",name_cz:"Žabí mast",category:"Ointment",tier:1,process:"Mix",base:"ING05",req_ing:["ING93"],effect:"Chladivá mast na záněty a vyrážky. Středověká dermatologie.",tags:["cooling","skin","anti-inflammatory"],value:20,color:"#27ae60"},
+  {id:"POT72",name_lat:"Aqua Hirudinum",name_cz:"Pijavicová voda",category:"Liquid",tier:2,process:"Boil",base:"ING01",req_ing:["ING95","ING10"],effect:"Snižuje krevní tlak a horečku. Alternativa k přímému nasazení pijavic.",tags:["blood","anti-fever","cooling"],value:35,color:"#2c6e2c"},
+  {id:"POT73",name_lat:"Antidotum Serpentinum",name_cz:"Hadí protijed",category:"Liquid",tier:3,process:"Mix",base:"ING04",req_ing:["ING92","ING14","ING48"],effect:"Protijed na hadí uštknutí. Používán rytíři i lovci.",tags:["anti-poison","blood","rare"],value:90,color:"#6b8e23"},
+  {id:"POT74",name_lat:"Unguentum Chirurgicum",name_cz:"Chirurgická mast",category:"Ointment",tier:3,process:"Boil",base:"ING33",req_ing:["ING26","ING60","ING95"],effect:"Hojení hlubokých ran po operaci. Snižuje zánět.",tags:["wound","healing","surgical","anti-inflammatory"],value:80,color:"#27ae60"},
+  // ── TIER 3-4: ALCHYMISTICKÉ A LEGENDÁRNÍ ──
+  {id:"POT75",name_lat:"Quinta Essentia",name_cz:"Quinta Essentia",category:"Liquid",tier:4,process:"Distill",base:"ING55",req_ing:["ING22","ING26","ING81"],effect:"Paracelsův ideál — pátá esence věcí. Léčí vše co existuje... nebo tak říkají.",tags:["tonic","healing","rare","alchemical"],value:250,color:"#9b59b6"},
+  {id:"POT76",name_lat:"Aurum Potabile",name_cz:"Pitné zlato",category:"Liquid",tier:4,process:"Mix",base:"ING55",req_ing:["ING46","ING81","ING22"],effect:"Legenda alchymie — koloidní zlato v lihu. Elixír mládí.",tags:["tonic","heart","precious","rare","alchemical"],value:400,color:"#ffd700"},
+  {id:"POT77",name_lat:"Mercurius Dulcis",name_cz:"Sladká rtuť",category:"Powder",tier:3,process:"Grind",base:"ING99",req_ing:["ING79"],effect:"Kalomel — silné purgativum a antisyfilitikum. TOXICKÉ.",tags:["purgative","toxic","dangerous","alchemical"],value:85,color:"#808b96"},
+  {id:"POT78",name_lat:"Lapis Philosophorum",name_cz:"Kámen mudrců (hint)",category:"Material",tier:4,process:"Distill",base:"ING55",req_ing:["ING99","ING84","ING79"],effect:"Alchymistický Grál. Tato verze je jen rudimentární frakce... ale hint směrem správným.",tags:["alchemical","rare","legendary"],value:999,color:"#ffd700"},
+  {id:"POT79",name_lat:"Oleum Vitrioli",name_cz:"Olej z vitriolu",category:"Liquid",tier:3,process:"Distill",base:"ING03",req_ing:["ING80","ING84"],effect:"Kyselina sírová — nejsilnější dostupné leptadlo. Extrémně nebezpečné.",tags:["acid","dangerous","alchemical","craft"],value:120,color:"#3498db"},
+  {id:"POT80",name_lat:"Magisterium Antimonii",name_cz:"Magisterium antimonu",category:"Powder",tier:4,process:"Distill",base:"ING86",req_ing:["ING81","ING55"],effect:"Paracelsova proslulá příprava. Léčí syfilis, mor, jedovatost. Sám je jedovatý.",tags:["purgative","toxic","rare","alchemical"],value:200,color:"#2c3e50"},
+  // ── TIER 2: KOSMETIKA A VOŇAVKY ──
+  {id:"POT81",name_lat:"Aqua Mirabillis",name_cz:"Divotvorná voda",category:"Liquid",tier:2,process:"Distill",base:"ING01",req_ing:["ING61","ING67","ING63"],effect:"Středověký parfém. Chránil prý před morem i stárnutím.",tags:["aromatic","anti-plague","cosmetic"],value:45,color:"#d7bde2"},
+  {id:"POT82",name_lat:"Unguentum Cosmeticum",name_cz:"Kosmetická mast",category:"Ointment",tier:2,process:"Mix",base:"ING33",req_ing:["ING61","ING93"],effect:"Vyhlazuje vrásky, zjemňuje pokožku. Pro bohaté dámy.",tags:["cosmetic","skin","aromatic"],value:40,color:"#f5cba7"},
+  {id:"POT83",name_lat:"Tinctura Aromatica",name_cz:"Aromatická tinktura",category:"Liquid",tier:2,process:"Mix",base:"ING55",req_ing:["ING87","ING28","ING25"],effect:"Kapky pro osvěžení, stimulaci mysli a zahřátí.",tags:["aromatic","stimulant","warming","tonic"],value:42,color:"#d4a843"},
+  {id:"POT84",name_lat:"Pulvis Faciei",name_cz:"Líčidlový prach",category:"Powder",tier:2,process:"Grind",base:"ING34",req_ing:["ING82","ING91"],effect:"Středověký make-up. Bělí pleť — ale magnézie je bezpečnější než olovo.",tags:["cosmetic","skin","pigment"],value:25,color:"#f8f9fa"},
+  // ── TIER 2-3: SPECIFICKÉ LÉKY ──
+  {id:"POT85",name_lat:"Potio Pulmonaria",name_cz:"Plicní lektvar",category:"Liquid",tier:2,process:"Boil",base:"ING01",req_ing:["ING68","ING66","ING63"],effect:"Léčí bronchitidu, astma a zápal plic. Středověká pneumologie.",tags:["lung","expectorant","anti-spasm","cooling"],value:38,color:"#5d86c0"},
+  {id:"POT86",name_lat:"Potio Renalis",name_cz:"Ledvinový lektvar",category:"Liquid",tier:2,process:"Boil",base:"ING01",req_ing:["ING62","ING70"],effect:"Diuretikum na ledvinové kameny a záněty. Denní pití.",tags:["kidney","diuretic","cooling"],value:30,color:"#a8c840"},
+  {id:"POT87",name_lat:"Cataplasma Vulnerarium",name_cz:"Hojivý obklad",category:"Material",tier:2,process:"Mix",base:"ING60",req_ing:["ING69","ING71"],effect:"Vlhký obklad na zlomeniny a otoky. Konsoliduje kosti.",tags:["wound","bone","anti-inflammatory","cooling"],value:32,color:"#7dbd8a"},
+  {id:"POT88",name_lat:"Potio Nervina",name_cz:"Nervový lektvar",category:"Liquid",tier:2,process:"Boil",base:"ING02",req_ing:["ING72","ING13","ING61"],effect:"Léčí třes, záchvaty a nervové bolesti. Sedativní.",tags:["analgesic","anti-spasm","sedative","calming"],value:48,color:"#967bb6"},
+  {id:"POT89",name_lat:"Antiphlogisticum",name_cz:"Protizánětlivý odvar",category:"Liquid",tier:2,process:"Boil",base:"ING01",req_ing:["ING69","ING10","ING75"],effect:"Bojuje se záněty kloubů a revmatem. Denní kúra.",tags:["anti-inflammatory","joint","analgesic","cooling"],value:35,color:"#7d9e4e"},
+  {id:"POT90",name_lat:"Potio Diuretica",name_cz:"Diuretický lektvar",category:"Liquid",tier:2,process:"Boil",base:"ING01",req_ing:["ING95","ING96"],effect:"Silné diuretikum — čistí ledviny a krev od jedů.",tags:["diuretic","blood","cooling","kidney"],value:30,color:"#aed6f1"},
+  // ── TIER 3: SPECIÁLNÍ A VZÁCNÉ ──
+  {id:"POT91",name_lat:"Elixir Longaevitatis",name_cz:"Elixír dlouhověkosti",category:"Liquid",tier:3,process:"Distill",base:"ING55",req_ing:["ING22","ING46","ING83"],effect:"Legendární prodlužovač života. Účinnost sporná, cena nesporná.",tags:["tonic","precious","rare","alchemical"],value:300,color:"#ffd700"},
+  {id:"POT92",name_lat:"Oleum Serpentinum",name_cz:"Hadí olej",category:"Ointment",tier:3,process:"Mix",base:"ING05",req_ing:["ING92","ING88","ING30"],effect:"Léčí paralýzu, nervová poranění a hadí uštknutí.",tags:["analgesic","anti-poison","rare","wound"],value:110,color:"#2ecc71"},
+  {id:"POT93",name_lat:"Confortativum Magnum",name_cz:"Velké posilující",category:"Electuary",tier:3,process:"Mix",base:"ING04",req_ing:["ING77","ING37","ING22"],effect:"Mohutné tonikum pro rekonvalescenty a starce. Vrací sílu.",tags:["tonic","stimulant","warming","rare"],value:140,color:"#e67e22"},
+  {id:"POT94",name_lat:"Theriac Minor",name_cz:"Malý Theriak",category:"Electuary",tier:3,process:"Mix",base:"ING04",req_ing:["ING92","ING48","ING14"],effect:"Zjednodušená verze Theriaku. Chrání před běžnými jedy.",tags:["anti-poison","tonic","analgesic"],value:120,color:"#8e44ad"},
+  {id:"POT95",name_lat:"Febrifugum Compositum",name_cz:"Složený přípravek na horečku",category:"Liquid",tier:3,process:"Boil",base:"ING01",req_ing:["ING10","ING38","ING95"],effect:"Nejsilnější horečkový přípravek. Snižuje i nejkrutější horečky.",tags:["anti-fever","blood","cooling"],value:75,color:"#3498db"},
+  {id:"POT96",name_lat:"Venenum Lentum",name_cz:"Pomalý jed",category:"Liquid",tier:4,process:"Distill",base:"ING01",req_ing:["ING73","ING85","ING99"],effect:"Jed s opožděným účinkem — příznaky nastupují po 3 dnech. Smrtelné.",tags:["poison","dangerous","rare","alchemical"],value:350,color:"#2c3e50"},
+  {id:"POT97",name_lat:"Aqua Regia",name_cz:"Lučavka královská",category:"Liquid",tier:4,process:"Distill",base:"ING03",req_ing:["ING80","ING81","ING97"],effect:"Rozpouští zlato. Nejsilnější kyselina středověké alchymie. SMRTELNĚ NEBEZPEČNÉ.",tags:["acid","alchemical","dangerous","legendary"],value:280,color:"#f4d03f"},
+  {id:"POT98",name_lat:"Unguentum Diabolicum",name_cz:"Ďábelská mast",category:"Ointment",tier:4,process:"Mix",base:"ING05",req_ing:["ING74","ING07","ING08"],effect:"Narkotická mast čarodějnic. Způsobuje halucinace a transy.",tags:["narcotic","poison","dangerous","rare"],value:180,color:"#4a235a"},
+  {id:"POT99",name_lat:"Electuarium Imperiale",name_cz:"Císařský elektuarium",category:"Electuary",tier:4,process:"Mix",base:"ING04",req_ing:["ING46","ING39","ING22","ING26"],effect:"Nejluxusnější přípravek empire. Pouze pro krále a papeže.",tags:["heart","tonic","precious","rare"],value:450,color:"#ffd700"},
+  {id:"POT100",name_lat:"Confectio Diatragacanthi",name_cz:"Tragantová konfekce",category:"Electuary",tier:3,process:"Mix",base:"ING04",req_ing:["ING32","ING63","ING87"],effect:"Sladká gumová pastilka pro dráždivý kašel a záněty hrdla.",tags:["expectorant","throat","calming","sweet"],value:45,color:"#d4a843"},
 ];
 
 // ══════════════════════════════════════════════════════
@@ -1476,8 +1882,26 @@ let state = {
   grimoireSort: 'name',
   // Gremium
   gremiumUnlocked: false,
-  apprentices: [],         // array of apprentice objects
-  pendingReturn: null,     // apprentice return waiting for modal
+  apprentices: [],
+  pendingReturn: null,
+  // Seasons
+  seasonIndex: 0,          // 0=spring,1=summer,2=autumn,3=winter
+  seasonDay: 0,            // day within current season (0-27)
+  // Dynamic prices
+  demand: {},              // { ingId: level } -3..+3
+  // Factions
+  factions: { guild:0, order:0, underworld:0 }, // 0-100
+  blackMarketUnlocked: false,
+  // Time pause
+  timePaused: false,
+  // Loyalty system
+  loyalCustomers: {},    // { custId: { name, icon, faction, visits, totalSpent, questsDone, stars, chain } }
+  bartexOffer: null,     // { ingId, qty, wantRecipeId, wantName, reward } active barter offer
+  // Tech Tree
+  usageTrack: {},        // { ingId: useCount }
+  techUnlocked: {},      // { hintId: true }
+  // Tutorial
+  tutStep: 0,            // 0=not started, -1=done, 1..N=active step
 };
 
 const ingMap = {};
@@ -1528,8 +1952,10 @@ const FORAGE_LOCATIONS = [
     id:"LOC_FOREST", name:"Temný les", icon:"🌲",
     vigorCost:20, hungerCost:10,
     possibleFinds:[
-      {id:"ING10",w:25},{id:"ING18",w:20},{id:"ING19",w:18},
-      {id:"ING57",w:20},{id:"ING59",w:15},{id:"ING06",w:6},{id:"ING11",w:12},
+      {id:"ING10",w:20},{id:"ING18",w:16},{id:"ING19",w:14},
+      {id:"ING57",w:16},{id:"ING59",w:12},{id:"ING06",w:5},{id:"ING11",w:10},
+      {id:"ING61",w:14},{id:"ING68",w:12},{id:"ING69",w:12},{id:"ING70",w:10},
+      {id:"ING71",w:10},{id:"ING75",w:8},{id:"ING67",w:8},
     ],
     minFinds:2, maxFinds:4,
     risks:[
@@ -1544,8 +1970,9 @@ const FORAGE_LOCATIONS = [
     id:"LOC_SWAMP", name:"Bažina", icon:"🌿",
     vigorCost:25, hungerCost:15,
     possibleFinds:[
-      {id:"ING07",w:20},{id:"ING08",w:18},{id:"ING12",w:20},
-      {id:"ING11",w:15},{id:"ING60",w:20},{id:"ING09",w:8},
+      {id:"ING07",w:18},{id:"ING08",w:16},{id:"ING12",w:16},
+      {id:"ING11",w:14},{id:"ING60",w:16},{id:"ING09",w:6},
+      {id:"ING73",w:8},{id:"ING74",w:6},{id:"ING93",w:10},{id:"ING95",w:8},
     ],
     minFinds:2, maxFinds:4,
     risks:[
@@ -1559,8 +1986,9 @@ const FORAGE_LOCATIONS = [
     id:"LOC_MOUNTAIN", name:"Horský štít", icon:"⛰️",
     vigorCost:35, hungerCost:20,
     possibleFinds:[
-      {id:"ING42",w:20},{id:"ING48",w:20},{id:"ING39",w:8},
-      {id:"ING30",w:15},{id:"ING36",w:18},{id:"ING47",w:5},{id:"ING31",w:10},
+      {id:"ING42",w:16},{id:"ING48",w:16},{id:"ING39",w:6},
+      {id:"ING30",w:12},{id:"ING36",w:14},{id:"ING47",w:4},{id:"ING31",w:8},
+      {id:"ING79",w:12},{id:"ING83",w:10},{id:"ING84",w:10},{id:"ING85",w:6},{id:"ING86",w:5},
     ],
     minFinds:1, maxFinds:3,
     risks:[
@@ -1736,6 +2164,141 @@ const EVENTS = [
                  notify("✨ Jsi Inspirován! Procedurální lektvary +30% hodnota.", "success"); } },
     ],
   },
+  // ── SEASONAL EVENTS ──
+  {
+    id:"EVT_SNOWSTORM",
+    title:"Sněhová bouře",
+    icon:"🌨",
+    text:"Prudká bouře zasypala cesty sněhem. Foraging bude po dobu 3 dní nemožný.",
+    unlockCondition: () => SEASONS[state.seasonIndex % 4].id === 'winter',
+    choices:[
+      { label:"Přijmout",    desc:"Foraging blokován 3 dny. Zásoby se nezkazí rychleji.",
+        fn:()=>{ state.marketBan = state.marketBan || { ids:[], until:state.gameDay+3, forageBan:true };
+                 state.marketBan.forageBan=true; state.marketBan.until=state.gameDay+3;
+                 notify("🌨 Foraging blokován na 3 dny.", "warn"); } },
+    ],
+  },
+  {
+    id:"EVT_HARVEST",
+    title:"Jarní sklizeň",
+    icon:"🌸",
+    text:"Jaro přineslo hojnou úrodu. Místní farmář ti přinesl dary z pole.",
+    unlockCondition: () => SEASONS[state.seasonIndex % 4].id === 'spring',
+    choices:[
+      { label:"Přijmout dary", desc:"Získáš 3× náhodné byliny zdarma.",
+        fn:()=>{ const herbs=['ING10','ING17','ING18','ING19','ING21','ING57','ING59'];
+          for(let i=0;i<3;i++){const id=herbs[Math.floor(Math.random()*herbs.length)];
+            state.inventory[id]=(state.inventory[id]||0)+1;
+            if(!state.inventoryMeta[id]) state.inventoryMeta[id]={purchasedDays:[]};
+            state.inventoryMeta[id].purchasedDays.push(state.gameDay);}
+          notify("🌸 Zásoby doplněny byliny z jarní sklizně!","success"); renderIngredients(); } },
+    ],
+  },
+  {
+    id:"EVT_DROUGHT",
+    title:"Letní sucho",
+    icon:"🌵",
+    text:"Vedro vysušilo potoky a louky. Byliny jsou vzácné — výnos z Foragingu snížen.",
+    unlockCondition: () => SEASONS[state.seasonIndex % 4].id === 'summer',
+    choices:[
+      { label:"Improvizovat", desc:"Zaplatíš 30 zlatých za zásobu vody. Foraging není blokován.",
+        fn:()=>{ if(state.gold>=30){state.gold-=30;ecoRecord('spend',30);
+          notify("💧 Zásoby vody zajištěny za 30 zlatých.","info");updateStats();}
+          else notify("Nemáš dost zlatých na vodu!","warn"); } },
+      { label:"Přečkat",     desc:"Nic nestojí, ale Foraging -1 nález na 5 dní.",
+        fn:()=>{ state.droughtUntil=state.gameDay+5; notify("🌵 Sucho ovlivňuje byliny 5 dní.","warn"); } },
+    ],
+  },
+  {
+    id:"EVT_AUTUMN_MARKET",
+    title:"Podzimní jarmark",
+    icon:"🎪",
+    text:"Do města přijel velký jarmark. Obchodníci přivezli neobvyklé zboží.",
+    unlockCondition: () => SEASONS[state.seasonIndex % 4].id === 'autumn',
+    choices:[
+      { label:"Navštívit jarmark", desc:"Putující obchodník přijede okamžitě se 5 položkami.",
+        fn:()=>{ state.merchantDay = state.gameDay - 7; spawnMerchant();
+                 notify("🎪 Jarmark — obchodník přijel!","success"); } },
+    ],
+  },
+  // ── FACTION EVENTS ──
+  {
+    id:"EVT_ROYAL_ENVOY",
+    title:"Královský posel",
+    icon:"👑",
+    text:"Posel z královského dvora přináší zakázku přímou od koruny. Velká odměna, vysoké nároky.",
+    unlockCondition: () => state.questsCompleted >= 10,
+    choices:[
+      { label:"Přijmout zakázku", desc:"Parametrická zakázka, odměna 500 zlatých, +10 rep Cech.",
+        fn:()=>{ addQuest({ type:'parametric', customer:CUSTOMER_TEMPLATES[1],
+          requirements:{ thermal_min:0, tox_max:25 },
+          description:"[KORUNA] Královský lékař žádá hojivý přípravek pro princ.",
+          reward:500, expiresIn:7, suspicionGain:0 });
+          gainFaction('guild',10); } },
+      { label:"Odmítnout",       desc:"-5 rep Cech.",
+        fn:()=>{ gainFaction('guild',-5); notify("Posel odešel zklamaně.","warn"); } },
+    ],
+  },
+  {
+    id:"EVT_INQUISITOR",
+    title:"Inkvizitor na cestách",
+    icon:"🔍",
+    text:"Inkvizitor projíždí městem a zajímá se o alchymisty. Tvé podezření dosáhlo jeho uší.",
+    unlockCondition: () => state.suspicion >= 40,
+    choices:[
+      { label:"Spolupracovat", desc:"Uhradíš 80 zlatých — podezření -30.",
+        fn:()=>{ if(state.gold>=80){state.gold-=80;ecoRecord('spend',80);
+          state.suspicion=Math.max(0,state.suspicion-30);
+          notify("💰 Inkvizitor odešel spokojen. Podezření -30.","success");updateStats();}
+          else notify("Nemáš dost zlatých!","warn"); } },
+      { label:"Odmítnout",    desc:"Podezření +20 a riziko razie.",
+        fn:()=>{ state.suspicion=Math.min(100,state.suspicion+20);checkInquisition();
+          notify("🔍 Inkvizitor tvé odmítnutí zapsal.","error"); } },
+    ],
+  },
+  {
+    id:"EVT_COMPETITOR",
+    title:"Alchymistický konkurent",
+    icon:"😤",
+    text:"Rival alchymista otevřel dílnu v sousední ulici. Zákazníci váhají.",
+    unlockCondition: () => state.gameDay >= 20,
+    choices:[
+      { label:"Snížit ceny",    desc:"Prodejní ceny -20% na 5 dní, ale zákazníci zůstanou.",
+        fn:()=>{ state.competitorUntil=state.gameDay+5; notify("📉 Ceny sníženy pro udržení zákazníků.","info"); } },
+      { label:"Ignorovat",      desc:"Nic, ale příští 3 zakázky přinesou nižší odměnu.",
+        fn:()=>{ state.competitorPenalty=3; notify("😤 Rival láká tvé zákazníky.","warn"); } },
+    ],
+  },
+  {
+    id:"EVT_EPIDEMIC",
+    title:"Epidemie v sousední vesnici",
+    icon:"🤒",
+    text:"Kurýr přináší zprávu: sousední vesnici zasáhla nemoc. Potřebují co nejvíce léků.",
+    choices:[
+      { label:"Mobilizovat se", desc:"Přidá 3 zakázky najednou s urgentní odměnou.",
+        fn:()=>{ for(let i=0;i<3;i++) addQuest({type:'parametric',
+          customer:CUSTOMER_TEMPLATES[0],
+          requirements:{thermal_max:0,tox_max:20},
+          description:`[EPIDEMIE ${i+1}/3] Kurýr: Potřebujeme léky na horečku!`,
+          reward:120+i*30, expiresIn:5, suspicionGain:0, urgent:true});
+          gainFaction('order',5); } },
+      { label:"Odmítnout",      desc:"-8 rep Lékárenský řád.",
+        fn:()=>{ gainFaction('order',-8); notify("Kurýr odjel bez pomoci.","warn"); } },
+    ],
+  },
+  {
+    id:"EVT_GUILD_INVITATION",
+    title:"Pozvánka do Cechu",
+    icon:"⚔️",
+    text:"Velmistr Cechu válečníků tě zve na slavnostní večeři. Skvělá příležitost ke spolupráci.",
+    unlockCondition: () => (state.factions?.guild||0) >= 20,
+    choices:[
+      { label:"Zúčastnit se", desc:"+15 rep Cech, zakázky od rytířů četnější.",
+        fn:()=>{ gainFaction('guild',15); notify("⚔️ Přivítán v Cechu válečníků!","success"); } },
+      { label:"Omluvit se",   desc:"Nic.",
+        fn:()=>{ notify("Velmistr přijal omluvu s úsměvem.","info"); } },
+    ],
+  },
   {
     id:"EVT_LETTER",
     title:"Dopis od starého mistra",
@@ -1788,19 +2351,25 @@ function init() {
   for (let i=0; i<3; i++) state.quests.push(generateQuest());
   renderQuests();
   checkMerchant();
+  updateSeasonBanner();
+  renderFactionBars();
+  renderPauseToggle();
+  renderTechTree();
+  // Start tutorial for new players
+  if (state.tutStep === 0) setTimeout(startTutorial, 600);
 }
 
 // ══════════════════════════════════════════════════════
 //  TAB SWITCHING
 // ══════════════════════════════════════════════════════
 function switchTab(tab) {
-  ['quests','forage','upgrades','grimoire','settings','gremium'].forEach(t => {
+  ['quests','forage','grimoire','loyal','gremium'].forEach(t => {
     document.getElementById('panel-'+t).style.display = t===tab ? 'block' : 'none';
     const tabEl = document.getElementById('tab-'+t); if(tabEl) tabEl.classList.toggle('active', t===tab);
   });
   activeTab = tab;
-  if (tab === 'settings') renderSettingsTab();
   if (tab === 'gremium') renderGremium();
+  if (tab === 'loyal') renderLoyalCustomers();
 }
 
 // ══════════════════════════════════════════════════════
@@ -2101,24 +2670,7 @@ function renderForage() {
 }
 
 function renderUpgrades() {
-  const el = document.getElementById('upgradeList');
-  el.innerHTML = UPGRADES.map(u => {
-    const purchased = !!state.upgrades[u.id];
-    const unlockOk = (!u.unlockBrewed || state.brewed >= u.unlockBrewed)
-                  && (!u.unlockQuests || state.questsCompleted >= u.unlockQuests);
-    const cantAfford = state.gold < u.cost;
-    let cls = '';
-    if (purchased) cls = 'purchased';
-    else if (!unlockOk) cls = 'locked';
-    const statusLabel = purchased ? '✓ Zakoupeno' : !unlockOk
-      ? `(${u.unlockBrewed ? 'uvař '+u.unlockBrewed : 'splň '+u.unlockQuests+' zakázek'})`
-      : `💰 ${u.cost}`;
-    return `<div class="upgrade-item ${cls}" onclick="${purchased||!unlockOk?'':` buyUpgrade('${u.id}')`}">
-      <div class="upgrade-name">${u.icon} ${u.name}</div>
-      <div class="upgrade-desc">${u.desc}</div>
-      <div class="upgrade-cost">${statusLabel}</div>
-    </div>`;
-  }).join('');
+  renderUpgradesCenter(); // upgradeList moved to center panel subtab
 }
 
 function updateStats() {
@@ -2126,7 +2678,7 @@ function updateStats() {
   document.getElementById('statBrewed').textContent = state.brewed;
   document.getElementById('statDiscovered').textContent = Object.keys(state.discovered).length;
   document.getElementById('statMaxTox').textContent = state.maxToxSeen;
-  document.getElementById('statDay').textContent = state.gameDay;
+  const sdEl = document.getElementById('statDay'); if(sdEl) sdEl.textContent = state.gameDay;
 
   // Vigor
   const vPct = Math.max(0, Math.min(100, state.vigor));
@@ -2264,13 +2816,19 @@ function brew() {
 
     state.brewed++;
     state.maxToxSeen = Math.max(state.maxToxSeen, vec.toxicity);
-    state.gameDay++;
-    checkReturns();
+    if (!state.timePaused) {
+      state.gameDay++;
+      tickSeason();
+      demandDecay();
+      checkReturns();
+    }
 
     if (isExact && result.id && !state.discovered[result.id]) {
       state.discovered[result.id] = true;
       notify(`✨ Nový objev: ${result.name_cz}!`, "success");
     }
+    // Tech tree: record ingredient usage
+    recordUsage(state.slots, state.process, vec);
 
     // Check if tonic result restores vigor
     if ((result.tags||[]).includes('tonic') && isExact) {
@@ -2281,8 +2839,9 @@ function brew() {
 
     showResult(result, vec, isExact);
 
-    // Per-brew mechanics
-    state.vigor  = Math.max(0, state.vigor - 2);
+    // Per-brew mechanics (season modifies vigor)
+    const seasonVigor = currentSeason().vigorBonus;
+    state.vigor = Math.max(0, Math.min(100, state.vigor - 2 + seasonVigor));
     state.hunger = Math.min(100, state.hunger + 2);
     if (state.hunger > 80) {
       state.vigor = Math.max(0, state.vigor - 3);
@@ -2339,6 +2898,8 @@ function brew() {
     renderResidue();
     renderAilmentBar();
     if (state.gremiumUnlocked) renderGremium();
+    updateSeasonBanner();
+    renderTechTree();
     updateStats();
   }, 800);
 }
@@ -2532,13 +3093,31 @@ function checkQuestCompletion(result, vec) {
 
   completed.forEach(q => {
     state.gold += q.reward;
+    ecoRecord('earn', q.reward);
     state.questsCompleted++;
     if (q.suspicionGain > 0) {
       state.suspicion = Math.min(100, state.suspicion + q.suspicionGain);
       checkInquisition();
     }
     if (q.bonusReward === 'grimoire_hint') revealGrimoireHint();
-    notify(`📜 Zakázka splněna! +${q.reward} zlatých`, 'success');
+    // Faction gains based on customer type
+    if (q.customer?.id === 'CUST_KNIGHT')   gainFaction('guild', 5);
+    if (q.customer?.id === 'CUST_MONK')     gainFaction('order', 5);
+    if (q.customer?.id === 'CUST_MERCHANT') gainFaction('guild', 2);
+    if (q.type === 'shady')                 gainFaction('underworld', 8);
+    if (q.type === 'exact' && q.customer?.id === 'CUST_PEASANT') gainFaction('order', 2);
+    // Loyalty tracking
+    recordLoyalVisit(q, q.reward);
+    // Bartex quest completion
+    if (q.bartexOfferIds) completeBartexQuest(q);
+    // Chain quest final reward
+    if (q.isChain && q.isFinal && state.loyalCustomers?.[q.customer?.id]) {
+      const reward2 = 100;
+      state.gold += reward2;
+      ecoRecord('earn', reward2);
+      notify(`⭐ Questový řetězec dokončen! Bonus: +${reward2} zlatých`, 'success');
+    }
+    notify(q.reward > 0 ? `📜 Zakázka splněna! +${q.reward} zlatých` : `📜 Zakázka splněna!`, 'success');
     updateStats();
   });
 }
@@ -2547,6 +3126,7 @@ function refreshQuests() {
   while (state.quests.length < 3) {
     state.quests.push(generateQuest());
   }
+  generateBartexOffer();
 }
 
 // ══════════════════════════════════════════════════════
@@ -2561,17 +3141,26 @@ function goForage(locationId) {
   if (state.vigor < loc.vigorCost) {
     notify(`Nemáš dost Vigoru! Potřebuješ ${loc.vigorCost}.`, "warn"); return;
   }
+  // Season: winter locks mountains
+  if (isLocationSeasonLocked(locationId)) {
+    notify("❄️ V zimě jsou hory nepřístupné!", "warn"); return;
+  }
   state.vigor -= loc.vigorCost;
   state.hunger = Math.min(100, state.hunger + loc.hungerCost);
-  state.gameDay++;
-  checkReturns();
+  if (!state.timePaused) {
+    state.gameDay++;
+    tickSeason();
+    checkReturns();
+  }
 
   // Risks
   loc.risks.forEach(r => { if (Math.random() < r.chance) r.fn(); });
 
   const found = [];
   if (state.vigor > 0) {
-    const count = loc.minFinds + Math.floor(Math.random() * (loc.maxFinds - loc.minFinds + 1));
+    const seasonBonus = getSeasonForagingBonus();
+    const rawCount = loc.minFinds + Math.floor(Math.random() * (loc.maxFinds - loc.minFinds + 1));
+    const count = Math.max(1, rawCount + seasonBonus);
     for (let i = 0; i < count; i++) {
       const ingId = weightedRandom(loc.possibleFinds);
       if (!ingMap[ingId]) continue;
@@ -2664,23 +3253,25 @@ function triggerRaid() {
 // ══════════════════════════════════════════════════════
 function openShop() {
   document.getElementById('shopGold').textContent = state.gold;
-  const grid = document.getElementById('shopGrid');
-  grid.innerHTML = INGREDIENTS_RAW.map(i => {
-    const qty = state.inventory[i.id] || 0;
-    const cant = state.gold < i.price;
-    return `<div class="shop-item ${cant?'cant-afford':''}" onclick="buyIng('${i.id}')">
-      <div style="display:flex;align-items:center;gap:6px">
-        <div style="width:8px;height:8px;border-radius:50%;background:${i.color};flex-shrink:0"></div>
-        <div>
-          <div class="shop-name">${i.name_cz}</div>
-          <div class="shop-lat">${i.name_lat}</div>
-        </div>
-      </div>
-      <div class="shop-price">🪙 ${i.price} <span class="shop-qty">Máš: ${qty}</span></div>
-    </div>`;
-  }).join('');
+  shopMode = 'buy'; shopFilter = 'All';
+  // Reset mode UI
+  ['buy','sell','food','black'].forEach(m => {
+    const panel = document.getElementById('shoppanel-'+m);
+    const btn   = document.getElementById('shopmode-'+m);
+    if (panel) panel.style.display = m==='buy' ? '' : 'none';
+    if (btn)   btn.classList.toggle('active', m==='buy');
+  });
+  // Show black market tab if unlocked
+  const bmBtn = document.getElementById('shopmode-black');
+  if (bmBtn) bmBtn.style.display = state.blackMarketUnlocked ? '' : 'none';
+  // Show bartex badge if offer available
+  const bbadge = document.getElementById('bartexBadge');
+  if (bbadge) bbadge.style.display = state.bartexOffer ? '' : 'none';
+  if (document.getElementById('shopSearch')) document.getElementById('shopSearch').value = '';
+  renderShopGrid();
+  // Food grid
   const fgrid = document.getElementById('shopFoodGrid');
-  fgrid.innerHTML = FOODS.map(f => {
+  if (fgrid) fgrid.innerHTML = FOODS.map(f => {
     const cant = state.gold < f.price;
     return `<div class="shop-item ${cant?'cant-afford':''}" onclick="buyFood('${f.id}')">
       <div style="display:flex;align-items:center;gap:6px">
@@ -2708,10 +3299,12 @@ function buyIng(id) {
   state.inventory[id] = (state.inventory[id] || 0) + 1;
   if (!state.inventoryMeta[id]) state.inventoryMeta[id] = { purchasedDays: [] };
   state.inventoryMeta[id].purchasedDays.push(state.gameDay);
+  ecoRecord('spend', i.price);
   notify(`Zakoupeno: ${i.name_cz}`, "success");
   updateStats();
   document.getElementById('shopGold').textContent = state.gold;
-  openShop();
+  renderShopGrid();
+  if (shopMode === 'sell') renderSellGrid();
 }
 
 function buyFood(id) {
@@ -2928,6 +3521,7 @@ function resolveEvent(choiceIdx) {
 const MERCHANT_RARE_POOL = [
   "ING07","ING09","ING22","ING30","ING31","ING35","ING37",
   "ING39","ING40","ING43","ING44","ING45","ING46","ING47","ING52","ING55",
+  "ING73","ING74","ING79","ING80","ING86","ING88","ING91","ING92","ING99",
 ];
 
 function checkMerchant() {
@@ -3009,6 +3603,891 @@ function buyFromMerchant(id) {
 }
 
 // ══════════════════════════════════════════════════════
+//  LOYALTY SYSTEM
+// ══════════════════════════════════════════════════════
+const LOYAL_NAMES = {
+  CUST_PEASANT:  ['Tomáš Mlynář','Ondřej Kovář','Václav Tesař','Anna Sedlářka','Marie Švadlena'],
+  CUST_KNIGHT:   ['Rytíř Sigmund','Sir Radovan','Vladimír z Hory','Rytíř Bertold'],
+  CUST_MONK:     ['Bratr Ambrož','Otec Klement','Bratr Vavřinec','Sestra Apolena'],
+  CUST_MERCHANT: ['Kupec Jakub','Obchodník Petr','Mistr Šimon','Obchodnice Klára'],
+  CUST_SHADOW:   ['???','Šedý plášť','Hlas ze tmy'],
+};
+
+const LOYAL_CHAIN_QUESTS = {
+  CUST_KNIGHT: [
+    { desc:"Potřebuji zásoby před tažením — hojivý lektvar.", type:'exact', targetTag:'wound', reward:200 },
+    { desc:"Vyhráli jsme bitvu! Potřebuji silnější analgetikum.", type:'parametric', req:{ thermal_max:0, tox_max:40 }, reward:280 },
+    { desc:"Král chce ochutnání tvého nejlepšího elixíru.", type:'parametric', req:{ tox_max:15 }, reward:450, final:true },
+  ],
+  CUST_MONK: [
+    { desc:"Pro klášterní lékárnu: chladivý přípravek na horečku.", type:'parametric', req:{ thermal_max:-1, tox_max:20 }, reward:150 },
+    { desc:"Potřebujeme lektvar k posílení mysli pro studenty.", type:'parametric', req:{ thermal_min:1, tox_max:15 }, reward:200 },
+    { desc:"Opat žádá vzácný elixír pro poutníky.", type:'exact', targetTag:'tonic', reward:350, final:true },
+  ],
+  CUST_MERCHANT: [
+    { desc:"Chci vyzkoušet tvůj nejlepší digestivní přípravek.", type:'parametric', req:{ thermal_min:1, moisture_min:-2 }, reward:160 },
+    { desc:"Přátelé z Benátek chtějí aromatický přípravek.", type:'parametric', req:{ tox_max:10 }, reward:220 },
+    { desc:"Exkluzivní zakázka od doge — cosi luxusního.", type:'parametric', req:{ tox_max:10 }, reward:500, final:true },
+  ],
+};
+
+function getLoyalName(custId) {
+  const pool = LOYAL_NAMES[custId] || ['Zákazník'];
+  const taken = Object.values(state.loyalCustomers).map(c => c.name);
+  const free  = pool.filter(n => !taken.includes(n));
+  return free.length ? free[Math.floor(Math.random()*free.length)] : pool[Math.floor(Math.random()*pool.length)];
+}
+
+function recordLoyalVisit(q, reward) {
+  const cid = q.customer?.id;
+  if (!cid) return;
+  if (!state.loyalCustomers) state.loyalCustomers = {};
+
+  if (!state.loyalCustomers[cid]) {
+    state.loyalCustomers[cid] = {
+      name:        getLoyalName(cid),
+      icon:        q.customer.icon,
+      faction:     cid,
+      visits:      0,
+      totalSpent:  0,
+      questsDone:  0,
+      stars:       1,
+      chain:       0,       // current chain quest index
+      chainDone:   false,
+    };
+    notify(`👤 Nový stálý zákazník: ${state.loyalCustomers[cid].name}!`, "success");
+  }
+
+  const c = state.loyalCustomers[cid];
+  c.visits++;
+  c.totalSpent += reward;
+  c.questsDone++;
+
+  // Star rating 1–4 based on visits
+  c.stars = c.visits >= 8 ? 4 : c.visits >= 4 ? 3 : c.visits >= 2 ? 2 : 1;
+
+  // 10% price bonus for loyal customers (applied in generateExactQuest/Parametric via loyalBonus)
+  // Chain quest progression
+  if (!c.chainDone) advanceLoyalChain(cid);
+
+  if (activeTab === 'loyal') renderLoyalCustomers();
+}
+
+function advanceLoyalChain(cid) {
+  const chain = LOYAL_CHAIN_QUESTS[cid];
+  if (!chain) return;
+  const c = state.loyalCustomers[cid];
+  if (c.chain >= chain.length) { c.chainDone = true; return; }
+
+  const step = chain[c.chain];
+  c.chain++;
+
+  // Generate a special chain quest
+  const q = {
+    id: 'CHAIN_'+cid+'_'+Date.now(),
+    type: step.type === 'exact' ? 'parametric' : step.type,
+    customer: { id:cid, name:c.name, icon:c.icon, priceMult:1.1, questTypes:['parametric'], suspicion:0 },
+    requirements: step.req || { tox_max:50 },
+    description: `[${c.name}] ${step.desc}`,
+    reward: Math.round(step.reward * (state.factions?.guild >= 30 && cid==='CUST_KNIGHT' ? 1.1 : 1)),
+    expiresIn: 6,
+    suspicionGain: 0,
+    isChain: true,
+    isFinal: !!step.final,
+  };
+  addQuest(q);
+
+  if (step.final) {
+    notify(`⭐ ${c.name}: poslední zakázka questového řetězce!`, "info");
+  } else {
+    notify(`🔗 ${c.name} má novou zakázku!`, "info");
+  }
+}
+
+function renderLoyalCustomers() {
+  const el = document.getElementById('loyalList');
+  if (!el) return;
+  const customers = Object.values(state.loyalCustomers || {});
+  if (!customers.length) {
+    el.innerHTML = '<div class="empty-state">Zatím žádní stálí zákazníci.<br><br>Splňuj zakázky pro stejné zákazníky.</div>';
+    return;
+  }
+  customers.sort((a,b) => b.visits - a.visits);
+  el.innerHTML = customers.map(c => {
+    const chain = LOYAL_CHAIN_QUESTS[c.faction];
+    const chainTotal = chain?.length || 0;
+    const chainText = c.chainDone
+      ? `✅ Questový řetězec dokončen!`
+      : chain ? `🔗 Řetězec: ${c.chain}/${chainTotal}` : '';
+    const loyalBonus = c.stars >= 2 ? '+10% odměna' : '';
+    return `<div class="loyal-card ${c.stars >= 3 ? 'vip' : ''}">
+      <div class="loyal-header">
+        <span style="font-size:1.3rem">${c.icon}</span>
+        <span class="loyal-name">${c.name}</span>
+        <span class="loyal-stars">${'⭐'.repeat(c.stars)}</span>
+      </div>
+      <div class="loyal-stats">
+        <span>Návštěv: <span class="loyal-stat-val">${c.visits}</span></span>
+        <span>Utraceno: <span class="loyal-stat-val">${c.totalSpent} 🪙</span></span>
+        <span>Splněno: <span class="loyal-stat-val">${c.questsDone}</span></span>
+        ${loyalBonus ? `<span style="color:var(--green)">${loyalBonus}</span>` : ''}
+      </div>
+      ${chainText ? `<div class="loyal-chain ${c.chainDone?'complete':''}">${chainText}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════
+//  BARTEX — BARTER EXCHANGE
+// ══════════════════════════════════════════════════════
+const BARTEX_OFFERS = [
+  // { wantIngIds: what they offer, forRecipeId or forTag, desc }
+  { id:'BT01', offerIngIds:['ING26','ING26','ING27'], forTag:'antiseptic',
+    desc:'Dám ti Myrhu (×2) a Kadidlo za antiseptický přípravek.' },
+  { id:'BT02', offerIngIds:['ING22'], forTag:'tonic',
+    desc:'Vzácný Šafrán za povzbudivý tonikum.' },
+  { id:'BT03', offerIngIds:['ING31','ING31'], forTag:'wound',
+    desc:'Dračí krev (×2) za hojivý lektvar.' },
+  { id:'BT04', offerIngIds:['ING39'], forTag:'cooling',
+    desc:'Drcené perly za chladivý přípravek.' },
+  { id:'BT05', offerIngIds:['ING55','ING55'], forTag:'sedative',
+    desc:'Vinný destilát (×2) za sedativum.' },
+  { id:'BT06', offerIngIds:['ING37'], forTag:'stimulant',
+    desc:'Bobrovina za stimulující elixír.' },
+];
+
+function generateBartexOffer() {
+  if (state.bartexOffer) return; // already active
+  if (Math.random() > 0.3) return; // 30% chance per refresh
+  const offer = BARTEX_OFFERS[Math.floor(Math.random() * BARTEX_OFFERS.length)];
+  state.bartexOffer = { ...offer, addedDay: state.gameDay };
+}
+
+function openBartex() {
+  if (!state.bartexOffer) { notify("Žádná bartex nabídka momentálně.", "info"); return; }
+  const offer = state.bartexOffer;
+  const ingNames = offer.offerIngIds.map(id => ingMap[id]?.name_cz || id);
+  const ingCounts = {};
+  ingNames.forEach(n => ingCounts[n] = (ingCounts[n]||0)+1);
+  const ingDisplay = Object.entries(ingCounts).map(([n,c]) => `${n}${c>1?' ×'+c:''}`).join(', ');
+
+  const el = document.getElementById('bartexContent');
+  if (!el) return;
+  el.innerHTML = `<div class="bartex-card">
+    <div class="bartex-title">🤝 Nabídka</div>
+    <div class="bartex-offer">${offer.desc}<br><br>
+      <strong style="color:var(--gold2)">Dostaneš:</strong> ${ingDisplay}<br>
+      <strong style="color:var(--text2)">Za:</strong> lektvar s vlastností <em>${offer.forTag}</em>
+    </div>
+    <button class="bartex-btn" onclick="acceptBartex()">Přijmout výměnu</button>
+    <button class="bartex-btn" style="margin-left:8px;background:var(--bg3);border-color:var(--border);color:var(--text2)" onclick="declineBartex()">Odmítnout</button>
+  </div>`;
+  document.getElementById('bartexModal').classList.add('open');
+}
+
+function closeBartex() {
+  document.getElementById('bartexModal').classList.remove('open');
+}
+
+function acceptBartex() {
+  const offer = state.bartexOffer;
+  if (!offer) { closeBartex(); return; }
+  // Add a quest for the required item type
+  addQuest({
+    id: 'BARTEX_'+Date.now(),
+    type: 'parametric',
+    customer: { id:'CUST_MERCHANT', name:'Bartex Partner', icon:'🔄', priceMult:1.0, questTypes:['parametric'], suspicion:0 },
+    requirements: { tox_max:60 },
+    description: `[BARTEX] ${offer.desc} Splnění = suroviny místo zlata.`,
+    reward: 0,
+    expiresIn: 5,
+    suspicionGain: 0,
+    bartexOfferIds: offer.offerIngIds,
+  });
+  state.bartexOffer = null;
+  closeBartex();
+  notify("🔄 Bartex přijat — uvaři požadovaný lektvar!", "success");
+  renderQuests();
+}
+
+function declineBartex() {
+  state.bartexOffer = null;
+  closeBartex();
+  notify("Nabídka odmítnuta.", "info");
+}
+
+function completeBartexQuest(q) {
+  // Called when bartex quest is completed
+  if (!q.bartexOfferIds) return;
+  q.bartexOfferIds.forEach(id => {
+    state.inventory[id] = (state.inventory[id]||0)+1;
+    if (!state.inventoryMeta[id]) state.inventoryMeta[id] = { purchasedDays:[] };
+    state.inventoryMeta[id].purchasedDays.push(state.gameDay);
+  });
+  const names = [...new Set(q.bartexOfferIds.map(id => ingMap[id]?.name_cz||id))].join(', ');
+  notify(`🔄 Bartex dokončen! Získáno: ${names}`, "success");
+  renderIngredients();
+}
+
+// ══════════════════════════════════════════════════════
+//  TECH TREE
+// ══════════════════════════════════════════════════════
+const TECH_NODES = [
+  { id:'TECH_POPPY',    name:'Opium Purificatum',   icon:'🌸',
+    req: { ING06:10 }, desc:'Použij Mák 10× → hint na pokročilé narkotikum.',
+    hint: 'POT15', // Laudanum
+  },
+  { id:'TECH_DISTILL5', name:'Kvintesence',          icon:'💎',
+    req: { _process_Distill:5 }, desc:'Destiluj 5× → odemkne recepturu Aqua Vitae.',
+    hint: 'POT02',
+  },
+  { id:'TECH_PARADOX',  name:'Paradoxní elixír',     icon:'☯',
+    req: { _thermal_cancel:3 }, desc:'Smíchej horké a chladné 3× → unikátní hint.',
+    hint: 'POT12',
+  },
+  { id:'TECH_RESIN3',   name:'Pryskyřičné pojivo',   icon:'🟤',
+    req: { ING26:5, ING31:3 }, desc:'Myrha 5× + Dračí krev 3× → vzácné masti.',
+    hint: 'POT69',
+  },
+  { id:'TECH_HERB10',   name:'Bylinář',              icon:'🌿',
+    req: { _herb_total:20 }, desc:'Použi celkem 20 různých bylin → bonus ke Foraging.',
+    bonus: 'forage_herb',
+  },
+  { id:'TECH_MINERAL5', name:'Minerální mistr',      icon:'💎',
+    req: { _mineral_total:15 }, desc:'Použi celkem 15 minerálů → Horský štít výhodnější.',
+    bonus: 'mountain_bonus',
+  },
+  { id:'TECH_POISON',   name:'Toxikologie',          icon:'☠',
+    req: { _tox_over60:5 }, desc:'Uvaři 5× s toxicitou >60 → odemkne černý trh dříve.',
+    bonus: 'black_market_early',
+  },
+];
+
+function recordUsage(slots, process, vec) {
+  if (!state.usageTrack) state.usageTrack = {};
+  if (!state.techStats) state.techStats = { distillCount:0, thermalCancels:0, toxOver60:0, herbTotal:0, mineralTotal:0 };
+
+  slots.forEach(id => {
+    state.usageTrack[id] = (state.usageTrack[id]||0)+1;
+    const ing = ingMap[id];
+    if (ing?.type === 'Herb')    state.techStats.herbTotal++;
+    if (ing?.type === 'Mineral') state.techStats.mineralTotal++;
+  });
+
+  if (process === 'Distill') state.techStats.distillCount++;
+  if (vec.toxicity > 60)     state.techStats.toxOver60++;
+
+  // Thermal cancel: hot + cold combination resulting in near-neutral
+  const hasHot  = slots.some(id => (ingMap[id]?.thermal||0) >= 2);
+  const hasCold = slots.some(id => (ingMap[id]?.thermal||0) <= -2);
+  if (hasHot && hasCold && Math.abs(vec.thermal) <= 1) state.techStats.thermalCancels++;
+
+  checkTechUnlocks();
+}
+
+function checkTechUnlocks() {
+  TECH_NODES.forEach(node => {
+    if (state.techUnlocked?.[node.id]) return;
+    if (!meetsTechReq(node)) return;
+
+    state.techUnlocked[node.id] = true;
+    notify(`🔬 Výzkum odemčen: ${node.name}!`, "success");
+
+    // Apply effect
+    if (node.hint) {
+      state.hinted[node.hint] = true;
+      renderJournal();
+    }
+    if (node.bonus === 'forage_herb')      state.foragingHerbBonus = true;
+    if (node.bonus === 'mountain_bonus')   state.mountainBonus = true;
+    if (node.bonus === 'black_market_early' && !state.blackMarketUnlocked) {
+      // Lower underworld threshold to 15 instead of 30
+      state.blackMarketEarlyUnlock = true;
+    }
+  });
+  renderTechTree();
+}
+
+function meetsTechReq(node) {
+  for (const [key, needed] of Object.entries(node.req)) {
+    if (key.startsWith('_')) {
+      const stat = key.replace('_','');
+      if (stat === 'process_Distill'  && (state.techStats?.distillCount||0)    < needed) return false;
+      if (stat === 'thermal_cancel'   && (state.techStats?.thermalCancels||0)  < needed) return false;
+      if (stat === 'tox_over60'       && (state.techStats?.toxOver60||0)       < needed) return false;
+      if (stat === 'herb_total'       && (state.techStats?.herbTotal||0)       < needed) return false;
+      if (stat === 'mineral_total'    && (state.techStats?.mineralTotal||0)    < needed) return false;
+    } else {
+      if ((state.usageTrack?.[key]||0) < needed) return false;
+    }
+  }
+  return true;
+}
+
+function getTechProgress(node) {
+  let min = Infinity;
+  for (const [key, needed] of Object.entries(node.req)) {
+    let current = 0;
+    if (key.startsWith('_')) {
+      const stat = key.replace('_','');
+      if (stat === 'process_Distill')  current = state.techStats?.distillCount||0;
+      if (stat === 'thermal_cancel')   current = state.techStats?.thermalCancels||0;
+      if (stat === 'tox_over60')       current = state.techStats?.toxOver60||0;
+      if (stat === 'herb_total')       current = state.techStats?.herbTotal||0;
+      if (stat === 'mineral_total')    current = state.techStats?.mineralTotal||0;
+    } else {
+      current = state.usageTrack?.[key]||0;
+    }
+    min = Math.min(min, current/needed);
+  }
+  return Math.min(1, min === Infinity ? 0 : min);
+}
+
+function renderTechTree() {
+  const el = document.getElementById('techTreeList');
+  if (!el) return;
+  el.innerHTML = TECH_NODES.map(node => {
+    const done = !!state.techUnlocked?.[node.id];
+    const pct  = Math.round(getTechProgress(node) * 100);
+    const cls  = done ? 'unlocked' : pct > 0 ? 'available' : '';
+    return `<div class="tech-node ${cls}">
+      <span class="tech-icon">${node.icon}</span>
+      <div class="tech-info">
+        <div class="tech-name">${node.name}</div>
+        <div class="tech-req">${node.desc}</div>
+      </div>
+      <span class="tech-progress">${done ? '✓' : pct+'%'}</span>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════
+//  TUTORIAL
+// ══════════════════════════════════════════════════════
+const TUTORIAL_STEPS = [
+  { text:"Vítej v AlchemiX! Jsi středověký alchymista. Vlevo vidíš svůj <strong>Sklad ingrediencí</strong> — klikni na surovinu abys ji přidal na pracovní stůl." },
+  { text:"Výborně! Přidej 2–3 ingredience do slotů na stole. Pak zvol postup (Smíchat, Vařit...) a stiskni <strong>UVAŘ!</strong>" },
+  { text:"Pokud jsi uvařil přesný recept — gratulace, přibyl do Grimoiru! Jinak engine vrátí procedurální výsledek podle humorálních vektorů." },
+  { text:"Zákazníci čekají v záložce <strong>📜 Zakázky</strong>. Splněním zakázek dostaneš zlato a budduješ si reputaci u frakcí." },
+  { text:"Na trhu (<strong>🛒 Navštívit trh</strong>) kupuješ suroviny, ale také prodáváš zásoby ze sběru. Ceny se mění s ročními obdobími." },
+  { text:"Časem odemkneš Gremium — systém učedníků, kteří sbírají suroviny za tebe. A pozor na Inkvizici! Dobrou hru. 🧪" },
+];
+
+function startTutorial() {
+  if (state.tutStep === -1) return; // already done
+  state.tutStep = 1;
+  showTutStep();
+}
+
+function showTutStep() {
+  const ov = document.getElementById('tutorialOverlay');
+  const stepEl = document.getElementById('tutStep');
+  const textEl = document.getElementById('tutText');
+  if (!ov || !stepEl || !textEl) return;
+
+  if (state.tutStep < 1 || state.tutStep > TUTORIAL_STEPS.length) {
+    ov.style.display = 'none';
+    return;
+  }
+
+  ov.style.display = 'flex';
+  const step = TUTORIAL_STEPS[state.tutStep - 1];
+  stepEl.textContent = `Krok ${state.tutStep} / ${TUTORIAL_STEPS.length}`;
+  textEl.innerHTML = step.text;
+}
+
+function nextTutStep() {
+  state.tutStep++;
+  if (state.tutStep > TUTORIAL_STEPS.length) {
+    state.tutStep = -1;
+    document.getElementById('tutorialOverlay').style.display = 'none';
+    return;
+  }
+  showTutStep();
+}
+
+function skipTutorial() {
+  state.tutStep = -1;
+  document.getElementById('tutorialOverlay').style.display = 'none';
+}
+
+// ══════════════════════════════════════════════════════
+//  SEASONS
+// ══════════════════════════════════════════════════════
+const SEASONS = [
+  { id:'spring', name:'Jaro',   icon:'🌱', days:28,
+    foragingBonus:1, priceMultiplier:1.0, vigorBonus:0,
+    riskMult:0.8, spoilMult:1.0, mountainLocked:false,
+    desc:'Příroda se probouzí — byliny hojné, rizika nižší.' },
+  { id:'summer', name:'Léto',   icon:'☀️', days:28,
+    foragingBonus:0, priceMultiplier:1.2, vigorBonus:3,
+    riskMult:0.9, spoilMult:1.0, mountainLocked:false,
+    desc:'Teplo obnovuje síly, ale suroviny zdražují.' },
+  { id:'autumn', name:'Podzim', icon:'🍂', days:28,
+    foragingBonus:1, priceMultiplier:1.0, vigorBonus:0,
+    riskMult:1.0, spoilMult:0.7, mountainLocked:false,
+    desc:'Dobrá sklizeň, ale suroviny se rychleji kazí.' },
+  { id:'winter', name:'Zima',   icon:'❄️', days:28,
+    foragingBonus:-1, priceMultiplier:1.4, vigorBonus:-2,
+    riskMult:1.4, spoilMult:1.0, mountainLocked:true,
+    desc:'Suroviny vzácné a drahé. Hory nepřístupné.' },
+];
+
+function currentSeason() {
+  return SEASONS[state.seasonIndex % SEASONS.length];
+}
+
+function tickSeason() {
+  if (state.timePaused) return;
+  state.seasonDay++;
+  const season = currentSeason();
+  if (state.seasonDay >= season.days) {
+    state.seasonDay = 0;
+    state.seasonIndex = (state.seasonIndex + 1) % SEASONS.length;
+    const next = currentSeason();
+    notify(`${next.icon} ${next.name} začíná! ${next.desc}`, "info");
+    // Seasonal event hints
+    if (next.id === 'winter') notify("❄️ Hory jsou nepřístupné. Zásobte se před zimou!", "warn");
+    if (next.id === 'spring') notify("🌱 Jaro obnovuje přírodu — Foraging přináší více nálezů.", "success");
+  }
+  updateSeasonBanner();
+}
+
+const CANONICAL_HOURS = [
+  { name:'Matutinum', icon:'🌑', desc:'Půlnoc'    },
+  { name:'Laudes',    icon:'🌄', desc:'Svítání'   },
+  { name:'Prima',     icon:'🌅', desc:'Ráno'      },
+  { name:'Tertia',    icon:'☀️',  desc:'Dopoledne' },
+  { name:'Sexta',     icon:'🌞', desc:'Poledne'   },
+  { name:'Nona',      icon:'🌇', desc:'Odpoledne' },
+  { name:'Vesperae',  icon:'🌆', desc:'Večer'     },
+  { name:'Completorium', icon:'🌙', desc:'Noc'    },
+];
+
+function toRoman(n) {
+  const vals = [1000,900,500,400,100,90,50,40,10,9,5,4,1];
+  const syms = ['M','CM','D','CD','C','XC','L','XL','X','IX','V','IV','I'];
+  let result = '';
+  for (let i=0; i<vals.length; i++) {
+    while (n >= vals[i]) { result += syms[i]; n -= vals[i]; }
+  }
+  return result;
+}
+
+function updateSeasonBanner() {
+  const seasonEl = document.getElementById('seasonBanner');
+  const hourEl   = document.getElementById('canonicalHour');
+  if (!seasonEl) return;
+
+  const s    = currentSeason();
+  const year = Math.floor(state.gameDay / (28 * 4)) + 1;
+  seasonEl.textContent = `${s.icon} ${s.name} · Rok ${toRoman(year)}`;
+  seasonEl.className   = `season-banner season-${s.id}`;
+
+  if (hourEl) {
+    const h = CANONICAL_HOURS[state.gameDay % 8];
+    hourEl.innerHTML = `${h.icon} <span title="${h.desc}">${h.name}</span>`;
+  }
+}
+
+function getSeasonForagingBonus() { return currentSeason().foragingBonus; }
+function getSeasonPriceMult(ingId) {
+  const base = currentSeason().priceMultiplier;
+  const demand = state.demand[ingId] || 0;
+  return base * (1 + demand * 0.15);
+}
+function getSeasonRiskMult() { return currentSeason().riskMult; }
+function isLocationSeasonLocked(locationId) {
+  return locationId === 'LOC_MOUNTAIN' && currentSeason().mountainLocked;
+}
+
+// ══════════════════════════════════════════════════════
+//  DYNAMIC PRICES
+// ══════════════════════════════════════════════════════
+function getDynamicPrice(ingId) {
+  const ing = ingMap[ingId];
+  if (!ing) return 0;
+  const mult = getSeasonPriceMult(ingId);
+  return Math.max(1, Math.round(ing.price * mult));
+}
+
+function adjustDemand(ingId, delta) {
+  state.demand[ingId] = Math.max(-3, Math.min(3, (state.demand[ingId] || 0) + delta));
+}
+
+function demandDecay() {
+  // Mean reversion: every 7 days, demand drifts toward 0
+  if (state.timePaused) return;
+  if (state.gameDay % 7 !== 0) return;
+  Object.keys(state.demand).forEach(id => {
+    if (state.demand[id] > 0) state.demand[id]--;
+    else if (state.demand[id] < 0) state.demand[id]++;
+    if (state.demand[id] === 0) delete state.demand[id];
+  });
+}
+
+function demandArrow(ingId) {
+  const d = state.demand[ingId] || 0;
+  if (d > 0) return `<span class="demand-up">▲${d}</span>`;
+  if (d < 0) return `<span class="demand-down">▼${Math.abs(d)}</span>`;
+  return '';
+}
+
+// ══════════════════════════════════════════════════════
+//  FACTIONS
+// ══════════════════════════════════════════════════════
+const FACTIONS = {
+  guild: {
+    name:'Cech válečníků', icon:'⚔️', color:'#e74c3c',
+    bonus:'Slevy na minerály a živočišné suroviny (-15%). Rytíři přicházejí časteji.',
+    thresholds:{ 30:'Uznávaný', 60:'Ceněný spojenec', 90:'Mistr Cechu' },
+  },
+  order: {
+    name:'Lékárenský řád',  icon:'🏥', color:'#3498db',
+    bonus:'Tušené recepty v Grimoiru (+1 hint per 10 rep). Byliny levnější (-10%).',
+    thresholds:{ 30:'Bratr Řádu', 60:'Licenciát', 90:'Archiater' },
+  },
+  underworld: {
+    name:'Podsvětí',        icon:'🌑', color:'#9b59b6',
+    bonus:'Černý trh dostupný při 30+. Jedy a toxické lektvary +25% cena.',
+    thresholds:{ 30:'Novic', 60:'Důvěryhodný', 90:'Stín' },
+  },
+};
+
+function gainFaction(key, amount) {
+  if (!state.factions) state.factions = { guild:0, order:0, underworld:0 };
+  const old = state.factions[key] || 0;
+  state.factions[key] = Math.min(100, old + amount);
+  // Underworld gains suspicion
+  if (key === 'underworld' && amount > 0) {
+    state.suspicion = Math.min(100, state.suspicion + Math.floor(amount * 0.3));
+    checkInquisition();
+  }
+  // Check black market unlock
+  if (key === 'underworld' && state.factions.underworld >= 30 && !state.blackMarketUnlocked) {
+    state.blackMarketUnlocked = true;
+    document.getElementById('shopmode-black').style.display = '';
+    notify("🌑 Černý trh odemčen — dostupný v obchodě!", "success");
+  }
+  // Order: faction hint every 10 rep
+  const newTier = Math.floor(state.factions[key] / 10);
+  const oldTier = Math.floor(old / 10);
+  if (key === 'order' && newTier > oldTier) revealGrimoireHint();
+  renderFactionBars();
+}
+
+function renderFactionBars() {
+  const el = document.getElementById('factionBars');
+  if (!el) return;
+  el.innerHTML = Object.entries(FACTIONS).map(([key, f]) => {
+    const val = state.factions?.[key] || 0;
+    const title = Object.entries(f.thresholds).reverse().find(([t]) => val >= Number(t))?.[1] || 'Neznámý';
+    return `<div class="faction-row">
+      <div class="faction-header">
+        <span class="faction-name">${f.icon} ${f.name}</span>
+        <span class="faction-val">${val} <span style="color:var(--text3);font-size:0.6rem">${title}</span></span>
+      </div>
+      <div class="faction-track">
+        <div class="faction-fill" style="width:${val}%;background:${f.color}"></div>
+      </div>
+      <div class="faction-bonus">${f.bonus}</div>
+    </div>`;
+  }).join('');
+}
+
+function getFactionPriceBonus(ingId) {
+  const ing = ingMap[ingId];
+  if (!ing) return 1;
+  const guildVal = state.factions?.guild || 0;
+  const orderVal = state.factions?.order || 0;
+  let mult = 1.0;
+  if (guildVal >= 30 && (ing.type === 'Mineral' || ing.type === 'Animal')) mult *= 0.85;
+  if (orderVal >= 30 && ing.type === 'Herb') mult *= 0.90;
+  // Underworld: jedy prodáváš dráž (sell price bonus handled in sellIng)
+  return mult;
+}
+
+// ══════════════════════════════════════════════════════
+//  TIME PAUSE
+// ══════════════════════════════════════════════════════
+function toggleTimePause() {
+  state.timePaused = !state.timePaused;
+  const sw = document.getElementById('pauseSwitch');
+  const tg = document.getElementById('pauseToggle');
+  const ind = document.getElementById('timePauseIndicator');
+  if (sw) sw.classList.toggle('on', state.timePaused);
+  if (tg) tg.classList.toggle('active', state.timePaused);
+  if (ind) ind.classList.toggle('visible', state.timePaused);
+  notify(state.timePaused ? "⏸ Čas zastaven." : "▶ Čas obnovem.", "info");
+}
+
+function renderPauseToggle() {
+  const sw = document.getElementById('pauseSwitch');
+  const tg = document.getElementById('pauseToggle');
+  const ind = document.getElementById('timePauseIndicator');
+  if (sw) sw.classList.toggle('on', !!state.timePaused);
+  if (tg) tg.classList.toggle('active', !!state.timePaused);
+  if (ind) ind.classList.toggle('visible', !!state.timePaused);
+}
+
+// ══════════════════════════════════════════════════════
+//  BLACK MARKET DATA
+// ══════════════════════════════════════════════════════
+const BLACK_MARKET_POOL = [
+  "ING06","ING07","ING08","ING09","ING35","ING43","ING44","ING51","ING52","ING53",
+  "ING73","ING74","ING80","ING85","ING86","ING99",
+];
+
+function renderBlackMarket() {
+  const grid = document.getElementById('shopBlackGrid');
+  if (!grid) return;
+  grid.innerHTML = BLACK_MARKET_POOL.map(id => {
+    const i = ingMap[id];
+    if (!i) return '';
+    const price = Math.round(getDynamicPrice(id) * 1.8);
+    const cant = state.gold < price;
+    return `<div class="shop-item ${cant?'cant-afford':''}" onclick="buyBlack('${id}')">
+      <div style="display:flex;align-items:center;gap:6px">
+        <div style="width:8px;height:8px;border-radius:50%;background:${i.color};flex-shrink:0"></div>
+        <div>
+          <div class="shop-name">${i.name_cz}</div>
+          <div class="shop-lat" style="color:var(--danger)">☠ tox ${i.toxicity} · +3 podezření</div>
+        </div>
+      </div>
+      <div class="shop-price">🪙 ${price}${demandArrow(id)}</div>
+    </div>`;
+  }).join('');
+}
+
+function buyBlack(id) {
+  const i = ingMap[id];
+  if (!i) return;
+  const price = Math.round(getDynamicPrice(id) * 1.8);
+  if (state.gold < price) { notify("Nemáš dost zlatých!", "error"); return; }
+  state.gold -= price;
+  ecoRecord('spend', price);
+  state.inventory[id] = (state.inventory[id] || 0) + 1;
+  if (!state.inventoryMeta[id]) state.inventoryMeta[id] = { purchasedDays: [] };
+  state.inventoryMeta[id].purchasedDays.push(state.gameDay);
+  state.suspicion = Math.min(100, state.suspicion + 3);
+  adjustDemand(id, 1);
+  checkInquisition();
+  notify(`🌑 Zakoupeno na černém trhu: ${i.name_cz} (+3 podezření)`, "warn");
+  updateStats();
+  document.getElementById('shopGold').textContent = state.gold;
+  renderBlackMarket();
+  renderIngredients();
+}
+
+// ══════════════════════════════════════════════════════
+//  CENTER SUBTABS
+// ══════════════════════════════════════════════════════
+let activeCenterTab = 'bench';
+
+function switchCenterTab(tab) {
+  ['bench','economy','upgrades','settings'].forEach(t => {
+    const panel = document.getElementById('cspanel-'+t);
+    const btn   = document.getElementById('csubtab-'+t);
+    if (panel) panel.style.display = t===tab ? '' : 'none';
+    if (btn)   btn.classList.toggle('active', t===tab);
+  });
+  activeCenterTab = tab;
+  if (tab === 'economy')  renderEconomy();
+  if (tab === 'upgrades') { renderUpgradesCenter(); renderTechTree(); }
+  if (tab === 'settings') renderSettingsTab();
+}
+
+function renderUpgradesCenter() {
+  const el = document.getElementById('upgradeListCenter');
+  if (!el) return;
+  el.innerHTML = UPGRADES.map(u => {
+    const purchased = !!state.upgrades[u.id];
+    const unlockOk = (!u.unlockBrewed || state.brewed >= u.unlockBrewed)
+                  && (!u.unlockQuests || state.questsCompleted >= u.unlockQuests);
+    const cantAfford = state.gold < u.cost;
+    let cls = '';
+    if (purchased) cls = 'purchased';
+    else if (!unlockOk) cls = 'locked';
+    const statusLabel = purchased ? '✓ Zakoupeno' : !unlockOk
+      ? `(${u.unlockBrewed ? 'uvař '+u.unlockBrewed : 'splň '+u.unlockQuests+' zakázek'})`
+      : `💰 ${u.cost}`;
+    return `<div class="upgrade-item ${cls}" onclick="${purchased||!unlockOk?'':` buyUpgrade('${u.id}')`}">
+      <div class="upgrade-name">${u.icon} ${u.name}</div>
+      <div class="upgrade-desc">${u.desc}</div>
+      <div class="upgrade-cost">${statusLabel}</div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════
+//  ECONOMY PANEL
+// ══════════════════════════════════════════════════════
+// Track earnings/spending across session
+const ecoLedger = { earned:0, spent:0, soldItems:0, boughtItems:0 };
+
+function ecoRecord(type, amount) {
+  if (type === 'earn')  { ecoLedger.earned    += amount; ecoLedger.soldItems++; }
+  if (type === 'spend') { ecoLedger.spent      += amount; ecoLedger.boughtItems++; }
+}
+
+function renderEconomy() {
+  const el = document.getElementById('economyContent');
+  if (!el) return;
+
+  // Inventory total value
+  const invValue = Object.entries(state.inventory).reduce((sum, [id, qty]) => {
+    return sum + (ingMap[id]?.price || 0) * qty;
+  }, 0);
+  const maxInvValue = INGREDIENTS_RAW.reduce((sum, i) => sum + i.price * 3, 0);
+
+  // Top ingredients by qty
+  const topInv = Object.entries(state.inventory)
+    .filter(([,q]) => q > 0)
+    .sort(([,a],[,b]) => b-a)
+    .slice(0, 5)
+    .map(([id,qty]) => `<div class="eco-row"><span class="eco-key">${ingMap[id]?.name_cz||id}</span><span class="eco-val">${qty}×</span></div>`)
+    .join('') || '<div style="color:var(--text3);font-size:0.72rem;font-style:italic">Sklad prázdný.</div>';
+
+  // Discovered recipes value potential
+  const discValue = RECIPES_RAW.filter(r => state.discovered[r.id]).reduce((s,r) => s+(r.value||0), 0);
+
+  el.innerHTML = `
+    <div class="eco-section">
+      <div class="eco-title">Přehled zlata</div>
+      <div class="eco-row"><span class="eco-key">💰 Aktuální zlato</span><span class="eco-val gold">${state.gold}</span></div>
+      <div class="eco-row"><span class="eco-key">📈 Vydělano (session)</span><span class="eco-val positive">+${ecoLedger.earned}</span></div>
+      <div class="eco-row"><span class="eco-key">📉 Utraceno (session)</span><span class="eco-val negative">-${ecoLedger.spent}</span></div>
+      <div class="eco-row"><span class="eco-key">⚖ Bilance</span><span class="eco-val ${ecoLedger.earned-ecoLedger.spent>=0?'positive':'negative'}">${ecoLedger.earned-ecoLedger.spent>=0?'+':''}${ecoLedger.earned-ecoLedger.spent}</span></div>
+    </div>
+    <div class="eco-section">
+      <div class="eco-title">Sklad ingrediencí</div>
+      <div class="eco-row"><span class="eco-key">📦 Hodnota skladu</span><span class="eco-val gold">${invValue} zlatých</span></div>
+      <div class="inv-value-bar"><div class="inv-value-fill" style="width:${Math.min(100,Math.round(invValue/Math.max(1,maxInvValue/10)*100))}%"></div></div>
+    </div>
+    <div class="eco-section">
+      <div class="eco-title">Top zásoby</div>
+      ${topInv}
+    </div>
+    <div class="eco-section">
+      <div class="eco-title">Recepty & výzkum</div>
+      <div class="eco-row"><span class="eco-key">📖 Objeveno receptů</span><span class="eco-val">${Object.keys(state.discovered).length} / ${RECIPES_RAW.length}</span></div>
+      <div class="eco-row"><span class="eco-key">💎 Hodnota receptů</span><span class="eco-val gold">${discValue} zlatých</span></div>
+      <div class="eco-row"><span class="eco-key">⚗ Celkem uvařeno</span><span class="eco-val">${state.brewed}×</span></div>
+      <div class="eco-row"><span class="eco-key">📜 Zakázky splněny</span><span class="eco-val">${state.questsCompleted}</span></div>
+    </div>
+  `;
+}
+
+// ══════════════════════════════════════════════════════
+//  SHOP — FILTERS & SELL
+// ══════════════════════════════════════════════════════
+let shopMode   = 'buy';
+let shopFilter = 'All';
+
+function setShopMode(mode) {
+  shopMode = mode;
+  ['buy','sell','food','black'].forEach(m => {
+    const panel = document.getElementById('shoppanel-'+m);
+    const btn   = document.getElementById('shopmode-'+m);
+    if (panel) panel.style.display = m===mode ? '' : 'none';
+    if (btn)   btn.classList.toggle('active', m===mode);
+  });
+  if (mode === 'sell')  renderSellGrid();
+  if (mode === 'buy')   renderShopGrid();
+  if (mode === 'black') renderBlackMarket();
+}
+
+function setShopFilter(f) {
+  shopFilter = f;
+  document.querySelectorAll('#shopTypeFilters .shop-filter-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.textContent.includes(f) || (f==='All' && btn.textContent==='Vše'));
+  });
+  renderShopGrid();
+}
+
+function renderShopGrid() {
+  const q = (document.getElementById('shopSearch')?.value || '').toLowerCase();
+  const grid = document.getElementById('shopGrid');
+  if (!grid) return;
+
+  // Check market ban
+  const banned = state.marketBan && state.gameDay < state.marketBan.until
+    ? state.marketBan.ids : [];
+
+  const list = INGREDIENTS_RAW.filter(i => {
+    if (shopFilter !== 'All' && i.type !== shopFilter) return false;
+    if (banned.includes(i.id)) return false;
+    if (q && !i.name_cz.toLowerCase().includes(q) && !i.name_lat.toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  grid.innerHTML = list.map(i => {
+    const qty = state.inventory[i.id] || 0;
+    const dynPrice = Math.round(getDynamicPrice(i.id) * getFactionPriceBonus(i.id));
+    const cant = state.gold < dynPrice;
+    const arrow = demandArrow(i.id);
+    const priceColor = dynPrice > i.price ? 'color:var(--danger)' : dynPrice < i.price ? 'color:var(--green)' : '';
+    return `<div class="shop-item ${cant?'cant-afford':''}" onclick="buyIng('${i.id}')">
+      <div style="display:flex;align-items:center;gap:6px">
+        <div style="width:8px;height:8px;border-radius:50%;background:${i.color};flex-shrink:0"></div>
+        <div>
+          <div class="shop-name">${i.name_cz}</div>
+          <div class="shop-lat">${i.name_lat}</div>
+        </div>
+      </div>
+      <div class="shop-price" style="${priceColor}">🪙 ${dynPrice}${arrow} <span class="shop-qty" style="color:var(--text3)">Máš: ${qty}</span></div>
+    </div>`;
+  }).join('') || '<div class="empty-state">Žádné suroviny v tomto filtru.</div>';
+}
+
+function renderSellGrid() {
+  const grid = document.getElementById('shopSellGrid');
+  if (!grid) return;
+
+  const sellable = Object.entries(state.inventory)
+    .filter(([,qty]) => qty > 0)
+    .sort(([a],[b]) => (ingMap[a]?.name_cz||a).localeCompare(ingMap[b]?.name_cz||b));
+
+  if (!sellable.length) {
+    grid.innerHTML = '<div class="empty-state">Nemáš co prodat.</div>';
+    return;
+  }
+
+  grid.innerHTML = sellable.map(([id, qty]) => {
+    const i = ingMap[id];
+    if (!i) return '';
+    const underworldBonus = (state.factions?.underworld >= 30 && i.toxicity >= 40) ? 1.25 : 1.0;
+  const sellPrice = Math.max(1, Math.round(i.price * 0.6 * underworldBonus));
+    return `<div class="shop-item">
+      <div style="display:flex;align-items:center;gap:6px">
+        <div style="width:8px;height:8px;border-radius:50%;background:${i.color};flex-shrink:0"></div>
+        <div>
+          <div class="shop-name">${i.name_cz}</div>
+          <div class="shop-lat">Zásoby: ${qty}×</div>
+        </div>
+      </div>
+      <div class="shop-price">🪙 ${sellPrice} / ks</div>
+      <button class="sell-btn" onclick="sellIng('${id}')">Prodat 1×</button>
+    </div>`;
+  }).join('');
+}
+
+function sellIng(id) {
+  const i = ingMap[id];
+  if (!i || (state.inventory[id]||0) <= 0) { notify("Nemáš tuto surovinu.", "warn"); return; }
+  const sellPrice = Math.max(1, Math.round(i.price * 0.6));
+  state.inventory[id]--;
+  consumeIngredientMeta(id);
+  state.gold += sellPrice;
+  ecoRecord('earn', sellPrice);
+  notify(`📤 Prodáno: ${i.name_cz} za ${sellPrice} zlatých.`, "success");
+  updateStats();
+  document.getElementById('shopGold').textContent = state.gold;
+  renderSellGrid();
+  renderIngredients();
+}
+
+// ══════════════════════════════════════════════════════
 //  GREMIUM — DATA
 // ══════════════════════════════════════════════════════
 
@@ -3050,9 +4529,8 @@ const HIRE_COSTS = [120, 250, 500];
 
 function unlockGremium() {
   state.gremiumUnlocked = true;
-  const tabEl = document.getElementById('tab-gremium');
-  if (tabEl) tabEl.style.display = '';
   notify("👥 Gremium odemčeno! Záložka Gremium je nyní dostupná.", "success");
+  renderGremium();
 }
 
 function getAppLevelData(level) {
@@ -3428,6 +4906,21 @@ function saveGame() {
       gremiumUnlocked: state.gremiumUnlocked || false,
       apprentices: state.apprentices || [],
       pendingReturn: state.pendingReturn || null,
+      loyalCustomers: state.loyalCustomers || {},
+      bartexOffer: state.bartexOffer || null,
+      usageTrack: state.usageTrack || {},
+      techStats: state.techStats || {},
+      techUnlocked: state.techUnlocked || {},
+      tutStep: state.tutStep || 0,
+      seasonIndex: state.seasonIndex || 0,
+      seasonDay: state.seasonDay || 0,
+      demand: state.demand || {},
+      factions: state.factions || { guild:0, order:0, underworld:0 },
+      blackMarketUnlocked: state.blackMarketUnlocked || false,
+      timePaused: state.timePaused || false,
+      droughtUntil: state.droughtUntil || 0,
+      competitorUntil: state.competitorUntil || 0,
+      competitorPenalty: state.competitorPenalty || 0,
     }));
     notify("Hra uložena! 💾", "success");
   } catch(e) { notify("Uložení selhalo.", "error"); }
@@ -3451,12 +4944,15 @@ function loadGame() {
     renderAilmentBar();
     updateStats();
     if (state.merchantStock?.length) spawnMerchant();
-    if (state.gremiumUnlocked) {
-      const tabEl = document.getElementById('tab-gremium');
-      if (tabEl) tabEl.style.display = '';
-    }
     renderGremium();
     if (state.pendingReturn) showReturnModal();
+    updateSeasonBanner();
+    renderFactionBars();
+    renderPauseToggle();
+    if (state.blackMarketUnlocked) {
+      const bmBtn = document.getElementById('shopmode-black');
+      if (bmBtn) bmBtn.style.display = '';
+    }
     notify("Hra načtena! 📂", "success");
   } catch(e) { notify("Načtení selhalo.", "error"); }
 }
@@ -3479,6 +4975,12 @@ function resetGame() {
     grimoireFilter:'all', grimoireSort:'name',
     swampUnlockBonus:0,
     gremiumUnlocked:false, apprentices:[], pendingReturn:null,
+    loyalCustomers:{}, bartexOffer:null,
+    usageTrack:{}, techStats:{}, techUnlocked:{},
+    tutStep:0,
+    seasonIndex:0, seasonDay:0, demand:{},
+    factions:{ guild:0, order:0, underworld:0 }, blackMarketUnlocked:false,
+    timePaused:false, droughtUntil:0, competitorUntil:0, competitorPenalty:0,
   };
   ["ING01","ING02","ING04","ING03","ING05","ING19"].forEach(id => {
     state.inventory[id] = 3;
@@ -3496,8 +4998,6 @@ function resetGame() {
   updateStats();
   const merchantBtn = document.getElementById('merchantBtn');
   if (merchantBtn) merchantBtn.remove();
-  const gTab = document.getElementById('tab-gremium');
-  if (gTab) gTab.style.display = 'none';
   renderGremium();
   document.getElementById('resultBox').innerHTML = '<div class="empty-state">Přidej ingredience a zvol postup...</div>';
   document.getElementById('vectorArea').style.display = 'none';
@@ -3544,6 +5044,8 @@ function isMobile() {
 let mobileActivePanel = 'left';
 
 function renderSettingsTab() {
+  renderFactionBars();
+  renderPauseToggle();
   const set = (id, val) => { const el=document.getElementById(id); if(el) el.textContent=val; };
   set('stDayVal',    state.gameDay);
   set('stBrewedVal', state.brewed);
@@ -3551,7 +5053,7 @@ function renderSettingsTab() {
   set('stDiscVal',   Object.keys(state.discovered).length);
   set('stToxVal',    state.maxToxSeen);
   set('stSuspVal',   state.suspicion);
-  const aEl = document.getElementById('settingsAilments');
+  const aEl = document.getElementById('settingsAilments2') || document.getElementById('settingsAilments');
   if (aEl) {
     const active = Object.keys(state.ailments||{}).filter(k => state.ailments[k]);
     aEl.innerHTML = active.length
