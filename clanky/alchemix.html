@@ -124,10 +124,13 @@ header p {
   .panel {
     border-right: none;
     border-bottom: none;
-    max-height: none;
+    max-height: calc(100dvh - 130px);
     min-height: calc(100dvh - 130px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
     padding: 10px 12px;
-    padding-bottom: 70px; /* space for bottom nav */
+    padding-bottom: 80px; /* clear fixed bottom nav */
   }
   /* Only active panel visible */
   .panel.mob-hidden { display: none; }
