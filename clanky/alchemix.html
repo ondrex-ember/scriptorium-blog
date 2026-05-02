@@ -90,10 +90,6 @@ header p {
   gap: 0;
   min-height: calc(100vh - 100px);
 }
-@media (max-width: 1000px) {
-  .layout { grid-template-columns: 1fr; }
-  .panel { border-right: none !important; border-bottom: 1px solid var(--border); }
-}
 
 .panel {
   border-right: 1px solid var(--border);
@@ -102,6 +98,129 @@ header p {
   max-height: calc(100vh - 100px);
 }
 .panel:last-child { border-right: none; }
+
+/* ── MOBILE BOTTOM NAV ── */
+.mobile-nav {
+  display: none;
+}
+
+/* ── TABLET (medium screens) ── */
+@media (max-width: 1000px) and (min-width: 601px) {
+  .layout { grid-template-columns: 1fr; }
+  .panel {
+    border-right: none !important;
+    border-bottom: 1px solid var(--border);
+    max-height: none;
+  }
+}
+
+/* ── MOBILE (phones up to 600px) ── */
+@media (max-width: 600px) {
+  /* Layout: single full-screen panels, switched by JS */
+  .layout {
+    display: block;
+    min-height: 0;
+  }
+  .panel {
+    border-right: none;
+    border-bottom: none;
+    max-height: none;
+    min-height: calc(100dvh - 130px);
+    padding: 10px 12px;
+    padding-bottom: 70px; /* space for bottom nav */
+  }
+  /* Only active panel visible */
+  .panel.mob-hidden { display: none; }
+
+  /* Header compact */
+  header {
+    padding: 10px 12px 8px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  header h1 { font-size: 1.4rem; letter-spacing: 2px; }
+  header p  { display: none; }
+  .stats-bar { gap: 10px; margin-top: 6px; }
+  .stat { font-size: 0.68rem; gap: 3px; }
+  .vitals-bar { gap: 8px; margin-top: 5px; }
+  .vital { gap: 3px; font-size: 0.65rem; }
+  .vital-track { width: 50px; }
+  .vital-val { min-width: 22px; font-size: 0.62rem; }
+
+  /* Workbench center */
+  .workbench { padding: 10px 0; gap: 12px; }
+  .cauldron-visual { width: 140px; height: 110px; }
+  .slot { width: 58px; height: 58px; }
+  .slot-icon { font-size: 1.1rem; }
+  .slot-row { gap: 7px; max-width: 100%; }
+  .proc-btn { padding: 7px 10px; font-size: 0.68rem; letter-spacing: 0; }
+  .proc-btn .proc-ico { font-size: 0.9rem; }
+  .brew-btn { padding: 11px 28px; font-size: 0.9rem; letter-spacing: 2px; }
+  .result-box { padding: 12px; }
+  .vector-display { gap: 8px; }
+
+  /* Ingredient list */
+  .ing-item { padding: 8px 8px; }
+  .ing-name { font-size: 0.8rem; }
+  .search-box { font-size: 0.82rem; padding: 8px 10px; }
+  .filter-btn { padding: 4px 10px; font-size: 0.7rem; }
+
+  /* Shop modal full-screen on mobile */
+  .modal {
+    width: 100%;
+    max-width: 100%;
+    height: 90vh;
+    max-height: 90vh;
+    border-radius: 16px 16px 0 0;
+    padding: 16px;
+    margin: auto auto 0;
+  }
+  .modal-bg { align-items: flex-end; }
+  .shop-grid {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  }
+
+  /* Tab row compact */
+  .tab-btn { font-size: 0.58rem; padding: 5px 2px; }
+
+  /* Bottom navigation bar */
+  .mobile-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: 58px;
+    background: rgba(13,10,6,0.97);
+    border-top: 2px solid var(--border);
+    backdrop-filter: blur(10px);
+    z-index: 150;
+    justify-content: space-around;
+    align-items: stretch;
+  }
+  .mobile-nav-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    background: none;
+    border: none;
+    color: var(--text3);
+    font-family: 'Cinzel', serif;
+    font-size: 0.55rem;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.15s;
+    padding: 0;
+  }
+  .mobile-nav-btn .mnav-ico { font-size: 1.3rem; }
+  .mobile-nav-btn.active {
+    color: var(--gold2);
+    border-top: 2px solid var(--gold);
+    background: rgba(200,150,30,0.06);
+  }
+}
 
 .panel-title {
   font-family: 'Cinzel', serif;
@@ -791,7 +910,7 @@ header p {
   </div>
 
   <!-- CENTER: Workbench -->
-  <div class="panel workbench">
+  <div class="panel workbench" id="centerPanel">
     <div class="panel-title" style="text-align:center">⚗ Pracovní stůl</div>
 
     <div class="cauldron-area">
@@ -864,7 +983,7 @@ header p {
   </div>
 
   <!-- RIGHT: Tabbed panel -->
-  <div class="panel">
+  <div class="panel" id="rightPanel">
     <div class="tab-row">
       <button class="tab-btn active" onclick="switchTab('quests')" id="tab-quests">📜 Zakázky</button>
       <button class="tab-btn" onclick="switchTab('forage')" id="tab-forage">🗺 Výpravy</button>
@@ -904,6 +1023,22 @@ header p {
     </div>
   </div>
 </div>
+
+<!-- Mobile bottom navigation -->
+<nav class="mobile-nav" id="mobileNav">
+  <button class="mobile-nav-btn active" id="mnav-left" onclick="mobileSwitch('left')">
+    <span class="mnav-ico">📦</span>
+    <span>Sklad</span>
+  </button>
+  <button class="mobile-nav-btn" id="mnav-center" onclick="mobileSwitch('center')">
+    <span class="mnav-ico">⚗</span>
+    <span>Dílna</span>
+  </button>
+  <button class="mobile-nav-btn" id="mnav-right" onclick="mobileSwitch('right')">
+    <span class="mnav-ico">📜</span>
+    <span>Panel</span>
+  </button>
+</nav>
 
 <!-- Shop Modal -->
 <div class="modal-bg" id="shopModal">
@@ -2106,10 +2241,63 @@ function notify(msg, type="info") {
 })();
 
 // ══════════════════════════════════════════════════════
+//  MOBILE NAV
+// ══════════════════════════════════════════════════════
+
+const MOBILE_BREAKPOINT = 600;
+
+function isMobile() {
+  return window.innerWidth <= MOBILE_BREAKPOINT;
+}
+
+let mobileActivePanel = 'left';
+
+function mobileSwitch(panel) {
+  if (!isMobile()) return;
+
+  const panels = {
+    left:   document.getElementById('leftPanel'),
+    center: document.getElementById('centerPanel'),
+    right:  document.getElementById('rightPanel'),
+  };
+  const btns = {
+    left:   document.getElementById('mnav-left'),
+    center: document.getElementById('mnav-center'),
+    right:  document.getElementById('mnav-right'),
+  };
+
+  Object.entries(panels).forEach(([key, el]) => {
+    if (!el) return;
+    el.classList.toggle('mob-hidden', key !== panel);
+  });
+  Object.entries(btns).forEach(([key, el]) => {
+    if (!el) return;
+    el.classList.toggle('active', key === panel);
+  });
+
+  mobileActivePanel = panel;
+}
+
+function applyMobileLayout() {
+  if (isMobile()) {
+    mobileSwitch(mobileActivePanel);
+  } else {
+    // Desktop: remove all mob-hidden classes
+    ['leftPanel','centerPanel','rightPanel'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('mob-hidden');
+    });
+  }
+}
+
+window.addEventListener('resize', applyMobileLayout);
+
+// ══════════════════════════════════════════════════════
 //  START
 // ══════════════════════════════════════════════════════
 
 init();
+applyMobileLayout();
 </script>
 </body>
 </html>
