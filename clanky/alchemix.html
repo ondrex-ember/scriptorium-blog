@@ -673,6 +673,160 @@ header p {
 }
 .shop-btn:hover { background: rgba(200,150,30,0.1); box-shadow: var(--glow); }
 
+/* ── GREMIUM ── */
+.apprentice-card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: var(--bg2);
+  margin-bottom: 8px;
+  transition: border-color 0.2s;
+}
+.apprentice-card.busy   { border-color: var(--warm); background: rgba(230,126,34,0.05); }
+.apprentice-card.resting{ border-color: var(--blue);  background: rgba(52,152,219,0.05); }
+.apprentice-card.idle   { border-color: var(--border); }
+.app-header { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+.app-name   { font-family:'Cinzel',serif; font-size:0.85rem; color:var(--gold2); flex:1; }
+.app-title  { font-size:0.65rem; color:var(--text3); font-style:italic; }
+.app-status-badge {
+  font-size:0.62rem; padding:2px 7px; border-radius:20px;
+  font-family:'Cinzel',serif; border:1px solid;
+}
+.xp-bar-wrap { margin:5px 0 6px; }
+.xp-bar-label { display:flex; justify-content:space-between; font-size:0.6rem; color:var(--text3); margin-bottom:2px; font-family:'Cinzel',serif; }
+.xp-bar-track { height:5px; background:var(--bg3); border-radius:3px; overflow:hidden; border:1px solid var(--border); }
+.xp-bar-fill  { height:100%; border-radius:3px; background:linear-gradient(90deg,var(--gold),var(--gold2)); transition:width 0.4s; }
+.app-stats { display:flex; gap:10px; font-size:0.65rem; color:var(--text3); margin-bottom:6px; flex-wrap:wrap; }
+.app-stat-val { color:var(--text2); }
+.app-actions { display:flex; gap:6px; flex-wrap:wrap; }
+.app-action-btn {
+  flex:1; min-width:70px; padding:5px 8px;
+  background:var(--bg3); border:1px solid var(--border2);
+  color:var(--text2); font-family:'Cinzel',serif; font-size:0.62rem;
+  border-radius:6px; cursor:pointer; transition:all 0.15s; text-align:center;
+}
+.app-action-btn:hover:not(:disabled) { border-color:var(--gold); color:var(--gold2); }
+.app-action-btn:disabled { opacity:0.3; cursor:not-allowed; }
+.app-action-btn.danger:hover { border-color:var(--danger); color:var(--danger); }
+.hire-card {
+  border:1px dashed var(--border2); border-radius:10px;
+  padding:12px; background:var(--bg2); text-align:center;
+  cursor:pointer; transition:all 0.15s; margin-bottom:8px;
+}
+.hire-card:hover { border-color:var(--gold); background:rgba(200,150,30,0.06); }
+.hire-card.locked { opacity:0.4; cursor:not-allowed; }
+.gremium-unlock-msg {
+  text-align:center; padding:30px 16px;
+  font-style:italic; color:var(--text3); font-size:0.8rem; line-height:1.7;
+}
+/* Return modal */
+.return-modal-content { text-align:center; }
+.return-modal-finds { margin:12px 0; font-size:0.82rem; color:var(--text2); line-height:1.7; }
+.return-modal-xp { font-family:'Cinzel',serif; font-size:0.85rem; color:var(--gold2); margin:8px 0; }
+
+/* ── GRIMOIRE 2.0 ── */
+.journal-entry.hinted { opacity: 0.6; border-style: dashed; }
+.journal-entry.unknown { opacity: 0.25; pointer-events: none; }
+.journal-entry.favorited .j-name::after { content: " ⭐"; }
+.j-state { font-size: 0.65rem; margin-left: 4px; }
+.grimoire-filters select { background: var(--bg3); color: var(--text2); border: 1px solid var(--border); border-radius: 6px; width: 100%; font-family: 'Cinzel', serif; }
+.grimoire-filters select:focus { outline: none; border-color: var(--gold); }
+.recipe-note {
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-family: 'IM Fell English', serif;
+  font-size: 0.75rem;
+  resize: vertical;
+  min-height: 52px;
+  margin-top: 6px;
+}
+.recipe-note:focus { outline: none; border-color: var(--gold); }
+
+/* ── AILMENTS ── */
+.ailment-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 0.68rem;
+  font-family: 'Cinzel', serif;
+  border: 1px solid;
+  pointer-events: all;
+  cursor: default;
+}
+
+/* ── RESIDUE INDICATOR ── */
+.residue-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border: 1px solid var(--warm);
+  border-radius: 8px;
+  background: rgba(230,126,34,0.08);
+  font-size: 0.72rem;
+  color: var(--warm);
+  font-family: 'Cinzel', serif;
+  margin-bottom: 6px;
+}
+.residue-clear {
+  margin-left: auto;
+  padding: 2px 8px;
+  background: none;
+  border: 1px solid var(--warm);
+  color: var(--warm);
+  border-radius: 4px;
+  font-size: 0.62rem;
+  cursor: pointer;
+  font-family: 'Cinzel', serif;
+}
+.residue-clear:hover { background: rgba(230,126,34,0.15); }
+
+/* ── MERCHANT ── */
+.merchant-btn {
+  position: fixed;
+  bottom: 70px;
+  right: 14px;
+  z-index: 140;
+  padding: 8px 14px;
+  background: linear-gradient(135deg, #5a3a10, #c8961e);
+  border: 2px solid var(--gold2);
+  color: var(--gold3);
+  font-family: 'Cinzel', serif;
+  font-size: 0.72rem;
+  border-radius: 20px;
+  cursor: pointer;
+  box-shadow: var(--glow2);
+  animation: merchant-pulse 2s ease infinite;
+}
+@keyframes merchant-pulse {
+  0%,100% { box-shadow: 0 0 10px rgba(200,150,30,0.4); }
+  50%      { box-shadow: 0 0 25px rgba(200,150,30,0.8); }
+}
+@media (max-width:600px) { .merchant-btn { bottom: 68px; right: 10px; font-size:0.65rem; padding:6px 10px; } }
+
+/* ── EVENT MODAL ── */
+#eventChoices .choice-btn {
+  padding: 10px 14px;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  font-family: 'IM Fell English', serif;
+  font-size: 0.8rem;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s;
+  line-height: 1.4;
+}
+#eventChoices .choice-btn:hover { border-color: var(--gold); background: rgba(200,150,30,0.08); }
+#eventChoices .choice-desc { font-size: 0.68rem; color: var(--text3); font-style: italic; margin-top: 2px; }
+
 /* Scrollbar styling */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg); }
@@ -992,6 +1146,8 @@ header p {
       <button class="tab-btn" onclick="switchTab('forage')" id="tab-forage">🗺 Výpravy</button>
       <button class="tab-btn" onclick="switchTab('upgrades')" id="tab-upgrades">🔨 Dílna</button>
       <button class="tab-btn" onclick="switchTab('grimoire')" id="tab-grimoire">📖 Grimoire</button>
+      <button class="tab-btn" onclick="switchTab('settings')" id="tab-settings">⚙ Nastavení</button>
+      <button class="tab-btn" id="tab-gremium" onclick="switchTab('gremium')" style="display:none">👥 Gremium</button>
     </div>
 
     <!-- QUESTS TAB -->
@@ -1015,14 +1171,68 @@ header p {
 
     <!-- GRIMOIRE TAB -->
     <div id="panel-grimoire" style="display:none">
-      <div class="panel-title">📖 Grimoire — Objevené lektvary</div>
+      <div class="panel-title">📖 Grimoire</div>
       <div class="save-load-row">
         <button class="icon-btn" onclick="saveGame()">💾 Uložit</button>
         <button class="icon-btn" onclick="loadGame()">📂 Načíst</button>
         <button class="icon-btn" onclick="resetGame()" style="color:var(--danger)">🗑 Reset</button>
       </div>
-      <hr class="section-divider">
+      <div class="grimoire-filters" id="grimoireFilters">
+        <div class="filter-bar" style="margin-bottom:4px">
+          <button class="filter-btn active" onclick="setGrimoireFilter('all')">Vše</button>
+          <button class="filter-btn" onclick="setGrimoireFilter('discovered')">✅ Objevené</button>
+          <button class="filter-btn" onclick="setGrimoireFilter('hinted')">🌫 Tušené</button>
+          <button class="filter-btn" onclick="setGrimoireFilter('favorites')">⭐ Oblíbené</button>
+        </div>
+        <div class="filter-bar" style="margin-bottom:6px">
+          <button class="filter-btn" onclick="setGrimoireFilter('Liquid')">Lektvary</button>
+          <button class="filter-btn" onclick="setGrimoireFilter('Ointment')">Masti</button>
+          <button class="filter-btn" onclick="setGrimoireFilter('Powder')">Prášky</button>
+          <button class="filter-btn" onclick="setGrimoireFilter('Electuary')">Elektuaria</button>
+        </div>
+        <select class="search-box" style="margin-bottom:6px;padding:4px 8px;height:28px" onchange="setGrimoireSort(this.value)">
+          <option value="name">Řadit: Název</option>
+          <option value="value">Řadit: Hodnota</option>
+          <option value="tier">Řadit: Tier</option>
+        </select>
+      </div>
       <div class="journal-list" id="journalList"></div>
+      <!-- Recipe detail popup -->
+      <div id="grimRecipeDetail" style="display:none;margin-top:8px;padding:10px;border:1px solid var(--gold);border-radius:8px;background:var(--bg2)"></div>
+    </div>
+
+    <!-- GREMIUM TAB -->
+    <div id="panel-gremium" style="display:none">
+      <div class="panel-title">👥 Gremium — Správa učedníků</div>
+      <div id="gremiumContent"></div>
+    </div>
+
+    <!-- SETTINGS TAB -->
+    <div id="panel-settings" style="display:none">
+      <div class="panel-title">⚙ Nastavení & Statistiky</div>
+      <div style="padding:8px 0;border-bottom:1px solid var(--border);margin-bottom:12px">
+        <div style="font-size:0.72rem;color:var(--text3);margin-bottom:10px;font-style:italic">Postup hry</div>
+        <div class="prop-row"><span class="prop-key">📅 Herní den:</span><span class="prop-val" id="stDayVal">0</span></div>
+        <div class="prop-row"><span class="prop-key">⚗ Uvařeno:</span><span class="prop-val" id="stBrewedVal">0</span></div>
+        <div class="prop-row"><span class="prop-key">📜 Zakázky splněny:</span><span class="prop-val" id="stQuestsVal">0</span></div>
+        <div class="prop-row"><span class="prop-key">📖 Objeveno receptů:</span><span class="prop-val" id="stDiscVal">0</span></div>
+        <div class="prop-row"><span class="prop-key">☠ Max toxicita:</span><span class="prop-val" id="stToxVal">0</span></div>
+        <div class="prop-row"><span class="prop-key">👁 Podezření:</span><span class="prop-val" id="stSuspVal">0</span></div>
+      </div>
+      <div style="font-size:0.72rem;color:var(--text3);margin-bottom:8px;font-style:italic">Uložení hry</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+        <button class="shop-btn" onclick="saveGame()">💾 Uložit hru</button>
+        <button class="shop-btn" onclick="loadGame()">📂 Načíst hru</button>
+        <button class="shop-btn" style="border-color:var(--danger);color:var(--danger)" onclick="resetGame()">🗑 Reset hry</button>
+      </div>
+      <div style="font-size:0.72rem;color:var(--text3);margin-bottom:8px;font-style:italic">Aktivní stavy</div>
+      <div id="settingsAilments" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px"></div>
+      <div style="font-size:0.72rem;color:var(--text3);margin-bottom:8px;font-style:italic">O hře</div>
+      <div style="font-size:0.68rem;color:var(--text3);line-height:1.6">
+        AlchemiX v0.4 · Středověká alchymie<br>
+        Humorální systém dle Galéna · Galénova farmacie<br>
+        <span style="color:var(--border2)">⚗ Omnia in mensura et numero et pondere</span>
+      </div>
     </div>
   </div>
 </div>
@@ -1041,9 +1251,9 @@ header p {
     <span class="mnav-ico">📜</span>
     <span>Panel</span>
   </button>
-  <button class="mobile-nav-btn" id="mnav-settings" onclick="openSettings()">
+  <button class="mobile-nav-btn" id="mnav-settings" onclick="mobileSwitch('right');switchTab('settings')">
     <span class="mnav-ico">⚙️</span>
-    <span>Uložit</span>
+    <span>Nastav.</span>
   </button>
 </nav>
 
@@ -1064,21 +1274,51 @@ header p {
 
 <div id="notif"></div>
 
-<!-- Settings Modal (mobile save/load/reset) -->
-<div class="modal-bg" id="settingsModal">
-  <div class="modal" style="max-width:340px">
-    <button class="modal-close" onclick="closeSettings()">✕ Zavřít</button>
-    <h2>⚙️ Hra</h2>
-    <p style="font-size:0.8rem;color:var(--text3);margin-bottom:20px;font-style:italic">
-      Den <span id="settingsDay">0</span> · Uvařeno: <span id="settingsBrewed">0</span> · Zlato: <span id="settingsGold" style="color:var(--gold2)">0</span>
-    </p>
-    <div style="display:flex;flex-direction:column;gap:10px">
-      <button class="shop-btn" onclick="saveGame();closeSettings()">💾 Uložit hru</button>
-      <button class="shop-btn" onclick="loadGame();closeSettings()">📂 Načíst hru</button>
-      <button class="shop-btn" style="border-color:var(--danger);color:var(--danger)" onclick="resetGame();closeSettings()">🗑 Reset hry</button>
+<!-- Apprentice Return Modal -->
+<div class="modal-bg" id="returnModal">
+  <div class="modal" style="max-width:380px">
+    <div class="return-modal-content">
+      <div id="returnModalIcon" style="font-size:2.5rem;margin-bottom:8px"></div>
+      <h2 id="returnModalTitle" style="font-size:1rem;margin-bottom:4px"></h2>
+      <div id="returnModalStatus" style="font-size:0.75rem;color:var(--text3);margin-bottom:12px;font-style:italic"></div>
+      <div class="return-modal-finds" id="returnModalFinds"></div>
+      <div class="return-modal-xp" id="returnModalXP"></div>
+      <div id="returnModalLevelUp" style="display:none;padding:8px;border:1px solid var(--gold);border-radius:8px;background:rgba(200,150,30,0.08);margin:8px 0;font-family:'Cinzel',serif;font-size:0.82rem;color:var(--gold2)"></div>
+      <button class="shop-btn" style="margin-top:12px" onclick="dismissReturn()">Rozumím</button>
     </div>
   </div>
 </div>
+
+<!-- Ailment bar (shown in workbench) -->
+<div id="ailmentBar" style="display:none;position:fixed;top:0;left:50%;transform:translateX(-50%);z-index:90;display:flex;gap:6px;padding:4px 12px;background:rgba(13,10,6,0.9);border-bottom:1px solid var(--border);border-radius:0 0 8px 8px;pointer-events:none"></div>
+
+<!-- Event Modal -->
+<div class="modal-bg" id="eventModal">
+  <div class="modal" style="max-width:440px">
+    <div style="text-align:center;margin-bottom:12px">
+      <div id="eventIcon" style="font-size:2.5rem;margin-bottom:6px"></div>
+      <h2 id="eventTitle" style="font-size:1.1rem"></h2>
+    </div>
+    <p id="eventText" style="font-size:0.82rem;color:var(--text2);line-height:1.6;margin-bottom:16px;font-style:italic"></p>
+    <div id="eventChoices" style="display:flex;flex-direction:column;gap:8px"></div>
+  </div>
+</div>
+
+<!-- Merchant Modal -->
+<div class="modal-bg" id="merchantModal">
+  <div class="modal" style="max-width:420px">
+    <button class="modal-close" onclick="closeMerchant()">✕ Zavřít</button>
+    <h2>🧳 Putující obchodník</h2>
+    <p style="font-size:0.78rem;color:var(--text3);margin-bottom:4px;font-style:italic">Vzácné suroviny — zmizí za <span id="merchantDaysLeft"></span> dní!</p>
+    <p style="font-size:0.8rem;color:var(--text2);margin-bottom:14px">Zlato: <span id="merchantGold" style="color:var(--gold2)"></span></p>
+    <div class="shop-grid" id="merchantGrid"></div>
+  </div>
+</div>
+
+<!-- Residue indicator (injected into workbench by JS) -->
+
+<!-- Settings Modal (mobile save/load/reset) -->
+
 
 <script>
 // ══════════════════════════════════════════════════════
@@ -1204,7 +1444,10 @@ let state = {
   inventory: {},
   slots: [],
   process: "Mix",
-  discovered: {},
+  discovered: {},        // { recipeId: true }
+  hinted: {},            // { recipeId: true } — tušené recepty
+  notes: {},             // { recipeId: "text" } — osobní poznámky
+  favorites: {},         // { recipeId: true }
   brewed: 0,
   maxToxSeen: 0,
   vigor: 100,
@@ -1218,6 +1461,23 @@ let state = {
   upgrades: {},
   maxSlots: 6,
   grindBonus: 0,
+  // Cauldron residue
+  residue: null,         // { ingId, thermal, moisture, toxicity } | null
+  // Ailments
+  ailments: {},          // { POISONED: true, FEVERISH: true, ... }
+  // Events
+  lastEventDay: 0,
+  activeEvent: null,
+  // Traveling merchant
+  merchantDay: -99,
+  merchantStock: [],
+  // Grimoire filter state
+  grimoireFilter: 'all',
+  grimoireSort: 'name',
+  // Gremium
+  gremiumUnlocked: false,
+  apprentices: [],         // array of apprentice objects
+  pendingReturn: null,     // apprentice return waiting for modal
 };
 
 const ingMap = {};
@@ -1335,6 +1595,169 @@ const UPGRADES = [
     desc:"Zobrazuje předpověď zakázek a rizik příštího dne.",
     unlockBrewed:1,
     applyFn:()=>{ state.hasCalendar=true; } },
+  { id:"UPG_GUILD",     name:"Velká dílna", icon:"🏛️", cost:500,
+    desc:"Odemkne třetí slot pro učedníka v Gremiu.",
+    unlockBrewed:20,
+    applyFn:()=>{ /* slot unlocked by upgrade check */ } },
+  { id:"UPG_SILVER",    name:"Stříbrná výstelka kotlíku", icon:"🥈", cost:220,
+    desc:"Reziduum po vaření se sníží na 50%. Čistší výsledky.",
+    unlockBrewed:8,
+    applyFn:()=>{ state.silverLining=true; } },
+];
+
+// ══════════════════════════════════════════════════════
+//  AILMENTS DATA
+// ══════════════════════════════════════════════════════
+const AILMENTS = {
+  POISONED:  { icon:"🤢", name:"Otráven",    color:"#27ae60",
+               desc:"Každé vaření -4 Vigor navíc.",
+               cure: v => (v.toxicity < 10 && v.thermal < 0) },
+  FEVERISH:  { icon:"🥵", name:"Horečka",    color:"#e74c3c",
+               desc:"Max Vigor snížen na 70.",
+               cure: v => (v.thermal <= -2 && v.toxicity < 20) },
+  EXHAUSTED: { icon:"😴", name:"Vyčerpán",   color:"#7f8c8d",
+               desc:"Výpravy stojí 2× víc Vigoru.",
+               cure: v => false }, // only cured by rest (eating)
+  INSPIRED:  { icon:"✨", name:"Inspirován", color:"#f1c40f",
+               desc:"Procedurální lektvary mají hodnotu +30%.", positive:true },
+  BLESSED:   { icon:"🙏", name:"Požehnán",   color:"#9b59b6",
+               desc:"Toxicita každého vaření -8.", positive:true },
+};
+
+// ══════════════════════════════════════════════════════
+//  EVENTS DATA
+// ══════════════════════════════════════════════════════
+const EVENTS = [
+  {
+    id:"EVT_PLAGUE",
+    title:"Mor ve vesnici",
+    icon:"💀",
+    text:"Starosta přišel s tváří plnou strachu. Vesnicí se šíří horečka — potřebují hojivé lektvary.",
+    choices:[
+      { label:"Přijmout", desc:"Odměna: 280 zlatých + Reputace",
+        fn:()=>{ addQuest({ type:'parametric', customer:CUSTOMER_TEMPLATES[0],
+          requirements:{ thermal_max:0, tox_max:20 },
+          description:"[MOR] Starosta: Potřebujeme chladivý hojivý přípravek!",
+          reward:280, expiresIn:5, suspicionGain:0, urgent:true }); } },
+      { label:"Odmítnout", desc:"Nic, ale ztratíš dobré jméno.",
+        fn:()=>{ notify("Starosta odešel zklamaný.", "warn"); } },
+      { label:"Vyjednávat", desc:"150 zlatých, ale 7 dní.",
+        fn:()=>{ addQuest({ type:'parametric', customer:CUSTOMER_TEMPLATES[0],
+          requirements:{ thermal_max:0, tox_max:20 },
+          description:"[MOR] Starosta: Dohodnutá dodávka lékárny.",
+          reward:150, expiresIn:7, suspicionGain:0 }); } },
+    ],
+  },
+  {
+    id:"EVT_THIEF",
+    title:"Zloděj v noci",
+    icon:"🦹",
+    text:"Ráno chybí suroviny ze skladu. Zloděj zanechal stopu vedoucí k bažinám.",
+    choices:[
+      { label:"Sledovat stopu", desc:"Bažina odemčena dříve (-1 zakázka požadavek).",
+        fn:()=>{ state.swampUnlockBonus = (state.swampUnlockBonus||0) + 1;
+                 notify("🌿 Bažina teď dostupnější!", "info"); } },
+      { label:"Ignorovat", desc:"Přijdeš o 1 náhodnou surovinu.",
+        fn:()=>{ const ids=Object.keys(state.inventory).filter(k=>state.inventory[k]>0);
+                 if(ids.length){ const id=ids[Math.floor(Math.random()*ids.length)];
+                   state.inventory[id]--; notify(`🦹 Ukradeno: ${ingMap[id]?.name_cz||id}`,"error"); } } },
+    ],
+  },
+  {
+    id:"EVT_STUDENT",
+    title:"Mladý učeň",
+    icon:"👦",
+    text:"Mladý chlapec klepe na dveře — touží se naučit alchymii. Nabízí pomoc v dílně.",
+    choices:[
+      { label:"Přijmout učně", desc:"+15 Vigor okamžitě, +5 Vigor každé 3 vaření po dobu 9 vaření.",
+        fn:()=>{ state.vigor=Math.min(100,state.vigor+15);
+                 state.apprenticeBrews=9;
+                 notify("👦 Učeň ti pomáhá! Vigor +15", "success"); } },
+      { label:"Odmítnout", desc:"Nic.",
+        fn:()=>{ notify("Chlapec odešel zklamaně.", "info"); } },
+    ],
+  },
+  {
+    id:"EVT_NOBLEWOMAN",
+    title:"Vznešená dáma",
+    icon:"👸",
+    text:"Šlechtična žádá exkluzivní vonný přípravek. Chce cosi 'aromatického a srdečního' — nic běžného.",
+    choices:[
+      { label:"Přijmout výzvu", desc:"Zakázka: aromatic + heart lektvar, odměna 350 zlatých.",
+        fn:()=>{ addQuest({ type:'parametric', customer:CUSTOMER_TEMPLATES[1],
+          requirements:{ thermal_min:-1, tox_max:15 },
+          description:"[ŠLECHTIČNA] Exkluzivní vonný přípravek pro dvůr. Musí být aromatický.",
+          reward:350, expiresIn:6, suspicionGain:0, urgent:false }); } },
+      { label:"Omluvit se", desc:"Nic.",
+        fn:()=>{ notify("Šlechtična odešla znechucena.", "warn"); } },
+    ],
+  },
+  {
+    id:"EVT_FIRE",
+    title:"Požár na tržišti",
+    icon:"🔥",
+    text:"Obchodníkův sklad lehl popelem. Tři dny nebude k dispozici: Myrha, Kadidlo a Dračí krev.",
+    choices:[
+      { label:"Přijmout zprávu", desc:"Tržiště omezeno — suroviny ING26, ING27, ING31 nedostupné 4 dny.",
+        fn:()=>{ state.marketBan = { ids:["ING26","ING27","ING31"], until: state.gameDay+4 };
+                 notify("🔥 Tržiště omezeno na 4 dny!", "error"); } },
+      { label:"Nakoupit zásoby", desc:"Pokud máš zlato, nakup každou z těchto surovin 2× za normální cenu.",
+        fn:()=>{ ["ING26","ING27","ING31"].forEach(id=>{ const i=ingMap[id];
+          if(i && state.gold>=i.price*2){ state.gold-=i.price*2;
+            state.inventory[id]=(state.inventory[id]||0)+2;
+            if(!state.inventoryMeta[id]) state.inventoryMeta[id]={purchasedDays:[]};
+            state.inventoryMeta[id].purchasedDays.push(state.gameDay,state.gameDay); }});
+          state.marketBan={ids:["ING26","ING27","ING31"],until:state.gameDay+4};
+          notify("📦 Zásoby nakoupeny, tržiště omezeno.", "success"); updateStats(); } },
+    ],
+  },
+  {
+    id:"EVT_TOURNAMENT",
+    title:"Alchymistický turnaj",
+    icon:"🏆",
+    text:"Město vyhlásilo soutěž! Kdo uvaří nejhodnotnější lektvar za 5 pokusů, získá velkou odměnu.",
+    choices:[
+      { label:"Zúčastnit se", desc:"Dalších 5 vaření: nejhodnotnější výsledek → odměna 400 zlatých.",
+        fn:()=>{ state.tournament={ brewsLeft:5, bestValue:0 };
+                 notify("🏆 Turnaj začal! 5 vaření na nejlepší lektvar.", "info"); } },
+      { label:"Vzdát se", desc:"Nic.",
+        fn:()=>{ notify("Přenecháš slávu jiným.", "info"); } },
+    ],
+  },
+  {
+    id:"EVT_INSPIRATION",
+    title:"Zjevení ve snu",
+    icon:"🌙",
+    text:"V noci se ti zjevil Avicenna. Probudil ses s jasnou myslí a novým nápadem.",
+    choices:[
+      { label:"Zapsat vizi", desc:"Získáš stav Inspirován na 8 vaření + hint na náhodný recept.",
+        fn:()=>{ state.ailments.INSPIRED=true; state.inspiredBrews=8;
+                 revealGrimoireHint();
+                 notify("✨ Jsi Inspirován! Procedurální lektvary +30% hodnota.", "success"); } },
+    ],
+  },
+  {
+    id:"EVT_LETTER",
+    title:"Dopis od starého mistra",
+    icon:"📜",
+    text:"Přišel zapečetěný pergamen. Mistr Paracelsus píše: 'Slyšel jsem o tvé práci. Je čas abys přijal učedníky a předával znalosti dál. Otevři své Gremium.'",
+    choices:[
+      { label:"Otevřít Gremium", desc:"Záložka Gremium se odemkne.",
+        fn:()=>{ unlockGremium(); } },
+    ],
+    unlockCondition: () => state.questsCompleted >= 15 && !state.gremiumUnlocked,
+  },
+  {
+    id:"EVT_BLESSED",
+    title:"Požehnání od mnicha",
+    icon:"🙏",
+    text:"Starý mnich z kláštera ti přinesl posvěcenou vodu a požehnal tvé dílně.",
+    choices:[
+      { label:"Přijmout požehnání", desc:"Stav Požehnán na 10 vaření — toxicita -8 při každém vaření.",
+        fn:()=>{ state.ailments.BLESSED=true; state.blessedBrews=10;
+                 notify("🙏 Dílna požehnána! Toxicita -8 po dobu 10 vaření.", "success"); } },
+    ],
+  },
 ];
 
 // ══════════════════════════════════════════════════════
@@ -1353,6 +1776,9 @@ function init() {
   renderQuests();
   renderForage();
   renderUpgrades();
+  renderResidue();
+  renderAilmentBar();
+  renderGremium();
   updateStats();
 
   document.querySelector('[data-proc="Mix"]').classList.add('active');
@@ -1361,17 +1787,20 @@ function init() {
   // Generate initial quests
   for (let i=0; i<3; i++) state.quests.push(generateQuest());
   renderQuests();
+  checkMerchant();
 }
 
 // ══════════════════════════════════════════════════════
 //  TAB SWITCHING
 // ══════════════════════════════════════════════════════
 function switchTab(tab) {
-  ['quests','forage','upgrades','grimoire'].forEach(t => {
+  ['quests','forage','upgrades','grimoire','settings','gremium'].forEach(t => {
     document.getElementById('panel-'+t).style.display = t===tab ? 'block' : 'none';
-    document.getElementById('tab-'+t).classList.toggle('active', t===tab);
+    const tabEl = document.getElementById('tab-'+t); if(tabEl) tabEl.classList.toggle('active', t===tab);
   });
   activeTab = tab;
+  if (tab === 'settings') renderSettingsTab();
+  if (tab === 'gremium') renderGremium();
 }
 
 // ══════════════════════════════════════════════════════
@@ -1508,20 +1937,126 @@ function renderVector(v) {
 
 function renderJournal() {
   const el = document.getElementById('journalList');
-  if (Object.keys(state.discovered).length === 0) {
-    el.innerHTML = `<div class="empty-state">Ještě jsi nic neobjevil...<br><br>Začni míchat! 🧪</div>`;
-    return;
-  }
-  el.innerHTML = RECIPES_RAW.filter(r => state.discovered[r.id]).map(r => `
-    <div class="journal-entry" onclick="showRecipeDetail('${r.id}')">
+  const f = state.grimoireFilter || 'all';
+  const s = state.grimoireSort  || 'name';
+
+  // Update filter button active states
+  document.querySelectorAll('#grimoireFilters .filter-btn').forEach(btn => {
+    const t = btn.getAttribute('onclick')?.match(/'([^']+)'/)?.[1];
+    btn.classList.toggle('active', t === f);
+  });
+
+  // Build list: discovered + hinted depending on filter
+  let list = RECIPES_RAW.filter(r => {
+    const disc = state.discovered[r.id];
+    const hint = state.hinted[r.id];
+    const fav  = state.favorites[r.id];
+    if (f === 'discovered') return disc;
+    if (f === 'hinted')     return hint && !disc;
+    if (f === 'favorites')  return fav;
+    if (['Liquid','Ointment','Powder','Electuary','Material'].includes(f)) return (disc||hint) && r.category===f;
+    // 'all': show discovered + hinted + first 6 unknown as silhouette
+    return disc || hint || true;
+  });
+
+  // Sort
+  if (s === 'value') list = list.sort((a,b) => (b.value||0)-(a.value||0));
+  else if (s === 'tier') list = list.sort((a,b) => b.tier-a.tier);
+  else list = list.sort((a,b) => a.name_cz.localeCompare(b.name_cz));
+
+  // For 'all' limit unknowns shown
+  let unknownCount = 0;
+
+  const items = list.map(r => {
+    const disc = state.discovered[r.id];
+    const hint = state.hinted[r.id];
+    const fav  = state.favorites[r.id];
+
+    if (!disc && !hint) {
+      if (f !== 'all') return '';
+      if (unknownCount >= 4) return '';
+      unknownCount++;
+      return `<div class="journal-entry unknown" style="filter:blur(2px);pointer-events:none">
+        <div class="j-name">??? <span class="tier-badge tier-${r.tier}">${TIER_LABELS[r.tier]}</span></div>
+        <div class="j-cat">${r.category} · ???</div>
+      </div>`;
+    }
+
+    const stateClass = disc ? '' : 'hinted';
+    const favClass   = fav  ? 'favorited' : '';
+    const stateIcon  = disc ? '✅' : '🌫';
+
+    return `<div class="journal-entry ${stateClass} ${favClass}" onclick="openGrimoireEntry('${r.id}')">
       <div class="j-name">
         <span class="j-dot" style="background:${r.color}"></span>
-        ${r.name_cz}
+        ${disc ? r.name_cz : '??? ' + r.category}
         <span class="tier-badge tier-${r.tier}">${TIER_LABELS[r.tier]}</span>
+        <span class="j-state">${stateIcon}</span>
+        ${fav ? '<span style="float:right">⭐</span>' : ''}
       </div>
-      <div class="j-cat">${r.category} · ${r.process} · 💰 ${r.value}</div>
+      <div class="j-cat">${disc ? r.category+' · '+r.process+' · 💰 '+r.value : 'Postup: '+r.process}</div>
+    </div>`;
+  }).filter(Boolean).join('');
+
+  if (!items) {
+    el.innerHTML = '<div class="empty-state">Nic v tomto filtru... Vař a experimentuj!</div>';
+    return;
+  }
+  el.innerHTML = items;
+}
+
+function setGrimoireFilter(f) {
+  state.grimoireFilter = f;
+  document.getElementById('grimRecipeDetail').style.display = 'none';
+  renderJournal();
+}
+
+function setGrimoireSort(s) {
+  state.grimoireSort = s;
+  renderJournal();
+}
+
+function openGrimoireEntry(id) {
+  const r = recMap[id];
+  if (!r) return;
+  const disc = state.discovered[r.id];
+  const hint = state.hinted[r.id];
+  const fav  = state.favorites[r.id];
+  const box  = document.getElementById('grimRecipeDetail');
+  box.style.display = 'block';
+
+  const allIng = disc
+    ? [r.base, ...r.req_ing].map(i => `<span style="color:var(--gold2)">${ingMap[i]?.name_cz||i}</span>`).join(' + ')
+    : '<em style="color:var(--text3)">Ingredience neznámé</em>';
+
+  const noteVal = state.notes[id] || '';
+  const favBtn  = `<button onclick="toggleFavorite('${id}')" style="background:none;border:1px solid var(--border);color:${fav?'#f1c40f':'var(--text3)'};padding:3px 8px;border-radius:4px;cursor:pointer;font-size:0.7rem">${fav?'⭐ Oblíbené':'☆ Přidat'}</button>`;
+
+  box.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+      <div>
+        <div style="font-family:'Cinzel',serif;font-size:0.88rem;color:var(--gold2)">${disc?r.name_cz:'???'}</div>
+        <div style="font-style:italic;font-size:0.7rem;color:var(--text3)">${disc?r.name_lat:''}</div>
+      </div>
+      ${favBtn}
     </div>
-  `).join('');
+    ${disc ? `<div style="font-size:0.75rem;color:var(--text2);margin-bottom:6px">${r.effect}</div>` : ''}
+    <div style="font-size:0.72rem;color:var(--text3);margin-bottom:4px">Ingredience: ${allIng}</div>
+    <div style="font-size:0.72rem;color:var(--text3);margin-bottom:6px">Postup: ${r.process} · Tier: ${TIER_LABELS[r.tier]}</div>
+    ${disc ? `<div style="font-size:0.72rem;color:var(--text3);margin-bottom:4px">Hodnota: 💰 ${r.value}</div>` : ''}
+    <textarea class="recipe-note" placeholder="Poznámky alchymisty..." oninput="saveNote('${id}',this.value)">${noteVal}</textarea>
+    <button onclick="document.getElementById('grimRecipeDetail').style.display='none'" style="margin-top:6px;background:none;border:1px solid var(--border);color:var(--text3);padding:3px 10px;border-radius:4px;cursor:pointer;font-size:0.68rem;width:100%">✕ Zavřít</button>
+  `;
+}
+
+function toggleFavorite(id) {
+  state.favorites[id] = !state.favorites[id];
+  renderJournal();
+  openGrimoireEntry(id);
+}
+
+function saveNote(id, text) {
+  state.notes[id] = text;
 }
 
 function renderQuests() {
@@ -1651,7 +2186,7 @@ function computeVector(slots, process) {
   thermal  = Math.max(-8, Math.min(8, thermal + mod.thermal));
   moisture = Math.max(-8, Math.min(8, moisture + mod.moisture));
   toxicity = Math.min(100, Math.round(toxicity * mod.tox_mult));
-  return { thermal, moisture, toxicity };
+  return applyResidue({ thermal, moisture, toxicity });
 }
 
 function phase1Match(slots, process) {
@@ -1730,6 +2265,7 @@ function brew() {
     state.brewed++;
     state.maxToxSeen = Math.max(state.maxToxSeen, vec.toxicity);
     state.gameDay++;
+    checkReturns();
 
     if (isExact && result.id && !state.discovered[result.id]) {
       state.discovered[result.id] = true;
@@ -1746,21 +2282,52 @@ function brew() {
     showResult(result, vec, isExact);
 
     // Per-brew mechanics
-    // Vigor decay: brewing is laborious — slow drain
-    state.vigor = Math.max(0, state.vigor - 2);
-    // Hunger: slow increase per brew
+    state.vigor  = Math.max(0, state.vigor - 2);
     state.hunger = Math.min(100, state.hunger + 2);
-    // Hunger > 80 weakens vigor faster
     if (state.hunger > 80) {
       state.vigor = Math.max(0, state.vigor - 3);
-      if (state.hunger > 90) notify("🍖 Jsi velmi hladový! Vigor klesá rychleji.", "warn");
+      if (state.hunger > 90) notify("🍖 Jsi velmi hladový! Vigor klesá.", "warn");
     }
-    // Suspicion natural decay
     if (state.suspicion > 0) state.suspicion = Math.max(0, state.suspicion - 1);
+
+    // Market ban check
+    if (state.marketBan && state.gameDay >= state.marketBan.until) state.marketBan = null;
+
+    // Tournament check
+    if (state.tournament) {
+      const val = Math.round(result.value||0);
+      if (val > state.tournament.bestValue) {
+        state.tournament.bestValue = val;
+        notify(`🏆 Nový rekord turnaje: ${val} zlatých!`, "info");
+      }
+      state.tournament.brewsLeft--;
+      if (state.tournament.brewsLeft <= 0) {
+        const prize = state.tournament.bestValue >= 80 ? 400 : state.tournament.bestValue >= 40 ? 200 : 80;
+        state.gold += prize;
+        notify(`🏆 Turnaj skončil! Nejlepší hodnota: ${state.tournament.bestValue}. Odměna: ${prize} zlatých.`, "success");
+        state.tournament = null;
+        updateStats();
+      }
+    }
+
+    // BLESSED ailment: reduce toxicity
+    if (state.ailments?.BLESSED) vec.toxicity = Math.max(0, vec.toxicity - 8);
+    // INSPIRED: boost procedural value
+    if (state.ailments?.INSPIRED && result.procedural) result.value = Math.round((result.value||10) * 1.3);
+
+    // Try to cure ailments with this brew
+    tryCureAilments(vec);
+    // Apply ailment per-brew effects
+    applyAilmentEffects();
+
+    // Cauldron residue: set for NEXT brew
+    setResidue(state.slots);
 
     checkSpoilage();
     checkQuestCompletion(result, vec);
     refreshQuests();
+    checkEvents();
+    checkMerchant();
 
     state.slots = [];
     renderSlots();
@@ -1769,6 +2336,9 @@ function brew() {
     renderQuests();
     renderForage();
     renderUpgrades();
+    renderResidue();
+    renderAilmentBar();
+    if (state.gremiumUnlocked) renderGremium();
     updateStats();
   }, 800);
 }
@@ -1994,6 +2564,7 @@ function goForage(locationId) {
   state.vigor -= loc.vigorCost;
   state.hunger = Math.min(100, state.hunger + loc.hungerCost);
   state.gameDay++;
+  checkReturns();
 
   // Risks
   loc.risks.forEach(r => { if (Math.random() < r.chance) r.fn(); });
@@ -2088,14 +2659,6 @@ function triggerRaid() {
 // ══════════════════════════════════════════════════════
 //  GRIMOIRE HINT
 // ══════════════════════════════════════════════════════
-function revealGrimoireHint() {
-  const undiscovered = RECIPES_RAW.filter(r => !state.discovered[r.id] && ingMap[r.base]);
-  if (!undiscovered.length) return;
-  const r = undiscovered[Math.floor(Math.random() * undiscovered.length)];
-  const allIng = [r.base, ...r.req_ing].map(i => ingMap[i]?.name_cz || i).join(' + ');
-  notify(`🧙 Mnich ti šeptá: "${r.name_cz}" — zkus: ${allIng} → ${r.process}`, "info");
-}
-
 // ══════════════════════════════════════════════════════
 //  SHOP
 // ══════════════════════════════════════════════════════
@@ -2165,6 +2728,664 @@ function buyFood(id) {
 }
 
 // ══════════════════════════════════════════════════════
+//  GRIMOIRE HINT (updated)
+// ══════════════════════════════════════════════════════
+function revealGrimoireHint() {
+  const pool = RECIPES_RAW.filter(r => !state.discovered[r.id] && !state.hinted[r.id] && ingMap[r.base]);
+  if (!pool.length) return;
+  const r = pool[Math.floor(Math.random() * pool.length)];
+  state.hinted[r.id] = true;
+  notify(`🌫 Nový tušený recept: ${r.category} (${r.process})`, "info");
+  renderJournal();
+}
+
+function addQuest(q) {
+  q.id = 'Q'+Date.now()+Math.random();
+  state.quests.push(q);
+  renderQuests();
+}
+
+// ══════════════════════════════════════════════════════
+//  CAULDRON RESIDUE
+// ══════════════════════════════════════════════════════
+function applyResidue(vec) {
+  if (!state.residue) return vec;
+  const r = state.residue;
+  const mult = state.silverLining ? 0.5 : 1.0;
+  return {
+    thermal:  Math.max(-8, Math.min(8, vec.thermal  + Math.round(r.thermal  * mult))),
+    moisture: Math.max(-8, Math.min(8, vec.moisture + Math.round(r.moisture * mult))),
+    toxicity: Math.min(100, Math.round(vec.toxicity + r.toxicity * mult)),
+  };
+}
+
+function setResidue(slots) {
+  if (!slots.length) { state.residue = null; return; }
+  // Pick the ingredient with highest toxicity as the residue carrier
+  const carrier = slots
+    .map(id => ingMap[id])
+    .filter(Boolean)
+    .sort((a,b) => b.toxicity - a.toxicity)[0];
+  if (!carrier) { state.residue = null; return; }
+  const mult = state.silverLining ? 0.5 : 1.0;
+  state.residue = {
+    ingId:    carrier.id,
+    name:     carrier.name_cz,
+    color:    carrier.color,
+    thermal:  Math.round(carrier.thermal  * 0.25 * mult),
+    moisture: Math.round(carrier.moisture * 0.25 * mult),
+    toxicity: Math.round(carrier.toxicity * 0.08 * mult),
+  };
+}
+
+function clearResidue() {
+  state.residue = null;
+  renderResidue();
+  notify("🫧 Kotel vyčištěn.", "info");
+}
+
+function renderResidue() {
+  const area = document.getElementById('vectorArea');
+  if (!area) return;
+  let box = document.getElementById('residueBox');
+  if (!state.residue) {
+    if (box) box.remove();
+    return;
+  }
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'residueBox';
+    area.parentNode.insertBefore(box, area);
+  }
+  const r = state.residue;
+  box.innerHTML = `<div class="residue-box">
+    <div style="width:8px;height:8px;border-radius:50%;background:${r.color};flex-shrink:0"></div>
+    <span>Reziduum: <strong>${r.name}</strong>
+      ${r.thermal  ? (r.thermal>0?` 🌡+${r.thermal}`:` 🌡${r.thermal}`) : ''}
+      ${r.moisture ? (r.moisture>0?` 💧+${r.moisture}`:` 💧${r.moisture}`) : ''}
+      ${r.toxicity ? ` ☠+${r.toxicity}` : ''}
+    </span>
+    <button class="residue-clear" onclick="clearResidue()">Vyčistit (5⚡)</button>
+  </div>`;
+}
+
+// ══════════════════════════════════════════════════════
+//  AILMENTS
+// ══════════════════════════════════════════════════════
+function applyAilmentEffects() {
+  const a = state.ailments || {};
+  // POISONED: extra vigor drain
+  if (a.POISONED) {
+    state.vigor = Math.max(0, state.vigor - 4);
+    notify("🤢 Jed v těle! Vigor -4", "error");
+  }
+  // FEVERISH: cap vigor at 70
+  if (a.FEVERISH) {
+    state.vigor = Math.min(70, state.vigor);
+  }
+  // BLESSED: reduce toxicity of last brew (tracked via flag set in brew)
+  // EXHAUSTED: handled in goForage (cost doubled)
+  // Decrement counters
+  if (state.inspiredBrews > 0) {
+    state.inspiredBrews--;
+    if (state.inspiredBrews === 0) { delete state.ailments.INSPIRED; notify("✨ Inspirace odezněla.", "info"); }
+  }
+  if (state.blessedBrews > 0) {
+    state.blessedBrews--;
+    if (state.blessedBrews === 0) { delete state.ailments.BLESSED; notify("🙏 Požehnání odeznělo.", "info"); }
+  }
+  if (state.apprenticeBrews > 0) {
+    state.apprenticeBrews--;
+    if (state.apprenticeBrews % 3 === 0) {
+      state.vigor = Math.min(100, state.vigor + 5);
+      notify("👦 Učeň ti pomohl! Vigor +5", "success");
+    }
+    if (state.apprenticeBrews === 0) notify("👦 Učeň dokončil svou výpomoc.", "info");
+  }
+}
+
+function tryCureAilments(vec) {
+  const a = state.ailments || {};
+  const cured = [];
+  if (a.POISONED && AILMENTS.POISONED.cure(vec)) {
+    delete state.ailments.POISONED;
+    cured.push("🤢 Otrava vyléčena!");
+  }
+  if (a.FEVERISH && AILMENTS.FEVERISH.cure(vec)) {
+    delete state.ailments.FEVERISH;
+    cured.push("🥵 Horečka zlomena!");
+  }
+  cured.forEach(m => notify(m, "success"));
+}
+
+function renderAilmentBar() {
+  const bar = document.getElementById('ailmentBar');
+  if (!bar) return;
+  const active = Object.keys(state.ailments||{}).filter(k => state.ailments[k]);
+  if (!active.length) { bar.style.display = 'none'; return; }
+  bar.style.display = 'flex';
+  bar.innerHTML = active.map(k => {
+    const a = AILMENTS[k];
+    return `<span class="ailment-pill" style="color:${a.color};border-color:${a.color}55;background:${a.color}11" title="${a.desc}">${a.icon} ${a.name}</span>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════
+//  EVENT SYSTEM
+// ══════════════════════════════════════════════════════
+function checkEvents() {
+  if (state.activeEvent) return; // event still pending
+  const daysSinceLast = state.gameDay - (state.lastEventDay || 0);
+  if (daysSinceLast < 5) return;
+  if (Math.random() > 0.55) return; // ~55% chance each eligible day
+
+  const usedIds = state.usedEvents || [];
+  const pool = EVENTS.filter(e => {
+    if (usedIds.includes(e.id)) return false;
+    if (e.unlockCondition && !e.unlockCondition()) return false;
+    return true;
+  });
+  if (!pool.length) {
+    state.usedEvents = []; // reset pool
+    return;
+  }
+  const evt = pool[Math.floor(Math.random() * pool.length)];
+  state.activeEvent = evt.id;
+  state.lastEventDay = state.gameDay;
+  if (!state.usedEvents) state.usedEvents = [];
+  state.usedEvents.push(evt.id);
+  showEvent(evt);
+}
+
+function showEvent(evt) {
+  document.getElementById('eventIcon').textContent  = evt.icon;
+  document.getElementById('eventTitle').textContent = evt.title;
+  document.getElementById('eventText').textContent  = evt.text;
+  const choicesEl = document.getElementById('eventChoices');
+  choicesEl.innerHTML = evt.choices.map((c, i) => `
+    <button class="choice-btn" onclick="resolveEvent(${i})">
+      <div><strong>${c.label}</strong></div>
+      <div class="choice-desc">${c.desc}</div>
+    </button>
+  `).join('');
+  document.getElementById('eventModal').classList.add('open');
+}
+
+function resolveEvent(choiceIdx) {
+  const evt = EVENTS.find(e => e.id === state.activeEvent);
+  if (!evt) return;
+  evt.choices[choiceIdx].fn();
+  state.activeEvent = null;
+  document.getElementById('eventModal').classList.remove('open');
+  updateStats();
+  renderIngredients();
+  renderQuests();
+}
+
+// ══════════════════════════════════════════════════════
+//  TRAVELING MERCHANT
+// ══════════════════════════════════════════════════════
+const MERCHANT_RARE_POOL = [
+  "ING07","ING09","ING22","ING30","ING31","ING35","ING37",
+  "ING39","ING40","ING43","ING44","ING45","ING46","ING47","ING52","ING55",
+];
+
+function checkMerchant() {
+  // Arrives every 7 days, stays for 2
+  if (state.merchantDay < 0) state.merchantDay = -99;
+  const daysSince = state.gameDay - state.merchantDay;
+  // New arrival?
+  if (daysSince >= 7 && state.merchantStock.length === 0) {
+    spawnMerchant();
+  }
+  // Depart after 2 days
+  if (state.merchantStock.length > 0 && daysSince >= 2) {
+    state.merchantStock = [];
+    const btn = document.getElementById('merchantBtn');
+    if (btn) btn.remove();
+  }
+}
+
+function spawnMerchant() {
+  const shuffled = [...MERCHANT_RARE_POOL].sort(() => Math.random() - 0.5);
+  state.merchantStock = shuffled.slice(0, 4);
+  state.merchantDay = state.gameDay;
+  // Show floating button
+  let btn = document.getElementById('merchantBtn');
+  if (!btn) {
+    btn = document.createElement('button');
+    btn.id = 'merchantBtn';
+    btn.className = 'merchant-btn';
+    btn.onclick = openMerchant;
+    document.body.appendChild(btn);
+  }
+  btn.textContent = '🧳 Obchodník!';
+  notify("🧳 Putující obchodník přijel! Nabízí vzácné suroviny.", "success");
+}
+
+function openMerchant() {
+  const daysLeft = Math.max(0, 2 - (state.gameDay - state.merchantDay));
+  document.getElementById('merchantDaysLeft').textContent = daysLeft;
+  document.getElementById('merchantGold').textContent = state.gold;
+  const grid = document.getElementById('merchantGrid');
+  grid.innerHTML = state.merchantStock.map(id => {
+    const i = ingMap[id];
+    if (!i) return '';
+    const price = Math.round(i.price * 2.2); // premium price
+    const cant = state.gold < price;
+    return `<div class="shop-item ${cant?'cant-afford':''}" onclick="buyFromMerchant('${id}')">
+      <div style="display:flex;align-items:center;gap:6px">
+        <div style="width:8px;height:8px;border-radius:50%;background:${i.color};flex-shrink:0"></div>
+        <div>
+          <div class="shop-name">${i.name_cz}</div>
+          <div class="shop-lat" style="color:var(--warm)">✦ Vzácné</div>
+        </div>
+      </div>
+      <div class="shop-price">🪙 ${price}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('merchantModal').classList.add('open');
+}
+
+function closeMerchant() {
+  document.getElementById('merchantModal').classList.remove('open');
+}
+
+function buyFromMerchant(id) {
+  const i = ingMap[id];
+  if (!i) return;
+  const price = Math.round(i.price * 2.2);
+  if (state.gold < price) { notify("Nemáš dost zlatých!", "error"); return; }
+  state.gold -= price;
+  state.inventory[id] = (state.inventory[id] || 0) + 1;
+  if (!state.inventoryMeta[id]) state.inventoryMeta[id] = { purchasedDays: [] };
+  state.inventoryMeta[id].purchasedDays.push(state.gameDay);
+  // Remove from merchant stock (one per type)
+  state.merchantStock = state.merchantStock.filter(x => x !== id);
+  notify(`✦ Zakoupeno od obchodníka: ${i.name_cz}`, "success");
+  updateStats();
+  openMerchant();
+  renderIngredients();
+}
+
+// ══════════════════════════════════════════════════════
+//  GREMIUM — DATA
+// ══════════════════════════════════════════════════════
+
+const APP_NAMES_M = ["Albertus","Raymundus","Nicolaus","Bartholomaeus",
+  "Hieronymus","Theodoricus","Sigismundus","Cornelius",
+  "Arnoldus","Blasius","Gualterus","Henricus","Fredericus","Benedictus"];
+const APP_NAMES_F = ["Hildegardis","Margaretha","Catharina","Dorothea",
+  "Elisabetha","Scholastica","Benedicta","Perpetua","Adelaidis","Clementina"];
+
+const APP_LEVELS = [
+  { level:1,  title:"Novicus",      xpNeeded:20,  yield:0.50, riskMult:1.00 },
+  { level:2,  title:"Discipulus",   xpNeeded:40,  yield:0.60, riskMult:0.80 },
+  { level:3,  title:"Scholaris",    xpNeeded:70,  yield:0.68, riskMult:0.65 },
+  { level:4,  title:"Practicus",    xpNeeded:100, yield:0.75, riskMult:0.50 },
+  { level:5,  title:"Adeptus",      xpNeeded:140, yield:0.80, riskMult:0.38 },
+  { level:6,  title:"Baccalaureus", xpNeeded:190, yield:0.85, riskMult:0.28 },
+  { level:7,  title:"Licentiatus",  xpNeeded:250, yield:0.90, riskMult:0.18 },
+  { level:8,  title:"Magister",     xpNeeded:320, yield:0.95, riskMult:0.10 },
+  { level:9,  title:"Doctor",       xpNeeded:400, yield:0.98, riskMult:0.04 },
+  { level:10, title:"Philosophus",  xpNeeded:null,yield:1.00, riskMult:0.00 },
+];
+
+// Scavenge pools by level tier
+const SCAVENGE_POOLS = {
+  basic:  [{id:"ING01",w:20},{id:"ING04",w:15},{id:"ING03",w:15},
+           {id:"ING57",w:18},{id:"ING59",w:18},{id:"ING19",w:10},{id:"ING21",w:12}],
+  mid:    [{id:"ING18",w:20},{id:"ING13",w:18},{id:"ING60",w:18},
+           {id:"ING20",w:15},{id:"ING15",w:15},{id:"ING17",w:14}],
+  advanced:[{id:"ING17",w:20},{id:"ING16",w:18},{id:"ING10",w:18},
+            {id:"ING11",w:16},{id:"ING57",w:14},{id:"ING24",w:14}],
+};
+
+// Hire costs by slot
+const HIRE_COSTS = [120, 250, 500];
+
+// ══════════════════════════════════════════════════════
+//  GREMIUM — ENGINE
+// ══════════════════════════════════════════════════════
+
+function unlockGremium() {
+  state.gremiumUnlocked = true;
+  const tabEl = document.getElementById('tab-gremium');
+  if (tabEl) tabEl.style.display = '';
+  notify("👥 Gremium odemčeno! Záložka Gremium je nyní dostupná.", "success");
+}
+
+function getAppLevelData(level) {
+  return APP_LEVELS.find(l => l.level === level) || APP_LEVELS[0];
+}
+
+function createApprentice() {
+  const isFemale = Math.random() < 0.35;
+  const names = isFemale ? APP_NAMES_F : APP_NAMES_M;
+  const name = names[Math.floor(Math.random() * names.length)];
+  // Ensure unique name
+  const taken = state.apprentices.map(a => a.name);
+  const available = names.filter(n => !taken.includes(n));
+  const finalName = available.length ? available[Math.floor(Math.random() * available.length)] : name + ' II';
+
+  return {
+    id: 'APP_' + Date.now(),
+    name: finalName,
+    gender: isFemale ? 'f' : 'm',
+    level: 1,
+    xp: 0,
+    // Stats 1-5, random at hire
+    curiosity: 1 + Math.floor(Math.random() * 5),
+    endurance: 1 + Math.floor(Math.random() * 5),
+    dexterity: 1 + Math.floor(Math.random() * 5),
+    status: 'idle',      // idle | foraging | scavenging | resting
+    task: null,          // { type, locationId, returnsOnDay, riskRoll }
+    restUntilDay: 0,
+    missionsCompleted: 0,
+    totalFinds: 0,
+  };
+}
+
+function hireApprentice(slot) {
+  const cost = HIRE_COSTS[slot] || 500;
+  if (state.gold < cost) { notify(`Nedostatek zlata! Potřebuješ ${cost} zlatých.`, "warn"); return; }
+  if (state.apprentices.length > slot) { notify("Tento slot je obsazen.", "warn"); return; }
+  if (state.apprentices.length < slot) { notify("Nejprve najmi předchozí učedníky.", "warn"); return; }
+  // Slot 1 requires first apprentice level 4+; slot 2 requires upgrade
+  if (slot === 1 && state.apprentices[0]?.level < 4) {
+    notify("Druhý učedník vyžaduje: první učedník lvl 4+.", "warn"); return;
+  }
+  if (slot === 2 && !state.upgrades['UPG_GUILD']) {
+    notify("Třetí učedník vyžaduje Upgrade 'Velká dílna'.", "warn"); return;
+  }
+  state.gold -= cost;
+  state.apprentices.push(createApprentice());
+  notify(`👥 Nový učedník přijat do Gremia!`, "success");
+  updateStats();
+  renderGremium();
+}
+
+function dismissApprentice(appId) {
+  if (!confirm("Propustit tohoto učedníka?")) return;
+  state.apprentices = state.apprentices.filter(a => a.id !== appId);
+  notify("👋 Učedník propuštěn.", "info");
+  renderGremium();
+}
+
+function sendApprentice(appId, type, locationId) {
+  const app = state.apprentices.find(a => a.id === appId);
+  if (!app) return;
+  if (app.status !== 'idle') { notify("Učedník není volný.", "warn"); return; }
+  if (app.restUntilDay > state.gameDay) {
+    notify(`${app.name} odpočívá do dne ${app.restUntilDay}.`, "warn"); return;
+  }
+
+  const lvlData = getAppLevelData(app.level);
+
+  // Duration: Foraging = 1 day, Scavenge = 0 if dexterity>=4 else 1 day
+  // (since gameDay increments each brew, "1 day" ≈ 1 brew cycle)
+  const baseDuration = type === 'forage' ? 1 : (app.dexterity >= 4 ? 0 : 1);
+  const duration = Math.max(0, baseDuration - (app.dexterity >= 5 ? 1 : 0));
+
+  // Pre-roll risk for display on return
+  const riskRoll = Math.random();
+
+  app.status   = type === 'forage' ? 'foraging' : 'scavenging';
+  app.task     = {
+    type,
+    locationId: locationId || null,
+    startDay: state.gameDay,
+    returnsOnDay: state.gameDay + Math.max(1, duration + 1),
+    riskRoll,
+  };
+
+  const locName = type === 'forage'
+    ? (FORAGE_LOCATIONS.find(l => l.id === locationId)?.name || 'les')
+    : 'okolí';
+  notify(`🚶 ${app.name} vyrazil na výpravu (${locName}).`, "info");
+  renderGremium();
+}
+
+function checkReturns() {
+  // Called every gameDay++ (in brew and goForage)
+  for (const app of state.apprentices) {
+    if ((app.status === 'foraging' || app.status === 'scavenging') && app.task) {
+      if (state.gameDay >= app.task.returnsOnDay) {
+        processReturn(app);
+      }
+    }
+    // Release from rest
+    if (app.status === 'resting' && state.gameDay >= app.restUntilDay) {
+      app.status = 'idle';
+    }
+  }
+}
+
+function processReturn(app) {
+  const task = app.task;
+  const lvlData = getAppLevelData(app.level);
+  const finds = [];
+  let riskTriggered = null;
+  let xpGained = task.type === 'forage' ? 8 : 3;
+
+  if (task.type === 'forage') {
+    const loc = FORAGE_LOCATIONS.find(l => l.id === task.locationId);
+    if (loc) {
+      // Check risk (modified by endurance + level)
+      const effectiveRisk = loc.risks[0]?.chance * lvlData.riskMult * (1 - (app.endurance - 1) * 0.08);
+      if (task.riskRoll < effectiveRisk && loc.risks[0]) {
+        riskTriggered = loc.risks[0].name;
+        xpGained = Math.max(1, xpGained - 2);
+      } else {
+        // Finds: scaled by yield + curiosity bonus
+        const bonusFinds = app.curiosity >= 4 ? 1 : 0;
+        const count = Math.round((loc.minFinds + Math.random() * (loc.maxFinds - loc.minFinds)) * lvlData.yield) + bonusFinds;
+        for (let i = 0; i < Math.max(1, count); i++) {
+          const ingId = weightedRandom(loc.possibleFinds);
+          if (!ingMap[ingId]) continue;
+          state.inventory[ingId] = (state.inventory[ingId] || 0) + 1;
+          if (!state.inventoryMeta[ingId]) state.inventoryMeta[ingId] = { purchasedDays: [] };
+          state.inventoryMeta[ingId].purchasedDays.push(state.gameDay);
+          finds.push(ingMap[ingId].name_cz);
+          app.totalFinds++;
+        }
+        // Lvl 8+ bonus: grimoire hint
+        if (app.level >= 8 && Math.random() < 0.3) {
+          revealGrimoireHint();
+          finds.push('[Hint na recept]');
+        }
+      }
+    }
+  } else {
+    // Scavenge
+    const pool = app.level >= 8 ? SCAVENGE_POOLS.advanced
+               : app.level >= 5 ? SCAVENGE_POOLS.mid
+               : SCAVENGE_POOLS.basic;
+    const count = Math.round((2 + Math.random() * 2) * lvlData.yield + (app.curiosity >= 4 ? 0.5 : 0));
+    for (let i = 0; i < Math.max(1, count); i++) {
+      const ingId = weightedRandom(pool);
+      if (!ingMap[ingId]) continue;
+      state.inventory[ingId] = (state.inventory[ingId] || 0) + 1;
+      if (!state.inventoryMeta[ingId]) state.inventoryMeta[ingId] = { purchasedDays: [] };
+      state.inventoryMeta[ingId].purchasedDays.push(state.gameDay);
+      finds.push(ingMap[ingId].name_cz);
+      app.totalFinds++;
+    }
+  }
+
+  app.missionsCompleted++;
+
+  // XP & level up
+  const oldLevel = app.level;
+  app.xp += xpGained;
+  let leveledUp = false;
+  while (app.level < 10) {
+    const needed = getAppLevelData(app.level).xpNeeded;
+    if (needed && app.xp >= needed) {
+      app.xp -= needed;
+      app.level++;
+      leveledUp = true;
+    } else break;
+  }
+
+  // Rest period: endurance reduces rest
+  const restDays = Math.max(1, 2 - Math.floor(app.endurance / 2));
+  app.restUntilDay = state.gameDay + restDays;
+  app.status = 'resting';
+  app.task = null;
+
+  // Queue return modal
+  state.pendingReturn = {
+    app: { ...app },
+    finds,
+    riskTriggered,
+    xpGained,
+    leveledUp,
+    oldLevel,
+    newLevel: app.level,
+    restUntilDay: app.restUntilDay,
+  };
+
+  renderIngredients();
+  renderGremium();
+  showReturnModal();
+}
+
+function showReturnModal() {
+  const ret = state.pendingReturn;
+  if (!ret) return;
+  const app = ret.app;
+  const lvlData = getAppLevelData(app.level);
+
+  document.getElementById('returnModalIcon').textContent  = app.gender === 'f' ? '👩' : '🧑';
+  document.getElementById('returnModalTitle').textContent = `${app.name} se vrátil${app.gender==='f'?'a':''}!`;
+  document.getElementById('returnModalStatus').textContent =
+    ret.riskTriggered
+      ? `⚠️ Incident: ${ret.riskTriggered}. Mise méně úspěšná.`
+      : `Mise úspěšně dokončena.`;
+
+  const findsEl = document.getElementById('returnModalFinds');
+  findsEl.innerHTML = ret.finds.length
+    ? `📦 Nalezeno: <strong>${[...new Set(ret.finds)].join(', ')}</strong>`
+    : '<em>Nic nenalezeno.</em>';
+
+  document.getElementById('returnModalXP').textContent =
+    `+${ret.xpGained} XP · Odpočívá do dne ${ret.restUntilDay}`;
+
+  const lvlUpEl = document.getElementById('returnModalLevelUp');
+  if (ret.leveledUp) {
+    lvlUpEl.style.display = 'block';
+    lvlUpEl.textContent = `🎓 Povýšen${app.gender==='f'?'a':''}: ${getAppLevelData(ret.oldLevel).title} → ${lvlData.title} (Lvl ${app.level})!`;
+  } else {
+    lvlUpEl.style.display = 'none';
+  }
+
+  document.getElementById('returnModal').classList.add('open');
+}
+
+function dismissReturn() {
+  state.pendingReturn = null;
+  document.getElementById('returnModal').classList.remove('open');
+  renderGremium();
+}
+
+// ══════════════════════════════════════════════════════
+//  GREMIUM — RENDER
+// ══════════════════════════════════════════════════════
+
+function renderGremium() {
+  const el = document.getElementById('gremiumContent');
+  if (!el) return;
+
+  if (!state.gremiumUnlocked) {
+    el.innerHTML = `<div class="gremium-unlock-msg">
+      🔒 Gremium je uzamčeno.<br><br>
+      Splň <strong>15 zakázek</strong> — přijde dopis od starého mistra.<br>
+      <span style="color:var(--border2)">Scientia est potentia.</span>
+    </div>`;
+    return;
+  }
+
+  let html = '';
+
+  // Existing apprentice cards
+  state.apprentices.forEach((app, idx) => {
+    const lvlData = getAppLevelData(app.level);
+    const xpNext  = lvlData.xpNeeded || '—';
+    const xpPct   = lvlData.xpNeeded ? Math.round((app.xp / lvlData.xpNeeded) * 100) : 100;
+
+    const statusColor = app.status === 'idle'      ? 'var(--green)'
+                      : app.status === 'resting'   ? 'var(--cool)'
+                      : 'var(--warm)';
+    const statusLabel = app.status === 'idle'      ? 'Volný'
+                      : app.status === 'resting'   ? `Odpočívá (den ${app.restUntilDay})`
+                      : app.status === 'foraging'  ? `Na výpravě (vrátí se den ${app.task?.returnsOnDay})`
+                      : `Sbírá suroviny (vrátí se den ${app.task?.returnsOnDay})`;
+
+    const isIdle = app.status === 'idle' && state.gameDay >= app.restUntilDay;
+    const isBusy = app.status === 'foraging' || app.status === 'scavenging';
+
+    // Forage location buttons (only unlocked locations)
+    const forageButtons = FORAGE_LOCATIONS
+      .filter(loc => state.questsCompleted + (state.swampUnlockBonus||0) >= loc.unlockAt)
+      .map(loc =>
+        `<button class="app-action-btn" ${isIdle?'':'disabled'} onclick="sendApprentice('${app.id}','forage','${loc.id}')">
+          ${loc.icon} ${loc.name}
+        </button>`
+      ).join('');
+
+    html += `<div class="apprentice-card ${app.status === 'resting' ? 'resting' : isBusy ? 'busy' : 'idle'}">
+      <div class="app-header">
+        <span style="font-size:1.4rem">${app.gender==='f'?'👩':'🧑'}</span>
+        <div style="flex:1">
+          <div class="app-name">${app.name}</div>
+          <div class="app-title">${lvlData.title} · Úroveň ${app.level}</div>
+        </div>
+        <span class="app-status-badge" style="color:${statusColor};border-color:${statusColor}44">${statusLabel}</span>
+      </div>
+      <div class="xp-bar-wrap">
+        <div class="xp-bar-label"><span>XP</span><span>${app.xp} / ${xpNext}</span></div>
+        <div class="xp-bar-track"><div class="xp-bar-fill" style="width:${xpPct}%"></div></div>
+      </div>
+      <div class="app-stats">
+        <span>🔍 Zvídavost: <span class="app-stat-val">${'★'.repeat(app.curiosity)}${'☆'.repeat(5-app.curiosity)}</span></span>
+        <span>💪 Výdrž: <span class="app-stat-val">${'★'.repeat(app.endurance)}${'☆'.repeat(5-app.endurance)}</span></span>
+        <span>✋ Zručnost: <span class="app-stat-val">${'★'.repeat(app.dexterity)}${'☆'.repeat(5-app.dexterity)}</span></span>
+        <span>📦 Mise: <span class="app-stat-val">${app.missionsCompleted}</span></span>
+        <span>🌿 Nalezeno: <span class="app-stat-val">${app.totalFinds}</span></span>
+      </div>
+      <div class="app-actions">
+        <button class="app-action-btn" ${isIdle?'':'disabled'} onclick="sendApprentice('${app.id}','scavenge',null)">🏘 Sbírat (okolí)</button>
+        ${forageButtons}
+        <button class="app-action-btn danger" ${isBusy?'disabled':''} onclick="dismissApprentice('${app.id}')">✕ Propustit</button>
+      </div>
+    </div>`;
+  });
+
+  // Hire slots
+  const slots = 3;
+  for (let i = state.apprentices.length; i < slots; i++) {
+    const cost = HIRE_COSTS[i];
+    const prereqOk = i === 0 ? true
+                   : i === 1 ? (state.apprentices[0]?.level >= 4)
+                   : !!state.upgrades['UPG_GUILD'];
+    const canAfford = state.gold >= cost;
+    const locked = !prereqOk;
+    const prereqNote = i === 1 ? ' (vyžaduje: 1. učedník lvl 4+)'
+                     : i === 2 ? ' (vyžaduje: Upgrade Velká dílna)' : '';
+    html += `<div class="hire-card ${locked?'locked':''}" onclick="${locked?'':'hireApprentice('+i+')'}">
+      <div style="font-size:1.5rem;margin-bottom:4px">➕</div>
+      <div style="font-family:'Cinzel',serif;font-size:0.78rem;color:${canAfford&&!locked?'var(--gold2)':'var(--text3)'}">
+        Najímat učedníka${prereqNote}
+      </div>
+      <div style="font-size:0.7rem;color:var(--gold);margin-top:3px">🪙 ${cost} zlatých</div>
+    </div>`;
+  }
+
+  el.innerHTML = html;
+}
+
+// ══════════════════════════════════════════════════════
 //  SAVE / LOAD
 // ══════════════════════════════════════════════════════
 function saveGame() {
@@ -2173,6 +3394,9 @@ function saveGame() {
       gold: state.gold,
       inventory: state.inventory,
       discovered: state.discovered,
+      hinted: state.hinted,
+      notes: state.notes,
+      favorites: state.favorites,
       brewed: state.brewed,
       maxToxSeen: state.maxToxSeen,
       vigor: state.vigor,
@@ -2186,6 +3410,24 @@ function saveGame() {
       maxSlots: state.maxSlots,
       grindBonus: state.grindBonus,
       cellarBonus: state.cellarBonus || false,
+      silverLining: state.silverLining || false,
+      residue: state.residue,
+      ailments: state.ailments,
+      inspiredBrews: state.inspiredBrews || 0,
+      blessedBrews: state.blessedBrews || 0,
+      apprenticeBrews: state.apprenticeBrews || 0,
+      lastEventDay: state.lastEventDay,
+      usedEvents: state.usedEvents || [],
+      merchantDay: state.merchantDay || -99,
+      merchantStock: state.merchantStock || [],
+      marketBan: state.marketBan || null,
+      tournament: state.tournament || null,
+      grimoireFilter: state.grimoireFilter,
+      grimoireSort: state.grimoireSort,
+      swampUnlockBonus: state.swampUnlockBonus || 0,
+      gremiumUnlocked: state.gremiumUnlocked || false,
+      apprentices: state.apprentices || [],
+      pendingReturn: state.pendingReturn || null,
     }));
     notify("Hra uložena! 💾", "success");
   } catch(e) { notify("Uložení selhalo.", "error"); }
@@ -2205,7 +3447,16 @@ function loadGame() {
     renderQuests();
     renderForage();
     renderUpgrades();
+    renderResidue();
+    renderAilmentBar();
     updateStats();
+    if (state.merchantStock?.length) spawnMerchant();
+    if (state.gremiumUnlocked) {
+      const tabEl = document.getElementById('tab-gremium');
+      if (tabEl) tabEl.style.display = '';
+    }
+    renderGremium();
+    if (state.pendingReturn) showReturnModal();
     notify("Hra načtena! 📂", "success");
   } catch(e) { notify("Načtení selhalo.", "error"); }
 }
@@ -2214,10 +3465,20 @@ function resetGame() {
   if (!confirm("Opravdu chceš resetovat hru?")) return;
   localStorage.removeItem('alchemix_save');
   state = {
-    gold:150, inventory:{}, slots:[], process:"Mix", discovered:{}, brewed:0, maxToxSeen:0,
+    gold:150, inventory:{}, slots:[], process:"Mix",
+    discovered:{}, hinted:{}, notes:{}, favorites:{},
+    brewed:0, maxToxSeen:0,
     vigor:100, hunger:0, gameDay:0, inventoryMeta:{},
     quests:[], questsCompleted:0, suspicion:0, inquisitionWarnings:0,
     upgrades:{}, maxSlots:6, grindBonus:0,
+    residue:null, ailments:{},
+    inspiredBrews:0, blessedBrews:0, apprenticeBrews:0,
+    lastEventDay:0, usedEvents:[], activeEvent:null,
+    merchantDay:-99, merchantStock:[],
+    marketBan:null, tournament:null,
+    grimoireFilter:'all', grimoireSort:'name',
+    swampUnlockBonus:0,
+    gremiumUnlocked:false, apprentices:[], pendingReturn:null,
   };
   ["ING01","ING02","ING04","ING03","ING05","ING19"].forEach(id => {
     state.inventory[id] = 3;
@@ -2230,7 +3491,14 @@ function resetGame() {
   renderQuests();
   renderForage();
   renderUpgrades();
+  renderResidue();
+  renderAilmentBar();
   updateStats();
+  const merchantBtn = document.getElementById('merchantBtn');
+  if (merchantBtn) merchantBtn.remove();
+  const gTab = document.getElementById('tab-gremium');
+  if (gTab) gTab.style.display = 'none';
+  renderGremium();
   document.getElementById('resultBox').innerHTML = '<div class="empty-state">Přidej ingredience a zvol postup...</div>';
   document.getElementById('vectorArea').style.display = 'none';
   notify("Hra resetována.", "info");
@@ -2275,15 +3543,22 @@ function isMobile() {
 
 let mobileActivePanel = 'left';
 
-function openSettings() {
-  document.getElementById('settingsDay').textContent    = state.gameDay;
-  document.getElementById('settingsBrewed').textContent = state.brewed;
-  document.getElementById('settingsGold').textContent   = state.gold;
-  document.getElementById('settingsModal').classList.add('open');
-}
-
-function closeSettings() {
-  document.getElementById('settingsModal').classList.remove('open');
+function renderSettingsTab() {
+  const set = (id, val) => { const el=document.getElementById(id); if(el) el.textContent=val; };
+  set('stDayVal',    state.gameDay);
+  set('stBrewedVal', state.brewed);
+  set('stQuestsVal', state.questsCompleted);
+  set('stDiscVal',   Object.keys(state.discovered).length);
+  set('stToxVal',    state.maxToxSeen);
+  set('stSuspVal',   state.suspicion);
+  const aEl = document.getElementById('settingsAilments');
+  if (aEl) {
+    const active = Object.keys(state.ailments||{}).filter(k => state.ailments[k]);
+    aEl.innerHTML = active.length
+      ? active.map(k => { const a=AILMENTS[k];
+          return `<span class="ailment-pill" style="color:${a.color};border-color:${a.color}44">${a.icon} ${a.name}</span>`; }).join('')
+      : '<span style="font-size:0.7rem;color:var(--text3);font-style:italic">Žádné aktivní stavy.</span>';
+  }
 }
 
 function mobileSwitch(panel) {
