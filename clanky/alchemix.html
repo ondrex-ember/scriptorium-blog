@@ -1038,6 +1038,10 @@ header p {
     <span class="mnav-ico">📜</span>
     <span>Panel</span>
   </button>
+  <button class="mobile-nav-btn" id="mnav-settings" onclick="openSettings()">
+    <span class="mnav-ico">⚙️</span>
+    <span>Uložit</span>
+  </button>
 </nav>
 
 <!-- Shop Modal -->
@@ -1056,6 +1060,22 @@ header p {
 </div>
 
 <div id="notif"></div>
+
+<!-- Settings Modal (mobile save/load/reset) -->
+<div class="modal-bg" id="settingsModal">
+  <div class="modal" style="max-width:340px">
+    <button class="modal-close" onclick="closeSettings()">✕ Zavřít</button>
+    <h2>⚙️ Hra</h2>
+    <p style="font-size:0.8rem;color:var(--text3);margin-bottom:20px;font-style:italic">
+      Den <span id="settingsDay">0</span> · Uvařeno: <span id="settingsBrewed">0</span> · Zlato: <span id="settingsGold" style="color:var(--gold2)">0</span>
+    </p>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button class="shop-btn" onclick="saveGame();closeSettings()">💾 Uložit hru</button>
+      <button class="shop-btn" onclick="loadGame();closeSettings()">📂 Načíst hru</button>
+      <button class="shop-btn" style="border-color:var(--danger);color:var(--danger)" onclick="resetGame();closeSettings()">🗑 Reset hry</button>
+    </div>
+  </div>
+</div>
 
 <script>
 // ══════════════════════════════════════════════════════
@@ -2251,6 +2271,17 @@ function isMobile() {
 }
 
 let mobileActivePanel = 'left';
+
+function openSettings() {
+  document.getElementById('settingsDay').textContent    = state.gameDay;
+  document.getElementById('settingsBrewed').textContent = state.brewed;
+  document.getElementById('settingsGold').textContent   = state.gold;
+  document.getElementById('settingsModal').classList.add('open');
+}
+
+function closeSettings() {
+  document.getElementById('settingsModal').classList.remove('open');
+}
 
 function mobileSwitch(panel) {
   if (!isMobile()) return;
