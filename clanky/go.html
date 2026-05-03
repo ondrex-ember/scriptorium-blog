@@ -1,272 +1,490 @@
 <!DOCTYPE html>
-<html lang="cs">
-<head>
-    <meta charset="UTF-8">
+<!-- saved from url=(0039)https://blog.myscriptorium.cz/clanky/go -->
+<html lang="cs" data-theme="dark"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Go - Člověk vs CPU (Multithread AI)</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Bebas+Neue&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --board-color: #e5b776;
-            --bg-color: #1a1a2e;
-            --panel-bg: rgba(255, 255, 255, 0.05);
-            --text-color: #e0e0e0;
-            --accent: #e94560;
-        }
-        body {
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            min-height: 100vh; background-color: var(--bg-color);
-            background-image: radial-gradient(circle at center, #2a2a4a 0%, #1a1a2e 100%);
-            margin: 0; padding: 12px 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: var(--text-color); overflow-x: hidden; box-sizing: border-box;
-        }
-        
+      @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
+
+      /* ── DARK THEME (výchozí) ── */
+      :root {
+        --gold:        #c8a84b;
+        --gold-dim:    rgba(200,168,75,0.16);
+        --gold-glow:   rgba(200,168,75,0.50);
+        --bg:          #0e0b06;
+        --bg2:         #1a1208;
+        --bg3:         #221a0a;
+        --panel-bg:    rgba(200,168,75,0.04);
+        --panel-border:rgba(200,168,75,0.12);
+        --ink:         #e8d5a3;
+        --ink-dim:     #a08860;
+        --ink-faint:   #6a5830;
+        --board-color: #c8a050;
+        --board-border:#6b3c14;
+        --accent:      #c8a84b;
+        --accent-hover:#d4b85a;
+        --modal-bg:    #130f07;
+        --input-bg:    rgba(0,0,0,0.4);
+        --input-border:#5a4020;
+        --btn-bg:      rgba(200,168,75,0.08);
+        --btn-border:  rgba(200,168,75,0.25);
+        --btn-color:   var(--ink-dim);
+        --scrollbar:   #3a2a10;
+      }
+
+      /* ── LIGHT THEME (pergamen) ── */
+      html[data-theme="light"] {
+        --gold:        #8a6010;
+        --gold-dim:    rgba(138,96,16,0.12);
+        --gold-glow:   rgba(138,96,16,0.40);
+        --bg:          #f5f0e8;
+        --bg2:         #ede6d6;
+        --bg3:         #e4dbc8;
+        --panel-bg:    rgba(138,96,16,0.05);
+        --panel-border:rgba(138,96,16,0.15);
+        --ink:         #2a1f0a;
+        --ink-dim:     #5a4520;
+        --ink-faint:   #9a8060;
+        --board-color: #d4b98a;
+        --board-border:#8a5c2a;
+        --accent:      #8a6010;
+        --accent-hover:#6a4800;
+        --modal-bg:    #ede6d6;
+        --input-bg:    rgba(255,255,255,0.5);
+        --input-border:#c8a87a;
+        --btn-bg:      rgba(138,96,16,0.07);
+        --btn-border:  rgba(138,96,16,0.22);
+        --btn-color:   var(--ink-dim);
+        --scrollbar:   #c8a87a;
+      }
+
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+
+      body {
+        display: flex; flex-direction: column; align-items: center;
+        min-height: 100vh;
+        background: var(--bg);
+        background-image:
+          radial-gradient(ellipse at 20% 0%, rgba(200,168,75,0.05) 0%, transparent 60%),
+          radial-gradient(ellipse at 80% 100%, rgba(93,58,26,0.07) 0%, transparent 50%);
+        margin: 0; padding: 16px 0 40px;
+        font-family: 'Crimson Text', Georgia, serif;
+        color: var(--ink);
+        overflow-x: hidden;
+        transition: background 0.3s, color 0.3s;
+      }
+
+      /* ── HEADER ── */
+      #gameHeader {
+        width: 580px;
+        text-align: center;
+        margin-bottom: 1.2rem;
+        user-select: none;
+      }
+      #logoGO {
+        font-family: 'Cinzel', serif;
+        font-size: clamp(2.2rem, 7vw, 3.6rem);
+        font-weight: 700;
+        letter-spacing: 0.22em;
+        color: var(--gold);
+        text-shadow: 0 0 40px var(--gold-glow);
+        display: block;
+        line-height: 1;
+      }
+      #logoGO .reversed-e { display: none; }
+      #hdrDivider {
+        width: 80px; height: 1px;
+        background: linear-gradient(90deg, transparent, var(--gold), transparent);
+        margin: 0.55rem auto;
+      }
+      #logoSub {
+        font-family: 'Cinzel', serif;
+        font-size: clamp(0.58rem, 1.4vw, 0.72rem);
+        letter-spacing: 0.32em;
+        text-transform: uppercase;
+        color: var(--ink-faint);
+        display: block;
+        margin-top: 0;
+      }
+
+      /* ── TOP PANEL ── */
+      #topPanel {
+        display: flex; justify-content: space-between; align-items: center;
+        width: 580px; margin-bottom: 12px;
+        background: var(--panel-bg);
+        padding: 12px 20px;
+        border-radius: 3px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+        border: 1px solid var(--panel-border);
+        box-sizing: border-box;
+      }
+      .player-box {
+        display: flex; flex-direction: column; align-items: center;
+        min-width: 110px; padding: 6px 10px;
+        border: 1px solid transparent;
+        border-radius: 3px;
+        transition: border-color .3s, box-shadow .3s;
+      }
+      .player-box.is-human {
+        border-color: var(--gold-glow);
+        box-shadow: 0 0 12px var(--gold-dim);
+        background: var(--gold-dim);
+      }
+      .player-box.is-active-turn {
+        border-color: rgba(100,180,80,0.5);
+        box-shadow: 0 0 10px rgba(80,160,60,0.2);
+      }
+      .player-box.is-human.is-active-turn {
+        border-color: var(--gold);
+        box-shadow: 0 0 16px var(--gold-glow);
+      }
+      .player-label {
+        font-family: 'Cinzel', serif;
+        font-size: .6rem; color: var(--gold);
+        font-weight: 600; letter-spacing: 1.5px;
+        margin-bottom: 2px; display: none;
+        text-transform: uppercase;
+      }
+      .player-box.is-human .player-label { display: block; }
+      .player-name {
+        font-family: 'Cinzel', serif;
+        font-size: 1rem; font-weight: 600;
+        letter-spacing: 1px; text-transform: uppercase;
+        color: var(--ink);
+      }
+      .timer {
+        font-size: 1.7rem; font-weight: bold;
+        margin: 4px 0; font-family: 'Cinzel', serif;
+        color: var(--gold);
+      }
+      .prisoners { font-size: 0.82rem; color: var(--ink-dim); font-style: italic; }
+
+      /* ── STATUS ── */
+      #statusContainer { text-align: center; flex-grow: 1; padding: 0 8px; }
+      #status {
+        font-size: 1rem; font-weight: 600;
+        color: var(--gold);
+        font-family: 'Crimson Text', serif;
+        font-style: italic;
+      }
+      #cpuThinking {
+        color: var(--gold); font-size: 0.8rem; display: none; margin-top: 5px;
+        font-weight: bold; letter-spacing: 1px; animation: pulse 1s infinite;
+        font-family: 'Cinzel', serif;
+      }
+      @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+
+      #levelBadge {
+        font-family: 'Cinzel', serif;
+        font-size: .7rem; font-weight: 600; color: var(--gold);
+        background: var(--gold-dim);
+        border: 1px solid var(--gold-glow);
+        border-radius: 3px; padding: 2px 8px;
+        margin-top: 4px; letter-spacing: .5px;
+        display: inline-block;
+      }
+
+      /* ── CANVAS (board) ── */
+      canvas {
+        background-color: var(--board-color);
+        box-shadow: 0 12px 40px rgba(0,0,0,0.5), 0 0 0 4px var(--board-border);
+        cursor: crosshair;
+        border-radius: 2px;
+        border: 2px solid var(--board-border);
+        will-change: transform;
+        display: block; flex-shrink: 0;
+      }
+
+      /* ── BOTTOM PANEL ── */
+      #bottomPanel {
+        display: flex; justify-content: space-between;
+        width: 540px; margin-top: 18px;
+        gap: 10px;
+      }
+      button {
+        font-family: 'Cinzel', serif;
+        padding: 9px 20px; font-size: 0.8rem;
+        cursor: pointer;
+        background: var(--btn-bg);
+        color: var(--btn-color);
+        border: 1px solid var(--btn-border);
+        border-radius: 3px;
+        transition: all 0.18s ease;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      button:hover {
+        background: var(--gold-dim);
+        border-color: var(--gold-glow);
+        color: var(--gold);
+        transform: translateY(-1px);
+      }
+      .btn-primary {
+        background: var(--gold-dim);
+        border-color: var(--gold);
+        color: var(--gold);
+      }
+      .btn-primary:hover {
+        background: var(--gold-glow);
+        color: var(--bg);
+        box-shadow: 0 3px 12px var(--gold-dim);
+      }
+
+      /* ── SETTINGS MODAL ── */
+      #settingsModal {
+        position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+        background: rgba(0,0,0,0.75); backdrop-filter: blur(4px);
+        display: none; justify-content: center; align-items: center; z-index: 1000;
+      }
+      .modal-content {
+        background: var(--modal-bg);
+        border: 1px solid var(--panel-border);
+        padding: 28px 36px; border-radius: 4px; width: 400px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+        max-height: 88vh; overflow-y: auto;
+        font-family: 'Crimson Text', serif;
+        color: var(--ink);
+      }
+      .modal-content::-webkit-scrollbar { width: 5px; }
+      .modal-content::-webkit-scrollbar-track { background: transparent; }
+      .modal-content::-webkit-scrollbar-thumb { background: var(--scrollbar); border-radius: 3px; }
+      .modal-content h2 {
+        font-family: 'Cinzel', serif;
+        margin-top: 0; text-align: center;
+        color: var(--gold);
+        font-size: 1.1rem; letter-spacing: 0.15em;
+        border-bottom: 1px solid var(--panel-border);
+        padding-bottom: 14px; margin-bottom: 4px;
+      }
+      .setting-row {
+        display: flex; justify-content: space-between; align-items: center;
+        margin: 13px 0; font-size: 0.95rem;
+        color: var(--ink-dim);
+      }
+      .setting-row label { font-style: italic; }
+      select, input[type="range"] {
+        padding: 5px 8px; font-size: 0.9rem;
+        background: var(--input-bg); color: var(--ink);
+        border: 1px solid var(--input-border); border-radius: 3px;
+        font-family: 'Crimson Text', serif;
+      }
+      input[type="checkbox"] {
+        accent-color: var(--gold);
+        width: 16px; height: 16px; cursor: pointer;
+      }
+      .modal-buttons {
+        display: flex; justify-content: space-between;
+        margin-top: 22px; gap: 10px;
+      }
+      .modal-buttons button { flex: 1; }
+      .json-row { display: flex; gap: 10px; margin-top: 14px; }
+      .json-row button {
+        flex: 1; padding: 7px; font-size: 0.72rem;
+        background: var(--btn-bg);
+      }
+
+      /* Theme toggle switch */
+      .theme-toggle-wrap {
+        display: flex; align-items: center; gap: 10px;
+      }
+      .theme-toggle {
+        position: relative; width: 44px; height: 22px; cursor: pointer;
+        display: inline-block;
+      }
+      .theme-toggle input { opacity: 0; width: 0; height: 0; }
+      .theme-slider {
+        position: absolute; inset: 0;
+        background: var(--input-bg);
+        border: 1px solid var(--input-border);
+        border-radius: 22px; transition: .3s;
+      }
+      .theme-slider:before {
+        content: ''; position: absolute;
+        width: 16px; height: 16px; left: 2px; top: 2px;
+        background: var(--gold); border-radius: 50%;
+        transition: .3s;
+      }
+      .theme-toggle input:checked + .theme-slider { background: var(--gold-dim); }
+      .theme-toggle input:checked + .theme-slider:before { transform: translateX(22px); }
+      .theme-label { font-size: 0.82rem; color: var(--ink-dim); font-style: italic; min-width: 50px; }
+
+      /* ── LEVEL SELECTOR ── */
+      #levelSelectorWrap { margin: 10px 0 4px; }
+      .level-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 4px; margin-top: 6px; }
+      .lvl-btn {
+        padding: 6px 2px; font-size: 0.68rem; font-weight: 600;
+        border-radius: 3px; cursor: pointer;
+        border: 1px solid var(--btn-border); text-align: center;
+        background: var(--btn-bg); color: var(--ink-dim);
+        transition: all .15s; line-height: 1.3;
+        font-family: 'Cinzel', serif; letter-spacing: 0;
+      }
+      .lvl-btn:hover { background: var(--gold-dim); color: var(--gold); transform: none; }
+      .lvl-btn.active {
+        border-color: var(--gold); color: var(--gold);
+        background: var(--gold-dim);
+      }
+      .lvl-btn.locked { opacity: .35; cursor: not-allowed; }
+      .lvl-btn.unlocked:not(.active) {
+        border-color: rgba(100,180,60,.45); color: #7aba50;
+        background: rgba(80,160,40,.07);
+      }
+
+      /* ── ACHIEVEMENT POPUP ── */
+      #achPopup {
+        position: fixed; bottom: 30px; right: 30px; z-index: 9999;
+        background: var(--bg2);
+        border: 1px solid var(--gold);
+        border-radius: 4px;
+        padding: 14px 20px 14px 16px; min-width: 260px; max-width: 320px;
+        box-shadow: 0 8px 32px rgba(0,0,0,.6), 0 0 16px var(--gold-dim);
+        display: none; opacity: 0;
+        transition: opacity .35s ease, transform .35s ease;
+        transform: translateY(20px);
+      }
+      #achPopup.show { display: flex !important; opacity: 1; transform: translateY(0); }
+      #achPopup .ach-title {
+        font-family: 'Cinzel', serif;
+        font-size: .68rem; color: var(--gold); font-weight: 700;
+        letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 4px;
+      }
+      #achPopup .ach-name { font-size: 1rem; font-weight: 600; color: var(--ink); }
+      #achPopup .ach-desc { font-size: .8rem; color: var(--ink-dim); margin-top: 3px; font-style: italic; }
+      #achPopup .ach-icon { font-size: 2rem; margin-right: 12px; flex-shrink: 0; }
+
+      /* ── ACHIEVEMENTS PANEL ── */
+      #achPanel { margin-top: 14px; border-top: 1px solid var(--panel-border); padding-top: 12px; }
+      #achPanel h3 {
+        margin: 0 0 10px;
+        font-family: 'Cinzel', serif;
+        font-size: .82rem; color: var(--gold);
+        letter-spacing: 1.5px; text-transform: uppercase;
+      }
+      .ach-list { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; max-height: 180px; overflow-y: auto; }
+      .ach-item {
+        background: var(--btn-bg); border-radius: 3px; padding: 7px 9px;
+        font-size: .75rem; border: 1px solid var(--btn-border);
+        opacity: .4; transition: opacity .2s;
+      }
+      .ach-item.done { opacity: 1; border-color: var(--gold-glow); background: var(--gold-dim); }
+      .ach-item .ai { font-size: 1.1rem; }
+      .ach-item .an { font-weight: bold; color: var(--ink); margin-left: 4px; font-size: .78rem; }
+      .ach-item .ad { color: var(--ink-faint); font-size: .7rem; margin-top: 2px; font-style: italic; }
+
+      /* ── COLOR PICK MODAL ── */
+      #colorPickModal {
+        position: fixed; inset: 0;
+        background: rgba(0,0,0,.82); backdrop-filter: blur(6px);
+        display: flex; justify-content: center; align-items: center; z-index: 2000;
+      }
+      #colorPickModal .cp-box {
+        background: var(--modal-bg);
+        border-radius: 4px; padding: 36px 40px; text-align: center;
+        border: 1px solid var(--panel-border);
+        box-shadow: 0 20px 60px rgba(0,0,0,.8); max-width: 340px;
+      }
+      #colorPickModal h2 {
+        margin: 0 0 8px; font-size: 1.2rem;
+        font-family: 'Cinzel', serif; color: var(--gold);
+        letter-spacing: 0.12em;
+      }
+      #colorPickModal p { color: var(--ink-dim); font-size: .88rem; margin: 0 0 24px; line-height: 1.6; font-style: italic; }
+      .cp-buttons { display: flex; gap: 16px; justify-content: center; }
+      .cp-btn {
+        flex: 1; padding: 16px 12px; border-radius: 3px;
+        font-size: .88rem; font-weight: 600; cursor: pointer;
+        border: 1px solid var(--btn-border); transition: all .2s;
+        display: flex; flex-direction: column; align-items: center; gap: 8px;
+        background: var(--btn-bg); color: var(--ink);
+        font-family: 'Cinzel', serif; letter-spacing: 0.06em;
+      }
+      .cp-btn:hover { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); transform: translateY(-2px); }
+      .cp-btn .cp-stone { width: 42px; height: 42px; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,.5); }
+      .cp-note { font-size: .75rem; color: var(--ink-faint); margin-top: 18px; line-height: 1.6; font-style: italic; }
+
+      /* dead stones help section */
+      #deadStonesHelp summary {
+        cursor: pointer;
+        background: var(--gold-dim);
+        border: 1px solid var(--gold-glow);
+        border-radius: 3px; padding: 8px 12px;
+        font-size: 0.82rem; color: var(--gold);
+        font-family: 'Cinzel', serif;
+        font-weight: 600; display: flex;
+        justify-content: space-between; align-items: center; list-style: none;
+        letter-spacing: 0.05em;
+      }
+      #deadStonesHelp > div {
+        background: var(--gold-dim);
+        border: 1px solid var(--panel-border);
+        border-top: none; border-radius: 0 0 3px 3px;
+        padding: 11px 13px; font-size: 0.81rem;
+        line-height: 1.55; color: var(--ink-dim);
+      }
+      #deadStonesHelp strong { color: var(--gold); }
+
+      /* ── MOBILE ── */
+      @media (max-width: 600px) {
+        body { padding: 8px 0 70px; justify-content: flex-start; }
+        #gameHeader { width: 100vw; margin-bottom: 8px; }
+        #logoGO { font-size: clamp(1.8rem, 10vw, 2.8rem); }
+        #logoSub { font-size: clamp(0.5rem, 2vw, 0.68rem); }
         #topPanel {
-            display: flex; justify-content: space-between; align-items: center; width: 580px;
-            margin-bottom: 12px; background: var(--panel-bg); padding: 12px 20px;
-            border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            box-sizing: border-box; border: 1px solid rgba(255,255,255,0.1);
+          width: 100vw; border-radius: 0;
+          padding: 8px 10px; margin-bottom: 6px;
+          flex-direction: row; flex-wrap: wrap; gap: 4px;
         }
-        .player-box { display:flex; flex-direction:column; align-items:center; min-width:110px; border-radius:10px; padding:6px 10px; border:2px solid transparent; transition:border-color .3s,box-shadow .3s; }
-        .player-box.is-human { border-color:#f1c40f; box-shadow:0 0 14px rgba(241,196,15,.35); background:rgba(241,196,15,.07); }
-        .player-box.is-active-turn { border-color:#2ed573; box-shadow:0 0 12px rgba(46,213,115,.3); }
-        .player-box.is-human.is-active-turn { border-color:#f1c40f; box-shadow:0 0 18px rgba(241,196,15,.5); }
-        .player-label { font-size:.65rem; color:#f1c40f; font-weight:bold; letter-spacing:1px; margin-bottom:2px; display:none; }
-        .player-box.is-human .player-label { display:block; }
-        .player-name { font-size: 1.1rem; font-weight: bold; letter-spacing: 1px; text-transform: uppercase;}
-        .timer { font-size: 1.8rem; font-weight: bold; margin: 5px 0; font-family: monospace; color: #fff;}
-        .prisoners { font-size: 0.85rem; color: #aaa; }
-        #colorPickModal { position:fixed; inset:0; background:rgba(0,0,0,.85); backdrop-filter:blur(6px); display:flex; justify-content:center; align-items:center; z-index:2000; }
-        #colorPickModal .cp-box { background:#22223b; border-radius:18px; padding:36px 40px; text-align:center; border:1px solid rgba(255,255,255,.12); box-shadow:0 20px 60px rgba(0,0,0,.8); max-width:340px; }
-        #colorPickModal h2 { margin:0 0 8px; font-size:1.4rem; }
-        #colorPickModal p { color:#aaa; font-size:.88rem; margin:0 0 28px; line-height:1.5; }
-        .cp-buttons { display:flex; gap:16px; justify-content:center; }
-        .cp-btn { flex:1; padding:18px 12px; border-radius:12px; font-size:1rem; font-weight:bold; cursor:pointer; border:2px solid rgba(255,255,255,.2); transition:all .2s; display:flex; flex-direction:column; align-items:center; gap:8px; background:rgba(255,255,255,.06); color:#fff; }
-        .cp-btn:hover { background:rgba(255,255,255,.14); border-color:#fff; transform:translateY(-3px); }
-        .cp-btn .cp-stone { width:42px; height:42px; border-radius:50%; box-shadow:0 4px 12px rgba(0,0,0,.5); }
-        .cp-note { font-size:.75rem; color:#888; margin-top:20px; line-height:1.5; }
-        
-        #statusContainer { text-align: center; flex-grow: 1; }
-        #status { font-size: 1.1rem; font-weight: bold; color: #fff;}
-        #cpuThinking { 
-            color: var(--accent); font-size: 0.85rem; display: none; margin-top: 5px; 
-            font-weight: bold; letter-spacing: 1px; animation: pulse 1s infinite;
-        }
-        @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
-
-        canvas {
-            background-color: var(--board-color);
-            box-shadow: 0 20px 50px rgba(0,0,0,0.6), inset 0 0 50px rgba(139, 90, 43, 0.3); 
-            cursor: crosshair; border-radius: 4px; border: 2px solid #5c3a21; will-change: transform; display: block; flex-shrink: 0;
-        }
-
-        #bottomPanel { display: flex; justify-content: space-between; width: 540px; margin-top: 20px; }
-        button {
-            padding: 10px 20px; font-size: 1rem; cursor: pointer;
-            background-color: rgba(255,255,255,0.1); color: white;
-            border: 1px solid rgba(255,255,255,0.2); border-radius: 8px;
-            transition: all 0.2s ease; font-weight: bold;
-        }
-        button:hover { background-color: rgba(255,255,255,0.2); transform: translateY(-2px); }
-        .btn-primary { background-color: var(--accent); border: none; }
-        .btn-primary:hover { background-color: #ff5c77; box-shadow: 0 4px 15px rgba(233, 69, 96, 0.4);}
-
-        #settingsModal {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(5px);
-            display: none; justify-content: center; align-items: center; z-index: 1000;
-        }
-        .modal-content {
-            background: #22223b; padding: 30px 40px; border-radius: 16px; width: 400px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.8); border: 1px solid rgba(255,255,255,0.1);
-            max-height: 88vh; overflow-y: auto;
-        }
-        .modal-content h2 { margin-top: 0; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px;}
-        .setting-row { display: flex; justify-content: space-between; align-items: center; margin: 15px 0; font-size: 1rem; }
-        select, input[type="checkbox"], input[type="range"] {
-            padding: 6px; font-size: 0.95rem; background: rgba(0,0,0,0.3); color: white; border: 1px solid #555; border-radius: 4px;
-        }
-        .modal-buttons { display: flex; justify-content: space-between; margin-top: 25px; gap: 10px;}
-        .modal-buttons button { flex: 1; }
-        .json-row { display: flex; gap: 10px; margin-top: 15px; }
-        .json-row button { flex: 1; padding: 8px; font-size: 0.9rem; background: #34495e;}
-
-        /* LEVEL SELECTOR */
-        #levelSelectorWrap { margin: 10px 0 4px; }
-        .level-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 4px; margin-top: 6px; }
-        .lvl-btn {
-            padding: 6px 2px; font-size: 0.72rem; font-weight: bold; border-radius: 6px;
-            cursor: pointer; border: 2px solid transparent; text-align: center;
-            background: rgba(255,255,255,0.07); color: #ccc; transition: all .15s;
-            line-height: 1.3;
-        }
-        .lvl-btn:hover { background: rgba(255,255,255,0.15); transform: none; }
-        .lvl-btn.active { border-color: #f1c40f; color: #f1c40f; background: rgba(241,196,15,0.12); }
-        .lvl-btn.locked { opacity: .38; cursor: not-allowed; }
-        .lvl-btn.unlocked:not(.active) { border-color: rgba(46,213,115,.4); color: #2ed573; background: rgba(46,213,115,.07); }
-
-        /* ACHIEVEMENT POPUP */
-        #achPopup {
-            position: fixed; bottom: 30px; right: 30px; z-index: 9999;
-            background: linear-gradient(135deg,#1e3a2f,#16213e);
-            border: 1px solid #f1c40f; border-radius: 14px;
-            padding: 14px 20px 14px 16px; min-width: 260px; max-width: 320px;
-            box-shadow: 0 8px 32px rgba(0,0,0,.6), 0 0 20px rgba(241,196,15,.2);
-            display: none; opacity: 0;
-            transition: opacity .35s ease, transform .35s ease;
-            transform: translateY(20px);
-        }
-        #achPopup.show { display: flex !important; opacity: 1; transform: translateY(0); }
-        #achPopup .ach-title { font-size: .72rem; color: #f1c40f; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
-        #achPopup .ach-name { font-size: 1.05rem; font-weight: bold; color: #fff; }
-        #achPopup .ach-desc { font-size: .8rem; color: #aaa; margin-top: 3px; }
-        #achPopup .ach-icon { font-size: 2rem; margin-right: 12px; flex-shrink: 0; }
-
-        /* ACHIEVEMENTS PANEL inside modal */
-        #achPanel { margin-top: 14px; border-top: 1px solid rgba(255,255,255,.1); padding-top: 12px; }
-        #achPanel h3 { margin: 0 0 10px; font-size: .9rem; color: #f1c40f; letter-spacing: 1px; text-transform: uppercase; }
-        .ach-list { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; max-height: 180px; overflow-y: auto; }
-        .ach-item {
-            background: rgba(255,255,255,.05); border-radius: 8px; padding: 7px 9px;
-            font-size: .75rem; border: 1px solid rgba(255,255,255,.08);
-            opacity: .4; transition: opacity .2s;
-        }
-        .ach-item.done { opacity: 1; border-color: rgba(241,196,15,.35); background: rgba(241,196,15,.07); }
-        .ach-item .ai { font-size: 1.1rem; }
-        .ach-item .an { font-weight: bold; color: #fff; margin-left: 4px; font-size: .78rem; }
-        .ach-item .ad { color: #888; font-size: .7rem; margin-top: 2px; }
-
-        /* TOP PANEL level badge */
-        #levelBadge {
-            font-size: .75rem; font-weight: bold; color: #f1c40f;
-            background: rgba(241,196,15,.13); border: 1px solid rgba(241,196,15,.3);
-            border-radius: 6px; padding: 2px 8px; margin-top: 4px; letter-spacing: .5px;
-        }
-
-        /* HERO HEADER */
-        #gameHeader {
-            width: 580px;
-            text-align: center;
-            margin-bottom: 10px;
-            line-height: 1;
-            user-select: none;
-        }
-        #logoGO {
-            font-family: 'Bebas Neue', 'Black Han Sans', 'Impact', sans-serif;
-            font-size: clamp(42px, 8vw, 80px);
-            font-weight: 900;
-            letter-spacing: .18em;
-            text-transform: uppercase;
-            background: linear-gradient(135deg, #f1c40f 0%, #e67e22 40%, #e94560 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            display: inline-block;
-            filter: drop-shadow(0 2px 12px rgba(233,69,96,.35));
-            transform: scaleY(1.15);
-            transform-origin: center bottom;
-        }
-        #logoGO .letter-o {
-            display: inline-block;
-            position: relative;
-        }
-        #logoGO .reversed-e {
-            display: inline-block;
-            transform: scaleX(-1) translateX(0.04em);
-            letter-spacing: 0;
-        }
-        #logoSub {
-            font-family: 'Segoe UI', sans-serif;
-            font-size: clamp(9px, 1.3vw, 13px);
-            letter-spacing: .35em;
-            text-transform: uppercase;
-            color: rgba(255,255,255,.35);
-            margin-top: -2px;
-            display: block;
-        }
-
-        /* ═══════════════════════════════════════════════
-           MOBILE RESPONSIVE  (≤ 600px)
-           ═══════════════════════════════════════════════ */
-        @media (max-width: 600px) {
-            body { padding: 6px 0 70px; justify-content: flex-start; }
-
-            #gameHeader { width: 100vw; margin-bottom: 6px; }
-            #logoGO { font-size: clamp(32px, 11vw, 54px); }
-            #logoSub { font-size: clamp(7px, 2.2vw, 11px); }
-
-            #topPanel {
-                width: 100vw; border-radius: 0;
-                padding: 8px 10px; margin-bottom: 6px;
-                flex-direction: row; flex-wrap: wrap; gap: 4px;
-            }
-            .player-box { min-width: 0; flex: 1; padding: 4px 6px; border-radius: 8px; }
-            .player-name { font-size: .85rem; }
-            .timer { font-size: 1.3rem; margin: 2px 0; }
-            .prisoners { font-size: .72rem; }
-            .player-label { font-size: .55rem; }
-            #statusContainer { order: -1; width: 100%; flex: none; text-align: center; padding-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,.08); margin-bottom: 2px; }
-            #status { font-size: .9rem; }
-            #levelBadge { font-size: .65rem; padding: 1px 6px; }
-            #cpuThinking { font-size: .75rem; }
-
-            canvas {
-                width: 100vw !important;
-                height: 100vw !important;
-                border-radius: 0;
-                border-left: none;
-                border-right: none;
-            }
-
-            #bottomPanel {
-                position: fixed; bottom: 0; left: 0; right: 0;
-                width: 100vw; margin: 0;
-                padding: 10px 16px;
-                background: rgba(26,26,46,.97);
-                border-top: 1px solid rgba(255,255,255,.1);
-                box-sizing: border-box;
-                z-index: 100;
-                backdrop-filter: blur(8px);
-            }
-            #bottomPanel button { padding: 8px 16px; font-size: .9rem; }
-
-            .modal-content { width: 96vw; padding: 20px 16px; border-radius: 12px; }
-            .level-grid { grid-template-columns: repeat(7,1fr); gap: 3px; }
-            .lvl-btn { padding: 4px 1px; font-size: .62rem; }
-
-            #colorPickModal .cp-box { padding: 24px 20px; margin: 0 12px; }
-            .cp-btn { padding: 14px 8px; }
-            .cp-btn .cp-stone { width: 34px; height: 34px; }
-
-            #achPopup { bottom: 80px; right: 10px; left: 10px; min-width: 0; }
-        }
+        .player-box { min-width: 0; flex: 1; padding: 4px 6px; }
+        .player-name { font-size: .82rem; }
+        .timer { font-size: 1.25rem; margin: 2px 0; }
+        .prisoners { font-size: .7rem; }
+        .player-label { font-size: .52rem; }
+        #statusContainer { order: -1; width: 100%; flex: none; text-align: center; padding-bottom: 4px; border-bottom: 1px solid var(--panel-border); margin-bottom: 2px; }
+        #status { font-size: .88rem; }
+        #levelBadge { font-size: .62rem; padding: 1px 6px; }
+        #cpuThinking { font-size: .72rem; }
+        canvas { width: 100vw !important; height: 100vw !important; border-radius: 0; border-left: none; border-right: none; }
+        #bottomPanel { position: fixed; bottom: 0; left: 0; right: 0; width: 100vw; margin: 0; padding: 10px 16px; background: var(--bg2); border-top: 1px solid var(--panel-border); box-sizing: border-box; z-index: 100; backdrop-filter: blur(8px); }
+        #bottomPanel button { padding: 8px 14px; font-size: .72rem; }
+        .modal-content { width: 96vw; padding: 20px 16px; }
+        .level-grid { grid-template-columns: repeat(7,1fr); gap: 3px; }
+        .lvl-btn { padding: 4px 1px; font-size: .58rem; }
+        #colorPickModal .cp-box { padding: 24px 20px; margin: 0 12px; }
+        .cp-btn { padding: 12px 8px; }
+        .cp-btn .cp-stone { width: 34px; height: 34px; }
+        #achPopup { bottom: 80px; right: 10px; left: 10px; min-width: 0; }
+      }
     </style>
 </head>
 <body>
 
     <header id="gameHeader">
-        <div id="logoGO">GO<span class="reversed-e">E</span></div>
-        <span id="logoSub">Ancient Strategy · AI Challenge</span>
+        <div id="logoGO">GO<span class="reversed-e"></span></div>
+        <div id="hdrDivider"></div>
+        <span id="logoSub">Starověká strategie · Výzva umělé inteligenci</span>
     </header>
 
     <div id="topPanel">
-        <div class="player-box" id="boxBlack">
+        <div class="player-box is-human is-active-turn" id="boxBlack">
             <div class="player-label">👤 TY</div>
             <div class="player-name">⚫ Černý</div>
             <div class="timer" id="timerBlack">05:00</div>
-            <div class="prisoners">Zajatci: <span id="prisBlack">0</span></div>
+            <div class="prisoners">Zajatci: <span id="prisBlack">13</span></div>
         </div>
         <div id="statusContainer">
-            <div id="status">Na tahu: Černý</div>
-            <div id="cpuThinking">🤖 AI analyzuje multivesmír...</div>
-            <div id="levelBadge">Level 1 – Kámen</div>
+            <div id="status" style="color: rgb(241, 196, 15);">Konec! Bílý vyhrál o 2.5 bodů. <br><small style="font-size:0.8rem">(Japonská prav. Č:20 B:22.5)</small></div>
+            <div id="cpuThinking" style="visibility: hidden;">🤖 AI analyzuje multivesmír...</div>
+            <div id="levelBadge">Level 3 – Žák</div>
         </div>
         <div class="player-box" id="boxWhite">
             <div class="player-label">👤 TY</div>
             <div class="player-name">⚪ Bílý</div>
             <div class="timer" id="timerWhite">05:00</div>
-            <div class="prisoners">Zajatci: <span id="prisWhite">0</span></div>
+            <div class="prisoners">Zajatci: <span id="prisWhite">15</span></div>
         </div>
     </div>
 
@@ -274,38 +492,38 @@
     
     <div id="bottomPanel">
         <button id="btnSettings">⚙️ Nastavení</button>
-        <button id="btnPass" class="btn-primary">Pasovat</button>
-        <button id="btnConfirmScore" class="btn-primary" style="display:none;">✅ Potvrdit skóre</button>
+        <button id="btnPass" class="btn-primary" style="display: block;">Pasovat</button>
+        <button id="btnConfirmScore" class="btn-primary" style="display: none;">✅ Potvrdit skóre</button>
     </div>
 
-    <div id="colorPickModal" style="position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(6px);display:none;justify-content:center;align-items:center;z-index:2000;pointer-events:none;">
-        <div class="cp-box" style="background:#22223b;border-radius:18px;padding:36px 40px;text-align:center;border:1px solid rgba(255,255,255,.12);box-shadow:0 20px 60px rgba(0,0,0,.8);max-width:340px;">
-            <h2 style="margin:0 0 8px;font-size:1.4rem;">🎮 Výběr barvy</h2>
-            <p style="color:#aaa;font-size:.88rem;margin:0 0 28px;line-height:1.5;">V Go začíná vždy <strong>Černý</strong>. Černý má výhodu prvního tahu &mdash; Bílý dostává <strong>6,5 bodů komi</strong> jako kompenzaci.</p>
-            <div style="display:flex;gap:16px;justify-content:center;">
-                <button id="cpPickBlack" style="flex:1;padding:18px 12px;border-radius:12px;font-size:1rem;font-weight:bold;cursor:pointer;border:2px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:#fff;display:flex;flex-direction:column;align-items:center;gap:8px;transition:all .2s;">
-                    <div style="width:42px;height:42px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#555,#0a0a0a);box-shadow:0 4px 12px rgba(0,0,0,.5);"></div>
+    <div id="colorPickModal" style="display:none; pointer-events:none;">
+        <div class="cp-box">
+            <h2>⚔ Výběr barvy</h2>
+            <p>V Go začíná vždy <strong>Černý</strong>. Černý má výhodu prvního tahu — Bílý dostává <strong>6,5 bodů komi</strong> jako kompenzaci.</p>
+            <div class="cp-buttons">
+                <button id="cpPickBlack" class="cp-btn">
+                    <div class="cp-stone" style="background:radial-gradient(circle at 35% 35%,#555,#0a0a0a);"></div>
                     <span>⚫ Černý</span>
-                    <small style="color:#aaa;font-size:.72rem;">Hraju první</small>
+                    <small style="font-size:.72rem;opacity:.7;">Hraju první</small>
                 </button>
-                <button id="cpPickWhite" style="flex:1;padding:18px 12px;border-radius:12px;font-size:1rem;font-weight:bold;cursor:pointer;border:2px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:#fff;display:flex;flex-direction:column;align-items:center;gap:8px;transition:all .2s;">
-                    <div style="width:42px;height:42px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff,#ccc);box-shadow:0 4px 12px rgba(0,0,0,.5);"></div>
+                <button id="cpPickWhite" class="cp-btn">
+                    <div class="cp-stone" style="background:radial-gradient(circle at 35% 35%,#fff,#ccc);"></div>
                     <span>⚪ Bílý</span>
-                    <small style="color:#aaa;font-size:.72rem;">Hraju druhý</small>
+                    <small style="font-size:.72rem;opacity:.7;">Hraju druhý</small>
                 </button>
             </div>
-            <div style="font-size:.75rem;color:#888;margin-top:20px;line-height:1.5;">Toto nastavení platí pro tuto partii. Příště si můžeš vybrat znovu.</div>
+            <div class="cp-note">Toto nastavení platí pro tuto partii. Příště si můžeš vybrat znovu.</div>
         </div>
     </div>
 
-    <div id="settingsModal">
+    <div id="settingsModal" style="display: none;">
         <div class="modal-content">
             <h2>Herní Menu</h2>
             
             <div class="setting-row">
                 <label>Velikost desky:</label>
                 <select id="selBoardSize">
-                    <option value="9" selected>9×9 (Začátečník)</option>
+                    <option value="9" selected="">9×9 (Začátečník)</option>
                     <option value="13">13×13 (Střední)</option>
                     <option value="19">19×19 (Plná hra)</option>
                 </select>
@@ -313,7 +531,7 @@
             <div class="setting-row">
                 <label>Soupeř:</label>
                 <select id="selCpu">
-                    <option value="cpu" selected>Umělá Inteligence (Bot)</option>
+                    <option value="cpu" selected="">Umělá Inteligence (Bot)</option>
                     <option value="human">Druhý hráč (Hotseat)</option>
                 </select>
             </div>
@@ -321,7 +539,7 @@
                 <label>Obtížnost AI:</label>
                 <select id="selDifficulty">
                     <option value="easy">Lehká (Dělá chyby)</option>
-                    <option value="medium" selected>Střední (Rychlá hra)</option>
+                    <option value="medium" selected="">Střední (Rychlá hra)</option>
                     <option value="hard">Těžká (Pomalá, Hluboká)</option>
                 </select>
             </div>
@@ -340,43 +558,54 @@
                 <label>Hlasitost efektů:</label>
                 <input type="range" id="rngVolume" min="0" max="1" step="0.1" value="0.5">
             </div>
+            <div class="setting-row">
+                <label>Vzhled:</label>
+                <div class="theme-toggle-wrap">
+                    <span class="theme-label" id="themeLabelDark">Tmavý</span>
+                    <label class="theme-toggle">
+                        <input type="checkbox" id="chkTheme">
+                        <span class="theme-slider"></span>
+                    </label>
+                    <span class="theme-label" id="themeLabelLight">Světlý</span>
+                </div>
+            </div>
             <div id="levelSelectorWrap">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-                    <label style="font-size:.85rem;color:#f1c40f;font-weight:bold;">🎮 Výběr levelu:</label>
-                    <label style="font-size:.78rem;color:#aaa;display:flex;align-items:center;gap:6px;cursor:pointer;">
+                    <label style="font-size:.85rem;color:var(--gold);font-weight:bold;font-family:'Cinzel',serif;">⚔ Výběr levelu:</label>
+                    <label style="font-size:.78rem;color:var(--ink-dim);display:flex;align-items:center;gap:6px;cursor:pointer;font-style:italic;">
                         <input type="checkbox" id="chkFreeMode">
                         <span>Volný režim</span>
                     </label>
                 </div>
-                <div class="level-grid" id="levelGrid"></div>
+                <div class="level-grid" id="levelGrid"><button class="lvl-btn unlocked" title="Čistý easy AI"><div style="font-size:1.1rem">🪨</div><div>L1</div><div style="font-size:.62rem;opacity:.8">Kámen</div></button><button class="lvl-btn unlocked" title="Každý 8. tah medium"><div style="font-size:1.1rem">🪨</div><div>L2</div><div style="font-size:.62rem;opacity:.8">Oblázek</div></button><button class="lvl-btn active" title="Každý 5. tah medium"><div style="font-size:1.1rem">📚</div><div>L3</div><div style="font-size:.62rem;opacity:.8">Žák</div></button><button class="lvl-btn locked" title="Každý 3. med + každý 10. hard"><div style="font-size:1.1rem">🎓</div><div>L4</div><div style="font-size:.62rem;opacity:.8">Student</div></button><button class="lvl-btn locked" title="Každý 2. med + každý 6. hard"><div style="font-size:1.1rem">♟️</div><div>L5</div><div style="font-size:.62rem;opacity:.8">Hráč</div></button><button class="lvl-btn locked" title="Vždy medium + každý 4. hard"><div style="font-size:1.1rem">🏯</div><div>L6</div><div style="font-size:.62rem;opacity:.8">Mistr</div></button><button class="lvl-btn locked" title="Čistý hard AI"><div style="font-size:1.1rem">🥋</div><div>L7</div><div style="font-size:.62rem;opacity:.8">Sensei</div></button></div>
             </div>
-            <div id="rowDifficultyFree" style="display:none;margin:4px 0 8px;padding:8px 10px;background:rgba(255,255,255,.04);border-radius:8px;border:1px solid rgba(255,255,255,.08);">
-                <label style="font-size:.78rem;color:#aaa;display:block;margin-bottom:5px;">Obtížnost volného režimu:</label>
-                <div class="level-grid" id="freeLevelGrid"></div>
+            <div id="rowDifficultyFree" style="display:none;margin:4px 0 8px;padding:8px 10px;background:var(--gold-dim);border-radius:3px;border:1px solid var(--panel-border);">
+                <label style="font-size:.78rem;color:var(--ink-dim);display:block;margin-bottom:5px;font-style:italic;">Obtížnost volného režimu:</label>
+                <div class="level-grid" id="freeLevelGrid"><button class="lvl-btn active" title="Čistý easy AI"><div style="font-size:1.1rem">🪨</div><div>L1</div><div style="font-size:.62rem;opacity:.8">Kámen</div></button><button class="lvl-btn unlocked" title="Každý 8. tah medium"><div style="font-size:1.1rem">🪨</div><div>L2</div><div style="font-size:.62rem;opacity:.8">Oblázek</div></button><button class="lvl-btn unlocked" title="Každý 5. tah medium"><div style="font-size:1.1rem">📚</div><div>L3</div><div style="font-size:.62rem;opacity:.8">Žák</div></button><button class="lvl-btn unlocked" title="Každý 3. med + každý 10. hard"><div style="font-size:1.1rem">🎓</div><div>L4</div><div style="font-size:.62rem;opacity:.8">Student</div></button><button class="lvl-btn unlocked" title="Každý 2. med + každý 6. hard"><div style="font-size:1.1rem">♟️</div><div>L5</div><div style="font-size:.62rem;opacity:.8">Hráč</div></button><button class="lvl-btn unlocked" title="Vždy medium + každý 4. hard"><div style="font-size:1.1rem">🏯</div><div>L6</div><div style="font-size:.62rem;opacity:.8">Mistr</div></button><button class="lvl-btn unlocked" title="Čistý hard AI"><div style="font-size:1.1rem">🥋</div><div>L7</div><div style="font-size:.62rem;opacity:.8">Sensei</div></button></div>
             </div>
 
             <div id="achPanel">
                 <h3>🏆 Achievements</h3>
-                <div class="ach-list" id="achList"></div>
+                <div class="ach-list" id="achList"><div class="ach-item done"><span class="ai">🎉</span><span class="an">První vítězství</span><div class="ad">Vyhraj svou první partii</div></div><div class="ach-item done"><span class="ai">🪨</span><span class="an">Přes Oblázek</span><div class="ad">Poraz Level 2</div></div><div class="ach-item"><span class="ai">📚</span><span class="an">Žák úspěšný</span><div class="ad">Poraz Level 3</div></div><div class="ach-item"><span class="ai">🎓</span><span class="an">Graduace</span><div class="ad">Poraz Level 4</div></div><div class="ach-item"><span class="ai">♟️</span><span class="an">Skutečný hráč</span><div class="ad">Poraz Level 5</div></div><div class="ach-item"><span class="ai">🏯</span><span class="an">Mistr poražen</span><div class="ad">Poraz Level 6</div></div><div class="ach-item"><span class="ai">🥋</span><span class="an">Sensei překonán</span><div class="ad">Poraz Level 7</div></div><div class="ach-item"><span class="ai">💥</span><span class="an">Drtivé vítězství</span><div class="ad">Vyhraj o 20+ bodů</div></div><div class="ach-item done"><span class="ai">⚔️</span><span class="an">Lovec kamenů</span><div class="ad">Zachyť 10+ kamenů v jedné partii</div></div><div class="ach-item"><span class="ai">🗺️</span><span class="an">Velký svět</span><div class="ad">Dokonči partii na 19×19</div></div><div class="ach-item"><span class="ai">🕊️</span><span class="an">Pacifista</span><div class="ad">Vyhraj bez jediného zachycení</div></div><div class="ach-item"><span class="ai">💯</span><span class="an">Stotak</span><div class="ad">Odehraj 100+ tahů v jedné partii</div></div><div class="ach-item"><span class="ai">⚡</span><span class="an">Rychlý jako blesk</span><div class="ad">Vyhraj za méně než 30 tahů</div></div><div class="ach-item"><span class="ai">🔟</span><span class="an">Veterán</span><div class="ad">Odehraj 10 partií</div></div><div class="ach-item done"><span class="ai">🔄</span><span class="an">Comeback</span><div class="ad">Vyhraj když jsi vedl o méně než 3 body po 50 tazích</div></div></div>
             </div>
 
             <div class="setting-row" style="margin-top:8px;">
                 <label>Vyhodnocovat mrtvé kameny:</label>
-                <input type="checkbox" id="chkDeadStones" checked>
+                <input type="checkbox" id="chkDeadStones" checked="">
             </div>
             <details id="deadStonesHelp" style="margin:4px 0 8px;">
-                <summary style="cursor:pointer;background:rgba(233,69,96,0.08);border:1px solid rgba(233,69,96,0.25);border-radius:8px;padding:8px 12px;font-size:0.82rem;color:#e94560;font-weight:bold;display:flex;justify-content:space-between;align-items:center;list-style:none;">
+                <summary>
                     ℹ️ Co jsou mrtvé kameny?
-                    <span style="font-size:.7rem;color:#aaa;font-weight:normal;">▼ nápověda</span>
+                    <span style="font-size:.7rem;opacity:.6;font-weight:normal;">▼ nápověda</span>
                 </summary>
-                <div style="background:rgba(233,69,96,0.06);border:1px solid rgba(233,69,96,0.2);border-top:none;border-radius:0 0 8px 8px;padding:11px 13px;font-size:0.81rem;line-height:1.55;color:#ddd;">
+                <div style="padding:11px 13px;font-size:0.81rem;line-height:1.55;">
                     Po dvou pasech označíš skupiny odsouzené k zániku — nemohou vytvořit dvě "oči" a soupeř je může kdykoliv zachytit.<br><br>
-                    <strong style="color:#f1c40f;">⚠️ Jak neprohrát vedoucí partii:</strong><br>
+                    <strong>⚠️ Jak neprohrát vedoucí partii:</strong><br>
                     • Klikni na <em>své vlastní</em> obklíčené kameny bez šance úniku.<br>
                     • <strong>Nikdy neklikej na živé skupiny</strong> — ty s alespoň dvěma vnitřními prostory.<br>
                     • Označ také mrtvé kameny <em>soupeře</em> — přičtou se ti jako zajatci.<br>
                     • Nejsi-li si jist — nic neoznačuj, klikni „Potvrdit skóre".<br><br>
-                    <span style="color:#aaa;font-size:0.78rem;">Klik = označí celou skupinu. Druhý klik = zruší označení.</span>
+                    <span style="font-size:0.78rem;opacity:.7;">Klik = označí celou skupinu. Druhý klik = zruší označení.</span>
                 </div>
             </details>
 
@@ -394,12 +623,12 @@
         </div>
     </div>
 
-    <div id="achPopup">
-        <div class="ach-icon" id="achPopIcon"></div>
+    <div id="achPopup" class="" style="display: none;">
+        <div class="ach-icon" id="achPopIcon">🪨</div>
         <div>
             <div class="ach-title">🏆 Achievement odemčen!</div>
-            <div class="ach-name" id="achPopName"></div>
-            <div class="ach-desc" id="achPopDesc"></div>
+            <div class="ach-name" id="achPopName">Přes Oblázek</div>
+            <div class="ach-desc" id="achPopDesc">Poraz Level 2</div>
         </div>
     </div>
 
@@ -1399,6 +1628,22 @@
         drawBoard();
         showColorPicker();
 
+        // ── THEME TOGGLE ──────────────────────────────────────────────────────
+        (function() {
+            const chkTheme = document.getElementById('chkTheme');
+            const html = document.documentElement;
+            // Load saved theme
+            const saved = localStorage.getItem('go_theme') || 'dark';
+            html.setAttribute('data-theme', saved);
+            chkTheme.checked = (saved === 'light');
+
+            chkTheme.addEventListener('change', () => {
+                const theme = chkTheme.checked ? 'light' : 'dark';
+                html.setAttribute('data-theme', theme);
+                localStorage.setItem('go_theme', theme);
+            });
+        })();
+
 
 
         // ── AI POLLER — jeden interval, spustí AI kdykoli je na tahu ──────
@@ -1420,5 +1665,6 @@
         <div id="debugLog"></div>
     </div>
 
-</body>
-</html>
+
+
+</body></html>
