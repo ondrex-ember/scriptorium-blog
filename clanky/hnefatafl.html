@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-<html lang="cs">
-<head>
-<meta charset="UTF-8">
+<!-- saved from url=(0046)https://blog.myscriptorium.cz/clanky/hnefatafl -->
+<html lang="cs" data-theme="light"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Hnefatafl — Vikingská hra</title>
 <style>
@@ -433,6 +433,67 @@
   .undo-btn:hover:not(:disabled) { color: var(--gold); border-color: var(--gold-glow); background: var(--gold-dim); }
   .undo-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
+  /* ── STATS ── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+    margin-bottom: 4px;
+  }
+  .stat-box {
+    background: var(--bg3);
+    border: 1px solid rgba(200,168,75,0.12);
+    border-radius: 4px;
+    padding: 8px 10px;
+  }
+  .stat-val {
+    font-family: 'Cinzel', serif;
+    font-size: 1.1rem;
+    color: var(--gold);
+    font-weight: 600;
+    line-height: 1.2;
+  }
+  .stat-lbl {
+    font-size: 0.62rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+  .variant-stat-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 10px;
+    background: var(--bg3);
+    border: 1px solid rgba(200,168,75,0.12);
+    border-radius: 4px;
+    margin-bottom: 5px;
+  }
+  .variant-stat-name {
+    font-family: 'Cinzel', serif;
+    font-size: 0.7rem;
+    color: var(--gold);
+  }
+  .variant-stat-vals {
+    font-size: 0.68rem;
+    color: var(--ink-dim);
+    text-align: right;
+  }
+  .winrate-bar {
+    height: 3px;
+    background: rgba(200,168,75,0.12);
+    border-radius: 2px;
+    margin-top: 4px;
+    overflow: hidden;
+  }
+  .winrate-fill {
+    height: 100%;
+    background: var(--gold);
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+
   @media (max-width: 480px) {
     body { padding: 1rem 0.5rem 2rem; }
   }
@@ -686,7 +747,7 @@
 
 <div class="status">
   <span class="status-side" id="s-def">⬜ Obránci: 13</span>
-  <span class="status-msg" id="s-msg">Vyberte obtížnost</span>
+  <span class="status-msg" id="s-msg">Váš tah — vyberte obránce nebo Krále</span>
   <span class="status-side right" id="s-att">⬛ Útočníci: 24</span>
 </div>
 
@@ -694,10 +755,10 @@
 
 <div class="captured-row" id="cap-row"></div>
 
-<div class="board-wrap" id="board-wrap"></div>
+<div class="board-wrap" id="board-wrap"><div class="board-row"><div id="cell-0-0" class="cell clickable" style="width:46px;height:46px;background:var(--corner);" onclick="G.onCellClick(0,0)"><span style="font-size:16px;opacity:0.5;pointer-events:none;">🏰</span></div><div id="cell-0-1" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(0,1)"></div><div id="cell-0-2" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(0,2)"></div><div id="cell-0-3" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(0,3)"><div id="piece-0-3" class="piece piece-att" style="width:30px;height:30px;top:8px;left:8px;"></div></div><div id="cell-0-4" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(0,4)"><div id="piece-0-4" class="piece piece-att" style="width:30px;height:30px;top:8px;left:8px;"></div></div><div id="cell-0-5" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(0,5)"><div id="piece-0-5" class="piece piece-att" style="width:30px;height:30px;top:8px;left:8px;"></div></div><div id="cell-0-6" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(0,6)"><div id="piece-0-6" class="piece piece-att" style="width:30px;height:30px;top:8px;left:8px;"></div></div><div id="cell-0-7" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(0,7)"><div id="piece-0-7" class="piece piece-att" style="width:30px;height:30px;top:8px;left:8px;"></div></div><div id="cell-0-8" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(0,8)"></div><div id="cell-0-9" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(0,9)"></div><div id="cell-0-10" class="cell clickable" style="width:46px;height:46px;background:var(--corner);" onclick="G.onCellClick(0,10)"><span style="font-size:16px;opacity:0.5;pointer-events:none;">🏰</span></div></div><div class="board-row"><div id="cell-1-0" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(1,0)"></div><div id="cell-1-1" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(1,1)"></div><div id="cell-1-2" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(1,2)"></div><div id="cell-1-3" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(1,3)"></div><div id="cell-1-4" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(1,4)"></div><div id="cell-1-5" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(1,5)"><div id="piece-1-5" class="piece piece-att" style="width:30px;height:30px;top:8px;left:8px;"></div></div><div id="cell-1-6" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(1,6)"></div><div id="cell-1-7" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(1,7)"></div><div id="cell-1-8" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(1,8)"></div><div id="cell-1-9" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(1,9)"></div><div id="cell-1-10" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(1,10)"></div></div><div class="board-row"><div id="cell-2-0" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(2,0)"></div><div id="cell-2-1" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(2,1)"></div><div id="cell-2-2" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(2,2)"></div><div id="cell-2-3" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(2,3)"></div><div id="cell-2-4" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(2,4)"></div><div id="cell-2-5" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(2,5)"></div><div id="cell-2-6" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(2,6)"></div><div id="cell-2-7" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(2,7)"></div><div id="cell-2-8" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(2,8)"></div><div id="cell-2-9" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(2,9)"></div><div id="cell-2-10" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(2,10)"></div></div><div class="board-row"><div id="cell-3-0" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(3,0)"><div id="piece-3-0" class="piece piece-att" style="width:30px;height:30px;top:8px;left:8px;"></div></div><div id="cell-3-1" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(3,1)"></div><div id="cell-3-2" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(3,2)"></div><div id="cell-3-3" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(3,3)"></div><div id="cell-3-4" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(3,4)"></div><div id="cell-3-5" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(3,5)"><div id="piece-3-5" class="piece piece-def" style="width:30px;height:30px;top:8px;left:8px;"></div></div><div id="cell-3-6" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(3,6)"></div><div id="cell-3-7" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(3,7)"></div><div id="cell-3-8" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(3,8)"></div><div id="cell-3-9" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(3,9)"></div><div id="cell-3-10" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(3,10)"><div id="piece-3-10" class="piece piece-att" style="width:30px;height:30px;top:8px;left:8px;"></div></div></div><div class="board-row"><div id="cell-4-0" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(4,0)"><div id="piece-4-0" class="piece piece-att" style="width:30px;height:30px;top:8px;left:8px;"></div></div><div id="cell-4-1" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(4,1)"></div><div id="cell-4-2" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(4,2)"></div><div id="cell-4-3" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(4,3)"></div><div id="cell-4-4" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(4,4)"><div id="piece-4-4" class="piece piece-def" style="width:30px;height:30px;top:8px;left:8px;"></div></div><div id="cell-4-5" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(4,5)"><div id="piece-4-5" class="piece piece-def" style="width:30px;height:30px;top:8px;left:8px;"></div></div><div id="cell-4-6" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(4,6)"><div id="piece-4-6" class="piece piece-def" style="width:30px;height:30px;top:8px;left:8px;"></div></div><div id="cell-4-7" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(4,7)"></div><div id="cell-4-8" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(4,8)"></div><div id="cell-4-9" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(4,9)"></div><div id="cell-4-10" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(4,10)"><div id="piece-4-10" class="piece piece-att" style="width:30px;height:30px;top:8px;left:8px;"></div></div></div><div class="board-row"><div id="cell-5-0" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(5,0)"><div id="piece-5-0" class="piece piece-att" style="width:30px;height:30px;top:8px;left:8px;"></div></div><div id="cell-5-1" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(5,1)"><div id="piece-5-1" class="piece piece-att" style="width:30px;height:30px;top:8px;left:8px;"></div></div><div id="cell-5-2" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(5,2)"></div><div id="cell-5-3" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(5,3)"><div id="piece-5-3" class="piece piece-def" style="width:30px;height:30px;top:8px;left:8px;"></div></div><div id="cell-5-4" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(5,4)"><div id="piece-5-4" class="piece piece-def" style="width:30px;height:30px;top:8px;left:8px;"></div></div><div id="cell-5-5" class="cell clickable" style="width:46px;height:46px;background:var(--throne);" onclick="G.onCellClick(5,5)"><div id="piece-5-5" class="piece piece-king" style="width:35px;height:35px;top:6px;left:6px;">👑</div></div><div id="cell-5-6" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(5,6)"><div id="piece-5-6" class="piece piece-def" style="width:30px;height:30px;top:8px;left:8px;"></div></div><div id="cell-5-7" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(5,7)"><div id="piece-5-7" class="piece piece-def" style="width:30px;height:30px;top:8px;left:8px;"></div></div><div id="cell-5-8" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(5,8)"></div><div id="cell-5-9" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(5,9)"><div id="piece-5-9" class="piece piece-att" style="width:30px;height:30px;top:8px;left:8px;"></div></div><div id="cell-5-10" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(5,10)"><div id="piece-5-10" class="piece piece-att" style="width:30px;height:30px;top:8px;left:8px;"></div></div></div><div class="board-row"><div id="cell-6-0" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(6,0)"><div id="piece-6-0" class="piece piece-att" style="width:30px;height:30px;top:8px;left:8px;"></div></div><div id="cell-6-1" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(6,1)"></div><div id="cell-6-2" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(6,2)"></div><div id="cell-6-3" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(6,3)"></div><div id="cell-6-4" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(6,4)"><div id="piece-6-4" class="piece piece-def" style="width:30px;height:30px;top:8px;left:8px;"></div></div><div id="cell-6-5" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(6,5)"><div id="piece-6-5" class="piece piece-def" style="width:30px;height:30px;top:8px;left:8px;"></div></div><div id="cell-6-6" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(6,6)"><div id="piece-6-6" class="piece piece-def" style="width:30px;height:30px;top:8px;left:8px;"></div></div><div id="cell-6-7" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(6,7)"></div><div id="cell-6-8" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(6,8)"></div><div id="cell-6-9" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(6,9)"></div><div id="cell-6-10" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(6,10)"><div id="piece-6-10" class="piece piece-att" style="width:30px;height:30px;top:8px;left:8px;"></div></div></div><div class="board-row"><div id="cell-7-0" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(7,0)"><div id="piece-7-0" class="piece piece-att" style="width:30px;height:30px;top:8px;left:8px;"></div></div><div id="cell-7-1" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(7,1)"></div><div id="cell-7-2" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(7,2)"></div><div id="cell-7-3" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(7,3)"></div><div id="cell-7-4" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(7,4)"></div><div id="cell-7-5" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(7,5)"><div id="piece-7-5" class="piece piece-def" style="width:30px;height:30px;top:8px;left:8px;"></div></div><div id="cell-7-6" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(7,6)"></div><div id="cell-7-7" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(7,7)"></div><div id="cell-7-8" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(7,8)"></div><div id="cell-7-9" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(7,9)"></div><div id="cell-7-10" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(7,10)"><div id="piece-7-10" class="piece piece-att" style="width:30px;height:30px;top:8px;left:8px;"></div></div></div><div class="board-row"><div id="cell-8-0" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(8,0)"></div><div id="cell-8-1" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(8,1)"></div><div id="cell-8-2" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(8,2)"></div><div id="cell-8-3" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(8,3)"></div><div id="cell-8-4" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(8,4)"></div><div id="cell-8-5" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(8,5)"></div><div id="cell-8-6" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(8,6)"></div><div id="cell-8-7" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(8,7)"></div><div id="cell-8-8" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(8,8)"></div><div id="cell-8-9" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(8,9)"></div><div id="cell-8-10" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(8,10)"></div></div><div class="board-row"><div id="cell-9-0" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(9,0)"></div><div id="cell-9-1" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(9,1)"></div><div id="cell-9-2" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(9,2)"></div><div id="cell-9-3" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(9,3)"></div><div id="cell-9-4" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(9,4)"></div><div id="cell-9-5" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(9,5)"><div id="piece-9-5" class="piece piece-att" style="width:30px;height:30px;top:8px;left:8px;"></div></div><div id="cell-9-6" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(9,6)"></div><div id="cell-9-7" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(9,7)"></div><div id="cell-9-8" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(9,8)"></div><div id="cell-9-9" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(9,9)"></div><div id="cell-9-10" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(9,10)"></div></div><div class="board-row"><div id="cell-10-0" class="cell clickable" style="width:46px;height:46px;background:var(--corner);" onclick="G.onCellClick(10,0)"><span style="font-size:16px;opacity:0.5;pointer-events:none;">🏰</span></div><div id="cell-10-1" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(10,1)"></div><div id="cell-10-2" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(10,2)"></div><div id="cell-10-3" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(10,3)"><div id="piece-10-3" class="piece piece-att" style="width:30px;height:30px;top:8px;left:8px;"></div></div><div id="cell-10-4" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(10,4)"><div id="piece-10-4" class="piece piece-att" style="width:30px;height:30px;top:8px;left:8px;"></div></div><div id="cell-10-5" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(10,5)"><div id="piece-10-5" class="piece piece-att" style="width:30px;height:30px;top:8px;left:8px;"></div></div><div id="cell-10-6" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(10,6)"><div id="piece-10-6" class="piece piece-att" style="width:30px;height:30px;top:8px;left:8px;"></div></div><div id="cell-10-7" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(10,7)"><div id="piece-10-7" class="piece piece-att" style="width:30px;height:30px;top:8px;left:8px;"></div></div><div id="cell-10-8" class="cell clickable" style="width:46px;height:46px;background:var(--board-light);" onclick="G.onCellClick(10,8)"></div><div id="cell-10-9" class="cell clickable" style="width:46px;height:46px;background:var(--board-dark);" onclick="G.onCellClick(10,9)"></div><div id="cell-10-10" class="cell clickable" style="width:46px;height:46px;background:var(--corner);" onclick="G.onCellClick(10,10)"><span style="font-size:16px;opacity:0.5;pointer-events:none;">🏰</span></div></div></div>
 
 <div class="undo-wrap" id="undo-wrap">
-  <button class="undo-btn" id="undo-btn" onclick="G.undoMove()" disabled>↩ Vrátit tah</button>
+  <button class="undo-btn" id="undo-btn" onclick="G.undoMove()" disabled="">↩ Vrátit tah</button>
 </div>
 
 <div class="legend">
@@ -705,7 +766,7 @@
 </div>
 
 <div class="action-row">
-  <button class="act-btn" onclick="document.getElementById('rules').classList.add('open')">Pravidla</button>
+  <button class="act-btn" onclick="document.getElementById(&#39;rules&#39;).classList.add(&#39;open&#39;)">Pravidla</button>
   <button class="act-btn primary" onclick="G.newGame(G.difficulty)">Nová hra</button>
 </div>
 
@@ -717,30 +778,31 @@
       <button class="close-btn" onclick="G.closeSettings()">×</button>
     </div>
     <div class="settings-tabs">
-      <button class="stab active" id="stab-variant" onclick="G.switchTab('variant')">Varianta</button>
-      <button class="stab" id="stab-diff" onclick="G.switchTab('diff')">Obtížnost</button>
+      <button class="stab" id="stab-variant" onclick="G.switchTab('variant')">Varianta</button>
+      <button class="stab active" id="stab-diff" onclick="G.switchTab('diff')">Obtížnost</button>
       <button class="stab" id="stab-theme" onclick="G.switchTab('theme')">Vzhled</button>
+      <button class="stab" id="stab-stats" onclick="G.switchTab('stats')">Statistiky</button>
     </div>
     <div class="settings-body">
 
       <!-- Tab: Varianta -->
-      <div id="tab-variant">
+      <div id="tab-variant" style="display: none;">
         <div class="s-section">
           <div class="s-label">Herní varianta</div>
           <div class="variant-grid">
-            <div class="variant-opt selected" id="vopt-tablut" onclick="G.selectVariant('tablut')">
+            <div class="variant-opt selected" id="vopt-tablut" onclick="G.selectVariant(&#39;tablut&#39;)">
               <div class="variant-name">11×11 Tablut</div>
               <div class="variant-desc">Klasická · 12 obr. vs 24 út.</div>
             </div>
-            <div class="variant-opt" id="vopt-brandubh" onclick="G.selectVariant('brandubh')">
+            <div class="variant-opt" id="vopt-brandubh" onclick="G.selectVariant(&#39;brandubh&#39;)">
               <div class="variant-name">7×7 Brandubh</div>
               <div class="variant-desc">Irská · 4 obr. vs 8 út.</div>
             </div>
-            <div class="variant-opt" id="vopt-tablut9" onclick="G.selectVariant('tablut9')">
+            <div class="variant-opt" id="vopt-tablut9" onclick="G.selectVariant(&#39;tablut9&#39;)">
               <div class="variant-name">9×9 Tablut</div>
               <div class="variant-desc">Laponská · 8 obr. vs 16 út.</div>
             </div>
-            <div class="variant-opt" id="vopt-tawlbwrdd" onclick="G.selectVariant('tawlbwrdd')">
+            <div class="variant-opt" id="vopt-tawlbwrdd" onclick="G.selectVariant(&#39;tawlbwrdd&#39;)">
               <div class="variant-name">13×13 Tawlbwrdd</div>
               <div class="variant-desc">Velšská · 12 obr. vs 24 út.</div>
             </div>
@@ -749,15 +811,15 @@
         <div class="s-section">
           <div class="s-label">Volba strany</div>
           <div class="side-grid">
-            <div class="side-opt selected" id="sopt-defender" onclick="G.selectSide('defender')">
+            <div class="side-opt selected" id="sopt-defender" onclick="G.selectSide(&#39;defender&#39;)">
               <span class="side-opt-icon">⬜</span>
               <span class="side-opt-lbl">Obránci</span>
             </div>
-            <div class="side-opt" id="sopt-attacker" onclick="G.selectSide('attacker')">
+            <div class="side-opt" id="sopt-attacker" onclick="G.selectSide(&#39;attacker&#39;)">
               <span class="side-opt-icon">⬛</span>
               <span class="side-opt-lbl">Útočníci</span>
             </div>
-            <div class="side-opt" id="sopt-random" onclick="G.selectSide('random')">
+            <div class="side-opt" id="sopt-random" onclick="G.selectSide(&#39;random&#39;)">
               <span class="side-opt-icon">🎲</span>
               <span class="side-opt-lbl">Náhodně</span>
             </div>
@@ -766,29 +828,43 @@
       </div>
 
       <!-- Tab: Obtížnost -->
-      <div id="tab-diff" style="display:none">
+      <div id="tab-diff" style="">
         <div class="s-section">
           <div class="s-label">Úroveň AI</div>
           <div class="diff-grid">
             <div class="diff-opt" id="dopt-1" onclick="G.selectDiff(1)">
               <div class="diff-radio"></div>
               <div>
-                <div class="diff-opt-title">Náhodná</div>
-                <div class="diff-opt-desc">AI volí tahy náhodně. Vhodné pro první hry a pochopení pravidel.</div>
+                <div class="diff-opt-title">Thrall</div>
+                <div class="diff-opt-desc">Otrok. Náhodné tahy — žádná strategie. Pro první seznámení s hrou.</div>
               </div>
             </div>
             <div class="diff-opt" id="dopt-2" onclick="G.selectDiff(2)">
               <div class="diff-radio"></div>
               <div>
-                <div class="diff-opt-title">Taktická</div>
-                <div class="diff-opt-desc">Pronásleduje Krále, oceňuje zajmutí. Základní strategie bez hledání dopředu.</div>
+                <div class="diff-opt-title">Karl</div>
+                <div class="diff-opt-desc">Svobodný muž. Základní taktika — pronásleduje Krále, oceňuje zajmutí.</div>
               </div>
             </div>
             <div class="diff-opt" id="dopt-3" onclick="G.selectDiff(3)">
               <div class="diff-radio"></div>
               <div>
-                <div class="diff-opt-title">Minimax</div>
-                <div class="diff-opt-desc">Alpha-beta pruning, hloubka 4. Blokuje rohy, hodnotí mobilitu. Skutečná výzva.</div>
+                <div class="diff-opt-title">Hersir</div>
+                <div class="diff-opt-desc">Válečník. Plánuje 2 tahy dopředu. Blokuje základní hrozby.</div>
+              </div>
+            </div>
+            <div class="diff-opt" id="dopt-4" onclick="G.selectDiff(4)">
+              <div class="diff-radio"></div>
+              <div>
+                <div class="diff-opt-title">Jarl</div>
+                <div class="diff-opt-desc">Šlechtic. Alpha-beta pruning, hloubka 3–4. Skutečná výzva.</div>
+              </div>
+            </div>
+            <div class="diff-opt" id="dopt-5" onclick="G.selectDiff(5)">
+              <div class="diff-radio"></div>
+              <div>
+                <div class="diff-opt-title">Konung</div>
+                <div class="diff-opt-desc">Král. Hloubka 5, rozšířený evaluátor. Pouze pro zkušené hráče.</div>
               </div>
             </div>
           </div>
@@ -801,27 +877,27 @@
               <div class="s-toggle-desc">Vrátí poslední tah hráče i odpověď AI</div>
             </div>
             <div class="s-toggle">
-              <button class="s-toggle-btn" id="undo-off" onclick="G.selectUndo(false)">Ne</button>
-              <button class="s-toggle-btn" id="undo-on"  onclick="G.selectUndo(true)">Ano</button>
+              <button class="s-toggle-btn active" id="undo-off" onclick="G.selectUndo(false)">Ne</button>
+              <button class="s-toggle-btn" id="undo-on" onclick="G.selectUndo(true)">Ano</button>
             </div>
           </div>
         </div>
       </div>
 
       <!-- Tab: Vzhled -->
-      <div id="tab-theme" style="display:none">
+      <div id="tab-theme" style="display: none;">
         <div class="s-section">
           <div class="s-label">Barevný režim</div>
           <div class="theme-grid">
-            <div class="theme-opt" id="topt-dark" onclick="G.selectTheme('dark')">
+            <div class="theme-opt" id="topt-dark" onclick="G.selectTheme(&#39;dark&#39;)">
               <div class="theme-swatch swatch-dark"></div>
               <div class="theme-lbl">Tmavý</div>
             </div>
-            <div class="theme-opt" id="topt-light" onclick="G.selectTheme('light')">
+            <div class="theme-opt selected" id="topt-light" onclick="G.selectTheme(&#39;light&#39;)">
               <div class="theme-swatch swatch-light"></div>
               <div class="theme-lbl">Světlý</div>
             </div>
-            <div class="theme-opt" id="topt-system" onclick="G.selectTheme('system')">
+            <div class="theme-opt" id="topt-system" onclick="G.selectTheme(&#39;system&#39;)">
               <div class="theme-swatch swatch-system"></div>
               <div class="theme-lbl">Systém</div>
             </div>
@@ -829,8 +905,29 @@
         </div>
       </div>
 
+      <!-- Tab: Statistiky -->
+      <div id="tab-stats" style="display:none">
+        <div class="s-section">
+          <div class="s-label">Celkové statistiky</div>
+          <div id="stats-global" class="stats-grid"></div>
+        </div>
+        <div class="s-section">
+          <div class="s-label">Per varianta</div>
+          <div id="stats-variants"></div>
+        </div>
+        <div class="s-section" style="margin-top:4px;">
+          <button class="s-btn" style="width:100%;text-align:center;color:#c0392b;border-color:rgba(192,57,43,0.3);" onclick="G.resetStats()">⚠ Smazat všechny statistiky</button>
+        </div>
+      </div>
+
     </div>
     <div class="settings-ftr">
+      <div style="display:flex;gap:6px;margin-right:auto;">
+        <button class="s-btn" onclick="G.exportSave()" title="Exportovat uloženou hru">💾 Export</button>
+        <label class="s-btn" style="cursor:pointer;" title="Importovat uloženou hru">
+          📂 Import<input type="file" accept=".json" style="display:none" onchange="G.importSave(event)">
+        </label>
+      </div>
       <button class="s-btn" onclick="G.closeSettings()">Zrušit</button>
       <button class="s-btn primary" onclick="G.applySettings()">Spustit hru</button>
     </div>
@@ -840,7 +937,7 @@
 <!-- RULES -->
 <div class="overlay" id="rules">
   <div class="rules-box">
-    <h2>Hnefatafl <button class="close-btn" onclick="document.getElementById('rules').classList.remove('open')">×</button></h2>
+    <h2>Hnefatafl <button class="close-btn" onclick="document.getElementById(&#39;rules&#39;).classList.remove(&#39;open&#39;)">×</button></h2>
     <h3>Historie</h3>
     <p>Hnefatafl ("taflová hra") hrávali Vikingové a germánské národy přibližně od 4. do 12. století, kdy ji vytlačily šachy. Varianta Tablut na desce 11×11.</p>
     <h3>Cíl</h3>
@@ -852,10 +949,10 @@
     <p>Kámen je zajat obklíčením ze dvou protilehlých stran. Rohové pole a trůn fungují jako pomocník při zajímání. Krále nelze zajmout takto — potřebuje obklíčení ze čtyř stran.</p>
     <h3>Obtížnosti AI</h3>
     <table class="diff-table">
-      <tr><td>Náhodná</td><td>AI volí tahy náhodně. Vhodné pro první hry a pochopení pravidel.</td></tr>
+      <tbody><tr><td>Náhodná</td><td>AI volí tahy náhodně. Vhodné pro první hry a pochopení pravidel.</td></tr>
       <tr><td>Taktická</td><td>Greedy: pronásleduje Krále, oceňuje zajmutí. Základní strategie bez hledání dopředu.</td></tr>
       <tr><td>Minimax</td><td>Minimax s alpha-beta ořezáváním, hloubka 4. Hodnotí útočné dráhy ke Králi, blokádu rohů, počet zajatých kamenů a mobilitu. Skutečná výzva.</td></tr>
-    </table>
+    </tbody></table>
   </div>
 </div>
 
@@ -863,7 +960,7 @@
 <div class="end-banner" id="end-banner">
   <h2 id="end-title">Konec hry</h2>
   <p id="end-sub"></p>
-  <button class="act-btn primary" onclick="G.newGame(G.difficulty);document.getElementById('end-banner').classList.remove('open')">Hrát znovu</button>
+  <button class="act-btn primary" onclick="G.newGame(G.difficulty);document.getElementById(&#39;end-banner&#39;).classList.remove(&#39;open&#39;)">Hrát znovu</button>
 </div>
 
 <script>
@@ -894,6 +991,7 @@ const G = {
     this.lastMove = null;
     this.capturedDefs = 0;
     this.capturedAtts = 0;
+    this._moveCount = 0;
 
     const v = variant || this._settingsState.variant || 'tablut';
     if (v === 'brandubh') {
@@ -946,7 +1044,7 @@ const G = {
     } else {
       this._msg('AI zahajuje…');
       document.getElementById('thinking').classList.add('visible');
-      setTimeout(() => this._aiTurn(), this.difficulty === 3 ? (this.SIZE >= 13 ? 120 : 80) : 50);
+      setTimeout(() => this._aiTurn(), this.difficulty >= 4 ? (this.SIZE >= 13 ? 150 : 100) : this.difficulty === 3 ? 60 : 40);
     }
   },
 
@@ -967,7 +1065,7 @@ const G = {
   },
 
   _updateDiffButtons() {
-    [1,2,3].forEach(i => {
+    [1,2,3,4,5].forEach(i => {
       const el = document.getElementById('dopt-'+i);
       if (el) el.classList.toggle('selected', i === this.difficulty);
     });
@@ -1097,7 +1195,7 @@ const G = {
       if (el) el.classList.toggle('selected', v === s.side);
     });
     // Diff
-    [1,2,3].forEach(i => {
+    [1,2,3,4,5].forEach(i => {
       const el = document.getElementById('dopt-'+i);
       if (el) el.classList.toggle('selected', i === s.diff);
     });
@@ -1114,10 +1212,11 @@ const G = {
   },
 
   switchTab(tab) {
-    ['variant','diff','theme'].forEach(t => {
+    ['variant','diff','theme','stats'].forEach(t => {
       document.getElementById('tab-'+t).style.display = t === tab ? '' : 'none';
       document.getElementById('stab-'+t).classList.toggle('active', t === tab);
     });
+    if (tab === 'stats') this._renderStats();
   },
 
   selectVariant(v) {
@@ -1138,7 +1237,7 @@ const G = {
 
   selectDiff(v) {
     this._settingsState.diff = v;
-    [1,2,3].forEach(i => {
+    [1,2,3,4,5].forEach(i => {
       const el = document.getElementById('dopt-'+i);
       if (el) el.classList.toggle('selected', i === v);
     });
@@ -1161,6 +1260,181 @@ const G = {
     const undoOff = document.getElementById('undo-off');
     if (undoOn)  undoOn.classList.toggle('active',  enabled);
     if (undoOff) undoOff.classList.toggle('active', !enabled);
+  },
+
+  /* ── STATS SYSTEM ─────────────────── */
+  _statsKey: 'hnefatafl_stats',
+  _variantNames: {
+    tablut: '11×11 Tablut', brandubh: '7×7 Brandubh',
+    tablut9: '9×9 Tablut', tawlbwrdd: '13×13 Tawlbwrdd'
+  },
+
+  _emptyStats() {
+    return { played: 0, wins: 0, losses: 0, totalMoves: 0, longestGame: 0 };
+  },
+
+  _loadStats() {
+    try {
+      const s = localStorage.getItem(this._statsKey);
+      return s ? JSON.parse(s) : { global: this._emptyStats(), variants: {} };
+    } catch(e) { return { global: this._emptyStats(), variants: {} }; }
+  },
+
+  _saveStats(stats) {
+    try { localStorage.setItem(this._statsKey, JSON.stringify(stats)); } catch(e) {}
+  },
+
+  _recordResult(winner) {
+    const stats = this._loadStats();
+    const variant = this._settingsState.variant || 'tablut';
+    if (!stats.variants[variant]) stats.variants[variant] = this._emptyStats();
+
+    const playerWon = winner === 'player';
+    stats.global.played++;
+    stats.global.totalMoves += this._moveCount || 0;
+    stats.global.longestGame = Math.max(stats.global.longestGame, this._moveCount || 0);
+    if (playerWon) stats.global.wins++; else stats.global.losses++;
+
+    stats.variants[variant].played++;
+    stats.variants[variant].totalMoves += this._moveCount || 0;
+    stats.variants[variant].longestGame = Math.max(stats.variants[variant].longestGame, this._moveCount || 0);
+    if (playerWon) stats.variants[variant].wins++; else stats.variants[variant].losses++;
+
+    this._saveStats(stats);
+  },
+
+  _renderStats() {
+    const stats = this._loadStats();
+    const g = stats.global;
+    const winPct = g.played > 0 ? Math.round(g.wins / g.played * 100) : 0;
+    const avgMoves = g.played > 0 ? Math.round(g.totalMoves / g.played) : 0;
+
+    document.getElementById('stats-global').innerHTML = `
+      <div class="stat-box"><div class="stat-val">${g.played}</div><div class="stat-lbl">Odehráno her</div></div>
+      <div class="stat-box"><div class="stat-val">${winPct}%</div><div class="stat-lbl">Winrate</div></div>
+      <div class="stat-box"><div class="stat-val">${g.wins} / ${g.losses}</div><div class="stat-lbl">Výhry / Prohry</div></div>
+      <div class="stat-box"><div class="stat-val">${g.longestGame}</div><div class="stat-lbl">Nejdelší hra (tahy)</div></div>
+      <div class="stat-box"><div class="stat-val">${avgMoves}</div><div class="stat-lbl">Průměr tahů</div></div>
+    `;
+
+    const variantOrder = ['tablut', 'brandubh', 'tablut9', 'tawlbwrdd'];
+    let vh = '';
+    variantOrder.forEach(key => {
+      const v = stats.variants[key];
+      if (!v || v.played === 0) return;
+      const wp = Math.round(v.wins / v.played * 100);
+      vh += `<div class="variant-stat-row">
+        <div>
+          <div class="variant-stat-name">${this._variantNames[key]}</div>
+          <div class="winrate-bar"><div class="winrate-fill" style="width:${wp}%"></div></div>
+        </div>
+        <div class="variant-stat-vals">
+          ${v.wins}W / ${v.losses}L · ${wp}%<br>
+          <span style="font-size:0.62rem;color:var(--ink-faint)">max ${v.longestGame} tahů</span>
+        </div>
+      </div>`;
+    });
+    document.getElementById('stats-variants').innerHTML = vh || '<div style="font-size:0.72rem;color:var(--ink-faint);padding:8px 0;">Žádné odehrané partie.</div>';
+  },
+
+  resetStats() {
+    if (!confirm('Smazat všechny statistiky?')) return;
+    try { localStorage.removeItem(this._statsKey); } catch(e) {}
+    this._renderStats();
+  },
+
+  /* ── AUTO-SAVE ────────────────────── */
+  _autoSaveKey: 'hnefatafl_autosave',
+
+  _autoSave() {
+    try {
+      const state = {
+        board: this._cloneBoard(),
+        currentTurn: this.currentTurn,
+        lastMove: this.lastMove,
+        capturedDefs: this.capturedDefs,
+        capturedAtts: this.capturedAtts,
+        difficulty: this.difficulty,
+        SIZE: this.SIZE,
+        THRONE: this.THRONE,
+        CORNERS: this.CORNERS,
+        playerOwner: this.playerOwner,
+        aiOwner: this.aiOwner,
+        settings: {...this._settingsState},
+        moveCount: this._moveCount || 0,
+        ts: Date.now()
+      };
+      localStorage.setItem(this._autoSaveKey, JSON.stringify(state));
+    } catch(e) {}
+  },
+
+  _autoLoad() {
+    try {
+      const raw = localStorage.getItem(this._autoSaveKey);
+      if (!raw) return false;
+      const s = JSON.parse(raw);
+      // Only restore if less than 24h old and game was active
+      if (Date.now() - s.ts > 86400000) return false;
+      if (s.currentTurn === undefined || !s.board) return false;
+
+      this.board        = s.board;
+      this.currentTurn  = s.currentTurn;
+      this.lastMove     = s.lastMove;
+      this.capturedDefs = s.capturedDefs || 0;
+      this.capturedAtts = s.capturedAtts || 0;
+      this.difficulty   = s.difficulty || 1;
+      this.SIZE         = s.SIZE || 11;
+      this.THRONE       = s.THRONE || [5,5];
+      this.CORNERS      = s.CORNERS || [[0,0],[0,10],[10,0],[10,10]];
+      this.playerOwner  = s.playerOwner || 'player';
+      this.aiOwner      = s.aiOwner || 'ai';
+      this._moveCount   = s.moveCount || 0;
+      this._settingsState = Object.assign(this._settingsState, s.settings || {});
+      this.gameActive   = true;
+      this.selectedCell = null;
+
+      this.selectTheme(this._settingsState.theme || 'dark');
+      this._cs = null;
+      this._undoStack = [];
+      this._buildBoard();
+      this._saveUndoSnapshot();
+      this._updateUndoBtn();
+      this._msg(this.currentTurn === 'player' ? 'Váš tah' : 'AI přemýšlí…');
+      if (this.currentTurn === 'ai') {
+        document.getElementById('thinking').classList.add('visible');
+        setTimeout(() => this._aiTurn(), 200);
+      }
+      return true;
+    } catch(e) { return false; }
+  },
+
+  /* ── EXPORT / IMPORT ──────────────── */
+  exportSave() {
+    const raw = localStorage.getItem(this._autoSaveKey);
+    if (!raw) { alert('Žádná uložená hra.'); return; }
+    const blob = new Blob([raw], {type: 'application/json'});
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url;
+    a.download = `hnefatafl_${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  },
+
+  importSave(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target.result);
+        localStorage.setItem(this._autoSaveKey, JSON.stringify(data));
+        this.closeSettings();
+        if (!this._autoLoad()) alert('Soubor nelze načíst — neplatný formát.');
+      } catch(err) { alert('Chyba při načítání souboru.'); }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
   },
 
   /* ── UNDO STACK ───────────────────── */
@@ -1330,6 +1604,8 @@ const G = {
 
   _endGame(winner) {
     this.gameActive = false;
+    this._recordResult(winner);
+    try { localStorage.removeItem(this._autoSaveKey); } catch(e) {}
     const win = winner === 'player';
     document.getElementById('end-title').textContent = win ? 'Obránci vítězí!' : 'Útočníci vítězí!';
     document.getElementById('end-sub').textContent = win
@@ -1347,7 +1623,7 @@ const G = {
     this._msg('AI přemýšlí…');
     this._updateState();
     document.getElementById('thinking').classList.add('visible');
-    setTimeout(() => this._aiTurn(), this.difficulty === 3 ? (this.SIZE >= 13 ? 120 : 80) : 50);
+    setTimeout(() => this._aiTurn(), this.difficulty >= 4 ? (this.SIZE >= 13 ? 150 : 100) : this.difficulty === 3 ? 60 : 40);
   },
 
   _aiTurn() {
@@ -1361,8 +1637,12 @@ const G = {
       chosen = moves[Math.floor(Math.random() * moves.length)];
     } else if (this.difficulty === 2) {
       chosen = this._greedyMove(moves);
+    } else if (this.difficulty === 3) {
+      chosen = this._minimaxMove(2);
+    } else if (this.difficulty === 4) {
+      chosen = this._minimaxMove(this.SIZE >= 13 ? 2 : 3);
     } else {
-      chosen = this._minimaxMove();
+      chosen = this._minimaxMove(this.SIZE >= 13 ? 3 : this.SIZE >= 11 ? 4 : 5);
     }
 
     // Collect which cells will be captured (before applying)
@@ -1399,10 +1679,12 @@ const G = {
     this._animateMove(chosen, capturedCells, () => {
       if (this._checkWin(chosen.toR, chosen.toC, 'ai')) { this._buildBoard(); return; }
       this.currentTurn = 'player';
+      this._moveCount = (this._moveCount || 0) + 1;
       this._msg('Váš tah');
-      this._saveUndoSnapshot(); // checkpoint after AI responded
+      this._saveUndoSnapshot();
       this._updateUndoBtn();
       this._updateState();
+      this._autoSave();
     });
   },
 
@@ -1435,19 +1717,17 @@ const G = {
     return best || moves[Math.floor(Math.random() * moves.length)];
   },
 
-  /* ── AI LEVEL 3: MINIMAX ──────────── */
-  _minimaxMove() {
+  /* ── AI LEVEL 3–5: MINIMAX ───────── */
+  _minimaxMove(depth) {
     const moves = this.getAllMoves('ai');
     let best = null, bestScore = -Infinity;
-    const alpha = -Infinity, beta = Infinity;
-    // Reduce depth for larger boards to keep response time reasonable
-    const depth = this.SIZE >= 13 ? 2 : 3;
+    const d = depth || 3;
 
     for (const move of moves) {
       const saved = this._cloneBoard();
       this._execMove(move, 'ai', this.board, false);
       const caps = this._doCaptures(move.toR, move.toC, 'ai');
-      const score = this._minimax(depth, false, -Infinity, Infinity);
+      const score = this._minimax(d, false, -Infinity, Infinity);
       this.board = saved;
       const adjusted = score + caps * 2;
       if (adjusted > bestScore) { bestScore = adjusted; best = move; }
@@ -1785,7 +2065,10 @@ G._execMove = function(move, side, board, live) {
     });
 
     // Save undo snapshot BEFORE applying player move
-    if (side === 'player') G._saveUndoSnapshot();
+    if (side === 'player') {
+      G._saveUndoSnapshot();
+      G._moveCount = (G._moveCount || 0) + 1;
+    }
 
     // Apply move to game state
     _origExecMove(move, side, G.board, true);
@@ -1823,12 +2106,17 @@ window.addEventListener('resize', () => {
 window.addEventListener('load', () => {
   G.playerOwner = 'player';
   G.aiOwner = 'ai';
+  G._moveCount = 0;
   G._loadSavedSettings();
-  G.newGame(G._settingsState.diff || 1);
+  // Try to restore auto-saved game, otherwise start fresh
+  if (!G._autoLoad()) {
+    G.newGame(G._settingsState.diff || 1);
+  }
   document.getElementById('settings-overlay').addEventListener('click', function(e) {
     if (e.target === this) G.closeSettings();
   });
 });
 </script>
-</body>
-</html>
+
+
+</body></html>
