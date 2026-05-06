@@ -3,29 +3,28 @@
 
   <url>
     <loc>https://blog.myscriptorium.cz/</loc>
-    <lastmod>2026-04-01</lastmod>
+    <lastmod>2026-04-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
 
-  <!-- Přidávej každý nový článek sem -->
   <url>
-    <loc>https://blog.myscriptorium.cz/clanky/gutenberg-fust-zrada.html</loc>
-    <lastmod>2026-04-07</lastmod>
+    <loc>https://blog.myscriptorium.cz/clanky/knihtisk-praha</loc>
+    <lastmod>2026-04-19</lastmod>
     <changefreq>never</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
-    <loc>https://blog.myscriptorium.cz/clanky/pisari-v-klasterech.html</loc>
+    <loc>https://blog.myscriptorium.cz/clanky/pisari-v-klasterech</loc>
     <lastmod>2026-04-14</lastmod>
     <changefreq>never</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
-    <loc>https://blog.myscriptorium.cz/clanky/knihtisk-praha.html</loc>
-    <lastmod>2026-04-19</lastmod>
+    <loc>https://blog.myscriptorium.cz/clanky/gutenberg-fust-zrada</loc>
+    <lastmod>2026-04-07</lastmod>
     <changefreq>never</changefreq>
     <priority>0.8</priority>
   </url>
