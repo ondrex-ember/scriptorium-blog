@@ -1,4 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap');
+/* Poznámka: IM Fell English SC (small caps) nepodporuje českou diakritiku —
+   H1 nadpisy článků proto používají IM Fell English (regular), ne SC verzi */
 
 :root {
   --ink: #1a1208;
@@ -86,7 +88,8 @@ body {
 }
 
 .site-logo {
-  font-family: 'IM Fell English SC', serif;
+  font-family: 'IM Fell English', serif;
+  font-variant: small-caps;
   font-size: 2.4rem;
   color: var(--ink);
   text-decoration: none;
@@ -116,7 +119,8 @@ body {
 }
 
 .site-nav a {
-  font-family: 'IM Fell English SC', serif;
+  font-family: 'IM Fell English', serif;
+  font-variant: small-caps;
   font-size: 0.85rem;
   color: var(--ink-faded);
   text-decoration: none;
@@ -134,7 +138,8 @@ body {
 }
 
 .section-title {
-  font-family: 'IM Fell English SC', serif;
+  font-family: 'IM Fell English', serif;
+  font-variant: small-caps;
   font-size: 0.75rem;
   letter-spacing: 0.2em;
   color: var(--gold);
@@ -173,7 +178,8 @@ body {
 .article-card-meta {
   font-size: 0.75rem;
   color: var(--gold);
-  font-family: 'IM Fell English SC', serif;
+  font-family: 'IM Fell English', serif;
+  font-variant: small-caps;
   letter-spacing: 0.08em;
   margin-bottom: 0.4rem;
 }
@@ -196,7 +202,8 @@ body {
 .article-card-tag {
   display: inline-block;
   font-size: 0.68rem;
-  font-family: 'IM Fell English SC', serif;
+  font-family: 'IM Fell English', serif;
+  font-variant: small-caps;
   letter-spacing: 0.1em;
   color: var(--red-rubricate);
   border: 1px solid var(--red-rubricate);
@@ -238,6 +245,25 @@ body {
   margin: 0 auto;
 }
 
+.article-author {
+  font-family: 'IM Fell English', serif;
+  font-variant: small-caps;
+  font-size: 0.8rem;
+  color: var(--ink-faded);
+  letter-spacing: 0.08em;
+  margin: 0.3rem 0 1rem;
+}
+
+.article-author a {
+  color: var(--ink-faded);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.article-author a:hover {
+  color: var(--red-rubricate);
+}
+
 .article-divider {
   text-align: center;
   color: var(--gold);
@@ -267,11 +293,12 @@ body {
 }
 
 .article-body h2 {
-  font-family: 'IM Fell English SC', serif;
+  font-family: 'IM Fell English', serif;
   font-size: 1.15rem;
   color: var(--red-rubricate);
   margin: 2.5rem 0 0.8rem;
   letter-spacing: 0.05em;
+  font-variant: small-caps;
 }
 
 .article-body h3 {
@@ -355,7 +382,8 @@ body {
 .site-footer p {
   font-size: 0.78rem;
   color: var(--ink-faded);
-  font-family: 'IM Fell English SC', serif;
+  font-family: 'IM Fell English', serif;
+  font-variant: small-caps;
   letter-spacing: 0.05em;
 }
 
@@ -373,7 +401,8 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  font-family: 'IM Fell English SC', serif;
+  font-family: 'IM Fell English', serif;
+  font-variant: small-caps;
   font-size: 0.8rem;
   color: var(--ink-faded);
   text-decoration: none;
@@ -495,6 +524,8 @@ body {
   .article-body h2 {
     font-size: 1.25rem;
     margin-top: 3rem;
+    font-family: 'IM Fell English', serif;
+    font-variant: small-caps;
   }
 
   .back-link {
