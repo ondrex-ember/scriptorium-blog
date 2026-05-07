@@ -1,0 +1,1810 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Medieval Board Games</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Palatino Linotype',Palatino,Georgia,serif;background:#120e06;color:#e8d5a3;min-height:100vh;overflow-x:hidden}
+
+/* ── SCREENS ── */
+.screen{display:none;min-height:100vh}
+.screen.active{display:flex}
+
+/* ── HUB ── */
+#hub{flex-direction:column;align-items:center;justify-content:center;padding:2.5rem 1rem}
+.hub-title{font-size:clamp(1.8rem,4vw,3rem);font-weight:400;letter-spacing:0.15em;text-align:center;color:#c8a84b;margin-bottom:0.3rem}
+.hub-sub{font-size:0.78rem;letter-spacing:0.3em;text-transform:uppercase;color:#6a5830;margin-bottom:0.5rem;text-align:center}
+.hub-ornament{font-size:1.1rem;color:#4a3820;margin-bottom:2.5rem;letter-spacing:0.5em}
+.games-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:1rem;width:100%;max-width:900px}
+.game-card{background:rgba(200,168,75,0.04);border:1px solid rgba(200,168,75,0.18);border-radius:5px;padding:1.6rem 1.4rem;cursor:pointer;transition:all 0.22s ease;position:relative;overflow:hidden;text-align:left}
+.game-card:not(.locked):hover{border-color:rgba(200,168,75,0.5);background:rgba(200,168,75,0.08);transform:translateY(-2px)}
+.game-card.locked{opacity:0.38;cursor:default}
+.card-icon{font-size:1.7rem;margin-bottom:0.7rem;display:block;opacity:0.9}
+.card-title{font-size:1.1rem;color:#c8a84b;margin-bottom:0.2rem;letter-spacing:0.04em}
+.card-origin{font-size:0.68rem;letter-spacing:0.18em;text-transform:uppercase;color:#6a5830;margin-bottom:0.7rem}
+.card-desc{font-size:0.82rem;line-height:1.55;color:#a08860}
+.card-badge{position:absolute;top:0.7rem;right:0.7rem;font-size:0.62rem;letter-spacing:0.1em;text-transform:uppercase;background:rgba(200,168,75,0.12);color:#c8a84b;border:1px solid rgba(200,168,75,0.28);border-radius:3px;padding:2px 7px}
+.card-badge.soon{background:rgba(80,70,50,0.2);color:#6a5830;border-color:rgba(80,70,50,0.3)}
+
+/* ── GAME SCREEN ── */
+#game-screen{flex-direction:column}
+.game-header{display:flex;align-items:center;gap:1rem;padding:0.8rem 1.2rem;border-bottom:1px solid rgba(200,168,75,0.12);flex-shrink:0}
+.back-btn{background:none;border:1px solid rgba(200,168,75,0.28);color:#c8a84b;font-family:inherit;font-size:0.78rem;letter-spacing:0.1em;padding:6px 14px;border-radius:3px;cursor:pointer;transition:all 0.18s}
+.back-btn:hover{background:rgba(200,168,75,0.1)}
+.gh-title{font-size:1.2rem;color:#c8a84b;letter-spacing:0.07em}
+.gh-sub{font-size:0.68rem;color:#6a5830;letter-spacing:0.15em;text-transform:uppercase;margin-left:auto}
+.game-body{flex:1;padding:1rem 1.2rem;display:flex;flex-direction:column;align-items:center}
+
+/* ── SHARED GAME UI ── */
+.diff-row{display:flex;gap:0.6rem;margin-bottom:0.75rem}
+.diff-btn{background:none;border:1px solid rgba(200,168,75,0.25);color:#a08860;font-family:inherit;font-size:0.77rem;letter-spacing:0.08em;padding:6px 16px;border-radius:3px;cursor:pointer;transition:all 0.18s}
+.diff-btn:hover,.diff-btn.active{background:rgba(200,168,75,0.14);border-color:rgba(200,168,75,0.55);color:#c8a84b}
+.status-bar{display:flex;justify-content:space-between;align-items:center;width:100%;max-width:540px;font-size:0.78rem;padding:6px 14px;background:rgba(200,168,75,0.05);border:1px solid rgba(200,168,75,0.1);border-radius:3px;color:#a08860;margin-bottom:0.7rem}
+.status-msg{font-style:italic;color:#c8a84b;font-size:0.76rem;text-align:center;flex:1;padding:0 8px}
+.action-row{display:flex;gap:0.6rem;margin-top:0.7rem}
+.act-btn{background:none;border:1px solid rgba(200,168,75,0.2);color:#7a6840;font-family:inherit;font-size:0.73rem;letter-spacing:0.07em;padding:6px 14px;border-radius:3px;cursor:pointer;transition:all 0.18s}
+.act-btn:hover{color:#c8a84b;border-color:rgba(200,168,75,0.4)}
+.act-btn.primary{border-color:rgba(200,168,75,0.35);color:#c8a84b}
+.legend{font-size:0.68rem;color:#6a5830;text-align:center;max-width:500px;line-height:1.6;margin-top:0.5rem}
+
+/* ── BOARDS ── */
+.board-wrap{border:2px solid #5a3518;border-radius:3px;box-shadow:0 0 25px rgba(90,53,24,0.35);overflow:hidden}
+.board-row{display:flex}
+.cell{display:flex;align-items:center;justify-content:center;cursor:pointer;border:1px solid rgba(0,0,0,0.13);transition:background 0.1s;position:relative}
+.piece-king{border-radius:50%;background:radial-gradient(circle at 35% 35%,#ffd700,#a07010);border:2px solid #8B6914;display:flex;align-items:center;justify-content:center}
+.piece-def{border-radius:50%;background:radial-gradient(circle at 35% 35%,#ece8df,#b5b0a5);border:2px solid #999}
+.piece-att{border-radius:50%;background:radial-gradient(circle at 35% 35%,#3c2a14,#150900);border:2px solid #6b3c14}
+
+/* ── BACKGAMMON ── */
+.bg-board{background:#4a2e10;padding:6px;border-radius:4px;width:100%;max-width:600px}
+.bg-half{display:flex;gap:2px;margin-bottom:3px}
+.bg-point{display:flex;flex-direction:column;align-items:center;padding:3px 2px;border-radius:2px;cursor:pointer;position:relative;min-height:80px;transition:background 0.15s}
+.bg-point.sel{outline:2px solid #c8a84b}
+.bg-checker{border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.58rem;font-weight:bold;flex-shrink:0}
+.bg-bar{background:rgba(0,0,0,0.3);border-radius:2px;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:80px;width:22px;font-size:0.6rem;color:rgba(255,255,255,0.4)}
+.bg-roll-btn{background:rgba(200,168,75,0.14);border:1px solid rgba(200,168,75,0.4);color:#c8a84b;font-family:inherit;font-size:0.82rem;letter-spacing:0.08em;padding:8px 20px;border-radius:3px;cursor:pointer;transition:all 0.18s}
+.bg-roll-btn:hover{background:rgba(200,168,75,0.24)}
+
+/* ── RITHMOMACHIA ── */
+.rith-board{display:grid;grid-template-columns:repeat(8,1fr);gap:2px;max-width:420px;width:100%}
+.rith-cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:2px;transition:background 0.12s}
+.rith-piece{border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;border:1.5px solid rgba(0,0,0,0.3)}
+
+/* ── RULES OVERLAY ── */
+#rules-overlay{display:none;position:fixed;inset:0;background:rgba(5,3,0,0.9);z-index:200;overflow-y:auto;padding:2rem 1rem}
+.rules-box{max-width:540px;margin:0 auto;background:#1a1208;border:1px solid rgba(200,168,75,0.22);border-radius:5px;padding:1.8rem}
+.rules-box h2{color:#c8a84b;font-size:1.2rem;margin-bottom:1rem;font-weight:400;display:flex;justify-content:space-between;align-items:center}
+.rules-box h3{color:#a08860;font-size:0.82rem;letter-spacing:0.12em;text-transform:uppercase;margin:1rem 0 0.3rem;font-weight:400}
+.rules-box p{font-size:0.83rem;line-height:1.65;color:#907860}
+.close-rules{background:none;border:none;color:#6a5830;font-size:1.3rem;cursor:pointer;line-height:1}
+.close-rules:hover{color:#c8a84b}
+</style>
+</head>
+<body>
+
+<!-- ══════════════ HUB ══════════════ -->
+<div id="hub" class="screen active">
+  <h1 class="hub-title">Medieval Board Games</h1>
+  <p class="hub-sub">Středověké deskové hry</p>
+  <p class="hub-ornament">✦ ✦ ✦</p>
+  <div class="games-grid">
+
+    <div class="game-card" onclick="openGame('hnefatafl')">
+      <span class="card-icon">♜</span>
+      <div class="card-badge">hratelné</div>
+      <div class="card-title">Hnefatafl</div>
+      <div class="card-origin">Vikingové · 400–1100 n.l.</div>
+      <div class="card-desc">Asymetrická hra Vikingů. Chraňte Krále a dostaňte ho do rohového pole. 11×11 deska, 2 úrovně AI.</div>
+    </div>
+
+    <div class="game-card" onclick="openGame('draughts')">
+      <span class="card-icon">◉</span>
+      <div class="card-badge">hratelné</div>
+      <div class="card-title">Dáma</div>
+      <div class="card-origin">Arabské Alquerque · 10. stol.</div>
+      <div class="card-desc">Diagonální boj o desku. Povinné skákání, dámy, tři úrovně AI včetně minimax algoritmu.</div>
+    </div>
+
+    <div class="game-card" onclick="openGame('backgammon')">
+      <span class="card-icon">⚄</span>
+      <div class="card-badge">hratelné</div>
+      <div class="card-title">Tables</div>
+      <div class="card-origin">Středověký Backgammon · 6. stol.</div>
+      <div class="card-desc">Závod 15 kamenů přes 24 polí s kostkami. Hit, bar, snášení. 2 úrovně AI.</div>
+    </div>
+
+    <div class="game-card" onclick="openGame('rithmomachia')">
+      <span class="card-icon">△</span>
+      <div class="card-badge">hratelné</div>
+      <div class="card-title">Rithmomachia</div>
+      <div class="card-origin">Středověká Evropa · 11. stol.</div>
+      <div class="card-desc">Filozofická matematická hra scholastiků. Kruhy, trojúhelníky, čtverce s hodnotami. Zajímání součtem.</div>
+    </div>
+
+    <div class="game-card" onclick="openGame('senet')">
+      <span class="card-icon">𓃭</span>
+      <div class="card-badge">hratelné</div>
+      <div class="card-title">Senet</div>
+      <div class="card-origin">Starověký Egypt · 3100 př.n.l.</div>
+      <div class="card-desc">Nejstarší desková hra světa. 30 polí, 5 kamenů, 4 hůlky-kostky. Speciální pole ☥ a ☠.</div>
+    </div>
+
+    <div class="game-card" onclick="openGame('ur')">
+      <span class="card-icon">✿</span>
+      <div class="card-badge">hratelné</div>
+      <div class="card-title">Královská hra z Uru</div>
+      <div class="card-origin">Mezopotámie · 2600 př.n.l.</div>
+      <div class="card-desc">Závod 7 kamenů po 20 polích. Rosetkové pole = extra tah. Možnost hry vs AI nebo sólový puzzle.</div>
+    </div>
+
+    <div class="game-card" onclick="openGame('karnoffel')">
+      <span class="card-icon">🎴</span>
+      <div class="card-badge">hratelné</div>
+      <div class="card-title">Karnöffel</div>
+      <div class="card-origin">Německo · 1426 n.l.</div>
+      <div class="card-desc">Nejstarší kartová hra s trumfy. 32 karet, 4 barvy, 5 triků. Trumpová barva určena náhodně.</div>
+    </div>
+
+    <div class="game-card" onclick="openGame('primero')">
+      <span class="card-icon">♠</span>
+      <div class="card-badge">hratelné</div>
+      <div class="card-title">Primero</div>
+      <div class="card-origin">Španělsko/Itálie · 16. stol.</div>
+      <div class="card-desc">Předchůdce pokeru. 4 karty, 3 kola, hodnocení ruky: flux, čtveřice, trojice, pár. Sázková hra.</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════ GAME SCREEN ══════════════ -->
+<div id="game-screen" class="screen">
+  <div class="game-header">
+    <button class="back-btn" onclick="goHub()">← Zpět</button>
+    <span class="gh-title" id="gh-title">-</span>
+    <span class="gh-sub" id="gh-sub">-</span>
+  </div>
+  <div class="game-body" id="game-body"></div>
+</div>
+
+<!-- ══════════════ RULES OVERLAY ══════════════ -->
+<div id="rules-overlay">
+  <div class="rules-box" id="rules-content"></div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   APP ROUTER
+═══════════════════════════════════════════════════ */
+let currentGame = null;
+
+function openGame(id) {
+  document.getElementById('hub').classList.remove('active');
+  document.getElementById('game-screen').classList.add('active');
+  currentGame = id;
+  const meta = GAMES[id].meta;
+  document.getElementById('gh-title').textContent = meta.title;
+  document.getElementById('gh-sub').textContent = meta.origin;
+  GAMES[id].mount(document.getElementById('game-body'));
+}
+
+function goHub() {
+  if (currentGame && GAMES[currentGame].destroy) GAMES[currentGame].destroy();
+  currentGame = null;
+  document.getElementById('game-screen').classList.remove('active');
+  document.getElementById('hub').classList.add('active');
+}
+
+function showRules(id) {
+  const r = GAMES[id].rules;
+  let h = `<h2>${r.title} <button class="close-rules" onclick="closeRules()">×</button></h2>`;
+  r.sections.forEach(s => { h += `<h3>${s.h}</h3><p>${s.p}</p>`; });
+  document.getElementById('rules-content').innerHTML = h;
+  document.getElementById('rules-overlay').style.display = 'block';
+}
+function closeRules() { document.getElementById('rules-overlay').style.display = 'none'; }
+
+/* ═══════════════════════════════════════════════════
+   HNEFATAFL
+═══════════════════════════════════════════════════ */
+const HG = {
+  gameActive:false, currentTurn:'player', selectedCell:null,
+  difficulty:1, board:[], SIZE:11,
+  THRONE:[5,5], CORNERS:[[0,0],[0,10],[10,0],[10,10]],
+  _container: null,
+
+  start(diff) {
+    this.difficulty=diff||1; this.gameActive=true; this.currentTurn='player'; this.selectedCell=null;
+    this.initBoard(); this.render(); this._msg('Váš tah — vyberte obránce nebo Krále');
+  },
+  initBoard() {
+    const S=this.SIZE; this.board=Array(S).fill(null).map(()=>Array(S).fill(null));
+    [[0,3],[0,4],[0,5],[0,6],[0,7],[1,5],[3,0],[4,0],[5,0],[6,0],[7,0],[5,1],
+     [3,10],[4,10],[5,10],[6,10],[7,10],[5,9],[10,3],[10,4],[10,5],[10,6],[10,7],[9,5]]
+     .forEach(([r,c])=>this.board[r][c]={type:'attacker',owner:'ai'});
+    [[3,5],[4,5],[5,3],[5,4],[5,6],[5,7],[6,5],[7,5],[4,4],[4,6],[6,4],[6,6]]
+     .forEach(([r,c])=>this.board[r][c]={type:'defender',owner:'player'});
+    this.board[5][5]={type:'king',owner:'player'};
+  },
+  _msg(m){ const el=document.getElementById('hg-msg'); if(el) el.textContent=m; },
+  selectCell(row,col) {
+    if(!this.gameActive||this.currentTurn!=='player') return;
+    const cell=this.board[row][col];
+    if(this.selectedCell){
+      const[sr,sc]=this.selectedCell;
+      if(row===sr&&col===sc){this.selectedCell=null;this.render();return;}
+      const mv=this.getMovesFor(sr,sc).find(m=>m.toR===row&&m.toC===col);
+      if(mv){this.executeMove(mv,'player');return;}
+      if(cell&&cell.owner==='player'){this.selectedCell=[row,col];this.render();return;}
+      this.selectedCell=null;this.render();return;
+    }
+    if(cell&&cell.owner==='player') this.selectedCell=[row,col];
+    this.render();
+  },
+  getMovesFor(row,col) {
+    const piece=this.board[row][col]; if(!piece) return [];
+    const moves=[]; const dirs=[[-1,0],[1,0],[0,-1],[0,1]];
+    dirs.forEach(([dr,dc])=>{
+      let r=row+dr,c=col+dc;
+      while(this.inBounds(r,c)){
+        if(this.board[r][c]) break;
+        if(r===this.THRONE[0]&&c===this.THRONE[1]&&piece.type!=='king') break;
+        if(this.isCorner(r,c)&&piece.type!=='king') break;
+        moves.push({fromR:row,fromC:col,toR:r,toC:c}); r+=dr;c+=dc;
+      }
+    }); return moves;
+  },
+  getAllMoves(side) {
+    const moves=[];
+    for(let r=0;r<this.SIZE;r++) for(let c=0;c<this.SIZE;c++){
+      const p=this.board[r][c]; if(p&&p.owner===side) moves.push(...this.getMovesFor(r,c));
+    } return moves;
+  },
+  isCorner(r,c){return this.CORNERS.some(([cr,cc])=>cr===r&&cc===c);},
+  inBounds(r,c){return r>=0&&r<this.SIZE&&c>=0&&c<this.SIZE;},
+  executeMove(move,side) {
+    const{fromR,fromC,toR,toC}=move;
+    this.board[toR][toC]=this.board[fromR][fromC];
+    this.board[fromR][fromC]=null; this.selectedCell=null;
+    this.checkCaptures(toR,toC,side);
+    if(this.checkWin(toR,toC,side)){this.render();return;}
+    this.endTurn(side);
+  },
+  checkCaptures(movedR,movedC,side) {
+    const opp=side==='player'?'ai':'player';
+    [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr,dc])=>{
+      const mr=movedR+dr,mc=movedC+dc,br=movedR+dr*2,bc=movedC+dc*2;
+      if(!this.inBounds(mr,mc)) return;
+      const t=this.board[mr][mc]; if(!t||t.owner!==opp||t.type==='king') return;
+      const secondSide=this.inBounds(br,bc)&&(
+        (this.board[br][bc]&&this.board[br][bc].owner===side)||
+        this.isCorner(br,bc)||(br===this.THRONE[0]&&bc===this.THRONE[1]));
+      const edgeCapture=!this.inBounds(br,bc);
+      if(secondSide||edgeCapture) this.board[mr][mc]=null;
+    });
+  },
+  isKingCaptured(kr,kc) {
+    let s=0;
+    [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr,dc])=>{
+      const r=kr+dr,c=kc+dc;
+      if(!this.inBounds(r,c)){s++;return;}
+      const cell=this.board[r][c];
+      if((cell&&cell.owner==='ai')||this.isCorner(r,c)||(r===this.THRONE[0]&&c===this.THRONE[1]))s++;
+    }); return s>=4;
+  },
+  findKing() {
+    for(let r=0;r<this.SIZE;r++) for(let c=0;c<this.SIZE;c++)
+      if(this.board[r][c]&&this.board[r][c].type==='king') return[r,c];
+    return null;
+  },
+  checkWin(movedR,movedC,side) {
+    const piece=this.board[movedR][movedC]; if(!piece) return false;
+    if(piece.type==='king'&&this.isCorner(movedR,movedC)){this.endGame('player');return true;}
+    const kp=this.findKing();
+    if(kp&&this.isKingCaptured(kp[0],kp[1])){this.endGame('ai');return true;}
+    const next=side==='player'?'ai':'player';
+    if(this.getAllMoves(next).length===0){this.endGame(side==='player'?'player':'ai');return true;}
+    return false;
+  },
+  endGame(winner) {
+    this.gameActive=false;
+    this._msg(winner==='player'?'Král uprchl! Obránci vítězí! 🎉':'Král zajat. Útočníci vítězí.');
+    this.render();
+  },
+  endTurn(side) {
+    if(side==='player'){
+      this.currentTurn='ai'; this._msg('AI přemýšlí…'); this.render();
+      setTimeout(()=>this.aiTurn(),650);
+    } else {
+      this.currentTurn='player'; this._msg('Váš tah'); this.render();
+    }
+  },
+  aiTurn() {
+    if(!this.gameActive||this.currentTurn!=='ai') return;
+    const moves=this.getAllMoves('ai');
+    if(!moves.length){this.endGame('player');this.render();return;}
+    const chosen=this.difficulty===1
+      ? moves[Math.floor(Math.random()*moves.length)]
+      : this.tacticalAiMove(moves);
+    this.executeMove(chosen,'ai');
+  },
+  tacticalAiMove(moves) {
+    const kp=this.findKing(); let best=null,bestScore=-Infinity;
+    moves.forEach(move=>{
+      let score=0;
+      if(kp){score+=(10-Math.abs(move.toR-kp[0])-Math.abs(move.toC-kp[1]));}
+      const saved=this.board.map(r=>r.map(c=>c?{...c}:null));
+      this.board[move.toR][move.toC]=this.board[move.fromR][move.fromC];
+      this.board[move.fromR][move.fromC]=null;
+      this.checkCaptures(move.toR,move.toC,'ai');
+      const kp2=this.findKing();
+      if(kp2&&this.isKingCaptured(kp2[0],kp2[1])) score+=100;
+      let cap=0;
+      for(let r=0;r<this.SIZE;r++) for(let c=0;c<this.SIZE;c++)
+        if(saved[r][c]&&saved[r][c].owner==='player'&&!this.board[r][c]) cap++;
+      score+=cap*5;
+      this.board=saved.map(r=>r.map(c=>c?{...c}:null));
+      if(score>bestScore){bestScore=score;best=move;}
+    });
+    return best||moves[Math.floor(Math.random()*moves.length)];
+  },
+  countPieces(side) {
+    let n=0;
+    for(let r=0;r<this.SIZE;r++) for(let c=0;c<this.SIZE;c++)
+      if(this.board[r][c]&&this.board[r][c].owner===side) n++;
+    return n;
+  },
+  render() {
+    const cont=document.getElementById('hg-board'); if(!cont) return;
+    const mobile=window.innerWidth<=520, cs=mobile?27:43, ks=mobile?21:33, ps=mobile?19:29;
+    let h='';
+    for(let r=0;r<this.SIZE;r++){
+      h+='<div class="board-row">';
+      for(let c=0;c<this.SIZE;c++){
+        const piece=this.board[r][c];
+        const isSel=this.selectedCell&&this.selectedCell[0]===r&&this.selectedCell[1]===c;
+        const isThrone=r===this.THRONE[0]&&c===this.THRONE[1];
+        const isCorn=this.isCorner(r,c);
+        let isVT=false;
+        if(this.selectedCell&&this.currentTurn==='player'){
+          const[sr,sc]=this.selectedCell;
+          isVT=this.getMovesFor(sr,sc).some(m=>m.toR===r&&m.toC===c);
+        }
+        let bg=(r+c)%2===0?'#6b4c2a':'#5a3d1e';
+        if(isThrone) bg='#6b1a1a';
+        if(isCorn) bg='#1e4a14';
+        if(isSel) bg='#8a6030';
+        else if(isVT) bg='rgba(100,180,80,0.42)';
+        const click=this.currentTurn==='player'&&this.gameActive;
+        h+=`<div class="cell" style="width:${cs}px;height:${cs}px;background:${bg};" ${click?`onclick="HG.selectCell(${r},${c})"`:''}>`;
+        if(!piece){
+          if(isThrone) h+=`<span style="font-size:0.75rem;opacity:0.45;">⊕</span>`;
+          else if(isCorn) h+=`<span style="font-size:0.7rem;opacity:0.55;">🏰</span>`;
+        }
+        if(piece){
+          if(piece.type==='king')
+            h+=`<div class="piece-king" style="width:${ks}px;height:${ks}px;font-size:0.85rem;${isSel?'box-shadow:0 0 10px 3px gold;':''}">👑</div>`;
+          else if(piece.type==='defender')
+            h+=`<div class="piece-def" style="width:${ps}px;height:${ps}px;${isSel?'box-shadow:0 0 8px 3px #c8a84b;':''}"></div>`;
+          else
+            h+=`<div class="piece-att" style="width:${ps}px;height:${ps}px;"></div>`;
+        }
+        h+='</div>';
+      }
+      h+='</div>';
+    }
+    cont.innerHTML=h;
+    const sd=document.getElementById('hg-def'); if(sd) sd.textContent='⬜ Obránci: '+this.countPieces('player');
+    const sa=document.getElementById('hg-att'); if(sa) sa.textContent='⬛ Útočníci: '+this.countPieces('ai');
+  }
+};
+
+/* ═══════════════════════════════════════════════════
+   DÁMA (DRAUGHTS)
+═══════════════════════════════════════════════════ */
+const DG = {
+  gameActive:false, currentTurn:'player', selectedCell:null,
+  mustJump:false, difficulty:1, playerCaptured:0, aiCaptured:0, board:[],
+
+  start(diff) {
+    this.difficulty=diff||1; this.gameActive=true; this.currentTurn='player';
+    this.selectedCell=null; this.mustJump=false; this.playerCaptured=0; this.aiCaptured=0;
+    this.initBoard(); this.render(); this._msg('Váš tah');
+  },
+  initBoard() {
+    this.board=Array(8).fill(null).map(()=>Array(8).fill(null));
+    for(let r=0;r<3;r++) for(let c=0;c<8;c++) if((r+c)%2===1) this.board[r][c]={owner:'ai',king:false};
+    for(let r=5;r<8;r++) for(let c=0;c<8;c++) if((r+c)%2===1) this.board[r][c]={owner:'player',king:false};
+  },
+  _msg(m){ const el=document.getElementById('dg-msg'); if(el) el.textContent=m; },
+  selectCell(row,col) {
+    if(!this.gameActive||this.currentTurn!=='player') return;
+    const cell=this.board[row][col];
+    if(this.selectedCell){
+      const[sr,sc]=this.selectedCell;
+      if(row===sr&&col===sc){this.selectedCell=null;this.render();return;}
+      const mv=this.getMovesFor(sr,sc).find(m=>m.toR===row&&m.toC===col);
+      if(mv){this.executeMove(mv,'player');return;}
+    }
+    if(cell&&cell.owner==='player'){
+      const jumps=this.getAllJumps('player');
+      if(jumps.length>0&&!jumps.some(m=>m.fromR===row&&m.fromC===col)){
+        this._msg('⚠️ Musíš skočit! Vyber jiný kámen.');this.render();return;
+      }
+      this.selectedCell=[row,col];
+    }
+    this.render();
+  },
+  executeMove(move,side) {
+    const{fromR,fromC,toR,toC,captures}=move;
+    const piece=this.board[fromR][fromC];
+    this.board[toR][toC]=piece; this.board[fromR][fromC]=null;
+    if(captures) captures.forEach(([cr,cc])=>{
+      this.board[cr][cc]=null;
+      if(side==='player') this.playerCaptured++; else this.aiCaptured++;
+    });
+    if(side==='player'&&toR===0) piece.king=true;
+    if(side==='ai'&&toR===7) piece.king=true;
+    this.selectedCell=null;
+    if(captures&&captures.length>0){
+      const fj=this.getJumpsFor(toR,toC,side).filter(m=>m.captures&&m.captures.length>0);
+      if(fj.length>0&&side==='player'){
+        this.selectedCell=[toR,toC]; this.mustJump=true; this._msg('⚔️ Další skok možný!'); this.render(); return;
+      }
+    }
+    this.mustJump=false;
+    this.checkWin(side);
+    if(!this.gameActive){this.render();return;}
+    this.endTurn(side);
+  },
+  endTurn(side) {
+    if(side==='player'){
+      this.currentTurn='ai'; this._msg('AI přemýšlí…'); this.render();
+      setTimeout(()=>this.aiTurn(),550);
+    } else {
+      this.currentTurn='player'; this._msg('Váš tah'); this.render();
+    }
+  },
+  getMovesFor(row,col) {
+    const jumps=this.getAllJumps('player');
+    if(jumps.length>0) return jumps.filter(m=>m.fromR===row&&m.fromC===col);
+    return this.getSimpleMovesFor(row,col,'player');
+  },
+  getSimpleMovesFor(row,col,side) {
+    const piece=this.board[row][col]; if(!piece) return [];
+    const moves=[];
+    this.getDirs(piece).forEach(([dr,dc])=>{
+      const nr=row+dr,nc=col+dc;
+      if(this.inBounds(nr,nc)&&!this.board[nr][nc]) moves.push({fromR:row,fromC:col,toR:nr,toC:nc,captures:[]});
+    }); return moves;
+  },
+  getJumpsFor(row,col,side) {
+    const piece=this.board[row][col]; if(!piece) return [];
+    const opp=side==='player'?'ai':'player'; const jumps=[];
+    this.getDirs(piece).forEach(([dr,dc])=>{
+      const mr=row+dr,mc=col+dc,jr=row+dr*2,jc=col+dc*2;
+      if(this.inBounds(jr,jc)&&this.board[mr]&&this.board[mr][mc]&&
+         this.board[mr][mc].owner===opp&&!this.board[jr][jc])
+        jumps.push({fromR:row,fromC:col,toR:jr,toC:jc,captures:[[mr,mc]]});
+    }); return jumps;
+  },
+  getAllJumps(side) {
+    const j=[];
+    for(let r=0;r<8;r++) for(let c=0;c<8;c++){
+      const p=this.board[r][c]; if(p&&p.owner===side) j.push(...this.getJumpsFor(r,c,side));
+    } return j;
+  },
+  getAllMoves(side) {
+    const j=this.getAllJumps(side); if(j.length) return j;
+    const m=[];
+    for(let r=0;r<8;r++) for(let c=0;c<8;c++){
+      const p=this.board[r][c]; if(p&&p.owner===side) m.push(...this.getSimpleMovesFor(r,c,side));
+    } return m;
+  },
+  getDirs(piece) {
+    if(piece.king) return[[-1,-1],[-1,1],[1,-1],[1,1]];
+    return piece.owner==='player'?[[-1,-1],[-1,1]]:[[1,-1],[1,1]];
+  },
+  inBounds(r,c){return r>=0&&r<8&&c>=0&&c<8;},
+  countPieces(side) {
+    let n=0; for(let r=0;r<8;r++) for(let c=0;c<8;c++) if(this.board[r][c]&&this.board[r][c].owner===side) n++;
+    return n;
+  },
+  checkWin(lastSide) {
+    const pm=this.getAllMoves('player'),am=this.getAllMoves('ai');
+    if(this.countPieces('ai')===0||(lastSide==='player'&&am.length===0)) this.endGame('player');
+    else if(this.countPieces('player')===0||(lastSide==='ai'&&pm.length===0)) this.endGame('ai');
+  },
+  endGame(winner) {
+    this.gameActive=false;
+    this._msg(winner==='player'?'Vyhráli jste! 🎉':'AI vyhrála. Zkuste znovu.');
+    this.render();
+  },
+  aiTurn() {
+    if(!this.gameActive||this.currentTurn!=='ai') return;
+    const moves=this.getAllMoves('ai');
+    if(!moves.length){this.endGame('player');this.render();return;}
+    let chosen;
+    if(this.difficulty===1){chosen=moves[Math.floor(Math.random()*moves.length)];}
+    else if(this.difficulty===2){moves.sort((a,b)=>(b.captures?.length||0)-(a.captures?.length||0));chosen=moves[0];}
+    else{chosen=this.minimaxMove();}
+    this.executeMove(chosen,'ai');
+  },
+  minimaxMove() {
+    const moves=this.getAllMoves('ai'); let best=null,bestScore=-Infinity;
+    moves.forEach(move=>{
+      const saved=this.applyTempMove(move,'ai');
+      const score=this.minimax(3,false,-Infinity,Infinity);
+      this.undoTempMove(saved);
+      if(score>bestScore){bestScore=score;best=move;}
+    }); return best||moves[0];
+  },
+  minimax(depth,isMax,alpha,beta) {
+    if(depth===0) return this.evaluate();
+    const side=isMax?'ai':'player'; const moves=this.getAllMoves(side);
+    if(!moves.length) return isMax?-1000:1000;
+    if(isMax){
+      let best=-Infinity;
+      for(const m of moves){
+        const s=this.applyTempMove(m,'ai');
+        best=Math.max(best,this.minimax(depth-1,false,alpha,beta));
+        this.undoTempMove(s); alpha=Math.max(alpha,best);
+        if(beta<=alpha) break;
+      } return best;
+    } else {
+      let best=Infinity;
+      for(const m of moves){
+        const s=this.applyTempMove(m,'player');
+        best=Math.min(best,this.minimax(depth-1,true,alpha,beta));
+        this.undoTempMove(s); beta=Math.min(beta,best);
+        if(beta<=alpha) break;
+      } return best;
+    }
+  },
+  evaluate() {
+    let score=0;
+    for(let r=0;r<8;r++) for(let c=0;c<8;c++){
+      const p=this.board[r][c]; if(!p) continue;
+      const v=p.king?3:1; if(p.owner==='ai') score+=v; else score-=v;
+    } return score;
+  },
+  applyTempMove(move,side) {
+    const saved={board:this.board.map(r=>r.map(c=>c?{...c}:null)),move};
+    const piece=this.board[move.fromR][move.fromC];
+    this.board[move.toR][move.toC]=piece; this.board[move.fromR][move.fromC]=null;
+    if(move.captures) move.captures.forEach(([r,c])=>{this.board[r][c]=null;});
+    if(side==='ai'&&move.toR===7) piece.king=true;
+    if(side==='player'&&move.toR===0) piece.king=true;
+    return saved;
+  },
+  undoTempMove(saved){this.board=saved.board;},
+  render() {
+    const cont=document.getElementById('dg-board'); if(!cont) return;
+    const mobile=window.innerWidth<=520, cs=mobile?40:52, ps=mobile?30:40;
+    let h='';
+    for(let r=0;r<8;r++){
+      h+='<div class="board-row">';
+      for(let c=0;c<8;c++){
+        const isDark=(r+c)%2===1, piece=this.board[r][c];
+        const isSel=this.selectedCell&&this.selectedCell[0]===r&&this.selectedCell[1]===c;
+        let isVT=false;
+        if(this.selectedCell&&this.currentTurn==='player'){
+          const[sr,sc]=this.selectedCell;
+          isVT=this.getMovesFor(sr,sc).some(m=>m.toR===r&&m.toC===c);
+        }
+        let bg=isDark?'#5a3518':'#e8d09a';
+        if(isSel) bg='#8a6030'; else if(isVT) bg='rgba(100,180,80,0.42)';
+        const click=isDark&&this.currentTurn==='player'&&this.gameActive;
+        h+=`<div class="cell" style="width:${cs}px;height:${cs}px;background:${bg};" ${click?`onclick="DG.selectCell(${r},${c})"`:''}>`;
+        if(piece){
+          const isP=piece.owner==='player';
+          const pbg=isP?'radial-gradient(circle at 35% 35%,#ece8df,#b5b0a5)':'radial-gradient(circle at 35% 35%,#3c2a14,#150900)';
+          const pb=isP?'#999':'#6b3c14';
+          h+=`<div style="width:${ps}px;height:${ps}px;border-radius:50%;background:${pbg};border:2px solid ${pb};display:flex;align-items:center;justify-content:center;font-size:0.9rem;${isSel?'box-shadow:0 0 8px 3px #c8a84b;':''}">`;
+          if(piece.king) h+=`👑`;
+          h+=`</div>`;
+        }
+        h+='</div>';
+      }
+      h+='</div>';
+    }
+    cont.innerHTML=h;
+    const sp=document.getElementById('dg-player'); if(sp) sp.textContent=`⬜ Vy: zajato ${this.playerCaptured}`;
+    const sa=document.getElementById('dg-ai'); if(sa) sa.textContent=`⬛ AI: zajato ${this.aiCaptured}`;
+  }
+};
+
+/* ═══════════════════════════════════════════════════
+   TABLES (BACKGAMMON)
+═══════════════════════════════════════════════════ */
+const BG = {
+  gameActive:false, currentTurn:'player', dice:[], movesLeft:[], selectedPoint:-1,
+  difficulty:1, points:[], playerBar:0, aiBar:0, playerHome:0, aiHome:0,
+  TOTAL:15,
+
+  start(diff) {
+    this.difficulty=diff||1; this.gameActive=true; this.currentTurn='player';
+    this.dice=[]; this.movesLeft=[]; this.selectedPoint=-1;
+    this.playerBar=0; this.aiBar=0; this.playerHome=0; this.aiHome=0;
+    this.setupBoard(); this.render(); this._msg('Váš tah — hoďte kostkami');
+  },
+  setupBoard() {
+    this.points=Array(24).fill(null).map(()=>({count:0,owner:null}));
+    [[0,2,'ai'],[5,5,'player'],[7,3,'player'],[11,5,'ai'],
+     [12,5,'player'],[16,3,'ai'],[18,5,'ai'],[23,2,'player']]
+     .forEach(([i,cnt,o])=>this.points[i]={count:cnt,owner:o});
+  },
+  _msg(m){const el=document.getElementById('bg-msg');if(el)el.textContent=m;},
+  rollDice() {
+    if(!this.gameActive||this.currentTurn!=='player') return;
+    if(this.movesLeft.length>0) return;
+    const d1=Math.ceil(Math.random()*6),d2=Math.ceil(Math.random()*6);
+    this.dice=[d1,d2];
+    this.movesLeft=d1===d2?[d1,d1,d1,d1]:[d1,d2];
+    this._msg(`Hod: ${d1} + ${d2}`);
+    if(!this.hasAnyMove('player')){
+      this._msg(`Hod: ${d1}+${d2} — žádný možný tah`);
+      this.movesLeft=[];
+      setTimeout(()=>this.endTurn(),1200);
+    }
+    this.render();
+  },
+  selectPoint(idx) {
+    if(!this.gameActive||this.currentTurn!=='player') return;
+    if(this.movesLeft.length===0) return;
+    if(this.playerBar>0){this.enterFromBar(idx);return;}
+    const pt=this.points[idx];
+    if(this.selectedPoint===-1){
+      if(!pt||pt.owner!=='player'||pt.count===0) return;
+      this.selectedPoint=idx;
+    } else {
+      const from=this.selectedPoint; this.selectedPoint=-1;
+      if(from===idx){this.render();return;}
+      if(!this.tryMove('player',from,idx)) this._msg('⚠️ Neplatný tah');
+    }
+    this.render();
+  },
+  enterFromBar(targetIdx) {
+    const diceVal=24-targetIdx;
+    if(!this.movesLeft.includes(diceVal)){this._msg('⚠️ Hodnota kostky nedostupná');this.render();return;}
+    const target=this.points[targetIdx];
+    if(target&&target.owner==='ai'&&target.count>=2){this._msg('🛡️ Pole obsazeno');this.render();return;}
+    if(target&&target.owner==='ai'&&target.count===1){this.aiBar++;this.points[targetIdx]={count:0,owner:null};}
+    if(!this.points[targetIdx]||this.points[targetIdx].count===0) this.points[targetIdx]={count:1,owner:'player'};
+    else this.points[targetIdx].count++;
+    this.playerBar--; this.useMove(diceVal); this.checkTurnEnd(); this.render();
+  },
+  tryMove(side,from,to) {
+    const dist=(from-to)*(side==='player'?1:-1);
+    if(dist<=0) return false;
+    if(!this.movesLeft.includes(dist)) return false;
+    const target=this.points[to]; const opp=side==='player'?'ai':'player';
+    if(target&&target.owner===opp&&target.count>=2) return false;
+    if(target&&target.owner===opp&&target.count===1){
+      if(side==='player') this.aiBar++; else this.playerBar++;
+      this.points[to]={count:0,owner:null};
+    }
+    this.points[from].count--; if(this.points[from].count===0) this.points[from].owner=null;
+    if(!this.points[to]||this.points[to].count===0) this.points[to]={count:1,owner:side};
+    else this.points[to].count++;
+    this.useMove(dist); this.checkTurnEnd(); return true;
+  },
+  bearOff(from) {
+    if(!this.canBearOff('player')) return;
+    const dist=from+1;
+    const useDice=this.movesLeft.includes(dist)?dist:this.movesLeft.find(m=>m>=dist);
+    if(!useDice) return;
+    this.points[from].count--; if(this.points[from].count===0) this.points[from].owner=null;
+    this.playerHome++; this.useMove(useDice);
+    if(this.playerHome===this.TOTAL){this.win('player');return;}
+    this.checkTurnEnd(); this.render();
+  },
+  canBearOff(side) {
+    if(side==='player'){
+      if(this.playerBar>0) return false;
+      return this.points.slice(6).reduce((s,pt)=>s+(pt&&pt.owner==='player'?pt.count:0),0)===0;
+    } else {
+      if(this.aiBar>0) return false;
+      return this.points.slice(0,18).reduce((s,pt)=>s+(pt&&pt.owner==='ai'?pt.count:0),0)===0;
+    }
+  },
+  useMove(val){const i=this.movesLeft.indexOf(val);if(i!==-1)this.movesLeft.splice(i,1);},
+  hasAnyMove(side) {
+    if(side==='player'){
+      if(this.playerBar>0) return this.movesLeft.some(d=>{const to=24-d;if(to<0||to>23)return false;const pt=this.points[to];return!pt||pt.owner!=='ai'||pt.count<2;});
+      return this.movesLeft.some(d=>this.points.some((pt,from)=>{
+        if(!pt||pt.owner!=='player'||pt.count===0) return false;
+        const to=from-d; if(to<0) return this.canBearOff('player');
+        const tpt=this.points[to]; return!tpt||tpt.owner!=='ai'||tpt.count<2;
+      }));
+    } return true;
+  },
+  checkTurnEnd() {
+    if(this.movesLeft.length===0||!this.hasAnyMove('player')){
+      this.movesLeft=[]; this.selectedPoint=-1;
+      setTimeout(()=>this.endTurn(),600);
+    }
+  },
+  endTurn() {
+    if(!this.gameActive) return;
+    if(this.currentTurn==='player'){
+      this.currentTurn='ai'; this._msg('AI tahá…'); this.render();
+      setTimeout(()=>this.aiTurn(),800);
+    } else {
+      this.currentTurn='player'; this.dice=[]; this.movesLeft=[]; this.selectedPoint=-1;
+      this._msg('Váš tah — hoďte kostkami'); this.render();
+    }
+  },
+  aiTurn() {
+    if(!this.gameActive||this.currentTurn!=='ai') return;
+    const d1=Math.ceil(Math.random()*6),d2=Math.ceil(Math.random()*6);
+    this.dice=[d1,d2]; this.movesLeft=d1===d2?[d1,d1,d1,d1]:[d1,d2];
+    this._msg(`AI: ${d1}+${d2}`); this.executeAiMoves();
+  },
+  executeAiMoves() {
+    if(!this.gameActive||this.movesLeft.length===0){this.endTurn();return;}
+    if(this.aiBar>0){
+      const d=this.movesLeft[0],to=d-1;
+      if(to>=0&&to<=23){
+        const pt=this.points[to];
+        if(!pt||pt.owner!=='player'||pt.count<2){
+          if(pt&&pt.owner==='player'&&pt.count===1){this.playerBar++;this.points[to]={count:0,owner:null};}
+          if(!this.points[to]||this.points[to].count===0) this.points[to]={count:1,owner:'ai'};
+          else this.points[to].count++;
+          this.aiBar--; this.useMove(d); this.render();
+          setTimeout(()=>this.executeAiMoves(),450); return;
+        }
+      }
+      this.movesLeft=[]; this.endTurn(); return;
+    }
+    if(this.canBearOff('ai')){
+      const d=this.movesLeft[0],from=d-1;
+      if(from>=0&&from<=5&&this.points[from]&&this.points[from].owner==='ai'&&this.points[from].count>0){
+        this.points[from].count--; if(this.points[from].count===0) this.points[from].owner=null;
+        this.aiHome++; this.useMove(d);
+        if(this.aiHome===this.TOTAL){this.win('ai');return;}
+        this.render(); setTimeout(()=>this.executeAiMoves(),450); return;
+      }
+    }
+    const moves=this.getAiMoves(); let bestMove=null;
+    if(this.difficulty===1){
+      if(moves.length) bestMove=moves[Math.floor(Math.random()*moves.length)];
+    } else {
+      moves.sort((a,b)=>{
+        let sa=a.to,sb=b.to;
+        const pta=this.points[a.to],ptb=this.points[b.to];
+        if(pta&&pta.owner==='player'&&pta.count===1) sa+=5;
+        if(ptb&&ptb.owner==='player'&&ptb.count===1) sb+=5;
+        return sb-sa;
+      }); if(moves.length) bestMove=moves[0];
+    }
+    if(!bestMove){this.movesLeft=[];this.endTurn();return;}
+    const{from,to,dist}=bestMove;
+    const target=this.points[to];
+    if(target&&target.owner==='player'&&target.count===1){this.playerBar++;this.points[to]={count:0,owner:null};}
+    this.points[from].count--; if(this.points[from].count===0) this.points[from].owner=null;
+    if(!this.points[to]||this.points[to].count===0) this.points[to]={count:1,owner:'ai'};
+    else this.points[to].count++;
+    this.useMove(dist); this.render(); setTimeout(()=>this.executeAiMoves(),450);
+  },
+  getAiMoves() {
+    const moves=[];
+    this.movesLeft.forEach(d=>{
+      this.points.forEach((pt,from)=>{
+        if(!pt||pt.owner!=='ai'||pt.count===0) return;
+        const to=from+d; if(to>23) return;
+        const tpt=this.points[to]; if(tpt&&tpt.owner==='player'&&tpt.count>=2) return;
+        moves.push({from,to,dist:d});
+      });
+    }); return moves;
+  },
+  win(side) {
+    this.gameActive=false;
+    this._msg(side==='player'?'Snesli jste všechny kameny! Vyhráváte! 🎉':'AI snesla všechny kameny. Prohráli jste.');
+    this.render();
+  },
+  render() {
+    const cont=document.getElementById('bg-board'); if(!cont) return;
+    const mobile=window.innerWidth<=520, pw=mobile?30:40, ph=mobile?22:28;
+    const pointW=(pw+4)+'px';
+
+    const renderHalf=(indices,dir)=>{
+      let h=`<div class="bg-half" style="align-items:${dir==='top'?'flex-start':'flex-end'};">`;
+      for(let i=0;i<12;i++){
+        if(i===6) h+=`<div class="bg-bar">${this.playerBar>0?`<div class="bg-checker" style="width:${ph}px;height:${ph}px;background:#ece8df;border:2px solid #999;margin:1px;">${this.playerBar>1?this.playerBar:''}</div>`:''}${this.aiBar>0?`<div class="bg-checker" style="width:${ph}px;height:${ph}px;background:#3c2a14;border:2px solid #6b3c14;margin:1px;">${this.aiBar>1?this.aiBar:''}</div>`:''}⊕</div>`;
+        const idx=indices[i];
+        const pt=this.points[idx];
+        const isTriP=(dir==='top'?idx%2===0:idx%2===1);
+        const bg=isTriP?'#8B1A1A':'#d4a96a';
+        const isSel=this.selectedPoint===idx;
+        const canSel=this.currentTurn==='player'&&this.movesLeft.length>0&&pt&&pt.owner==='player'&&pt.count>0&&this.playerBar===0;
+        const canTgt=this.currentTurn==='player'&&this.selectedPoint!==-1&&this.movesLeft.length>0;
+        const bearPt=this.canBearOff('player')&&pt&&pt.owner==='player'&&pt.count>0&&idx<=5;
+        const clickFn=bearPt?`BG.bearOff(${idx})`:(canSel||canTgt)?`BG.selectPoint(${idx})`:'';
+        h+=`<div class="bg-point${isSel?' sel':''}" style="width:${pointW};background:${bg};flex-direction:${dir==='top'?'column':'column-reverse'};" onclick="${clickFn}">`;
+        h+=`<div style="font-size:0.52rem;color:rgba(0,0,0,0.4);${dir==='top'?'margin-top:2px':'margin-bottom:2px'}">${idx+1}</div>`;
+        if(pt&&pt.count>0){
+          const pcolor=pt.owner==='player'?'#ece8df':'#3c2a14';
+          const pborder=pt.owner==='player'?'#999':'#6b3c14';
+          const ptcolor=pt.owner==='player'?'#333':'#c8a84b';
+          const show=Math.min(pt.count,5);
+          for(let k=0;k<show;k++){
+            h+=`<div class="bg-checker" style="width:${ph}px;height:${ph}px;background:${pcolor};border:2px solid ${pborder};color:${ptcolor};margin:1px;">`;
+            if(k===show-1&&pt.count>5) h+=pt.count;
+            h+=`</div>`;
+          }
+        }
+        h+=`</div>`;
+      }
+      h+=`</div>`; return h;
+    };
+
+    const topIdx=[12,13,14,15,16,17,18,19,20,21,22,23];
+    const botIdx=[11,10,9,8,7,6,5,4,3,2,1,0];
+    let h=renderHalf(topIdx,'top')+renderHalf(botIdx,'bottom');
+    cont.innerHTML=h;
+
+    const sp=document.getElementById('bg-player');
+    if(sp) sp.textContent=`👤 Vy: ${this.playerHome}/${this.TOTAL}${this.playerBar>0?' · Bar:'+this.playerBar:''}`;
+    const sa=document.getElementById('bg-ai');
+    if(sa) sa.textContent=`🤖 AI: ${this.aiHome}/${this.TOTAL}${this.aiBar>0?' · Bar:'+this.aiBar:''}`;
+    const rb=document.getElementById('bg-roll');
+    if(rb) rb.style.display=(this.gameActive&&this.currentTurn==='player'&&this.movesLeft.length===0)?'inline-block':'none';
+    const ml=document.getElementById('bg-moves');
+    if(ml) ml.textContent=this.movesLeft.length>0?`🎲 Zbývá: ${this.movesLeft.join(', ')}`:( this.currentTurn==='ai'?'AI tahá…':'');
+  }
+};
+
+/* ═══════════════════════════════════════════════════
+   RITHMOMACHIA
+═══════════════════════════════════════════════════ */
+const RM = {
+  gameActive:false, board:[], whitePieces:[], blackPieces:[],
+  currentTurn:'white', selectedPiece:null, validMoves:[],
+  points:{white:0,black:0}, captured:{white:[],black:[]},
+  pieceTypes:{
+    circle:{symbol:'○',movement:1,shape:'orthogonal'},
+    triangle:{symbol:'△',movement:2,shape:'diagonal'},
+    square:{symbol:'□',movement:3,shape:'any'}
+  },
+  startingSetup:{
+    white:[
+      {type:'square',value:4,pos:[1,0]},{type:'triangle',value:9,pos:[2,0]},
+      {type:'square',value:9,pos:[3,0]},{type:'triangle',value:16,pos:[4,0]},
+      {type:'square',value:16,pos:[5,0]},
+      {type:'circle',value:2,pos:[0,1]},{type:'circle',value:4,pos:[1,1]},
+      {type:'circle',value:6,pos:[2,1]},{type:'circle',value:8,pos:[3,1]},
+      {type:'circle',value:10,pos:[4,1]},{type:'circle',value:12,pos:[5,1]},
+      {type:'circle',value:14,pos:[6,1]}
+    ],
+    black:[
+      {type:'square',value:1,pos:[1,7]},{type:'triangle',value:9,pos:[2,7]},
+      {type:'square',value:4,pos:[3,7]},{type:'triangle',value:25,pos:[4,7]},
+      {type:'square',value:9,pos:[5,7]},
+      {type:'circle',value:1,pos:[0,6]},{type:'circle',value:3,pos:[1,6]},
+      {type:'circle',value:5,pos:[2,6]},{type:'circle',value:7,pos:[3,6]},
+      {type:'circle',value:9,pos:[4,6]},{type:'circle',value:11,pos:[5,6]},
+      {type:'circle',value:13,pos:[6,6]}
+    ]
+  },
+  start() {
+    this.gameActive=true; this.currentTurn='white'; this.selectedPiece=null; this.validMoves=[];
+    this.board=Array(8).fill(null).map(()=>Array(8).fill(null));
+    this.whitePieces=JSON.parse(JSON.stringify(this.startingSetup.white));
+    this.blackPieces=JSON.parse(JSON.stringify(this.startingSetup.black));
+    this.whitePieces.forEach((p,i)=>{p.id=i;p.player='white';});
+    this.blackPieces.forEach((p,i)=>{p.id=i;p.player='black';});
+    [...this.whitePieces,...this.blackPieces].forEach(p=>this.board[p.pos[1]][p.pos[0]]=p);
+    this.points={white:0,black:0}; this.captured={white:[],black:[]};
+    this.render(); this._msg('Váš tah — vyberte figurku');
+  },
+  _msg(m){const el=document.getElementById('rm-msg');if(el)el.textContent=m;},
+  selectPiece(x,y) {
+    if(!this.gameActive||this.currentTurn!=='white') return;
+    const piece=this.board[y][x];
+    if(!piece){if(this.selectedPiece) this.attemptMove(x,y); return;}
+    if(piece.player!=='white'){this._msg('⚠️ Není váše figurka.');return;}
+    this.selectedPiece=piece; this.validMoves=this.calcMoves(piece); this.render();
+    if(!this.validMoves.length) this._msg('⚠️ Žádný možný tah');
+  },
+  calcMoves(piece) {
+    const moves=[],[px,py]=piece.pos,info=this.pieceTypes[piece.type],range=info.movement;
+    const addDir=(dirs)=>{dirs.forEach(([dx,dy])=>{
+      for(let i=1;i<=range;i++){
+        const nx=px+dx*i,ny=py+dy*i;
+        if(nx<0||nx>=8||ny<0||ny>=8) break;
+        if(this.board[ny][nx]) break;
+        moves.push([nx,ny]);
+      }
+    });};
+    if(info.shape==='orthogonal') addDir([[0,-1],[0,1],[1,0],[-1,0]]);
+    else if(info.shape==='diagonal') addDir([[1,-1],[1,1],[-1,-1],[-1,1]]);
+    else addDir([[0,-1],[0,1],[1,0],[-1,0],[1,-1],[1,1],[-1,-1],[-1,1]]);
+    return moves;
+  },
+  attemptMove(x,y) {
+    if(!this.selectedPiece) return;
+    if(!this.validMoves.some(([mx,my])=>mx===x&&my===y)){this._msg('⚠️ Neplatný tah');return;}
+    const[oldX,oldY]=this.selectedPiece.pos;
+    this.board[oldY][oldX]=null; this.board[y][x]=this.selectedPiece;
+    this.selectedPiece.pos=[x,y];
+    this.checkCaptures(this.selectedPiece);
+    this.selectedPiece=null; this.validMoves=[];
+    if(this.checkVictory()) return;
+    this.endTurn();
+  },
+  checkCaptures(piece) {
+    const[px,py]=piece.pos;
+    const dirs=[[0,-1],[0,1],[1,0],[-1,0],[1,-1],[1,1],[-1,-1],[-1,1]];
+    const adjEnemies=[];
+    dirs.forEach(([dx,dy])=>{
+      const nx=px+dx,ny=py+dy;
+      if(nx>=0&&nx<8&&ny>=0&&ny<8){const t=this.board[ny][nx];if(t&&t.player!==piece.player)adjEnemies.push(t);}
+    });
+    adjEnemies.forEach(enemy=>{
+      let sum=piece.value;
+      dirs.forEach(([dx,dy])=>{
+        const nx=px+dx,ny=py+dy;
+        if(nx>=0&&nx<8&&ny>=0&&ny<8){const ally=this.board[ny][nx];if(ally&&ally.player===piece.player&&ally!==piece)sum+=ally.value;}
+      });
+      if(sum===enemy.value) this.capturePiece(enemy);
+    });
+  },
+  capturePiece(piece) {
+    const[x,y]=piece.pos; this.board[y][x]=null;
+    if(piece.player==='white'){
+      const i=this.whitePieces.findIndex(p=>p.id===piece.id);
+      if(i>=0){this.whitePieces.splice(i,1);this.captured.black.push(piece);this.points.black+=piece.value;}
+    } else {
+      const i=this.blackPieces.findIndex(p=>p.id===piece.id);
+      if(i>=0){this.blackPieces.splice(i,1);this.captured.white.push(piece);this.points.white+=piece.value;}
+    }
+    this._msg(`⚔️ Zajato: ${piece.type} (${piece.value})`);
+  },
+  checkVictory() {
+    const wt=this.whitePieces.filter(p=>p.type==='triangle').length;
+    const bt=this.blackPieces.filter(p=>p.type==='triangle').length;
+    if(wt===0){this.endGame('black','všechny bílé trojúhelníky zajaty');return true;}
+    if(bt===0){this.endGame('white','všechny černé trojúhelníky zajaty');return true;}
+    if(this.points.white>=100){this.endGame('white','100 bodů dosaženo');return true;}
+    if(this.points.black>=100){this.endGame('black','100 bodů dosaženo');return true;}
+    return false;
+  },
+  endGame(winner,reason) {
+    this.gameActive=false;
+    this._msg(winner==='white'?`Vyhráváte! ${reason} 🎉`:`AI vyhrála: ${reason}`);
+    this.render();
+  },
+  endTurn() {
+    this.currentTurn=this.currentTurn==='white'?'black':'white';
+    this.render();
+    if(this.currentTurn==='black') setTimeout(()=>this.aiTurn(),800);
+  },
+  aiTurn() {
+    if(!this.gameActive) return;
+    let bestMove=null,bestScore=-Infinity;
+    this.blackPieces.forEach(piece=>{
+      this.calcMoves(piece).forEach(([x,y])=>{
+        let score=(7-y)*2;
+        if(piece.type==='triangle') score+=10;
+        score+=Math.random()*5;
+        if(score>bestScore){bestScore=score;bestMove={piece,x,y};}
+      });
+    });
+    if(bestMove){
+      const{piece,x,y}=bestMove;
+      const[ox,oy]=piece.pos;
+      this.board[oy][ox]=null; this.board[y][x]=piece; piece.pos=[x,y];
+      this.checkCaptures(piece);
+    }
+    this.checkVictory(); this.endTurn();
+  },
+  render() {
+    const cont=document.getElementById('rm-board'); if(!cont) return;
+    const mobile=window.innerWidth<=520,cs=mobile?36:48,ps=mobile?26:36;
+    let h='';
+    for(let y=0;y<8;y++){
+      for(let x=0;x<8;x++){
+        const piece=this.board[y][x];
+        const isSel=this.selectedPiece&&this.selectedPiece.pos[0]===x&&this.selectedPiece.pos[1]===y;
+        const isVT=this.validMoves.some(([mx,my])=>mx===x&&my===y);
+        let bg=(x+y)%2===0?'rgba(110,80,40,0.2)':'rgba(70,55,35,0.1)';
+        if(isSel) bg='rgba(200,168,75,0.5)'; if(isVT) bg='rgba(100,180,80,0.35)';
+        h+=`<div class="rith-cell" style="background:${bg};width:${cs}px;height:${cs}px;" onclick="RM.selectPiece(${x},${y})">`;
+        if(piece){
+          const isW=piece.player==='white';
+          const sym=RM.pieceTypes[piece.type].symbol;
+          h+=`<div class="rith-piece" style="width:${ps}px;height:${ps}px;background:${isW?'#ece8df':'#2a1a08'};color:${isW?'#2a1a08':'#c8a84b'};font-size:${mobile?'0.5rem':'0.65rem'};flex-direction:column;">`;
+          h+=`<span style="font-size:${mobile?'0.75rem':'0.9rem'};line-height:1;">${sym}</span>`;
+          h+=`<span>${piece.value}</span></div>`;
+        }
+        h+=`</div>`;
+      }
+    }
+    cont.innerHTML=h;
+    const sp=document.getElementById('rm-white');if(sp)sp.textContent=`⬜ Vy: ${this.points.white} bodů`;
+    const sa=document.getElementById('rm-black');if(sa)sa.textContent=`⬛ AI: ${this.points.black} bodů`;
+  }
+};
+
+/* ═══════════════════════════════════════════════════
+   GAME REGISTRY
+═══════════════════════════════════════════════════ */
+const GAMES = {
+  hnefatafl: {
+    meta:{title:'Hnefatafl',origin:'Vikingové · 400–1100 n.l.'},
+    mount(el) {
+      el.innerHTML=`
+        <div class="diff-row">
+          <button class="diff-btn active" id="hd1" onclick="HG.start(1);document.getElementById('hd1').classList.add('active');document.getElementById('hd2').classList.remove('active')">Snadná AI</button>
+          <button class="diff-btn" id="hd2" onclick="HG.start(2);document.getElementById('hd2').classList.add('active');document.getElementById('hd1').classList.remove('active')">Taktická AI</button>
+        </div>
+        <div class="status-bar">
+          <span id="hg-def">⬜ Obránci: 13</span>
+          <span class="status-msg" id="hg-msg">Zvolte obtížnost</span>
+          <span id="hg-att">⬛ Útočníci: 24</span>
+        </div>
+        <div class="board-wrap" id="hg-board"></div>
+        <div class="legend">🏰 Rohový cíl · ⊕ Trůn (jen Král) · 👑 Král · ⬜ Obránce (vy) · ⬛ Útočník (AI)</div>
+        <div class="action-row">
+          <button class="act-btn" onclick="showRules('hnefatafl')">Pravidla</button>
+          <button class="act-btn primary" onclick="HG.start(HG.difficulty)">Nová hra</button>
+        </div>`;
+      HG.start(1);
+    },
+    destroy(){HG.gameActive=false;},
+    rules:{
+      title:'Hnefatafl — Pravidla',
+      sections:[
+        {h:'Historie',p:'Hnefatafl ("taflová hra") je skupina asymetrických deskových her hraných Vikingy od 4. do 12. stol. Varianta Tablut na desce 11×11.'},
+        {h:'Cíl',p:'Obránci (vy, ⬜): dostaňte Krále do rohového pole. Útočníci (AI, ⬛): obklíčte Krále ze čtyř stran (nebo 3 + okraj).'},
+        {h:'Pohyb',p:'Všechny figurky se pohybují jako věž v šachu — libovolně v přímé linii. Trůn a rohy může obsadit jen Král.'},
+        {h:'Zajímání',p:'Kámen je zajat obklíčením ze dvou protilehlých stran. Rohové pole a trůn fungují jako pomocník. Krále nelze takto zajmout — potřebuje 4 strany.'}
+      ]
+    }
+  },
+  draughts: {
+    meta:{title:'Dáma',origin:'Arabské Alquerque · 10. stol.'},
+    mount(el) {
+      el.innerHTML=`
+        <div class="diff-row">
+          <button class="diff-btn active" id="dd1" onclick="DG.start(1);['dd1','dd2','dd3'].forEach(id=>{document.getElementById(id).classList.remove('active')});document.getElementById('dd1').classList.add('active')">Snadná</button>
+          <button class="diff-btn" id="dd2" onclick="DG.start(2);['dd1','dd2','dd3'].forEach(id=>{document.getElementById(id).classList.remove('active')});document.getElementById('dd2').classList.add('active')">Střední</button>
+          <button class="diff-btn" id="dd3" onclick="DG.start(3);['dd1','dd2','dd3'].forEach(id=>{document.getElementById(id).classList.remove('active')});document.getElementById('dd3').classList.add('active')">Těžká (minimax)</button>
+        </div>
+        <div class="status-bar">
+          <span id="dg-player">⬜ Vy: zajato 0</span>
+          <span class="status-msg" id="dg-msg">Zvolte obtížnost</span>
+          <span id="dg-ai">⬛ AI: zajato 0</span>
+        </div>
+        <div class="board-wrap" id="dg-board"></div>
+        <div class="legend">Tmavá pole · ⬜ vy (jdete nahoru) · ⬛ AI (jde dolů) · 👑 dáma · povinné skákání platí</div>
+        <div class="action-row">
+          <button class="act-btn" onclick="showRules('draughts')">Pravidla</button>
+          <button class="act-btn primary" onclick="DG.start(DG.difficulty)">Nová hra</button>
+        </div>`;
+      DG.start(1);
+    },
+    destroy(){DG.gameActive=false;},
+    rules:{
+      title:'Dáma — Pravidla',
+      sections:[
+        {h:'Historie',p:'Dáma pochází z arabské hry Alquerque (10. stol.). Na dnešní formu přešla ve středověké Francii a Španělsku.'},
+        {h:'Cíl',p:'Zajměte všechny soupeřovy kameny, nebo mu zablokujte všechny možné tahy.'},
+        {h:'Pohyb',p:'Kameny se pohybují diagonálně o jedno pole dopředu. Dámy (povýšené kameny) se pohybují libovolně diagonálně.'},
+        {h:'Skákání',p:'Pokud můžete skočit přes soupeřův kámen, musíte to udělat (povinné skákání). Vícenásobné skoky jsou povinné.'},
+        {h:'Povýšení',p:'Kámen, který dosáhne poslední řady soupeře, se povýší na dámu (zobrazena 👑).'}
+      ]
+    }
+  },
+  backgammon: {
+    meta:{title:'Tables',origin:'Středověký Backgammon · 6. stol.'},
+    mount(el) {
+      el.innerHTML=`
+        <div class="diff-row">
+          <button class="diff-btn active" id="bd1" onclick="BG.start(1);document.getElementById('bd1').classList.add('active');document.getElementById('bd2').classList.remove('active')">Snadná AI</button>
+          <button class="diff-btn" id="bd2" onclick="BG.start(2);document.getElementById('bd2').classList.add('active');document.getElementById('bd1').classList.remove('active')">Taktická AI</button>
+        </div>
+        <div class="status-bar">
+          <span id="bg-player">👤 Vy: 0/15</span>
+          <span class="status-msg" id="bg-msg">Zvolte obtížnost</span>
+          <span id="bg-ai">🤖 AI: 0/15</span>
+        </div>
+        <div class="bg-board" id="bg-board"></div>
+        <div style="margin-top:0.6rem;display:flex;gap:0.6rem;align-items:center;flex-wrap:wrap;">
+          <button class="bg-roll-btn" id="bg-roll" onclick="BG.rollDice()" style="display:none;">🎲 Hodit kostky</button>
+          <span style="font-size:0.78rem;color:#a08860;" id="bg-moves"></span>
+        </div>
+        <div class="legend" style="margin-top:0.5rem;">Hráč ⬜ (body 24→1) · AI ⬛ (body 1→24) · Čísla = bod na desce · Klik: vyberte zdroj, pak cíl</div>
+        <div class="action-row">
+          <button class="act-btn" onclick="showRules('backgammon')">Pravidla</button>
+          <button class="act-btn primary" onclick="BG.start(BG.difficulty)">Nová hra</button>
+        </div>`;
+      BG.start(1);
+    },
+    destroy(){BG.gameActive=false;},
+    rules:{
+      title:'Tables — Pravidla',
+      sections:[
+        {h:'Historie',p:'Tables je středověký předchůdce backgammonu, hraný v Evropě od 6. stol. Pravidla se mírně liší od moderního backgammonu.'},
+        {h:'Cíl',p:'Sneste všech 15 svých kamenů z desky dříve než soupeř. Vy hrajete z bodu 24 → 1, AI hraje z 1 → 24.'},
+        {h:'Pohyb',p:'Hoďte kostky a pohybujte kameny o odpovídající hodnoty. Dublet = čtyři tahy stejnou hodnotou. Pole obsazené 2+ soupeřovými kameny je blokováno.'},
+        {h:'Hit & Bar',p:'Soupeřův osamělý kámen na poli (blot) lze "bít" — soupeř ho umístí na bar a musí ho jako první vrátit na desku.'},
+        {h:'Snášení',p:'Jakmile máte všechny kameny ve své domácí čtvrtině (body 1–6), začnete je snášet z desky.'}
+      ]
+    }
+  },
+  rithmomachia: {
+    meta:{title:'Rithmomachia',origin:'Středověká Evropa · 11. stol.'},
+    mount(el) {
+      el.innerHTML=`
+        <div class="status-bar">
+          <span id="rm-white">⬜ Vy: 0 bodů</span>
+          <span class="status-msg" id="rm-msg">Začínáme…</span>
+          <span id="rm-black">⬛ AI: 0 bodů</span>
+        </div>
+        <div class="rith-board" id="rm-board"></div>
+        <div class="legend">○ Kruh (1 krok, přímě) · △ Trojúhelník (2 kroky, diagonálně) · □ Čtverec (3 kroky, libovolně) · Číslo = hodnota · Zajmutí: součet svých sousedů = hodnotě nepřítele</div>
+        <div class="action-row">
+          <button class="act-btn" onclick="showRules('rithmomachia')">Pravidla</button>
+          <button class="act-btn primary" onclick="RM.start()">Nová hra</button>
+        </div>`;
+      RM.start();
+    },
+    destroy(){RM.gameActive=false;},
+    rules:{
+      title:'Rithmomachia — Pravidla',
+      sections:[
+        {h:'Historie',p:'Rithmomachia ("počtový boj") byla filozofická hra středověkých scholastiků 11.–16. stol. Kombinuje strategii s aritmetikou.'},
+        {h:'Figurky',p:'Každá figurka má tvar a hodnotu. ○ Kruh se pohybuje o 1 krok přímě. △ Trojúhelník 2 kroky diagonálně. □ Čtverec 3 kroky libovolně.'},
+        {h:'Zajímání',p:'Po pohybu figurky: pokud součet hodnot vašich figurek sousedících se soupeřovou figurkou = hodnotě soupeřovy figurky, je zajata.'},
+        {h:'Výhra',p:'Zajměte všechny soupeřovy trojúhelníky, nebo nasbírejte 100 bodů (součet hodnot zajatých figurek).'}
+      ]
+    }
+  },
+
+  /* ── SENET ── */
+  senet: {
+    meta:{title:'Senet',origin:'Starověký Egypt · 3100 př.n.l.'},
+    mount(el) {
+      el.innerHTML=`
+        <div class="status-bar">
+          <span id="sn-player">👤 Vy: 0/5 venku</span>
+          <span class="status-msg" id="sn-msg">Hoďte hůlky</span>
+          <span id="sn-ai">🤖 AI: 0/5 venku</span>
+        </div>
+        <div id="sn-board" style="width:100%;max-width:580px;"></div>
+        <div class="legend">☥ Dům znovuzrození (pole 15) · ☠ Nebezpečná pole (27–29) · 🌟 Výstup · ⬜ váš kámen · ⬛ AI kámen</div>
+        <div class="action-row" style="margin-top:0.6rem;">
+          <button class="act-btn" onclick="showRules('senet')">Pravidla</button>
+          <button class="act-btn primary" id="sn-roll-btn" onclick="SN.rollSticks()">🎲 Hodit hůlky</button>
+          <button class="act-btn" onclick="SN.start()">Nová hra</button>
+        </div>
+        <div style="font-size:0.75rem;color:#6a5830;margin-top:0.4rem;" id="sn-hint"></div>`;
+      SN.start();
+    },
+    destroy(){SN.gameActive=false;},
+    rules:{
+      title:'Senet — Pravidla',
+      sections:[
+        {h:'Historie',p:'Senet je nejstarší doložená desková hra světa, hrána ve starověkém Egyptě od 3100 př.n.l. Nalezena v hrobce Tutanchamona.'},
+        {h:'Cíl',p:'Dostaňte všech 5 svých kamenů (⬜) mimo desku dříve než soupeř. Kameny postupují ze pole 1 → 30 hadem přes tři řady.'},
+        {h:'Hůlky-kostky',p:'4 hůlky, každá má bílou a tmavou stranu. Počet bílých stran = počet kroků. Výjimka: 0 bílých = 5 kroků (nejlepší hod!).'},
+        {h:'Speciální pole',p:'☥ Pole 15 (Dům znovuzrození): kameny se zde musí zastavit, nelze přeskočit. ☠ Pole 27–29: nebezpečná pole, kámen se vrací. 🌟 Pole 30: výstupní pole.'},
+        {h:'Zajímání',p:'Váš kámen na soupeřově poli jej odešle zpět. Soupeřovy chráněné kameny (dva vedle sebe) nelze zajmout.'}
+      ]
+    }
+  },
+
+  /* ── ROYAL GAME OF UR ── */
+  ur: {
+    meta:{title:'Královská hra z Uru',origin:'Mezopotámie · 2600 př.n.l.'},
+    mount(el) {
+      el.innerHTML=`
+        <div class="diff-row">
+          <button class="diff-btn active" id="ur-vs" onclick="UR.startVsAi();document.getElementById('ur-vs').classList.add('active');document.getElementById('ur-solo').classList.remove('active')">vs AI</button>
+          <button class="diff-btn" id="ur-solo" onclick="UR.startSolo();document.getElementById('ur-solo').classList.add('active');document.getElementById('ur-vs').classList.remove('active')">Sólový puzzle</button>
+        </div>
+        <div class="status-bar">
+          <span id="ur-left">👤 Vy: 0/7</span>
+          <span class="status-msg" id="ur-msg">Hoďte kostky</span>
+          <span id="ur-right">🤖 AI: 0/7</span>
+        </div>
+        <div id="ur-board" style="width:100%;max-width:480px;"></div>
+        <div style="margin-top:0.6rem;display:flex;gap:0.6rem;align-items:center;flex-wrap:wrap;">
+          <button class="bg-roll-btn" id="ur-roll" onclick="UR.rollDice()">🎲 Hodit kostky</button>
+          <span style="font-size:0.76rem;color:#a08860;" id="ur-dice-info"></span>
+        </div>
+        <div class="legend" style="margin-top:0.5rem;">✿ Rosetka = extra tah · 🔵 váš kámen · 🔴 AI kámen · Klikněte na svůj kámen pro tah</div>
+        <div class="action-row">
+          <button class="act-btn" onclick="showRules('ur')">Pravidla</button>
+          <button class="act-btn primary" onclick="UR.restart()">Nová hra</button>
+        </div>`;
+      UR.startVsAi();
+    },
+    destroy(){UR.gameActive=false;},
+    rules:{
+      title:'Královská hra z Uru — Pravidla',
+      sections:[
+        {h:'Historie',p:'Jedna z nejstarších her světa, nalezena v královských hrobkách v Uru (Mezopotámie, 2600 př.n.l.). Pravidla rekonstruována z klínopisné tabulky.'},
+        {h:'Cíl',p:'Dostaňte všech 7 kamenů přes desku a ven dříve než soupeř. Každý hráč má vlastní vstupní a výstupní dráhu, střed desky je sdílený.'},
+        {h:'Kostky',p:'4 tetrahedrální kostky (každá 0 nebo 1). Součet = počet kroků. Hod 0 = přechod na soupeře.'},
+        {h:'Rosetky',p:'Pole s rosetkou (✿) dávají extra tah po přistání. Rosetka ve sdíleném pásmu navíc chrání před zajmutím.'},
+        {h:'Zajímání',p:'Přistání na soupeřově kamenu (mimo rosetku) ho odešle zpět na start. Ve sdíleném pásmu hrozí zajmutí oběma stranám.'}
+      ]
+    }
+  },
+
+  /* ── KARNÖFFEL ── */
+  karnoffel: {
+    meta:{title:'Karnöffel',origin:'Německo · 1426 n.l.'},
+    mount(el) {
+      el.innerHTML=`
+        <div class="status-bar">
+          <span id="kf-player">👤 Triky: 0</span>
+          <span class="status-msg" id="kf-msg">Začínáme…</span>
+          <span id="kf-ai">🤖 Triky: 0</span>
+        </div>
+        <div id="kf-area" style="width:100%;max-width:500px;"></div>
+        <div class="action-row" style="margin-top:0.6rem;">
+          <button class="act-btn" onclick="showRules('karnoffel')">Pravidla</button>
+          <button class="act-btn primary" onclick="KF.start()">Nová hra</button>
+        </div>`;
+      KF.start();
+    },
+    destroy(){KF.gameActive=false;},
+    rules:{
+      title:'Karnöffel — Pravidla',
+      sections:[
+        {h:'Historie',p:'Karnöffel (1426, Bavorsko) je nejstarší doložená kartová hra s trumfy. Předchůdce všech moderních karetních her s trumfovou barvou.'},
+        {h:'Balíček',p:'32 karet: 4 barvy (🍃 žaludy, 🔔 zvonky, ❤️ srdce, 🎯 kolečka), hodnoty 6–K. Trumfová barva zvýhodňuje příslušné karty.'},
+        {h:'Cíl',p:'Získejte více triků (odehraných kol) než soupeř z celkových 5 kol.'},
+        {h:'Trumfy',p:'Karta trumfové barvy bije libovolnou kartu jiné barvy bez ohledu na hodnotu. Mezi trumfy rozhoduje hodnota.'},
+        {h:'Průběh',p:'Zahrajete kartu ze své ruky, soupeř odpoví. Vyšší karta (s respektem k trumfům) bere trik. Pět triků = konec kola.'}
+      ]
+    }
+  },
+
+  /* ── PRIMERO ── */
+  primero: {
+    meta:{title:'Primero',origin:'Španělsko/Itálie · 16. stol.'},
+    mount(el) {
+      el.innerHTML=`
+        <div class="status-bar">
+          <span id="pr-player">👤 Kola: 0</span>
+          <span class="status-msg" id="pr-msg">Začínáme…</span>
+          <span id="pr-ai">🤖 Kola: 0</span>
+        </div>
+        <div id="pr-area" style="width:100%;max-width:500px;"></div>
+        <div class="action-row" style="margin-top:0.6rem;">
+          <button class="act-btn" onclick="showRules('primero')">Pravidla</button>
+          <button class="act-btn primary" onclick="PR.start()">Nová hra</button>
+        </div>`;
+      PR.start();
+    },
+    destroy(){PR.gameActive=false;},
+    rules:{
+      title:'Primero — Pravidla',
+      sections:[
+        {h:'Historie',p:'Primero (16. stol., Španělsko/Itálie) je přímý předchůdce pokeru. Hrával ho Jindřich VIII. i Filip II. Španělský.'},
+        {h:'Balíček',p:'40 karet: 4 barvy (♠♥♣♦), hodnoty 1–7, J, Q, K.'},
+        {h:'Cíl',p:'Vyhrajte 2 ze 3 kol porovnáním hodnoty ruky. Nejlepší ruka = nejvyšší skóre.'},
+        {h:'Hodnocení ruky',p:'Flux (4 karty jedné barvy): +40 bodů. Čtveřice: +50. Trojice: +30. Pár: +10. Obličejové karty: K=5, Q=4, J=3 bodů.'},
+        {h:'Průběh',p:'Každý dostane 4 karty. Klikněte "Odhalit" pro porovnání rukou. Hrajete 3 kola, vítěz má více výher.'}
+      ]
+    }
+  }
+};
+
+/* ═══════════════════════════════════════════════════
+   SENET ENGINE
+═══════════════════════════════════════════════════ */
+const SN = {
+  gameActive:false, currentTurn:'player', diceRoll:0, canMove:false,
+  playerPieces:[], aiPieces:[],
+  REBIRTH:14, DANGER:[26,27,28], EXIT:29,
+
+  start() {
+    this.gameActive=true; this.currentTurn='player'; this.diceRoll=0; this.canMove=false;
+    this.playerPieces=[]; this.aiPieces=[];
+    for(let i=0;i<5;i++){
+      this.playerPieces.push({id:i,pos:i*2,out:false});
+      this.aiPieces.push({id:i,pos:i*2+1,out:false});
+    }
+    this.render(); this._msg('Váš tah — hoďte hůlky');
+  },
+  _msg(m){const el=document.getElementById('sn-msg');if(el)el.textContent=m;},
+  rollSticks() {
+    if(!this.gameActive||this.currentTurn!=='player'||this.canMove) return;
+    const whites=[0,0,0,0].map(()=>Math.random()<0.5?1:0).reduce((a,b)=>a+b,0);
+    this.diceRoll=whites===0?5:whites;
+    this.canMove=true;
+    this._msg(`🎲 Hod: ${this.diceRoll}${this.diceRoll===5?' (4 tmavé = 5!)':''} — klikněte na kámen`);
+    if(!this.hasValidMove('player')){
+      this._msg(`🎲 Hod: ${this.diceRoll} — žádný tah, přechod na AI`);
+      this.canMove=false;
+      setTimeout(()=>this.aiTurn(),1100);
+    }
+    this.render();
+  },
+  castValue(){const w=[0,0,0,0].map(()=>Math.random()<0.5?1:0).reduce((a,b)=>a+b,0);return w===0?5:w;},
+  isValidMove(piece,newPos,side){
+    if(newPos>30) return false;
+    if(piece.pos<this.REBIRTH&&newPos>this.REBIRTH) return false;
+    const own=side==='player'?this.playerPieces:this.aiPieces;
+    if(newPos<30&&own.some(p=>p.pos===newPos&&!p.out)) return false;
+    return true;
+  },
+  hasValidMove(side){
+    const pieces=side==='player'?this.playerPieces:this.aiPieces;
+    return pieces.some(p=>!p.out&&this.isValidMove(p,p.pos+this.diceRoll,side));
+  },
+  selectPiece(id) {
+    if(!this.gameActive||!this.canMove||this.currentTurn!=='player') return;
+    const piece=this.playerPieces.find(p=>p.id===id);
+    if(!piece||piece.out) return;
+    const newPos=piece.pos+this.diceRoll;
+    if(!this.isValidMove(piece,newPos,'player')){this._msg('⚠️ Neplatný tah');this.render();return;}
+    this.movePiece(piece,newPos,'player');
+  },
+  movePiece(piece,newPos,side) {
+    const opp=side==='player'?this.aiPieces:this.playerPieces;
+    if(newPos===30){piece.out=true;piece.pos=30;this._msg(`✅ Kámen ${piece.id+1} opustil desku!`);this.checkWin();if(this.gameActive)this.endTurn(side);this.render();return;}
+    if(this.DANGER.includes(newPos)){
+      const oppPiece=opp.find(p=>p.pos===newPos&&!p.out);
+      if(oppPiece){oppPiece.pos=piece.pos;piece.pos=newPos;this._msg('⚔️ Výměna kamenů na nebezpečném poli!');}
+      else{piece.pos=this.REBIRTH;this._msg('💀 Nebezpečné pole! Kámen se vrací na pole 15.');}
+      this.endTurn(side);this.render();return;
+    }
+    const oppPiece=opp.find(p=>p.pos===newPos&&!p.out);
+    if(oppPiece){
+      const oppProtected=opp.filter(p=>!p.out).some(p=>p.id!==oppPiece.id&&Math.abs(p.pos-oppPiece.pos)===1);
+      if(!oppProtected){oppPiece.pos=piece.pos;this._msg('⚔️ Zajmutí!');}
+      else{this._msg('🛡️ Soupeřův kámen je chráněn!');this.render();return;}
+    }
+    piece.pos=newPos; if(!this._lastMsg||!this._lastMsg.includes('⚔️')) this._msg(`→ Pole ${newPos+1}`);
+    this.endTurn(side);this.render();
+  },
+  endTurn(side){
+    this.canMove=false;this.diceRoll=0;
+    if(!this.gameActive) return;
+    if(side==='player'){this.currentTurn='ai';this._msg('AI tahá…');setTimeout(()=>this.aiTurn(),900);}
+    else{this.currentTurn='player';this._msg('Váš tah — hoďte hůlky');}
+  },
+  aiTurn(){
+    if(!this.gameActive||this.currentTurn!=='ai') return;
+    const roll=this.castValue(); this.diceRoll=roll;
+    const valid=this.aiPieces.filter(p=>!p.out&&this.isValidMove(p,p.pos+roll,'ai'));
+    if(!valid.length){this.currentTurn='player';this.diceRoll=0;this._msg('AI nemá tah — váš tah');this.render();return;}
+    valid.sort((a,b)=>{
+      const na=a.pos+roll,nb=b.pos+roll;
+      const da=this.DANGER.includes(na)?-10:0,db=this.DANGER.includes(nb)?-10:0;
+      return (nb+db)-(na+da);
+    });
+    const chosen=valid[0],newPos=chosen.pos+roll;
+    this._msg(`AI hodilo ${roll}`);this.render();
+    setTimeout(()=>this.movePiece(chosen,newPos,'ai'),700);
+  },
+  checkWin(){
+    if(this.playerPieces.every(p=>p.out)){this.gameActive=false;this._msg('Vyhráli jste! 🎉');}
+    else if(this.aiPieces.every(p=>p.out)){this.gameActive=false;this._msg('AI vyhrála. Zkuste znovu.');}
+  },
+  render(){
+    const bc=document.getElementById('sn-board');if(!bc) return;
+    const mobile=window.innerWidth<=520,sq=mobile?30:48;
+    const rows=[[0,1,2,3,4,5,6,7,8,9],[19,18,17,16,15,14,13,12,11,10],[20,21,22,23,24,25,26,27,28,29]];
+    let h='<div style="display:flex;flex-direction:column;gap:3px;">';
+    rows.forEach(row=>{
+      h+=`<div style="display:flex;gap:3px;">`;
+      row.forEach(sq2=>{
+        const pHere=this.playerPieces.filter(p=>p.pos===sq2&&!p.out);
+        const aHere=this.aiPieces.filter(p=>p.pos===sq2&&!p.out);
+        let bg='rgba(200,168,75,0.07)',border='1px solid rgba(200,168,75,0.15)';
+        if(sq2===this.REBIRTH){bg='rgba(76,175,80,0.18)';border='1.5px solid #4CAF50';}
+        else if(this.DANGER.includes(sq2)){bg='rgba(220,60,40,0.15)';border='1.5px solid #c0392b';}
+        else if(sq2===this.EXIT){bg='rgba(200,168,75,0.25)';border='1.5px solid #c8a84b';}
+        h+=`<div style="width:${sq}px;height:${sq}px;background:${bg};border:${border};border-radius:3px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;font-size:0.6rem;">`;
+        h+=`<div style="opacity:0.35;font-size:0.52rem;position:absolute;top:1px;left:2px;">${sq2+1}</div>`;
+        if(sq2===this.REBIRTH) h+=`<span style="font-size:${mobile?'0.7':'0.85'}rem;">☥</span>`;
+        else if(this.DANGER.includes(sq2)) h+=`<span style="font-size:${mobile?'0.7':'0.85'}rem;">☠</span>`;
+        else if(sq2===this.EXIT) h+=`<span style="font-size:${mobile?'0.7':'0.85'}rem;">🌟</span>`;
+        if(pHere.length){
+          h+=`<div style="display:flex;flex-wrap:wrap;justify-content:center;gap:1px;">`;
+          pHere.forEach(p=>{
+            const clickable=this.canMove&&this.currentTurn==='player'&&this.isValidMove(p,p.pos+this.diceRoll,'player');
+            h+=`<div onclick="${clickable?`SN.selectPiece(${p.id})`:''}" style="width:${mobile?10:14}px;height:${mobile?10:14}px;border-radius:50%;background:#ece8df;border:2px solid ${clickable?'#c8a84b':'#999'};cursor:${clickable?'pointer':'default'};${clickable?'box-shadow:0 0 4px #c8a84b;':''}"></div>`;
+          });
+          h+=`</div>`;
+        }
+        if(aHere.length){
+          h+=`<div style="display:flex;flex-wrap:wrap;justify-content:center;gap:1px;">`;
+          aHere.forEach(()=>h+=`<div style="width:${mobile?10:14}px;height:${mobile?10:14}px;border-radius:50%;background:#3c2a14;border:2px solid #6b3c14;"></div>`);
+          h+=`</div>`;
+        }
+        h+=`</div>`;
+      });
+      h+=`</div>`;
+    });
+    h+=`</div>`;
+    bc.innerHTML=h;
+    const pOut=this.playerPieces.filter(p=>p.out).length,aOut=this.aiPieces.filter(p=>p.out).length;
+    const sp=document.getElementById('sn-player');if(sp)sp.textContent=`👤 Vy: ${pOut}/5 venku`;
+    const sa=document.getElementById('sn-ai');if(sa)sa.textContent=`🤖 AI: ${aOut}/5 venku`;
+    const rb=document.getElementById('sn-roll-btn');
+    if(rb) rb.style.display=(this.currentTurn==='player'&&!this.canMove&&this.gameActive)?'inline-block':'none';
+  }
+};
+
+/* ═══════════════════════════════════════════════════
+   ROYAL GAME OF UR ENGINE
+═══════════════════════════════════════════════════ */
+const UR = {
+  gameActive:false, mode:'vs', currentTurn:'player',
+  diceRoll:0, canMove:false,
+  board:[], playerPieces:[], aiPieces:[],
+  pFinished:0, aFinished:0,
+  ROSETTES:[3,7,13,17], SHARED:[4,5,6,7,8,9,10,11,12],
+
+  startVsAi(){this.mode='vs';this._init();},
+  startSolo(){this.mode='solo';this._init();},
+  restart(){this.mode==='solo'?this.startSolo():this.startVsAi();},
+  _init(){
+    this.gameActive=true; this.currentTurn='player';
+    this.diceRoll=0; this.canMove=false;
+    this.pFinished=0; this.aFinished=0;
+    this.playerPieces=[]; this.aiPieces=[];
+    for(let i=0;i<7;i++){this.playerPieces.push({id:i,pos:-1});this.aiPieces.push({id:i,pos:-1});}
+    this.board=Array(20).fill(null);
+    this._msg('Váš tah — hoďte kostky');
+    const lr=document.getElementById('ur-right');
+    if(lr) lr.textContent=this.mode==='solo'?'🎯 Sólový puzzle':'🤖 AI: 0/7';
+    this.render();
+  },
+  _msg(m){const el=document.getElementById('ur-msg');if(el)el.textContent=m;},
+  rollDice(){
+    if(!this.gameActive||this.currentTurn!=='player'||this.canMove) return;
+    let total=0;for(let i=0;i<4;i++) total+=Math.random()<0.5?1:0;
+    this.diceRoll=total;
+    const di=document.getElementById('ur-dice-info');if(di)di.textContent=`Hod: ${total}`;
+    const rb=document.getElementById('ur-roll');if(rb)rb.style.display='none';
+    const valid=this._getValid('player');
+    if(!valid.length){this._msg(total===0?'Hod 0 — přechod na AI':'Žádný tah — přechod na AI');setTimeout(()=>this._endTurn(),1200);}
+    else{this.canMove=true;this._msg(`Hod ${total} — klikněte na svůj kámen`);}
+    this.render();
+  },
+  _getValid(side){
+    const pieces=side==='player'?this.playerPieces:this.aiPieces;
+    return pieces.reduce((acc,p,i)=>{
+      const np=this._calcPos(p.pos,this.diceRoll,side);
+      if(np!==null&&this._validMove(p.pos,np,side)) acc.push(i);
+      return acc;
+    },[]);
+  },
+  _calcPos(cur,roll,side){
+    if(roll===0) return null;
+    if(cur===-1) return side==='player'?roll-1:14+roll-1;
+    if(cur===20) return null;
+    if(side==='player'){
+      if(cur<13) return cur+roll;
+      if(cur===13&&roll===1) return 20;
+      return null;
+    } else {
+      let np=cur+roll;
+      if(cur<18&&np>=18) np=12-(np-18);
+      if(cur>=4&&cur<=12) np=cur-roll;
+      if(cur===18&&roll===1) return 20;
+      if(np<0||np>19) return null;
+      return np;
+    }
+  },
+  _validMove(old,np,side){
+    if(np===null) return false;
+    if(np===20) return true;
+    const occ=this.board[np];
+    if(!occ) return true;
+    if(occ.player===side) return false;
+    if(this.ROSETTES.includes(np)) return false;
+    if(this.mode==='solo') return false;
+    return this.SHARED.includes(np);
+  },
+  movePiece(idx){
+    if(!this.canMove||this.currentTurn!=='player') return;
+    const piece=this.playerPieces[idx];
+    const np=this._calcPos(piece.pos,this.diceRoll,'player');
+    if(!this._validMove(piece.pos,np,'player')){this._msg('⚠️ Neplatný tah');return;}
+    this._execMove(idx,np,'player');
+    this.checkWin();
+    if(this.ROSETTES.includes(np)){this._msg('✿ Rosetka — extra tah!');this.canMove=false;this.diceRoll=0;const di=document.getElementById('ur-dice-info');if(di)di.textContent='';const rb=document.getElementById('ur-roll');if(rb)rb.style.display='inline-block';}
+    else this._endTurn();
+    this.render();
+  },
+  movePieceFromBoard(pos){const i=this.playerPieces.findIndex(p=>p.pos===pos);if(i>=0)this.movePiece(i);},
+  _execMove(idx,np,side){
+    const pieces=side==='player'?this.playerPieces:this.aiPieces;
+    const piece=pieces[idx];
+    if(piece.pos>=0&&piece.pos<20) this.board[piece.pos]=null;
+    if(np<20&&this.board[np]){
+      const cap=this.board[np];
+      const ep=cap.player==='player'?this.playerPieces:this.aiPieces;
+      ep[cap.idx].pos=-1;
+      this._msg('⚔️ Zajmutí!');
+    }
+    piece.pos=np;
+    if(np===20){if(side==='player')this.pFinished++;else this.aFinished++;}
+    else this.board[np]={player:side,idx};
+  },
+  _endTurn(){
+    this.canMove=false;this.diceRoll=0;
+    const di=document.getElementById('ur-dice-info');if(di)di.textContent='';
+    if(!this.gameActive) return;
+    this.currentTurn=this.mode==='solo'?'player':'ai';
+    if(this.mode==='vs'&&this.currentTurn==='ai'){this._msg('AI tahá…');setTimeout(()=>this._aiTurn(),900);}
+    else{const rb=document.getElementById('ur-roll');if(rb)rb.style.display='inline-block';this._msg('Váš tah — hoďte kostky');}
+    this.render();
+  },
+  _aiTurn(){
+    if(!this.gameActive||this.currentTurn!=='ai') return;
+    let total=0;for(let i=0;i<4;i++) total+=Math.random()<0.5?1:0;
+    this.diceRoll=total;
+    const valid=this._getValid('ai');
+    if(!valid.length){setTimeout(()=>this._endTurn(),900);return;}
+    let best=null,bestScore=-Infinity;
+    valid.forEach(i=>{
+      const np=this._calcPos(this.aiPieces[i].pos,total,'ai');
+      let score=0;
+      if(np===20)score+=1000;
+      if(np<20&&this.board[np]&&this.board[np].player==='player')score+=500;
+      if(this.ROSETTES.includes(np))score+=300;
+      score+=np;
+      if(score>bestScore){bestScore=score;best=i;}
+    });
+    const np=this._calcPos(this.aiPieces[best].pos,total,'ai');
+    this._execMove(best,np,'ai');
+    this._msg(`AI hodilo ${total}`);
+    this.checkWin();
+    if(this.ROSETTES.includes(np)){this._msg('AI: rosetka — extra tah!');setTimeout(()=>this._aiTurn(),1000);}
+    else setTimeout(()=>this._endTurn(),1000);
+    this.render();
+  },
+  checkWin(){
+    if(this.pFinished===7){this.gameActive=false;this._msg('Vyhráli jste! Všech 7 kamenů mimo desku! 🎉');}
+    else if(this.aFinished===7){this.gameActive=false;this._msg('AI vyhrála. Zkuste znovu.');}
+  },
+  render(){
+    const bc=document.getElementById('ur-board');if(!bc) return;
+    const mobile=window.innerWidth<=520,sq=mobile?34:44;
+    // Hnefatafl-style: 3 řady. Hráč: 0-3, 13 (vlevo). Sdílené: 4-12 (střed). AI: 14-18 (vpravo).
+    // Zjednodušené lineární zobrazení
+    const sqStyle=(idx,type)=>{
+      const isR=this.ROSETTES.includes(idx);
+      const occ=this.board[idx];
+      let bg=type==='shared'?'rgba(140,50,30,0.18)':'rgba(110,80,40,0.18)';
+      if(isR) bg='rgba(200,168,75,0.28)';
+      const clickable=this.canMove&&occ&&occ.player==='player';
+      return `<div onclick="${clickable?`UR.movePieceFromBoard(${idx})`:''}" style="width:${sq}px;height:${sq}px;background:${bg};border:1px solid rgba(200,168,75,0.2);border-radius:3px;display:flex;align-items:center;justify-content:center;cursor:${clickable?'pointer':'default'};font-size:${mobile?'0.9':'1.1'}rem;">${isR&&!occ?'✿':occ?(occ.player==='player'?'🔵':'🔴'):''}</div>`;
+    };
+    // Off-board pieces
+    const pOff=this.playerPieces.filter(p=>p.pos===-1).length;
+    const aOff=this.aiPieces.filter(p=>p.pos===-1).length;
+    let h=`<div style="display:flex;flex-direction:column;gap:4px;margin-bottom:0.5rem;">`;
+    // Row 1: player track 0-3 + blank×4 + blank×1
+    h+=`<div style="display:flex;gap:3px;align-items:center;">`;
+    h+=`<span style="font-size:0.65rem;color:#6a5830;width:24px;">🔵</span>`;
+    for(let i=0;i<4;i++) h+=sqStyle(i,'player');
+    h+=`<div style="width:${sq}px;height:${sq}px;"></div>`;
+    h+=`<div style="width:${sq}px;height:${sq}px;background:rgba(200,168,75,0.08);border:1px dashed rgba(200,168,75,0.15);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:0.6rem;color:#6a5830;">${pOff>0?`×${pOff}`:''}</div>`;
+    h+=`</div>`;
+    // Row 2: shared 4-12
+    h+=`<div style="display:flex;gap:3px;align-items:center;">`;
+    h+=`<span style="font-size:0.65rem;color:#6a5830;width:24px;"></span>`;
+    for(let i=4;i<=12;i++) h+=sqStyle(i,'shared');
+    h+=`</div>`;
+    // Row 3: ai track 14-18 + blank×4
+    if(this.mode==='vs'){
+      h+=`<div style="display:flex;gap:3px;align-items:center;">`;
+      h+=`<span style="font-size:0.65rem;color:#6a5830;width:24px;">🔴</span>`;
+      for(let i=14;i<=18;i++) h+=sqStyle(i,'ai');
+      h+=`<div style="width:${sq}px;height:${sq}px;background:rgba(200,168,75,0.08);border:1px dashed rgba(200,168,75,0.15);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:0.6rem;color:#6a5830;">${aOff>0?`×${aOff}`:''}</div>`;
+      h+=`</div>`;
+    }
+    h+=`</div>`;
+    // Off-board clickable pieces for player
+    if(this.canMove&&pOff>0){
+      h+=`<div style="font-size:0.75rem;color:#a08860;margin-bottom:4px;">Kameny mimo desku — klikněte pro vstup:</div>`;
+      h+=`<div style="display:flex;gap:4px;flex-wrap:wrap;">`;
+      this.playerPieces.filter(p=>p.pos===-1).forEach(p=>{
+        const np=this._calcPos(-1,this.diceRoll,'player');
+        const valid=np!==null&&this._validMove(-1,np,'player');
+        h+=`<div onclick="${valid?`UR.movePiece(${p.id})`:''}" style="width:34px;height:34px;border-radius:50%;background:#ece8df;border:2px solid ${valid?'#c8a84b':'#888'};display:flex;align-items:center;justify-content:center;font-size:0.7rem;cursor:${valid?'pointer':'default'};">🔵</div>`;
+      });
+      h+=`</div>`;
+    }
+    bc.innerHTML=h;
+    const sp=document.getElementById('ur-left');if(sp)sp.textContent=`👤 Vy: ${this.pFinished}/7`;
+    const sa=document.getElementById('ur-right');
+    if(sa) sa.textContent=this.mode==='solo'?`🎯 Hody celkem: ${this.playerPieces.reduce((a,p)=>a+(p.pos>=0?1:0),0)}`:`🤖 AI: ${this.aFinished}/7`;
+    const rb=document.getElementById('ur-roll');
+    if(rb) rb.style.display=(this.gameActive&&this.currentTurn==='player'&&!this.canMove)?'inline-block':'none';
+  }
+};
+
+/* ═══════════════════════════════════════════════════
+   KARNÖFFEL ENGINE
+═══════════════════════════════════════════════════ */
+const KF = {
+  gameActive:false, deck:[], playerHand:[], aiHand:[],
+  playerTricks:0, aiTricks:0, trump:null, trick:[],
+  suits:['🍃','🔔','❤️','🎯'], ranks:['6','7','8','9','10','U','O','K'],
+
+  start(){
+    this.gameActive=true; this.playerTricks=0; this.aiTricks=0; this.trick=[];
+    this._createDeck();
+    this.trump=this.suits[Math.floor(Math.random()*this.suits.length)];
+    this._deal();
+    this._msg(`Trumf: ${this.trump} — zahrajte kartu`);
+    this.render();
+  },
+  _msg(m){const el=document.getElementById('kf-msg');if(el)el.textContent=m;},
+  _power(rank,suit){
+    const base={'6':1,'7':2,'8':3,'9':4,'10':5,'U':6,'O':7,'K':8};
+    return base[rank]+(suit===this.trump?10:0);
+  },
+  _createDeck(){
+    this.deck=[];
+    this.suits.forEach(s=>this.ranks.forEach(r=>this.deck.push({suit:s,rank:r,power:this._power(r,s)})));
+    for(let i=this.deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[this.deck[i],this.deck[j]]=[this.deck[j],this.deck[i]];}
+  },
+  _deal(){this.playerHand=[];this.aiHand=[];for(let i=0;i<5;i++){this.playerHand.push(this.deck.pop());this.aiHand.push(this.deck.pop());}},
+  playCard(idx){
+    if(!this.gameActive||this.trick.length>=2) return;
+    const card=this.playerHand.splice(idx,1)[0];
+    this.trick.push({card,who:'player'});
+    this.render();
+    setTimeout(()=>{
+      const ai=this.aiHand.pop();
+      this.trick.push({card:ai,who:'ai'});
+      this.render();
+      setTimeout(()=>this._resolve(),900);
+    },450);
+  },
+  _resolve(){
+    const[p1,p2]=this.trick;
+    const winner=p1.card.power>p2.card.power?'player':'ai';
+    if(winner==='player'){this.playerTricks++;this._msg(`Trik váš! (${p1.card.rank}${p1.card.suit} vs ${p2.card.rank}${p2.card.suit})`);}
+    else{this.aiTricks++;this._msg(`Trik AI! (${p1.card.rank}${p1.card.suit} vs ${p2.card.rank}${p2.card.suit})`);}
+    this.trick=[];
+    if(this.playerHand.length===0) setTimeout(()=>this._end(),1400);
+    else setTimeout(()=>this.render(),1400);
+  },
+  _end(){
+    this.gameActive=false;
+    if(this.playerTricks>this.aiTricks) this._msg(`Vyhráli jste! ${this.playerTricks}:${this.aiTricks} triků 🎉`);
+    else if(this.aiTricks>this.playerTricks) this._msg(`AI vyhrála. ${this.aiTricks}:${this.playerTricks} triků`);
+    else this._msg(`Remíza! ${this.playerTricks}:${this.aiTricks}`);
+    this.render();
+  },
+  render(){
+    const area=document.getElementById('kf-area');if(!area) return;
+    const cardStyle=(card,clickFn,gold)=>`<div onclick="${clickFn}" style="padding:10px 8px;background:${gold?'rgba(200,168,75,0.3)':'rgba(255,255,255,0.06)'};border:1.5px solid ${gold?'#c8a84b':'rgba(200,168,75,0.2)'};border-radius:5px;text-align:center;min-width:44px;cursor:${clickFn?'pointer':'default'};font-size:1rem;color:#e8d5a3;transition:transform 0.1s;${clickFn?'':'opacity:0.85;'}">${card.rank}<br><span style="font-size:1.2rem;">${card.suit}</span></div>`;
+    let h=`<div style="margin-bottom:0.8rem;">`;
+    // Trick area
+    if(this.trick.length){
+      h+=`<div style="display:flex;gap:0.5rem;justify-content:center;align-items:center;margin-bottom:0.8rem;padding:0.6rem;background:rgba(200,168,75,0.07);border-radius:4px;">`;
+      this.trick.forEach(t=>h+=cardStyle(t.card,'',false));
+      h+=`</div>`;
+    }
+    // AI hand (face down)
+    h+=`<div style="margin-bottom:0.5rem;font-size:0.72rem;color:#6a5830;letter-spacing:0.1em;text-transform:uppercase;">Soupeřova ruka</div>`;
+    h+=`<div style="display:flex;gap:5px;margin-bottom:1rem;">`;
+    for(let i=0;i<this.aiHand.length;i++) h+=`<div style="padding:10px 8px;background:rgba(60,42,20,0.5);border:1.5px solid rgba(200,168,75,0.15);border-radius:5px;min-width:44px;text-align:center;font-size:1.2rem;">🎴</div>`;
+    h+=`</div>`;
+    // Player hand
+    h+=`<div style="margin-bottom:0.5rem;font-size:0.72rem;color:#6a5830;letter-spacing:0.1em;text-transform:uppercase;">Vaše karty${this.gameActive?' — klikněte pro zahrání':''}</div>`;
+    h+=`<div style="display:flex;gap:5px;flex-wrap:wrap;">`;
+    this.playerHand.forEach((card,idx)=>h+=cardStyle(card,this.gameActive&&this.trick.length<1?`KF.playCard(${idx})`:'',(card.suit===this.trump)));
+    h+=`</div>`;
+    h+=`<div style="margin-top:0.6rem;font-size:0.75rem;color:#7a6840;">Trumf: <strong style="color:#c8a84b;">${this.trump}</strong></div>`;
+    h+=`</div>`;
+    area.innerHTML=h;
+    const sp=document.getElementById('kf-player');if(sp)sp.textContent=`👤 Triky: ${this.playerTricks}`;
+    const sa=document.getElementById('kf-ai');if(sa)sa.textContent=`🤖 Triky: ${this.aiTricks}`;
+  }
+};
+
+/* ═══════════════════════════════════════════════════
+   PRIMERO ENGINE
+═══════════════════════════════════════════════════ */
+const PR = {
+  gameActive:false, deck:[], playerHand:[], aiHand:[],
+  playerScore:0, aiScore:0, round:1,
+  suits:['♠','♥','♣','♦'], ranks:['1','2','3','4','5','6','7','J','Q','K'],
+
+  start(){
+    this.gameActive=true; this.round=1; this.playerScore=0; this.aiScore=0;
+    this._createDeck(); this._deal();
+    this._msg(`Kolo 1/3 — hodnoťte svou ruku`);
+    this.render();
+  },
+  _msg(m){const el=document.getElementById('pr-msg');if(el)el.textContent=m;},
+  _createDeck(){
+    this.deck=[];
+    this.suits.forEach(s=>this.ranks.forEach(r=>this.deck.push({suit:s,rank:r})));
+    for(let i=this.deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[this.deck[i],this.deck[j]]=[this.deck[j],this.deck[i]];}
+  },
+  _deal(){
+    this.playerHand=[];this.aiHand=[];
+    for(let i=0;i<4;i++){this.playerHand.push(this.deck.pop());this.aiHand.push(this.deck.pop());}
+  },
+  _eval(hand){
+    const suits={},ranks={};
+    hand.forEach(c=>{suits[c.suit]=(suits[c.suit]||0)+1;ranks[c.rank]=(ranks[c.rank]||0)+1;});
+    let score=0;
+    if(Object.keys(suits).length===1) score+=40;
+    Object.values(ranks).forEach(n=>{if(n===2)score+=10;if(n===3)score+=30;if(n===4)score+=50;});
+    hand.forEach(c=>{if(c.rank==='K')score+=5;if(c.rank==='Q')score+=4;if(c.rank==='J')score+=3;});
+    return score;
+  },
+  _handLabel(hand){
+    const suits={},ranks={};
+    hand.forEach(c=>{suits[c.suit]=(suits[c.suit]||0)+1;ranks[c.rank]=(ranks[c.rank]||0)+1;});
+    const labels=[];
+    if(Object.keys(suits).length===1) labels.push('Flux');
+    const max=Math.max(...Object.values(ranks));
+    if(max===4) labels.push('Čtveřice');
+    else if(max===3) labels.push('Trojice');
+    else if(max===2) labels.push('Pár');
+    return labels.length?labels.join(', '):'Vysoká karta';
+  },
+  reveal(){
+    if(!this.gameActive) return;
+    const pv=this._eval(this.playerHand),av=this._eval(this.aiHand);
+    let msg=`Vy: ${pv} (${this._handLabel(this.playerHand)}) · AI: ${av} (${this._handLabel(this.aiHand)}) → `;
+    if(pv>av){this.playerScore++;msg+='Kolo vaše!';}
+    else if(av>pv){this.aiScore++;msg+='Kolo AI!';}
+    else msg+='Remíza';
+    this._msg(msg);
+    this.render();
+    if(this.round<3){
+      this.round++;
+      setTimeout(()=>{this._deal();this._msg(`Kolo ${this.round}/3`);this.render();},2200);
+    } else {
+      setTimeout(()=>this._end(),2200);
+    }
+  },
+  _end(){
+    this.gameActive=false;
+    if(this.playerScore>this.aiScore) this._msg(`Vyhráli jste! ${this.playerScore}:${this.aiScore} kol 🎉`);
+    else if(this.aiScore>this.playerScore) this._msg(`AI vyhrála. ${this.aiScore}:${this.playerScore} kol`);
+    else this._msg('Celková remíza!');
+    this.render();
+  },
+  render(){
+    const area=document.getElementById('pr-area');if(!area) return;
+    const suitColor=s=>(s==='♥'||s==='♦')?'#c0392b':'#e8d5a3';
+    const cardDiv=(card,back)=>back
+      ?`<div style="padding:10px 8px;background:rgba(60,42,20,0.5);border:1.5px solid rgba(200,168,75,0.15);border-radius:5px;min-width:44px;text-align:center;font-size:1.2rem;">🎴</div>`
+      :`<div style="padding:10px 8px;background:rgba(255,255,255,0.06);border:1.5px solid rgba(200,168,75,0.2);border-radius:5px;text-align:center;min-width:44px;font-size:0.95rem;color:${suitColor(card.suit)};">${card.rank}<br><span style="font-size:1.1rem;">${card.suit}</span></div>`;
+    let h=`<div>`;
+    h+=`<div style="margin-bottom:0.5rem;font-size:0.72rem;color:#6a5830;text-transform:uppercase;letter-spacing:0.1em;">Soupeřova ruka</div>`;
+    h+=`<div style="display:flex;gap:5px;margin-bottom:1rem;">`;
+    this.aiHand.forEach(c=>h+=cardDiv(c,!this._revealAi));
+    h+=`</div>`;
+    h+=`<div style="margin-bottom:0.5rem;font-size:0.72rem;color:#6a5830;text-transform:uppercase;letter-spacing:0.1em;">Vaše karty (kolo ${this.round}/3)</div>`;
+    h+=`<div style="display:flex;gap:5px;margin-bottom:1rem;">`;
+    this.playerHand.forEach(c=>h+=cardDiv(c,false));
+    h+=`</div>`;
+    if(this.gameActive){
+      h+=`<button class="bg-roll-btn" onclick="PR.reveal()" style="margin-bottom:0.5rem;">🃏 Odhalit a porovnat</button>`;
+      const pv=this._eval(this.playerHand);
+      h+=`<div style="font-size:0.74rem;color:#7a6840;">Vaše skóre ruky: <strong style="color:#c8a84b;">${pv}</strong> · ${this._handLabel(this.playerHand)}</div>`;
+    }
+    h+=`</div>`;
+    area.innerHTML=h;
+    const sp=document.getElementById('pr-player');if(sp)sp.textContent=`👤 Kola: ${this.playerScore}`;
+    const sa=document.getElementById('pr-ai');if(sa)sa.textContent=`🤖 Kola: ${this.aiScore}`;
+  }
+};
+</script>
+</body>
+</html>
