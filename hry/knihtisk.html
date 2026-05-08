@@ -457,6 +457,10 @@ body{
 .audio-dot{width:6px;height:6px;border-radius:50%;background:#2a2a2a;
   display:inline-block;margin-left:5px;transition:background .3s;}
 .audio-dot.on{background:#44aa44;box-shadow:0 0 5px #44aa44;}
+/* ── JOURNAL TAB ── */
+@media(max-width:600px){
+  .journal-wrap{grid-template-columns:1fr !important;}
+}
 </style>
 </head>
 <body>
@@ -1340,6 +1344,18 @@ function initState(){
     // UI state
     _workersOpen: true,
     _ordersOpen: true,
+
+    // Player identity (set after round 1)
+    playerName: "",
+    workshopName: "",
+    gender: "master",   // "master" | "mistress" | "none"
+    role: null,         // null until chosen; "apprentice"|"journeyman"|"master"|"publisher"
+    roleLevel: 1,       // 1-4, mirrors career progression
+    _roleModalDone: false,
+    _journalNoteOpen: false,
+
+    // Journal
+    journal: [],        // [{type:"note"|"story"|"auto", gameYear, gameRound, text, ts}]
 
     log: [],
     events: [],
@@ -2699,6 +2715,11 @@ function endInterseason(){
   G.phase="playing";
   G.morale=clamp(G.morale+10,0,100);
   G.log.push(`__EVT__🌿 ${G.lang==="en"?"New year begins — press ready":"Nový rok začíná — lis připraven"}: ${G.year}`);
+  // Role modal: trigger when entering year 2 for the first time
+  if(G.gameYear===2 && !G._roleModalDone){
+    G.phase="roleSelect";
+    autoSave(); render(); return;
+  }
   autoSave(); render();
 }
 
@@ -2805,6 +2826,158 @@ function bar(val,max,color){
 }
 
 // ── RENDER ────────────────────────────────────────────────────
+// ── ROLE SELECTION MODAL ──────────────────────────────────────
+const ROLES = {
+  apprentice: {
+    en:"Apprentice",        cs:"Učeň",
+    desc_en:"You clean the type, carry lead, and learn by watching. No authority — but no blame either.",
+    desc_cs:"Čistíš litery, nosíš olovo a učíš se pozorováním. Žádná moc — ale ani žádná odpovědnost.",
+    bonus_en:"Starter bonus: +4 rags, +2 lead. Wage costs -20%.",
+    bonus_cs:"Startovní bonus: +4 hadry, +2 olovo. Mzdy -20%.",
+    icon:"🪣"
+  },
+  journeyman: {
+    en:"Journeyman",        cs:"Tovaryš",
+    desc_en:"You know the press. You set type, pull the bar, mix ink. Skilled, respected, but not yet your own master.",
+    desc_cs:"Znáš lis. Sázíš, taháš za páku, mícháš barvu. Zkušený, respektovaný — ale ještě ne svým vlastním pánem.",
+    bonus_en:"Starter bonus: +3 ink, +3 paper. Print quality +5%.",
+    bonus_cs:"Startovní bonus: +3 inkoust, +3 papír. Kvalita tisku +5%.",
+    icon:"⚙️"
+  },
+  master: {
+    en:"Master Printer",    cs:"Mistr tiskař",
+    desc_en:"Your workshop, your press, your decisions. You take the orders, pay the wages, bear the risk.",
+    desc_cs:"Tvá dílna, tvůj lis, tvá rozhodnutí. Přijímáš zakázky, platíš mzdy, neseš riziko.",
+    bonus_en:"Starter bonus: +15 gold, +1 press run-in. Reputation starts at 6.",
+    bonus_cs:"Startovní bonus: +15 zlatých, +1 zaběhnutost lisu. Reputace začíná na 6.",
+    icon:"🖨️"
+  },
+  publisher: {
+    en:"Publisher",         cs:"Nakladatel",
+    desc_en:"You fund, you plan, you sell. The press is a tool — the market is your battlefield.",
+    desc_cs:"Financuješ, plánuješ, prodáváš. Lis je nástroj — trh je tvé bojiště.",
+    bonus_en:"Starter bonus: +25 gold, +2 active orders slots. Market prices -10%.",
+    bonus_cs:"Startovní bonus: +25 zlatých, +2 sloty aktivních zakázek. Tržní ceny -10%.",
+    icon:"📦"
+  }
+};
+
+function applyRoleBonus(roleId){
+  switch(roleId){
+    case "apprentice": G.res.rags+=4; G.res.lead+=2; break;
+    case "journeyman": G.res.ink+=3; G.res.paper+=3; break;
+    case "master":     G.gold+=15; G.pressRunIn=Math.min(100,G.pressRunIn+10); G.reputation=Math.max(G.reputation,6); break;
+    case "publisher":  G.gold+=25; break;
+  }
+}
+
+function confirmRole(roleId, name, workshop, gender){
+  const L=G.lang;
+  G.role=roleId;
+  G.roleLevel=["apprentice","journeyman","master","publisher"].indexOf(roleId)+1;
+  G.playerName=name||( L==="en"?"The Printer":"Tiskař" );
+  G.workshopName=workshop||( L==="en"?"The Press":"Tiskárna" );
+  G.gender=gender;
+  G._roleModalDone=true;
+  applyRoleBonus(roleId);
+  const r=ROLES[roleId];
+  const title=gender==="master"?(L==="en"?"Master ":"Mistr "): gender==="mistress"?(L==="en"?"Mistress ":"Mistrová "):"";
+  const firstEntry = L==="en"
+    ? `I, ${title}${G.playerName}, take up the press at ${G.workshopName}. The year is ${G.year}. The ink smells of linseed and ambition.`
+    : `Já, ${title}${G.playerName}, přebírám lis v dílně ${G.workshopName}. Je rok ${G.year}. Inkoust voní po lněném oleji a ctižádosti.`;
+  G.journal.push({type:"story", gameYear:G.gameYear, gameRound:G.round, text:firstEntry, ts:Date.now()});
+  G.log.push(`__EVT__🖨️ ${L==="en"?`${G.workshopName} established. ${title}${G.playerName} takes the press.`:`${G.workshopName} založena. ${title}${G.playerName} přebírá lis.`}`);
+  G.phase="playing";
+  autoSave(); render();
+}
+
+function buildRoleModal(){
+  const L=G.lang;
+  let selRole="master";
+  let nameVal=""; let workshopVal=""; let genderVal="master";
+
+  const overlay=h("div",{class:"modal-bg"});
+  const modal=h("div",{class:"modal",style:{maxWidth:"520px",padding:"0",overflow:"hidden"},onClick:e=>e.stopPropagation()});
+
+  const header=h("div",{style:{padding:"18px 20px 14px",borderBottom:"1px solid var(--border)"}},
+    h("div",{style:{fontSize:"9px",letterSpacing:"2px",color:"var(--red)",textTransform:"uppercase",marginBottom:"6px"}},
+      L==="en"?"Anno Domini "+G.year:"Léta Páně "+G.year),
+    h("div",{style:{fontSize:"16px",fontWeight:"700",color:"var(--paper)",marginBottom:"4px"}},
+      L==="en"?"Who are you?":"Kdo jste?"),
+    h("div",{style:{fontSize:"11px",color:"#666"}},
+      L==="en"?"Your first year is behind you. Now define your place in the trade.":"Váš první rok je za vámi. Nyní definujte své místo v řemesle."));
+  modal.append(header);
+
+  const body=h("div",{style:{padding:"16px 20px"}});
+
+  // Name inputs
+  const nameRow=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px",marginBottom:"12px"}});
+  const nameInput=h("input",{type:"text",placeholder:L==="en"?"Your name":"Vaše jméno",maxLength:40,
+    style:{width:"100%",padding:"7px 10px",background:"var(--card2)",border:"1px solid var(--border2)",color:"var(--paper)",fontSize:"12px"},
+    onInput:e=>{nameVal=e.target.value;}});
+  const wsInput=h("input",{type:"text",placeholder:L==="en"?"Workshop name":"Název dílny",maxLength:40,
+    style:{width:"100%",padding:"7px 10px",background:"var(--card2)",border:"1px solid var(--border2)",color:"var(--paper)",fontSize:"12px"},
+    onInput:e=>{workshopVal=e.target.value;}});
+  nameRow.append(
+    h("div",null,h("div",{style:{fontSize:"9px",color:"#555",marginBottom:"3px",textTransform:"uppercase",letterSpacing:"1px"}},L==="en"?"Your name":"Jméno"),nameInput),
+    h("div",null,h("div",{style:{fontSize:"9px",color:"#555",marginBottom:"3px",textTransform:"uppercase",letterSpacing:"1px"}},L==="en"?"Workshop":"Dílna"),wsInput));
+  body.append(nameRow);
+
+  // Gender
+  const genderRow=h("div",{style:{display:"flex",gap:"6px",marginBottom:"14px"}});
+  [["master",L==="en"?"Mistr":"Mistr"],["mistress",L==="en"?"Mistrová":"Mistrová"],["none",L==="en"?"No title":"Bez titulu"]].forEach(([val,label])=>{
+    const btn=h("button",{class:"btn btn-s"+(val==="master"?" btn-p":""),id:"gender_"+val,
+      style:{flex:"1",fontSize:"11px"},
+      onClick:()=>{
+        genderVal=val;
+        ["master","mistress","none"].forEach(v=>document.getElementById("gender_"+v)?.classList.toggle("btn-p",v===val));
+      }},label);
+    genderRow.append(btn);
+  });
+  body.append(h("div",{style:{fontSize:"9px",color:"#555",marginBottom:"4px",textTransform:"uppercase",letterSpacing:"1px"}},L==="en"?"Title":"Titul"));
+  body.append(genderRow);
+
+  // Role cards
+  body.append(h("div",{style:{fontSize:"9px",color:"#555",marginBottom:"6px",textTransform:"uppercase",letterSpacing:"1px"}},
+    L==="en"?"Your role":"Vaše role"));
+  const roleGrid=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"6px",marginBottom:"14px"}});
+  Object.entries(ROLES).forEach(([id,r])=>{
+    const card=h("div",{id:"role_"+id,
+      style:{padding:"10px",border:"1px solid "+(id==="master"?"var(--gold2)":"var(--border2)"),
+        background:id==="master"?"rgba(201,149,43,0.07)":"var(--card2)",cursor:"pointer"},
+      onClick:()=>{
+        selRole=id;
+        Object.keys(ROLES).forEach(k=>{
+          const el=document.getElementById("role_"+k);
+          if(el){el.style.borderColor=k===id?"var(--gold2)":"var(--border2)"; el.style.background=k===id?"rgba(201,149,43,0.07)":"var(--card2)";}
+        });
+        // update bonus text
+        const bonusEl=document.getElementById("role_bonus_text");
+        if(bonusEl) bonusEl.textContent=L==="en"?ROLES[id].bonus_en:ROLES[id].bonus_cs;
+      }},
+      h("div",{style:{fontSize:"16px",marginBottom:"4px"}},r.icon),
+      h("div",{style:{fontSize:"11px",fontWeight:"700",color:"var(--paper)",marginBottom:"3px"}},L==="en"?r.en:r.cs),
+      h("div",{style:{fontSize:"10px",color:"#666",lineHeight:"1.4"}},L==="en"?r.desc_en:r.desc_cs));
+    roleGrid.append(card);
+  });
+  body.append(roleGrid);
+
+  // Bonus display
+  const bonusBox=h("div",{style:{padding:"8px 10px",background:"rgba(201,149,43,0.05)",border:"1px solid var(--border)",marginBottom:"14px",fontSize:"11px",color:"var(--gold2)"}},
+    h("span",{id:"role_bonus_text"},L==="en"?ROLES.master.bonus_en:ROLES.master.bonus_cs));
+  body.append(bonusBox);
+
+  // Confirm
+  const confirmBtn=h("button",{class:"btn btn-p",style:{width:"100%",padding:"10px",fontSize:"12px",letterSpacing:"1px"},
+    onClick:()=>confirmRole(selRole, nameVal.trim(), workshopVal.trim(), genderVal)},
+    L==="en"?"Take up the press →":"Přistoupit k lisu →");
+  body.append(confirmBtn);
+
+  modal.append(body);
+  overlay.append(modal);
+  return overlay;
+}
+
 function render(){
   const p=G, L=p.lang;
   const isDesktop = window.innerWidth>=768;
@@ -2817,6 +2990,18 @@ function render(){
     const w = p.workers.find(x=>x.id===p._heroModal);
     if(w){ app.append(buildHeroModal(w)); return; }
     else G._heroModal=null;
+  }
+
+  // ── Role selection phase ──
+  if(p.phase==="roleSelect"){
+    app.append(buildRoleModal());
+    return;
+  }
+
+  // Fallback: show role modal if somehow missed
+  if(p.phase==="playing" && p.gameYear>=2 && !p._roleModalDone && !p.role){
+    app.append(buildRoleModal());
+    return;
   }
 
   // ── Historical Event phase ──
@@ -3098,7 +3283,7 @@ function render(){
     {id:"market",   icon:"🛒", en:"Market",      cs:"Trh"},
     {id:"party",    icon:"👥", en:"Workers",     cs:"Parta"},
     {id:"tabularium",icon:"💰",en:"Tabularium",  cs:"Tabulárium"},
-    {id:"log",      icon:"📖", en:"Chronicle",   cs:"Kronika"},
+    {id:"log",      icon:"📖", en:"Journal",    cs:"Deník"},
     {id:"settings", icon:"⚙",  en:"Settings",   cs:"Nastavení"},
   ];
   const tabRow=h("div",{class:"tabs"});
@@ -4616,24 +4801,113 @@ function render(){
 
   // ── TAB: LOG ──
   } else if(p.tab==="log"){
-    const logSec=h("div",{class:"sec"});
-    logSec.append(h("div",{class:"sec-title"},L==="en"?"Chronicle":"Kronika"));
-    const logBox=h("div",{class:"log-box"});
-    const entries=[...p.log].reverse().slice(0,100);
+    // ── JOURNAL TAB — two columns ──
+    const jWrap=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px",alignItems:"start"}});
+
+    // ── LEFT: PERSONAL JOURNAL ──
+    const jLeft=h("div");
+    const jHeader=h("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"8px"}},
+      h("div",{class:"sec-title",style:{marginBottom:"0"}},L==="en"?"Journal":"Deník"),
+      h("button",{
+        class:"btn btn-s",
+        title:L==="en"?"Add note":"Přidat poznámku",
+        style:{fontSize:"13px",padding:"3px 8px"},
+        onClick:()=>{
+          if((p.journal||[]).filter(e=>e.type==="note").length>=25){
+            showToast(L==="en"?"Journal full":"Deník plný",[L==="en"?"Max 25 notes reached. Delete one first.":"Dosaženo max 25 poznámek."]);
+            return;
+          }
+          G._journalNoteOpen=!G._journalNoteOpen; render();
+        }},
+        "✒"));
+    jLeft.append(jHeader);
+
+    // New note input area
+    if(p._journalNoteOpen){
+      const noteBox=h("div",{style:{marginBottom:"10px",padding:"8px",border:"1px solid var(--gold2)",background:"rgba(201,149,43,0.05)"}});
+      const noteMeta=h("div",{style:{fontSize:"9px",color:"#555",marginBottom:"5px",letterSpacing:"1px"}},
+        `${L==="en"?"Year":"Rok"} ${p.year} · ${L==="en"?"Round":"Kolo"} ${p.round+1}`);
+      const noteArea=h("textarea",{
+        placeholder:L==="en"?"Write your note… (max 500 chars)":"Napište poznámku… (max 500 znaků)",
+        maxLength:500,
+        style:{width:"100%",minHeight:"70px",background:"var(--card2)",border:"1px solid var(--border2)",
+          color:"var(--paper)",fontSize:"11px",padding:"6px",resize:"vertical",fontFamily:"var(--font)"}});
+      const charCount=h("div",{style:{fontSize:"9px",color:"#444",textAlign:"right",marginTop:"2px"}},"0 / 500");
+      noteArea.addEventListener("input",()=>{ charCount.textContent=noteArea.value.length+" / 500"; });
+      const noteBtns=h("div",{style:{display:"flex",gap:"6px",marginTop:"6px"}});
+      noteBtns.append(
+        h("button",{class:"btn btn-s btn-p",style:{flex:"1"},onClick:()=>{
+          const txt=(noteArea.value||"").trim();
+          if(!txt) return;
+          if(!G.journal) G.journal=[];
+          G.journal.push({type:"note",gameYear:p.gameYear,gameRound:p.round,text:txt,ts:Date.now()});
+          G._journalNoteOpen=false;
+          autoSave(); render();
+        }},L==="en"?"Save":"Uložit"),
+        h("button",{class:"btn btn-s",style:{flex:"1"},onClick:()=>{G._journalNoteOpen=false;render();}},
+          L==="en"?"Cancel":"Zrušit"));
+      noteBox.append(noteMeta,noteArea,charCount,noteBtns);
+      jLeft.append(noteBox);
+    }
+
+    // Journal entries list
+    const jEntries=(p.journal||[]).slice().reverse();
+    if(!jEntries.length){
+      jLeft.append(h("div",{style:{fontSize:"11px",color:"#444",fontStyle:"italic",padding:"8px 0"}},
+        L==="en"?"No entries yet. Press ✒ to write your first note.":"Zatím žádné záznamy. Stiskni ✒ pro první poznámku."));
+    }
+    jEntries.forEach((entry,idx)=>{
+      const realIdx=jEntries.length-1-idx;
+      const isNote=entry.type==="note";
+      const isStory=entry.type==="story";
+      const card=h("div",{style:{
+        marginBottom:"8px",padding:"8px 10px",
+        background:isNote?"rgba(201,149,43,0.04)":isStory?"rgba(255,153,153,0.04)":"var(--card2)",
+        border:"1px solid "+(isNote?"var(--gold2)":isStory?"var(--red)":"var(--border)"),
+        position:"relative"}});
+      const meta=h("div",{style:{fontSize:"9px",color:"#444",marginBottom:"4px",letterSpacing:"1px"}},
+        `${isNote?"✒ ":isStory?"📖 ":"• "}${L==="en"?"Year":"Rok"} ${entry.gameYear} · ${L==="en"?"Round":"Kolo"} ${entry.gameRound+1}`);
+      const txt=h("div",{style:{fontSize:"11px",color:isStory?"#ffaaaa":"var(--paper)",lineHeight:"1.6",fontStyle:isStory?"italic":"normal"}},entry.text);
+      card.append(meta,txt);
+      // Delete button for personal notes
+      if(isNote){
+        const del=h("button",{style:{position:"absolute",top:"6px",right:"6px",background:"none",border:"none",
+          color:"#333",cursor:"pointer",fontSize:"11px",padding:"2px 4px"},
+          title:L==="en"?"Delete":"Smazat",
+          onClick:()=>{
+            G.journal.splice(realIdx,1);
+            autoSave(); render();
+          }},"×");
+        card.append(del);
+      }
+      jLeft.append(card);
+    });
+
+    // ── RIGHT: CHRONICLE ──
+    const jRight=h("div");
+    jRight.append(h("div",{class:"sec-title",style:{marginBottom:"8px"}},L==="en"?"Chronicle":"Kronika"));
+    const entries=[...p.log].reverse().slice(0,120);
+    if(!entries.length){
+      jRight.append(h("div",{style:{fontSize:"11px",color:"#444",fontStyle:"italic"}},
+        L==="en"?"The chronicle is empty.":"Kronika je prázdná."));
+    }
     entries.forEach(entry=>{
-      const cleanEntry=entry.replace(/^__(PROD|ECO|EVT|FLAVOR)__/,"");
+      const clean=entry.replace(/^__(PROD|ECO|EVT|FLAVOR)__/,"");
       const isProd=entry.startsWith("__PROD__");
       const isEco=entry.startsWith("__ECO__");
       const isEvt=entry.startsWith("__EVT__");
       const isFlavor=entry.startsWith("__FLAVOR__");
-      const el=h("div",{class:"log-entry",style:{
-        color:isProd?"#88cc88":isEco?"var(--gold2)":isEvt?"#ff9999":isFlavor?"#8a7a6a":"var(--paper)",
+      const el=h("div",{style:{
+        fontSize:"10px",lineHeight:"1.5",padding:"3px 0",
+        borderBottom:"1px solid var(--border)",
+        color:isProd?"#88cc88":isEco?"var(--gold2)":isEvt?"#ff9999":isFlavor?"#8a7a6a":"#666",
         fontStyle:isFlavor?"italic":"normal"
-      }},cleanEntry);
-      logBox.append(el);
+      }},clean);
+      jRight.append(el);
     });
-    logSec.append(logBox);
-    content.append(logSec);
+
+    jWrap.append(jLeft,jRight);
+    content.append(jWrap);
 
   // ── TAB: TABULARIUM ──
   } else if(p.tab==="tabularium"){
@@ -4813,57 +5087,6 @@ function render(){
           localStorage.removeItem("kt_v1");G=initState();G.availOrders=genOrderPool(1,5);render();
         }
       }},L==="en"?"Reset":"Smazat")));
-    // ── AUDIO ──
-    const audioSec=h("div",{class:"sec"});
-    audioSec.append(h("div",{class:"sec-title"},L==="en"?"Audio":"Zvuk"));
-    audioSec.append(h("div",{class:"settings-row"},
-      h("div",{class:"settings-label"},
-        L==="en"?"Sound effects & ambient":"Zvukové efekty a ambient",
-        h("span",{class:"audio-dot"+(AUDIO.enabled?" on":""),id:"audioDot"})),
-      h("div",{style:{display:"flex",gap:"4px"}},
-        h("button",{
-          class:"btn btn-s"+(AUDIO.enabled?" btn-active":""),
-          onClick:()=>{AUDIO.enable();render();}},
-          L==="en"?"ON":"ZAP"),
-        h("button",{
-          class:"btn btn-s"+(!AUDIO.enabled?" btn-active":""),
-          onClick:()=>{AUDIO.disable();render();}},
-          L==="en"?"OFF":"VYP"))));
-    if(AUDIO.enabled){
-      audioSec.append(h("div",{class:"settings-row"},
-        h("div",{class:"settings-label"},L==="en"?"Volume":"Hlasitost"),
-        h("input",{type:"range",min:"0",max:"1",step:"0.05",value:"0.7",
-          style:{width:"100px",accentColor:"var(--gold)"},
-          onInput:e=>AUDIO.setVolume(parseFloat(e.target.value))})));
-    }
-    setsSec.append(audioSec);
-
-    // ── SAVE / LOAD ──
-    const saveSec=h("div",{class:"sec"});
-    saveSec.append(h("div",{class:"sec-title"},L==="en"?"Save & Load":"Uložit a načíst"));
-    saveSec.append(h("div",{class:"settings-row"},
-      h("div",{class:"settings-label"},L==="en"?"Save game to file":"Uložit hru do souboru"),
-      h("button",{class:"btn btn-s btn-p",onClick:()=>saveGame()},
-        L==="en"?"💾 Save":"💾 Uložit")));
-    saveSec.append(h("div",{class:"settings-row"},
-      h("div",{class:"settings-label"},L==="en"?"Load game from file":"Načíst hru ze souboru"),
-      h("button",{class:"btn btn-s",onClick:()=>loadGame()},
-        L==="en"?"📂 Load":"📂 Načíst")));
-    saveSec.append(h("div",{style:{fontSize:"9px",color:"#444",marginTop:"4px",padding:"0 2px"}},
-      L==="en"?"Game auto-saves to browser on every round. Export JSON for backup.":
-               "Hra se automaticky ukládá do prohlížeče každé kolo. JSON export pro zálohu."));
-    content.append(saveSec);
-
-    // ── ABOUT ──
-    const aboutSec=h("div",{class:"sec"});
-    aboutSec.append(h("div",{class:"sec-title"},L==="en"?"About":"O hře"));
-    aboutSec.append(h("div",{class:"settings-row"},
-      h("div",{class:"settings-label"},L==="en"?"About the game":"Informace o hře"),
-      h("button",{class:"btn btn-s",onClick:()=>showAbout()},
-        L==="en"?"ℹ️ About":"ℹ️ O hře")));
-    content.append(aboutSec);
-
-    setsSec.append(audioSec);
     content.append(setsSec);
 
     // Stats
@@ -4949,10 +5172,8 @@ function render(){
   // About modal
   if(p._showAbout) renderAboutModal(app);
 
-  // Audio hooks — play sounds on key actions
-  if(AUDIO.enabled){
-    // Patch printRun to play print cycle
-    const printBtns=app.querySelectorAll('[data-audio="print"]');
+  // Audio hooks
+  if(typeof AUDIO!=="undefined" && AUDIO.enabled){
     // Sound triggers are called directly from game functions via AUDIO.play()
   }
 }
