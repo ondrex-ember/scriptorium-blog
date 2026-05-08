@@ -2658,27 +2658,11 @@ function advanceRound(){
   mor=clamp(mor,0,100); gold=Math.max(0,gold);
   const nr=(round+1)%ROUNDS_PER_YEAR;
 
-  // If last round, go straight to interseason — skip event phase
-  if(isLastRound){
-    Object.assign(G,{
-      round:nr, log, morale:mor, gold, debt,
-      summary:{wages,wagesPaid,wagesDeficit,bCost,goldDelta:gold-p.gold,morDelta:mor-p.morale},
-      events:[], curEvt:null,
-      phase:"interseason"
-    });
-    showToast(`${MONTH_NAMES_EN[round]} · ${isPrep?"Prep":"Press"}`,
-      [`💰 ${gold}g (${gold-p.gold>=0?"+":""}${gold-p.gold}g)`,
-       wages>0?`💸 -${wages}g wages`:null,
-       G.letterWear>60?`⚠️ Type worn ${G.letterWear}%`:null].filter(Boolean));
-    startInterseason();
-    return;
-  }
-
   Object.assign(G,{
     round:nr, log, morale:mor, gold, debt,
     summary:{wages,wagesPaid,wagesDeficit,bCost,goldDelta:gold-p.gold,morDelta:mor-p.morale},
     events:evts.slice(1), curEvt:evts[0]||null,
-    phase: evts.length?"event":"summary"
+    phase: evts.length?"event":(isLastRound?"interseasonPhase":"summary")
   });
 
   // Toast
@@ -2929,11 +2913,15 @@ function buildRoleModal(){
   // Name inputs
   const nameRow=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px",marginBottom:"12px"}});
   const nameInput=h("input",{type:"text",placeholder:L==="en"?"Your name":"Vaše jméno",maxLength:40,
-    style:{width:"100%",padding:"7px 10px",background:"var(--card2)",border:"1px solid var(--border2)",color:"var(--paper)",fontSize:"12px"}});
+    autocomplete:"off",autocorrect:"off",autocapitalize:"words",spellcheck:"false",
+    style:{width:"100%",padding:"7px 10px",background:"var(--card2)",border:"1px solid var(--border2)",color:"var(--paper)",fontSize:"16px"}});
   nameInput.addEventListener("input",e=>{nameVal=e.target.value;});
+  nameInput.addEventListener("blur",e=>{nameVal=e.target.value;});
   const wsInput=h("input",{type:"text",placeholder:L==="en"?"Workshop name":"Název dílny",maxLength:40,
-    style:{width:"100%",padding:"7px 10px",background:"var(--card2)",border:"1px solid var(--border2)",color:"var(--paper)",fontSize:"12px"}});
+    autocomplete:"off",autocorrect:"off",autocapitalize:"words",spellcheck:"false",
+    style:{width:"100%",padding:"7px 10px",background:"var(--card2)",border:"1px solid var(--border2)",color:"var(--paper)",fontSize:"16px"}});
   wsInput.addEventListener("input",e=>{workshopVal=e.target.value;});
+  wsInput.addEventListener("blur",e=>{workshopVal=e.target.value;});
   nameRow.append(
     h("div",null,h("div",{style:{fontSize:"9px",color:"#555",marginBottom:"3px",textTransform:"uppercase",letterSpacing:"1px"}},L==="en"?"Your name":"Jméno"),nameInput),
     h("div",null,h("div",{style:{fontSize:"9px",color:"#555",marginBottom:"3px",textTransform:"uppercase",letterSpacing:"1px"}},L==="en"?"Workshop":"Dílna"),wsInput));
@@ -3014,6 +3002,13 @@ function render(){
 
   // ── Role selection phase ──
   if(p.phase==="roleSelect"){
+    // Don't re-render if modal already exists and user is focused on an input
+    const existingModal=app.querySelector(".modal-bg");
+    const activeEl=document.activeElement;
+    if(existingModal && activeEl && (activeEl.tagName==="INPUT"||activeEl.tagName==="TEXTAREA")){
+      return; // preserve focus, don't wipe modal
+    }
+    app.innerHTML="";
     app.append(buildRoleModal());
     return;
   }
