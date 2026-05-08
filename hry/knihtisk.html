@@ -1352,6 +1352,7 @@ function initState(){
     role: null,         // null until chosen; "apprentice"|"journeyman"|"master"|"publisher"
     roleLevel: 1,       // 1-4, mirrors career progression
     _roleModalDone: false,
+    _lastRoundDone: false,
     _journalNoteOpen: false,
 
     // Journal
@@ -2654,6 +2655,8 @@ function advanceRound(){
     }
   }
   if(isLastRound) evts.push("yearEnd");
+  // Mark that this was the last round so dismissEvt can trigger interseason
+  if(isLastRound) G._lastRoundDone = true;
 
   mor=clamp(mor,0,100); gold=Math.max(0,gold);
   const nr=(round+1)%ROUNDS_PER_YEAR;
@@ -2913,15 +2916,11 @@ function buildRoleModal(){
   // Name inputs
   const nameRow=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px",marginBottom:"12px"}});
   const nameInput=h("input",{type:"text",placeholder:L==="en"?"Your name":"Vaše jméno",maxLength:40,
-    autocomplete:"off",autocorrect:"off",autocapitalize:"words",spellcheck:"false",
-    style:{width:"100%",padding:"7px 10px",background:"var(--card2)",border:"1px solid var(--border2)",color:"var(--paper)",fontSize:"16px"}});
+    style:{width:"100%",padding:"7px 10px",background:"var(--card2)",border:"1px solid var(--border2)",color:"var(--paper)",fontSize:"12px"}});
   nameInput.addEventListener("input",e=>{nameVal=e.target.value;});
-  nameInput.addEventListener("blur",e=>{nameVal=e.target.value;});
   const wsInput=h("input",{type:"text",placeholder:L==="en"?"Workshop name":"Název dílny",maxLength:40,
-    autocomplete:"off",autocorrect:"off",autocapitalize:"words",spellcheck:"false",
-    style:{width:"100%",padding:"7px 10px",background:"var(--card2)",border:"1px solid var(--border2)",color:"var(--paper)",fontSize:"16px"}});
+    style:{width:"100%",padding:"7px 10px",background:"var(--card2)",border:"1px solid var(--border2)",color:"var(--paper)",fontSize:"12px"}});
   wsInput.addEventListener("input",e=>{workshopVal=e.target.value;});
-  wsInput.addEventListener("blur",e=>{workshopVal=e.target.value;});
   nameRow.append(
     h("div",null,h("div",{style:{fontSize:"9px",color:"#555",marginBottom:"3px",textTransform:"uppercase",letterSpacing:"1px"}},L==="en"?"Your name":"Jméno"),nameInput),
     h("div",null,h("div",{style:{fontSize:"9px",color:"#555",marginBottom:"3px",textTransform:"uppercase",letterSpacing:"1px"}},L==="en"?"Workshop":"Dílna"),wsInput));
@@ -3002,13 +3001,6 @@ function render(){
 
   // ── Role selection phase ──
   if(p.phase==="roleSelect"){
-    // Don't re-render if modal already exists and user is focused on an input
-    const existingModal=app.querySelector(".modal-bg");
-    const activeEl=document.activeElement;
-    if(existingModal && activeEl && (activeEl.tagName==="INPUT"||activeEl.tagName==="TEXTAREA")){
-      return; // preserve focus, don't wipe modal
-    }
-    app.innerHTML="";
     app.append(buildRoleModal());
     return;
   }
@@ -3144,8 +3136,8 @@ function render(){
     if(p.events?.length){G.curEvt=p.events.shift();}
     else{
       G.curEvt=null;
-      if(p.phase==="event") G.phase=G.round>=ROUNDS_PER_YEAR?"interseasonPhase":"summary";
-      if(G.round>=ROUNDS_PER_YEAR||G.phase==="interseasonPhase") startInterseason();
+      if(p.phase==="event") G.phase=G._lastRoundDone?"interseasonPhase":"summary";
+      if(G._lastRoundDone||G.phase==="interseasonPhase"){ G._lastRoundDone=false; startInterseason(); }
       else G.phase="playing";
     }
     render();
