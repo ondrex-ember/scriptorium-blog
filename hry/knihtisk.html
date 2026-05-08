@@ -2913,64 +2913,68 @@ function buildRoleModal(){
   // Name inputs
   const nameRow=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px",marginBottom:"12px"}});
   const nameInput=h("input",{type:"text",placeholder:L==="en"?"Your name":"Vaše jméno",maxLength:40,
-    style:{width:"100%",padding:"7px 10px",background:"var(--card2)",border:"1px solid var(--border2)",color:"var(--paper)",fontSize:"12px"},
-    onInput:e=>{nameVal=e.target.value;}});
+    style:{width:"100%",padding:"7px 10px",background:"var(--card2)",border:"1px solid var(--border2)",color:"var(--paper)",fontSize:"12px"}});
+  nameInput.addEventListener("input",e=>{nameVal=e.target.value;});
   const wsInput=h("input",{type:"text",placeholder:L==="en"?"Workshop name":"Název dílny",maxLength:40,
-    style:{width:"100%",padding:"7px 10px",background:"var(--card2)",border:"1px solid var(--border2)",color:"var(--paper)",fontSize:"12px"},
-    onInput:e=>{workshopVal=e.target.value;}});
+    style:{width:"100%",padding:"7px 10px",background:"var(--card2)",border:"1px solid var(--border2)",color:"var(--paper)",fontSize:"12px"}});
+  wsInput.addEventListener("input",e=>{workshopVal=e.target.value;});
   nameRow.append(
     h("div",null,h("div",{style:{fontSize:"9px",color:"#555",marginBottom:"3px",textTransform:"uppercase",letterSpacing:"1px"}},L==="en"?"Your name":"Jméno"),nameInput),
     h("div",null,h("div",{style:{fontSize:"9px",color:"#555",marginBottom:"3px",textTransform:"uppercase",letterSpacing:"1px"}},L==="en"?"Workshop":"Dílna"),wsInput));
   body.append(nameRow);
 
-  // Gender
+  // Gender — store buttons in object for direct reference, no getElementById
+  const genderBtns={};
   const genderRow=h("div",{style:{display:"flex",gap:"6px",marginBottom:"14px"}});
   [["master",L==="en"?"Mistr":"Mistr"],["mistress",L==="en"?"Mistrová":"Mistrová"],["none",L==="en"?"No title":"Bez titulu"]].forEach(([val,label])=>{
-    const btn=h("button",{class:"btn btn-s"+(val==="master"?" btn-p":""),id:"gender_"+val,
-      style:{flex:"1",fontSize:"11px"},
-      onClick:()=>{
-        genderVal=val;
-        ["master","mistress","none"].forEach(v=>document.getElementById("gender_"+v)?.classList.toggle("btn-p",v===val));
-      }},label);
+    const btn=h("button",{class:"btn btn-s"+(val==="master"?" btn-p":""),
+      style:{flex:"1",fontSize:"11px"}},label);
+    btn.addEventListener("click",()=>{
+      genderVal=val;
+      Object.values(genderBtns).forEach(b=>b.classList.remove("btn-p"));
+      btn.classList.add("btn-p");
+    });
+    genderBtns[val]=btn;
     genderRow.append(btn);
   });
   body.append(h("div",{style:{fontSize:"9px",color:"#555",marginBottom:"4px",textTransform:"uppercase",letterSpacing:"1px"}},L==="en"?"Title":"Titul"));
   body.append(genderRow);
 
-  // Role cards
+  // Role cards — store in object for direct reference
+  const roleCards={};
+  const bonusText=h("span",null,L==="en"?ROLES.master.bonus_en:ROLES.master.bonus_cs);
   body.append(h("div",{style:{fontSize:"9px",color:"#555",marginBottom:"6px",textTransform:"uppercase",letterSpacing:"1px"}},
     L==="en"?"Your role":"Vaše role"));
-  const roleGrid=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"6px",marginBottom:"14px"}});
+  const roleGrid=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"6px",marginBottom:"10px"}});
   Object.entries(ROLES).forEach(([id,r])=>{
-    const card=h("div",{id:"role_"+id,
-      style:{padding:"10px",border:"1px solid "+(id==="master"?"var(--gold2)":"var(--border2)"),
-        background:id==="master"?"rgba(201,149,43,0.07)":"var(--card2)",cursor:"pointer"},
-      onClick:()=>{
-        selRole=id;
-        Object.keys(ROLES).forEach(k=>{
-          const el=document.getElementById("role_"+k);
-          if(el){el.style.borderColor=k===id?"var(--gold2)":"var(--border2)"; el.style.background=k===id?"rgba(201,149,43,0.07)":"var(--card2)";}
-        });
-        // update bonus text
-        const bonusEl=document.getElementById("role_bonus_text");
-        if(bonusEl) bonusEl.textContent=L==="en"?ROLES[id].bonus_en:ROLES[id].bonus_cs;
-      }},
+    const card=h("div",{style:{padding:"10px",border:"1px solid "+(id==="master"?"var(--gold2)":"var(--border2)"),
+      background:id==="master"?"rgba(201,149,43,0.07)":"var(--card2)",cursor:"pointer"}},
       h("div",{style:{fontSize:"16px",marginBottom:"4px"}},r.icon),
       h("div",{style:{fontSize:"11px",fontWeight:"700",color:"var(--paper)",marginBottom:"3px"}},L==="en"?r.en:r.cs),
       h("div",{style:{fontSize:"10px",color:"#666",lineHeight:"1.4"}},L==="en"?r.desc_en:r.desc_cs));
+    card.addEventListener("click",()=>{
+      selRole=id;
+      Object.values(roleCards).forEach(c=>{
+        c.style.borderColor="var(--border2)";
+        c.style.background="var(--card2)";
+      });
+      card.style.borderColor="var(--gold2)";
+      card.style.background="rgba(201,149,43,0.07)";
+      bonusText.textContent=L==="en"?ROLES[id].bonus_en:ROLES[id].bonus_cs;
+    });
+    roleCards[id]=card;
     roleGrid.append(card);
   });
   body.append(roleGrid);
 
   // Bonus display
-  const bonusBox=h("div",{style:{padding:"8px 10px",background:"rgba(201,149,43,0.05)",border:"1px solid var(--border)",marginBottom:"14px",fontSize:"11px",color:"var(--gold2)"}},
-    h("span",{id:"role_bonus_text"},L==="en"?ROLES.master.bonus_en:ROLES.master.bonus_cs));
+  const bonusBox=h("div",{style:{padding:"8px 10px",background:"rgba(201,149,43,0.05)",border:"1px solid var(--border)",marginBottom:"14px",fontSize:"11px",color:"var(--gold2)"}},bonusText);
   body.append(bonusBox);
 
   // Confirm
-  const confirmBtn=h("button",{class:"btn btn-p",style:{width:"100%",padding:"10px",fontSize:"12px",letterSpacing:"1px"},
-    onClick:()=>confirmRole(selRole, nameVal.trim(), workshopVal.trim(), genderVal)},
+  const confirmBtn=h("button",{class:"btn btn-p",style:{width:"100%",padding:"10px",fontSize:"12px",letterSpacing:"1px"}},
     L==="en"?"Take up the press →":"Přistoupit k lisu →");
+  confirmBtn.addEventListener("click",()=>confirmRole(selRole, nameVal.trim(), workshopVal.trim(), genderVal));
   body.append(confirmBtn);
 
   modal.append(body);
