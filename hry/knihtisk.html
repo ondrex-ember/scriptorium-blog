@@ -2658,11 +2658,27 @@ function advanceRound(){
   mor=clamp(mor,0,100); gold=Math.max(0,gold);
   const nr=(round+1)%ROUNDS_PER_YEAR;
 
+  // If last round, go straight to interseason — skip event phase
+  if(isLastRound){
+    Object.assign(G,{
+      round:nr, log, morale:mor, gold, debt,
+      summary:{wages,wagesPaid,wagesDeficit,bCost,goldDelta:gold-p.gold,morDelta:mor-p.morale},
+      events:[], curEvt:null,
+      phase:"interseason"
+    });
+    showToast(`${MONTH_NAMES_EN[round]} · ${isPrep?"Prep":"Press"}`,
+      [`💰 ${gold}g (${gold-p.gold>=0?"+":""}${gold-p.gold}g)`,
+       wages>0?`💸 -${wages}g wages`:null,
+       G.letterWear>60?`⚠️ Type worn ${G.letterWear}%`:null].filter(Boolean));
+    startInterseason();
+    return;
+  }
+
   Object.assign(G,{
     round:nr, log, morale:mor, gold, debt,
     summary:{wages,wagesPaid,wagesDeficit,bCost,goldDelta:gold-p.gold,morDelta:mor-p.morale},
     events:evts.slice(1), curEvt:evts[0]||null,
-    phase: evts.length?"event":(isLastRound?"interseasonPhase":"summary")
+    phase: evts.length?"event":"summary"
   });
 
   // Toast
@@ -2708,18 +2724,18 @@ function startInterseason(){
   triggerTurkishThreat();
   // Check if a historical event fires this year
   checkHistEvents();
-  render();
+  // Role modal: show after first year (gameYear just became 2)
+  if(G.gameYear===2 && !G._roleModalDone){
+    G.phase="roleSelect";
+    autoSave(); render(); return;
+  }
+  autoSave(); render();
 }
 
 function endInterseason(){
   G.phase="playing";
   G.morale=clamp(G.morale+10,0,100);
   G.log.push(`__EVT__🌿 ${G.lang==="en"?"New year begins — press ready":"Nový rok začíná — lis připraven"}: ${G.year}`);
-  // Role modal: trigger when entering year 2 for the first time
-  if(G.gameYear===2 && !G._roleModalDone){
-    G.phase="roleSelect";
-    autoSave(); render(); return;
-  }
   autoSave(); render();
 }
 
@@ -2998,12 +3014,6 @@ function render(){
 
   // ── Role selection phase ──
   if(p.phase==="roleSelect"){
-    app.append(buildRoleModal());
-    return;
-  }
-
-  // Fallback: show role modal if somehow missed
-  if(p.phase==="playing" && p.gameYear>=2 && !p._roleModalDone && !p.role){
     app.append(buildRoleModal());
     return;
   }
@@ -5200,7 +5210,6 @@ initMarketPrices();
 updateMarketPrices();
 
 window.addEventListener("resize",()=>render());
-render();
 
 // ── PRINTSHOP AUDIO ENGINE ────────────────────────────────
 class PrintshopAudio {
@@ -5350,6 +5359,7 @@ class PrintshopAudio {
 }
 
 const AUDIO = new PrintshopAudio();
+render(); // First render — AUDIO now exists
 
 // Hook audio into game actions
 const _origPrintRun=printRun;
