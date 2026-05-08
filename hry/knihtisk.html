@@ -691,164 +691,190 @@ const ORDER_POOL = [
   // ── POPULAR (fast, cheap, mass market) ───────────────────
   {id:"pop_01", type:"popular", en:"Broadside — Market Day Prices",     cs:"Leták — Tržní ceny",
    req:{paper:2,ink:1}, workers:["compositor"], reward:7, prestige:0, duration:2,
-   tip_en:"Simple price lists nailed to market posts. Quick money, no prestige.", tip_cs:"Jednoduché cenníky přibité na trhové kůly."},
+   tip_en:"Simple price lists nailed to market posts. The town crier reads them aloud for those who cannot read. Quick money, no prestige — but steady work.", tip_cs:"Jednoduché cenníky přibité na trhové kůly. Obecní biřic je čte nahlas těm, co číst neumějí. Rychlé peníze bez prestiže — ale stabilní práce."},
   {id:"pop_02", type:"popular", en:"Almanac — Weather & Saints' Days",  cs:"Almanach — Počasí a světci",
    req:{paper:3,ink:1}, workers:["compositor"], reward:10, prestige:1, duration:2,
-   tip_en:"Everyone wants to know feast days and planting times.", tip_cs:"Každý chce znát svátky a časy setby."},
+   tip_en:"Everyone wants to know feast days and planting times. The village priest orders ten, the apothecary five, the miller three. Print two hundred and you'll sell every one.", tip_cs:"Každý chce znát svátky a časy setby. Farář objedná deset, lékárník pět, mlynář tři. Vytiskni dvě stě a prodáš každý."},
   {id:"pop_03", type:"popular", en:"Broadside — Indulgence Notice",     cs:"Leták — Odpustky",
    req:{paper:2,ink:1,letters:true}, workers:["compositor"], reward:9, prestige:1, duration:2,
-   tip_en:"The Church sells salvation. You print the certificate.", tip_cs:"Církev prodává spásu. Ty tiskneš potvrzení."},
+   tip_en:"The Church sells salvation by the sheet. You print the blank form, the pardoner fills in the name and takes his cut. Fast work, but Luther's followers are watching.", tip_cs:"Církev prodává spásu po listech. Ty tiskneš prázdný formulář, prodavač odpustků doplní jméno a bere svůj díl. Rychlá práce — ale Lutherovi přívrženci sledují."},
   {id:"pop_04", type:"popular", en:"Song Sheet — Pilgrim Hymns",        cs:"Zpěvník — Poutní písně",
    req:{paper:3,ink:1}, workers:["compositor"], reward:8, prestige:0, duration:2,
-   tip_en:"Pilgrims buy these at shrine gates. Print 200 and sell fast.", tip_cs:"Poutníci kupují u bran svatyní."},
+   tip_en:"Pilgrims buy these at shrine gates before the long walk home. The tunes are old but the words change each year. Print them cheap, sell them fast, collect before they leave.", tip_cs:"Poutníci je kupují u bran svatyní před dlouhou cestou domů. Melodie jsou staré, ale slova se každý rok mění. Tiskni levně, prodej rychle, vybírej peníze dřív než odejdou."},
   {id:"pop_05", type:"popular", en:"Notice — Town Council Ordinance",   cs:"Vyhláška — Nařízení radnice",
    req:{paper:2,ink:1}, workers:["compositor"], reward:11, prestige:1, duration:1,
-   tip_en:"The aldermen pay promptly. Good repeat client.", tip_cs:"Radní platí promptně. Dobrý opakovaný zákazník."},
+   tip_en:"The aldermen pay promptly and never haggle. A reliable client — but the ordinances are long and the deadline is always yesterday. Good repeat work if you can keep up.", tip_cs:"Radní platí promptně a nikdy nesmlouvají. Spolehlivý zákazník — ale nařízení jsou dlouhá a termín byl vždy včera. Dobrá opakovaná práce, pokud udržíš tempo."},
   {id:"pop_06", type:"popular", en:"Calendar — Lunar Phases 1469",      cs:"Kalendář — Lunární fáze 1469",
    req:{paper:4,ink:2}, workers:["compositor"], reward:12, prestige:1, duration:3,
-   tip_en:"Farmers, physicians and priests all need the moon calendar.", tip_cs:"Farmáři, lékaři i kněží potřebují lunární kalendář."},
+   tip_en:"Farmers, physicians and priests all need the moon calendar. The Canon of the Cathedral calculated the phases himself — he'll want to inspect the proofs before you print.", tip_cs:"Farmáři, lékaři i kněží potřebují lunární kalendář. Kanovník katedrály sám vypočítal fáze — bude chtít zkontrolovat korektury dřív než vytiskneš."},
   {id:"pop_07", type:"popular", en:"Broadside — Plague Warning Notice", cs:"Leták — Varování před morem",
    req:{paper:2,ink:1}, workers:["compositor"], reward:8, prestige:0, duration:1,
-   tip_en:"Grim work, but someone must do it.", tip_cs:"Ponurá práce, ale někdo ji udělat musí."},
+   tip_en:"Grim work. The city physician dictates, you set type, and by morning the notices are nailed to every gate. Someone must do it. At least the city pays the same day.", tip_cs:"Ponurá práce. Městský lékař diktuje, ty sázíš, a do rána jsou letáky přibity ke každé bráně. Někdo to udělat musí. Aspoň město platí ten samý den."},
   {id:"pop_08", type:"popular", en:"Recipe Booklet — Herbal Remedies",  cs:"Recetář — Bylinné léky",
    req:{paper:4,ink:2}, workers:["compositor"], reward:13, prestige:1, duration:3,
-   tip_en:"Apothecaries commission these for resale.", tip_cs:"Lékárníci je objednávají na přeprodej."},
+   tip_en:"The apothecaries commission these for resale — they buy fifty copies and sell them at three times the price. You're the one doing the work. Perhaps you should sell direct.", tip_cs:"Lékárníci je objednávají na přeprodej — koupí padesát kusů a prodají za trojnásobek. Ty děláš práci. Možná bys měl prodávat přímo."},
   {id:"pop_09", type:"popular", en:"Pamphlet — Merchant Guild Statutes",cs:"Pamflet — Stanovy kupeckého cechu",
    req:{paper:3,ink:2,letters:true}, workers:["compositor"], reward:14, prestige:1, duration:2,
-   tip_en:"Guild masters want 50 copies for their members.", tip_cs:"Cechmistři chtějí 50 kusů pro členy."},
+   tip_en:"Guild masters want fifty copies for their members — lists of dues, penalties, and rights that every journeyman must know by heart. Dense text, small type, careful work.", tip_cs:"Cechmistři chtějí padesát kusů pro členy — seznamy poplatků, trestů a práv, která každý tovaryš musí znát zpaměti. Hustý text, malé písmo, pečlivá práce."},
   {id:"pop_10", type:"popular", en:"Broadside — New Year Greetings",    cs:"Leták — Novoroční přání",
    req:{paper:3,ink:1}, workers:["compositor"], reward:10, prestige:1, duration:1,
-   tip_en:"December rush. Merchants order by the hundred.", tip_cs:"Prosincový nápor. Kupci objednávají po stovkách."},
+   tip_en:"December rush. Merchants order by the hundred for gifts and for posting on their stalls. A festive commission — but the deadline is Christmas Eve, no exceptions.", tip_cs:"Prosincový nápor. Kupci objednávají po stovkách na dárky a na vylepení u svých krámků. Sváteční zakázka — ale termín je Štědrý večer, bez výjimky."},
   {id:"pop_11", type:"popular", en:"Handbill — Auction of Confiscated Goods", cs:"Leták — Dražba zabaveného zboží",
    req:{paper:2,ink:1}, workers:["compositor"], reward:9, prestige:0, duration:1,
-   tip_en:"City bailiff needs these by morning.", tip_cs:"Městský biřic to potřebuje do rána."},
+   tip_en:"The city bailiff needs these by morning. Somebody's debts came due. The list of seized goods runs to three pages — chairs, a broken loom, six piglets. Print it and collect.", tip_cs:"Městský biřic to potřebuje do rána. Něčí dluhy dozrály. Seznam zabaveného zboží běží na tři strany — židle, rozbitý tkalcovský stav, šest selat. Vytiskni a inkasuj."},
   {id:"pop_12", type:"popular", en:"ABC Primer — Children's Alphabet",  cs:"Slabikář — Dětská abeceda",
    req:{paper:5,ink:2,letters:true}, workers:["compositor"], reward:15, prestige:2, duration:3,
-   tip_en:"Schools are growing. Cheap but many copies needed.", tip_cs:"Školy rostou. Levné, ale potřeba hodně kusů."},
+   tip_en:"Schools are growing and every child needs a primer. The teacher orders for the whole class and pays half upfront. Repetitive to set — but the letters are simple and the run is long.", tip_cs:"Školy rostou a každé dítě potřebuje slabikář. Učitel objednává pro celou třídu a platí polovinu předem. Jednotvárné sázení — ale písmo je jednoduché a náklad je velký."},
 
   // ── RELIGIOUS (steady demand, moderate risk) ─────────────
   {id:"rel_01", type:"religious", en:"Psalterium — 50 Copies",          cs:"Psalterium — 50 kusů",
    req:{paper:8,ink:3,letters:true}, workers:["compositor","corrector"], reward:22, prestige:3, duration:4,
-   tip_en:"The canons of Olomouc Cathedral need choir books.", tip_cs:"Kanovníci olomoucké katedrály potřebují chorální knihy."},
+   tip_en:"The canons of Olomouc Cathedral need choir books for the new season. Fifty copies, each one identical. The precentor will check them page by page against the manuscript.", tip_cs:"Kanovníci olomoucké katedrály potřebují chorální knihy na novou sezonu. Padesát kusů, každý identický. Precentor je zkontroluje stránku po stránce proti rukopisu."},
   {id:"rel_02", type:"religious", en:"Missale Olomucense — Liturgy",    cs:"Missale Olomucense — Liturgie",
    req:{paper:12,ink:4,letters:true}, workers:["compositor","corrector"], reward:30, prestige:4, duration:5,
-   tip_en:"The bishop himself will inspect this. No errors permitted.", tip_cs:"Sám biskup to bude kontrolovat. Žádné chyby."},
+   tip_en:"The bishop himself will inspect this before the first Mass. No errors permitted — not one transposed letter, not one smudged line. The diocese will use this missal for a generation.", tip_cs:"Sám biskup to bude kontrolovat před první mší. Žádné chyby — ani jedno přehozené písmeno, ani jedna rozmazaná linka. Diecéze bude tento misál používat generaci."},
   {id:"rel_03", type:"religious", en:"Bible Excerpts — Lectionary",     cs:"Perikopy — Nedělní čtení",
    req:{paper:6,ink:2,letters:true}, workers:["compositor"], reward:18, prestige:2, duration:3,
-   tip_en:"Sunday readings for parish priests. Steady annual order.", tip_cs:"Nedělní čtení pro farní kněze. Stálá roční zakázka."},
+   tip_en:"Sunday readings for parish priests across the diocese. The order comes every three years — reliable, unspectacular income. The kind of work that keeps the press fed in lean months.", tip_cs:"Nedělní čtení pro farní kněze po celé diecézi. Zakázka přichází každé tři roky — spolehlivý, nenápadný příjem. Druh práce, který lisě živí v chudých měsících."},
   {id:"rel_04", type:"religious", en:"Prayer Book — Lay Brotherhood",   cs:"Modlitebník — Laické bratrstvo",
    req:{paper:5,ink:2,letters:true}, workers:["compositor"], reward:16, prestige:2, duration:3,
-   tip_en:"Brotherhood of Corpus Christi orders 30 copies.", tip_cs:"Bratrstvo Božího Těla objednává 30 kusů."},
+   tip_en:"The Brotherhood of Corpus Christi meets every Sunday after Mass. Thirty copies of their private prayer book, with their patron saint on the frontispiece. They'll pay well for quality.", tip_cs:"Bratrstvo Božího Těla se schází každou neděli po mši. Třicet kusů jejich soukromého modlitebníku s patronem na frontispisu. Za kvalitu dobře zaplatí."},
   {id:"rel_05", type:"religious", en:"Passion Narrative — Holy Week",   cs:"Pašije — Velikonoční týden",
    req:{paper:7,ink:3,letters:true}, workers:["compositor","corrector"], reward:20, prestige:3, duration:3,
-   tip_en:"Must be ready before Palm Sunday. Tight deadline.", tip_cs:"Musí být před Květnou nedělí. Těsný termín."},
+   tip_en:"Must be ready before Palm Sunday — the choir needs the texts to rehearse. The Passion narrative runs long and the type must be large enough for candlelit reading. Tight deadline.", tip_cs:"Musí být před Květnou nedělí — sbor potřebuje texty pro zkoušení. Pašije jsou dlouhé a písmo musí být dost velké pro čtení při svíčkách. Těsný termín."},
   {id:"rel_06", type:"religious", en:"Sermon Collection — Advent",      cs:"Sbírka kázání — Advent",
    req:{paper:8,ink:3}, workers:["compositor"], reward:19, prestige:2, duration:4,
-   tip_en:"Franciscan friars commission for Advent preaching.", tip_cs:"Františkáni objednávají pro adventní kázání."},
+   tip_en:"The Franciscans preach Advent in villages where few can read. Their sermons are printed, distributed to literate locals, and read aloud. Simple language, large type, fast turnaround.", tip_cs:"Františkáni kážou advent ve vesnicích, kde málokdo umí číst. Jejich kázání se tisknou, rozdávají gramotným místním a čtou nahlas. Jednoduchý jazyk, velké písmo, rychlý obrat."},
   {id:"rel_07", type:"religious", en:"Breviary — Augustinian Order",    cs:"Breviář — Augustiniánský řád",
    req:{paper:10,ink:4,letters:true}, workers:["compositor","corrector"], reward:26, prestige:3, duration:5,
-   tip_en:"Hours of prayer — meticulous work, well rewarded.", tip_cs:"Hodinky — pečlivá práce, dobře odměněná."},
+   tip_en:"The Augustinians keep the canonical hours — seven times daily, every day. Their breviary is their life. Meticulous work, well rewarded. Every error will be read a thousand times.", tip_cs:"Augustiniáni drží kanonické hodinky — sedmkrát denně, každý den. Breviář je jejich život. Pečlivá práce, dobře odměněná. Každá chyba bude přečtena tisíckrát."},
   {id:"rel_08", type:"religious", en:"Hagiography — Life of St. Wenceslas", cs:"Život sv. Václava",
    req:{paper:9,ink:3,letters:true}, workers:["compositor"], reward:22, prestige:3, duration:4,
-   tip_en:"Patron saint of Bohemia. Popular with noble patrons.", tip_cs:"Patron Čech. Oblíbený u šlechtických mecenášů."},
+   tip_en:"Saint Wenceslas, martyred duke and patron of Bohemia — his story sells itself. Popular with noble patrons who want their piety on display. The Olomouc chapter will want first copies.", tip_cs:"Svatý Václav, mučednický vévoda a patron Čech — jeho příběh se prodává sám. Oblíbený u šlechtických mecenášů, kteří chtějí ukázat svou zbožnost. Olomoucká kapitula bude chtít první kusy."},
   {id:"rel_09", type:"religious", en:"Antiphonary — Choir Book",        cs:"Antifonář — Chorální zpěvník",
    req:{paper:11,ink:4,letters:true}, workers:["compositor","corrector"], reward:28, prestige:4, duration:5,
-   tip_en:"Large format, large type. Singers must read it from ten feet.", tip_cs:"Velký formát, velká písmena. Zpěváci čtou z deseti stop."},
+   tip_en:"Large format, large type — singers must read this from ten feet away in a darkened choir. Every page matters. One error in a psalm setting and the whole choir stumbles.", tip_cs:"Velký formát, velká písmena — zpěváci čtou z deseti stop ve ztemnělém kůru. Každá stránka je důležitá. Jedna chyba v sazbě žalmu a celý sbor se zakolísá."},
   {id:"rel_10", type:"religious", en:"Catechism — For Parish Schools",  cs:"Katechismus — Pro farní školy",
    req:{paper:6,ink:2,letters:true}, workers:["compositor"], reward:16, prestige:2, duration:3,
-   tip_en:"Bishop mandates religious education. Steady demand.", tip_cs:"Biskupský mandát pro náboženskou výchovu."},
+   tip_en:"Bishop Tas has mandated religious education in every parish school in the diocese. The catechism must be uniform, affordable, and correct. Thousands of children will learn from this page.", tip_cs:"Biskup Tass nařídil náboženskou výuku v každé farní škole diecéze. Katechismus musí být jednotný, dostupný a správný. Tisíce dětí se z těchto stránek naučí."},
 
   // ── SCIENTIFIC (longer, well paid, scholar market) ───────
   {id:"sci_01", type:"scientific", en:"Atlas Mundi — 12 Maps",          cs:"Atlas Mundi — 12 map",
    req:{paper:12,ink:4,vellum:1}, workers:["compositor","engraver"], reward:38, prestige:5, duration:6,
-   tip_en:"Cartographers from Vienna supplied the drawings. Your job: the text and borders.", tip_cs:"Kartografové z Vídně dodali kresby."},
+   tip_en:"Cartographers from Vienna supplied the drawings — twelve maps of the known world, trade routes, coastlines. Your job: the Latin text, borders, and coordinates. A landmark commission.", tip_cs:"Kartografové z Vídně dodali kresby — dvanáct map známého světa, obchodních cest, pobřeží. Tvoje práce: latinský text, orámování a souřadnice. Přelomová zakázka."},
   {id:"sci_02", type:"scientific", en:"Herbarium — Medicinal Plants",   cs:"Herbář — Léčivé rostliny",
    req:{paper:8,ink:3}, workers:["compositor"], reward:22, prestige:3, duration:4,
-   tip_en:"University physicians order for their students.", tip_cs:"Univerzitní lékaři objednávají pro studenty."},
+   tip_en:"University physicians order for their students — every plant named in Latin and the vernacular, with notes on preparation. The illustrations were hand-drawn by a monk in Brno.", tip_cs:"Univerzitní lékaři objednávají pro studenty — každá rostlina pojmenována latinsky i lidově, s poznámkami o přípravě. Ilustrace ručně nakreslil mnich v Brně."},
   {id:"sci_03", type:"scientific", en:"Astronomical Calendar 1469–1480",cs:"Astronomický kalendář 1469–1480",
    req:{paper:7,ink:3,letters:true}, workers:["compositor"], reward:20, prestige:3, duration:4,
-   tip_en:"Planetary tables calculated by the Canon of Olomouc Cathedral.", tip_cs:"Planetární tabulky vypočítané kanovníkem katedrály."},
+   tip_en:"The Canon of Olomouc Cathedral spent three years calculating planetary positions. He wants them printed before a rival publishes first. The numbers must be exact — astronomers will check.", tip_cs:"Kanovník olomoucké katedrály strávil tři roky výpočtem poloh planet. Chce je vytisknout dřív než konkurent vydá první. Čísla musí být přesná — astronomové zkontrolují."},
   {id:"sci_04", type:"scientific", en:"Medica — Physician's Manual",    cs:"Medica — Lékařský manuál",
    req:{paper:9,ink:3,letters:true}, workers:["compositor"], reward:24, prestige:3, duration:5,
-   tip_en:"Latin text. Compositor must know abbreviations — hire carefully.", tip_cs:"Latinský text. Sazeč musí znát zkratky."},
+   tip_en:"A Latin physician's manual — dosages, procedures, and prognoses. The compositor must know medical abbreviations or every line will be wrong. Hire your most learned man for this one.", tip_cs:"Latinský lékařský manuál — dávky, postupy a prognózy. Sazeč musí znát lékařské zkratky nebo každý řádek bude špatně. Na tuto zakázku najmi svého nejznalejšího muže."},
   {id:"sci_05", type:"scientific", en:"Arithmetic — Commercial Reckoning",cs:"Aritmetika — Obchodní počty",
    req:{paper:7,ink:2,letters:true}, workers:["compositor"], reward:18, prestige:2, duration:4,
-   tip_en:"Merchants need to count faster than their competitors.", tip_cs:"Kupci potřebují počítat rychleji než konkurenti."},
+   tip_en:"Merchants need to count faster than their competitors. The abacist who wrote this says it will revolutionise trade. Simple layout — but every number must be checked twice.", tip_cs:"Kupci potřebují počítat rychleji než konkurenti. Počtář, který to napsal, tvrdí, že to revolucionizuje obchod. Jednoduchá sazba — ale každé číslo musí být zkontrolováno dvakrát."},
   {id:"sci_06", type:"scientific", en:"Natural History — Pliny Excerpts",cs:"Přírodopis — Výpisky z Plinia",
    req:{paper:10,ink:4,letters:true}, workers:["compositor","corrector"], reward:28, prestige:4, duration:5,
-   tip_en:"Humanist scholars at the Cathedral school commission this.", tip_cs:"Humanistični učenci katedrální školy si to objednávají."},
+   tip_en:"Humanist scholars at the Cathedral school commissioned this translation of Pliny. Footnotes in three languages. The corrector will earn his fee here — and so will you.", tip_cs:"Humanistití učenci katedrální školy si objednali tento překlad Plinia. Poznámky pod čarou ve třech jazycích. Korektor si zde vydělá svůj honorář — a ty také."},
   {id:"sci_07", type:"scientific", en:"Legal Commentary — Roman Law",   cs:"Komentář — Římské právo",
    req:{paper:11,ink:4,letters:true}, workers:["compositor","corrector"], reward:30, prestige:4, duration:6,
-   tip_en:"Notaries and judges compete for copies. Prestige work.", tip_cs:"Notáři a soudci soutěží o kopie. Prestižní práce."},
+   tip_en:"Notaries and judges compete for copies of this Roman law commentary. The author is a professor at Kraków — his prestige sells the edition before it is even printed.", tip_cs:"Notáři a soudci soutěží o kopie tohoto komentáře k římskému právu. Autor je profesor v Krakově — jeho prestiž prodává vydání ještě před tiskem."},
   {id:"sci_08", type:"scientific", en:"Grammar — Latin for Schoolboys", cs:"Gramatika — Latina pro žáky",
    req:{paper:6,ink:2,letters:true}, workers:["compositor"], reward:16, prestige:2, duration:3,
-   tip_en:"Donatus and Priscian — every school needs these.", tip_cs:"Donatus a Priscianus — každá škola to potřebuje."},
+   tip_en:"Donatus and Priscian — the grammar books every schoolboy must master. Simple to set, long runs, steady demand. The kind of bread-and-butter work a well-run press thrives on.", tip_cs:"Donatus a Priscianus — gramatiky, které musí zvládnout každý školák. Jednoduché sázení, dlouhé náklady, stálá poptávka. Druh každodenní práce, na které prosperuje dobře řízená tiskárna."},
   {id:"sci_09", type:"scientific", en:"Philosophy — Aristotle Excerpts", cs:"Filosofie — Výpisky z Aristotela",
    req:{paper:9,ink:3,letters:true}, workers:["compositor","corrector"], reward:25, prestige:3, duration:5,
-   tip_en:"The Dominican prior wants 20 copies for his scholars.", tip_cs:"Dominikánský prior chce 20 kusů pro své učence."},
+   tip_en:"The Dominican prior wants twenty copies for his scholars. Aristotle on logic, physics, and ethics — essential for any educated man. The translation is new; the corrector must be careful.", tip_cs:"Dominikánský prior chce dvacet kusů pro své učence. Aristoteles o logice, fyzice a etice — nezbytné pro každého vzdělaného muže. Překlad je nový; korektor musí být opatrný."},
   {id:"sci_10", type:"scientific", en:"Map — Roads of Moravia",         cs:"Mapa — Cesty Moravy",
    req:{paper:5,ink:2,vellum:1}, workers:["engraver"], reward:28, prestige:3, duration:4,
-   tip_en:"Merchants pay well for reliable road maps.", tip_cs:"Kupci dobře platí za spolehlivé silniční mapy."},
+   tip_en:"Merchants pay well for reliable road maps. The distances marked here were measured by a royal surveyor — his accuracy has a price, and so does your engraving.", tip_cs:"Kupci dobře platí za spolehlivé silniční mapy. Vzdálenosti zde vyznačené změřil královský zeměměřič — jeho přesnost má cenu, a tvé rytectví také."},
   {id:"sci_11", type:"scientific", en:"Treatise — On Comet of 1468",    cs:"Traktát — O kometě roku 1468",
    req:{paper:6,ink:2,letters:true}, workers:["compositor"], reward:20, prestige:3, duration:3,
-   tip_en:"The Olomouc Canon observed it. His manuscript needs printing fast.", tip_cs:"Olomoucký kanovník ji pozoroval. Rukopis potřebuje rychlý tisk."},
+   tip_en:"The Canon observed the comet for forty nights and wrote twenty pages of notes. He needs them printed before the comet fades from memory — and before anyone else claims priority.", tip_cs:"Kanovník pozoroval kometu čtyřicet nocí a napsal dvacet stránek poznámek. Potřebuje je vytisknout dřív než kometa zmizí z paměti — a dřív než si kdokoli jiný nárokuje prioritu."},
   {id:"sci_12", type:"scientific", en:"Chronicle — History of Moravia",  cs:"Kronika — Dějiny Moravy",
    req:{paper:14,ink:5,letters:true}, workers:["compositor","corrector"], reward:36, prestige:5, duration:7,
-   tip_en:"The Margrave's court historian wants this done within the year.", tip_cs:"Historik markraběcího dvora to chce do roka."},
+   tip_en:"The Margrave's court historian has spent ten years on this chronicle. He is old and wants to see it printed before he dies. The Margrave's office will pay handsomely — if it is done this year.", tip_cs:"Historik markraběcího dvora strávil deset let na této kronice. Je starý a chce ji vidět vytištěnou dřív než zemře. Markraběcí úřad zaplatí štědře — pokud to bude hotovo letos."},
 
   // ── STATE (high reward, reputation gated ≥4) ─────────────
   {id:"sta_01", type:"state", en:"Imperial Decree — 100 Copies",        cs:"Císařský dekret — 100 kusů",
    req:{paper:12,ink:4,letters:true,vellum:1}, workers:["compositor","engraver","corrector"], reward:40, prestige:5, duration:4,
-   tip_en:"The Imperial chancellery demands exact text. One error means confiscation.", tip_cs:"Císařská kancelář vyžaduje přesný text. Jedna chyba = konfiskace."},
+   tip_en:"The Imperial chancellery demands exact text — not one word added or removed. An error means confiscation of the entire run and a fine that would close the press. Work slowly. Check twice.", tip_cs:"Císařská kancelář vyžaduje přesný text — ani slovo navíc ani chybí. Chyba znamená konfiskaci celého nákladu a pokutu, která by zavřela tiskárnu. Pracuj pomalu. Kontroluj dvakrát."},
   {id:"sta_02", type:"state", en:"Town Charter — Olomouc Privileges",   cs:"Listina — Olomoucká privilegia",
    req:{paper:6,ink:2,vellum:2}, workers:["engraver"], reward:32, prestige:4, duration:4,
-   tip_en:"The city council needs official copies of their founding charter.", tip_cs:"Městská rada potřebuje oficielní kopie zakládací listiny."},
+   tip_en:"The city council needs official copies of their founding charter — a document that grants Olomouc its trading rights. Vellum only. The seal will be added by hand after printing.", tip_cs:"Městská rada potřebuje oficielní kopie zakládací listiny — dokument, který Olomouci zaručuje obchodní práva. Pouze pergamen. Pečeť bude přidána ručně po tisku."},
   {id:"sta_03", type:"state", en:"Bishop's Edict — Diocese Boundaries", cs:"Biskupský edikt — Hranice diecéze",
    req:{paper:5,ink:2,letters:true}, workers:["compositor"], reward:22, prestige:3, duration:3,
-   tip_en:"Bishop Tas of Boskovice signs every page personally.", tip_cs:"Biskup Tass z Boskovic každou stránku osobně podepisuje."},
+   tip_en:"Bishop Tas of Boskovice signs every page personally — which means he will read every page personally. The boundaries dispute with the Archbishop of Prague makes this politically delicate.", tip_cs:"Biskup Tass z Boskovic každou stránku osobně podepisuje — což znamená, že každou stránku osobně přečte. Spor o hranice s pražským arcibiskupem to politicky zneho komplikuje."},
   {id:"sta_04", type:"state", en:"Nobility Roll — Moravian Landowners", cs:"Zemský registr — Moravská šlechta",
    req:{paper:10,ink:3,vellum:1}, workers:["compositor","corrector"], reward:35, prestige:4, duration:5,
-   tip_en:"The Margrave's office commissions this for tax purposes.", tip_cs:"Markraběcí úřad objednává pro daňové účely."},
+   tip_en:"The Margrave's office needs a full register of landowners for the new tax assessment. A boring document — but the families listed will scrutinise every letter of their names.", tip_cs:"Markraběcí úřad potřebuje úplný registr vlastníků půdy pro nové daňové hodnocení. Nudný dokument — ale rodiny na seznamu budou zkoumat každé písmeno svých jmen."},
   {id:"sta_05", type:"state", en:"Legal Code — City Statutes",          cs:"Právní kodex — Městské stanovy",
    req:{paper:12,ink:4,letters:true}, workers:["compositor","corrector"], reward:38, prestige:5, duration:5,
-   tip_en:"Olomouc adopts Magdeburg Law. Every alderman needs a copy.", tip_cs:"Olomouc přijímá Magdeburské právo. Každý radní potřebuje kopii."},
+   tip_en:"Olomouc adopts Magdeburg Law. Every alderman, judge, and notary needs a copy. A landmark document for the city — and a major commission for whoever prints it first.", tip_cs:"Olomouc přijímá Magdeburské právo. Každý radní, soudce a notář potřebuje kopii. Přelomový dokument pro město — a velká zakázka pro toho, kdo to vytiskne první."},
   {id:"sta_06", type:"state", en:"Census Register — Royal Commission",  cs:"Soupis obyvatel — Královská komise",
    req:{paper:8,ink:3,letters:true}, workers:["compositor"], reward:30, prestige:3, duration:4,
-   tip_en:"The Royal chancery pays on delivery. No delays tolerated.", tip_cs:"Královská kancelář platí při dodání. Žádné průtahy."},
+   tip_en:"The Royal chancery pays on delivery — not before. No delays tolerated. The census clerk has the manuscript ready. The only question is whether your press is ready too.", tip_cs:"Královská kancelář platí při dodání — ne dřív. Žádné průtahy. Kancelářský úředník má rukopis připraven. Jediná otázka je, zda je připraven i tvůj lis."},
   {id:"sta_07", type:"state", en:"Military Muster Roll — Border Guards",cs:"Mustr — Pohraniční stráž",
    req:{paper:7,ink:2}, workers:["compositor"], reward:26, prestige:3, duration:3,
-   tip_en:"Captain Vašek needs rosters for 400 men by Thursday.", tip_cs:"Kapitán Vašek potřebuje seznamy 400 mužů do čtvrtka."},
+   tip_en:"Captain Vašek needs rosters for four hundred men by Thursday — names, ranks, equipment, and pay owed. Straightforward work. He tips well if you deliver on time.", tip_cs:"Kapitán Vašek potřebuje seznamy čtyř set mužů do čtvrtka — jména, hodnosti, vybavení a dlužný žold. Přímočará práce. Dá spropitné, pokud dodáš včas."},
   {id:"sta_08", type:"state", en:"Peace Treaty — Bohemia & Hungary",    cs:"Mírová smlouva — Čechy a Uhry",
    req:{paper:10,ink:3,vellum:3}, workers:["compositor","engraver","corrector"], reward:48, prestige:6, duration:5,
-   tip_en:"Historic document. Every word checked by royal notaries.", tip_cs:"Historický dokument. Každé slovo kontrolují královští notáři."},
+   tip_en:"A historic peace between King Matthias of Hungary and the Bohemian estates — witnessed by bishops, nobles, and royal notaries. Every word checked by three lawyers before it reaches you. Handle with care.", tip_cs:"Historický mír mezi uherským králem Matyášem a českými stavy — dosvědčený biskupy, šlechtici a královskými notáři. Každé slovo zkontrolováno třemi právníky dřív než se dostane k tobě. Zacházej opatrně."},
 
   // ── LUXURY (high prestige, reputation gated ≥7) ──────────
   {id:"lux_01", type:"luxury", en:"Illuminated Horae — on Vellum",      cs:"Iluminovaný Horárius — pergamen",
    req:{paper:4,ink:3,vellum:5}, workers:["engraver","corrector"], reward:55, prestige:7, duration:7,
-   tip_en:"A noble lady commissions this as a gift. Illuminators add colour after printing.", tip_cs:"Šlechtična objednává jako dar. Iluminátoři přidají barvu po tisku."},
+   tip_en:"A noble lady commissions this as a devotional gift — the Hours of the Virgin, with spaces left for hand-painted miniatures. Illuminators in Brno will add colour after your text is printed.", tip_cs:"Šlechtična objednává jako pobožnostní dar — Hodiny Panny Marie s místem pro ručně malované miniatury. Iluminátoři v Brně přidají barvu po vytištění tvého textu."},
   {id:"lux_02", type:"luxury", en:"Chronicle — Leather Bound, Gilded",  cs:"Kronika — Kožená vazba, zlacená",
    req:{paper:16,ink:5,letters:true,vellum:2}, workers:["compositor","engraver","corrector"], reward:65, prestige:8, duration:8,
-   tip_en:"The Liechtenstein family wants their lineage recorded in style.", tip_cs:"Liechtensteinové chtějí svůj rod zaznamenaný s náležitou nádherou."},
+   tip_en:"The Liechtenstein family wants their lineage recorded in leather-bound glory. Sixteen generations, gilded initials, and a frontispiece portrait engraved on copper. Work slowly. This will outlast you.", tip_cs:"Liechtensteinové chtějí svůj rod zaznamenaný v kožené nádheře. Šestnáct generací, zlacené iniciály a portrét na frontispisu vyrytý do mědi. Pracuj pomalu. Toto tě přežije."},
   {id:"lux_03", type:"luxury", en:"Psalter — Bishop's Personal Copy",   cs:"Žaltář — Biskupův osobní výtisk",
    req:{paper:6,ink:3,vellum:4}, workers:["compositor","engraver"], reward:48, prestige:6, duration:6,
-   tip_en:"Marginal decorations expected. The bishop is a connoisseur.", tip_cs:"Okrajové dekorace jsou očekávány. Biskup je znalec."},
+   tip_en:"The bishop is a connoisseur — he will notice if the margins are uneven or the ink uneven. Marginal decorations expected. Vellum throughout. This is the kind of commission that makes a printer's reputation.", tip_cs:"Biskup je znalec — všimne si, pokud budou okraje nestejné nebo inkoust nerovnoměrný. Okrajové dekorace jsou očekávány. Pergamen po celé délce. Toto je druh zakázky, která dělá pověst tiskaře."},
   {id:"lux_04", type:"luxury", en:"Genealogy — Žerotín Family Tree",    cs:"Genealogie — Rodokmen Žerotínů",
    req:{paper:8,ink:3,vellum:3}, workers:["engraver","compositor"], reward:50, prestige:6, duration:6,
-   tip_en:"Moravian noble family traces lineage to Charles IV. Accurate engraving essential.", tip_cs:"Moravský šlechtický rod sleduje linii ke Karlu IV."},
+   tip_en:"The Žerotín family claims descent from Charles IV himself. Their genealogy must be engraved with heraldic precision — wrong quarterings are a legal matter in Moravia.", tip_cs:"Rod Žerotínů tvrdí, že pochází přímo od Karla IV. Jejich genealogie musí být rytá s heraldickou přesností — špatné čtvrcení je na Moravě právní záležitostí."},
   {id:"lux_05", type:"luxury", en:"Devotional — Meditations on Passion", cs:"Pobožnost — Rozjímání o Umučení",
    req:{paper:10,ink:4,vellum:3}, workers:["compositor","corrector","engraver"], reward:58, prestige:7, duration:7,
-   tip_en:"Commissioned by a Cistercian abbess for her nuns. No expense spared.", tip_cs:"Objednáno cisterckou abatyší pro její jeptišky."},
+   tip_en:"The Cistercian abbess wants meditations on the Passion for her nuns — illuminated pages, careful text, and a binding of pressed leather. No expense spared. She has the funds of the entire convent.", tip_cs:"Cisterciánská abatyše chce rozjímání o Umučení pro své jeptišky — iluminované stránky, pečlivý text a vazba z lisované kůže. Bez omezení nákladů. Má k dispozici prostředky celého kláštera."},
   {id:"lux_06", type:"luxury", en:"Heraldic Roll — Moravian Nobility",  cs:"Heraldický soupis — Moravská šlechta",
    req:{paper:10,ink:4,vellum:4}, workers:["engraver","compositor"], reward:60, prestige:7, duration:7,
-   tip_en:"Coats of arms of 40 Moravian noble houses. Engraver earns his fee here.", tip_cs:"Erby 40 moravských šlechtických rodů. Rytec si tady vydělá."},
+   tip_en:"The coats of arms of forty Moravian noble houses — each one engraved with the correct tinctures, blazons, and supporters. The engraver earns his fee here. So do you.", tip_cs:"Erby čtyřiceti moravských šlechtických rodů — každý vyrytý se správnými tinktúrami, popisy a štítonoši. Rytec si zde vydělá svůj honorář. Stejně tak ty."},
   {id:"lux_07", type:"luxury", en:"Illuminated Bible — Margrave's Gift",cs:"Iluminovaná Bible — Dar markraběte",
    req:{paper:20,ink:7,vellum:6}, workers:["compositor","engraver","corrector"], reward:90, prestige:10, duration:10,
-   tip_en:"The greatest commission possible. Years of work — and years of prestige.", tip_cs:"Největší možná zakázka. Roky práce — a roky prestiže."},
+   tip_en:"The greatest commission possible. The Margrave orders an illuminated Bible as a gift to the Cathedral — years of work, years of prestige, and a payment that could fund the press for a decade.", tip_cs:"Největší možná zakázka. Markrabě objednává iluminovanou Bibli jako dar katedrále — roky práce, roky prestiže a honorář, který by mohl živit tiskárnu deset let."},
   {id:"lux_08", type:"luxury", en:"Diplomatic Correspondence — Royal Seals", cs:"Diplomatická korespondence — Královské pečeti",
    req:{paper:8,ink:3,vellum:5}, workers:["engraver","compositor"], reward:55, prestige:6, duration:5,
-   tip_en:"Letters patent between King Matthias and the Bohemian estates.", tip_cs:"Listiny mezi králem Matyášem a českými stavy."},
+   tip_en:"Letters patent between King Matthias and the Bohemian estates — sealed, witnessed, and copied for the royal archives. The seals are added after. Every copy must be letter-perfect.", tip_cs:"Listiny mezi králem Matyášem a českými stavy — opatřené pečetěmi, dosvědčené a zkopírované pro královské archivy. Pečeti se přidají afterwards. Každá kopie musí být dokonalá."},
 
-  // ── STORY ORDERS (forbidden & dangerous books) ───────────
+  // ── SPECIAL HISTORICAL ORDERS ────────────────────────────
+  {id:"sta_09", type:"state", en:"Missale Strigoniense — Esztergom Missal", cs:"Missale Strigoniense — Ostřihomský misál",
+   req:{paper:18,ink:6,vellum:4,letters:true}, workers:["compositor","corrector","engraver"], reward:72, prestige:8, duration:8,
+   availFromYear:2, repRequired:6,
+   tip_en:"The Archbishop of Esztergom orders the definitive missal for the Hungarian Church — to be printed in Olomouc and shipped down the Danube. The Budapest publisher Rodt funds the run, but every page must pass his inspection. The commission that could make your press famous across the Kingdom.",
+   tip_cs:"Ostřihomský arcibiskup objednává závazný misál pro uherskou církev — vytisknout v Olomouci a dopravit po Dunaji. Budínský nakladatel Rodt financuje náklad, každá stránka musí projít jeho inspekcí. Zakázka, která by mohla proslavit tvou tiskárnu po celém Království."},
+
+  {id:"rel_11", type:"religious", en:"Utraquist Hymnal — Both Kinds", cs:"Utrakvistický kancionál — Pod obojí",
+   req:{paper:9,ink:3,letters:true}, workers:["compositor","corrector"], reward:28, prestige:4, duration:4,
+   availFromYear:1, censorRisk:true,
+   tip_en:"The Utraquist congregation of St. Moritz wants a Czech hymnal — songs for the faithful who take communion in both bread and wine. Legal in Bohemia, tolerated in Moravia — but the Bishop office is watching. Print it and collect before anyone asks too many questions.",
+   tip_cs:"Utrakvistická kongregace sv. Mořice chce kancionál v češtině — písně pro věřící přijímající pod obojí. Legální v Čechách, tolerované na Moravě — ale biskupský úřad sleduje. Vytiskni a inkasuj dřív než se někdo začne ptát."},
+
+  {id:"pop_13", type:"popular", en:"Kronika trojánská — In the Czech Tongue", cs:"Kronika trojánská — V jazyku českém",
+   req:{paper:14,ink:4,letters:true}, workers:["compositor","corrector"], reward:32, prestige:4, duration:6,
+   availFromYear:1,
+   tip_en:"The story of Troy in Czech — knights, battles, the fall of a great city. The Prague merchant Bakalář wants five hundred copies for distribution across Bohemia. The text was translated by a Brno schoolmaster; you are only the printer. But when it sells, your name is in the colophon.",
+   tip_cs:"Příběh Tróje v češtině — rytíři, bitvy, pád velkého města. Pražský kupec Bakalář chce pět set kusů pro distribuci po Čechách. Text přeložil brněnský školmistr; ty jsi jen tiskař. Ale až se bude prodávat, tvé jméno bude v kolofonem."},
+
+  {id:"lux_09", type:"luxury", en:"Gutenberg Bible — Full Edition", cs:"Gutenbergova Bible — Úplné vydání",
+   req:{paper:28,ink:9,vellum:8,letters:true}, workers:["compositor","corrector","engraver"], reward:130, prestige:14, duration:12,
+   availFromYear:3, repRequired:8,
+   tip_en:"The greatest work ever printed — 1,282 pages, 42 lines per column, two volumes. The Benedictine monastery at Hradiště supplies the vellum and funds the run. A commission that will take more than a year and test every skill your press possesses. Complete it and your name stands beside Gutenberg in history.",
+   tip_cs:"Největší kdy vytištěné dílo — 1 282 stránek, 42 řádků na sloupec, dva svazky. Benediktinský klášter na Hradišti dodá pergamen. Zakázka zabere více než rok a otestuje každou dovednost tiskárny. Dokonči ji a tvé jméno stojí vedle Gutenbergova v dějinách tisku."},
+
+    // ── STORY ORDERS (forbidden & dangerous books) ───────────
+
   {id:"story_summis",    type:"religious", story:true, storyId:"summis",
    en:"Commission — Papal Bull (Summis Desiderantes)", cs:"Zakázka — Papežská bula (Summis Desiderantes)",
    req:{paper:4,ink:2,letters:true}, workers:["compositor"], reward:18, prestige:3, duration:2,
@@ -889,6 +915,13 @@ const ORDER_POOL = [
    req:{paper:3,ink:2,letters:true}, workers:["compositor"], reward:16, prestige:3, duration:2,
    availFromYear:2, tip_en:"A Czech nobleman's steward. Utraquist theology. The bishop is watching.",
    tip_cs:"Správce českého šlechtice. Utrakvistická teologie. Biskup sleduje."},
+
+  {id:"story_luther", type:"religious", story:true, storyId:"luther",
+   en:"The Ninety-Five Theses — Martin Luther", cs:"Devadesát pět tezí — Martin Luther",
+   req:{paper:2,ink:1,letters:true}, workers:["compositor"], reward:8, prestige:6, duration:1,
+   availFromYear:5, censorTokens:3,
+   tip_en:"A student courier arrives with a single manuscript: print it tonight, distribute it tomorrow, do not put your name to it. The theses attack indulgences — the trade that feeds half the presses in the Empire. Three censor tokens if discovered. But the prestige of being first may outlast any punishment.",
+   tip_cs:"Studentský kurýr přichází s jediným rukopisem: vytiskni dnes v noci, distribuuj zítra, nedávej k tomu své jméno. Teze útočí na odpustky — obchod, který živí polovinu lisů v říši. Tři cenzurní tokeny při odhalení. Ale prestiž z toho, že jsi byl první, může přežít každý trest."},
 ];
 
 // ── HISTORICAL EVENTS ────────────────────────────────────────
@@ -1023,6 +1056,7 @@ function resolveHistEvent(eventId, choiceId){
   if(eventId==="reformation"){
     G.reformation=true;
     G.reformationStance = choiceId;
+    if(pressMusic&&G.musicEnabled){pressMusic.forceMood('sitar');pressMusic.setTempo(72);}
     if(choiceId==="loyal"){
       G.reputation=clamp(G.reputation+2,0,10);
       G.log.push(`__EVT__✝️ ${L==="en"?"Stance: Loyal to Church. Imprimatur required for all religious work.":"Postoj: Věrnost Církvi. Imprimatur vyžadován pro všechna náboženská díla."}`);
@@ -1037,6 +1071,7 @@ function resolveHistEvent(eventId, choiceId){
   if(eventId==="index"){
     G.indexActive=true;
     G.indexStance = choiceId;
+    if(pressMusic&&G.musicEnabled){pressMusic.forceMood('atmosphere');pressMusic.setTempo(58);}
     if(choiceId==="comply"){
       G.reputation=clamp(G.reputation+3,0,10);
       G.log.push(`__EVT__📕 ${L==="en"?"Full compliance with the Index. Reputation grows.":"Plný soulad s Indexem. Reputace roste."}`);
@@ -1404,6 +1439,41 @@ function initState(){
     censorTokens: 0,      // accumulates from story book prints
     storyLog: [],         // [{bookId, decision, year, round}]
     dismissedStory: [],   // bookIds dismissed — can return later
+
+    // Subtab state
+    produceSubtab: "formats",
+    marketSubtab: "buy",
+
+    // Quick produce inventory
+    quickGoods: {},
+
+    // Achievements & Codex
+    achievements:     [],
+    codexUnlocked:    [],
+    _showAchievements:false,
+    _verdictScreen:   false,
+
+    // Music (JouzaMedievalAmbient)
+    musicEnabled:    false,   // off by default, user enables
+    musicVolume:     0.6,
+    _showMusicPanel: false,
+    _codexCat:        "all",
+    _codexSubtab:     "history",
+    _careerOpen:      {},
+    _codexOpen:       {},
+
+    // Journal & Character Sheet
+    journalSubtab:   "journal",
+    playerAvatar:    null,
+    _csEditIdentity: false,
+
+    // Stats tracking
+    booksProduced: 0,
+    quickSoldTotal: 0,
+    illuminatedSold: 0,
+    illuminatedProduced: 0,
+    leipzigSales: 0,
+    formatHistory: [],
 
     log: [],
     events: [],
@@ -1844,6 +1914,9 @@ function fulfillOrder(instanceId){
     if(typeof AUDIO!=="undefined"){ AUDIO.printCycle(); setTimeout(()=>AUDIO.play('bellComplete'),1600); setTimeout(()=>AUDIO.play('coinClink'),1800); }
   }
   G.completedOrders++;
+  G.booksProduced = (G.booksProduced||0) + 1;
+  if(o.format && !G.formatHistory.includes(o.format)) G.formatHistory.push(o.format);
+  if(isLeipzig) G.leipzigSales = (G.leipzigSales||0) + 1;
   G.orderIncome += fullReward;
   G.printedSheets += (o.req.paper||0);
   G.activeOrders = G.activeOrders.filter(x=>x.instanceId!==instanceId);
@@ -1857,6 +1930,7 @@ function fulfillOrder(instanceId){
        `+${remaining}g ${isLeipzig?"🏪 Leipzig!":""}${popBonus>0?" 📣+"+popBonus+"g":""}`,
        `+${prestige} Prestige · ${"★".repeat(quality)}`]);
   }
+  checkAchievements();
   render();
 }
 
@@ -2569,6 +2643,9 @@ function advanceRound(){
   const log=[...p.log];
   const evts=[];
 
+  // Music mood on round change
+  if(pressMusic&&G.musicEnabled) syncMusicMood();
+
   // 1. Worker tasks → resource production
   for(const w of p.workers){
     if(w.task==="idle") continue;
@@ -2737,6 +2814,7 @@ function advanceRound(){
   if(G.letterWear>60) tL.push(`⚠️ Type worn ${G.letterWear}%`);
   if(G.pressRunIn>0) tL.push(`🖨️ Press ${G.pressRunIn}% run-in`);
   showToast(toastTitle, tL);
+  checkAchievements();
   autoSave(); render();
 }
 
@@ -2772,9 +2850,18 @@ function startInterseason(){
   triggerTurkishThreat();
   // Check if a historical event fires this year
   checkHistEvents();
+  checkAchievements();
+  checkCodexUnlocks();
   // Role modal: show after first year (gameYear just became 2)
   if(G.gameYear===2 && !G._roleModalDone){
     G.phase="roleSelect";
+    autoSave(); render(); return;
+  }
+  // END GAME: after MAX_YEARS
+  if(G.gameYear > MAX_YEARS){
+    G._verdictScreen=true;
+    if(pressMusic&&G.musicEnabled){pressMusic.forceMood("atmosphere");pressMusic.setTempo(52);}
+    checkAchievements();
     autoSave(); render(); return;
   }
   autoSave(); render();
@@ -3102,6 +3189,622 @@ const STORY_BOOKS = {
   },
 };
 
+// ── QUICK PRODUCE ─────────────────────────────────────────────
+// Kramářské zboží — fast production, no orders needed
+// Economics: buying all materials at market price → small positive profit
+// Own production → bigger profit; seasonal bonus → peak profit
+const QUICK_PRODUCE = {
+  mirror: {
+    id:"mirror", icon:"🪞",
+    en:"Pilgrim Mirrors", cs:"Poutní zrcátka",
+    desc_en:"Gutenberg's original hustle. Pilgrims buy these at shrine gates.",
+    desc_cs:"Gutenbergův původní byznys. Poutníci je kupují u bran svatyní.",
+    req:{paper:1, ink:1},
+    output:5,
+    basePrice:2,      // per unit
+    sellKey:"mirror",
+    season:[5,6,7,8], // summer months — pilgrim season
+    seasonMult:1.3,
+    tip_en:"Best in summer (May–Aug) — pilgrim season. Cost: 1 paper + 1 ink → 5 mirrors.",
+    tip_cs:"Nejlepší v létě (Květ–Srp) — poutní sezona. Náklad: 1 papír + 1 inkoust → 5 zrcátek.",
+  },
+  calendar: {
+    id:"calendar", icon:"📅",
+    en:"Lunar Calendars", cs:"Lunární kalendáře",
+    desc_en:"Farmers, physicians and priests all need the moon calendar.",
+    desc_cs:"Farmáři, lékaři i kněží potřebují lunární kalendář.",
+    req:{paper:2, ink:1},
+    output:3,
+    basePrice:4,
+    sellKey:"calendar",
+    season:[11,0,1],  // December, January, February
+    seasonMult:1.5,
+    tip_en:"Best in December–February. Cost: 2 paper + 1 ink → 3 calendars.",
+    tip_cs:"Nejlepší v prosinci–únoru. Náklad: 2 papír + 1 inkoust → 3 kalendáře.",
+  },
+  herbarium: {
+    id:"herbarium", icon:"🌿",
+    en:"Herbal Remedy Booklets", cs:"Bylinné recetáře",
+    desc_en:"Apothecaries commission these for resale. Year-round demand.",
+    desc_cs:"Lékárníci je objednávají na přeprodej. Celoroční poptávka.",
+    req:{paper:2, ink:1},
+    output:2,
+    basePrice:7,
+    sellKey:"herbarium",
+    season:null,      // year-round
+    seasonMult:1.0,
+    tip_en:"Steady income year-round. Cost: 2 paper + 1 ink → 2 booklets.",
+    tip_cs:"Stabilní příjem celoročně. Náklad: 2 papír + 1 inkoust → 2 recetáře.",
+  },
+  indulgence: {
+    id:"indulgence", icon:"📜",
+    en:"Indulgence Forms", cs:"Odpustkové formuláře",
+    desc_en:"The Church sells salvation. You print the forms. Quick money — but politically sensitive after Reform.",
+    desc_cs:"Církev prodává spásu. Ty tiskneš formuláře. Rychlé peníze — ale politicky citlivé po reformaci.",
+    req:{paper:1},
+    output:10,
+    basePrice:0.4,
+    sellKey:"indulgence",
+    season:null,
+    seasonMult:1.0,
+    toxic:true,       // becomes risky after reformation
+    tip_en:"Fastest turnaround. 1 paper → 10 forms. Risky after the Reformation fires.",
+    tip_cs:"Nejrychlejší obrat. 1 papír → 10 formulářů. Rizikové po reformaci.",
+  },
+  songbook: {
+    id:"songbook", icon:"🎵",
+    en:"Pilgrim Songbooks", cs:"Poutní zpěvníky",
+    desc_en:"Pilgrims buy these along the road. Moravian routes are busy in spring and summer.",
+    desc_cs:"Poutníci je kupují na cestě. Moravské trasy jsou v jaru a létě rušné.",
+    req:{paper:2, ink:1},
+    output:4,
+    basePrice:3.5,
+    sellKey:"songbook",
+    season:[3,4,5,6,7], // spring and summer
+    seasonMult:1.2,
+    tip_en:"Best spring–summer. Cost: 2 paper + 1 ink → 4 songbooks.",
+    tip_cs:"Nejlepší jaro–léto. Náklad: 2 papír + 1 inkoust → 4 zpěvníky.",
+  },
+};
+
+function makeQuickGood(goodId){
+  const L=G.lang;
+  const good=QUICK_PRODUCE[goodId];
+  if(!good) return;
+  // Check resources
+  if((good.req.paper||0)>0 && G.res.paper<good.req.paper){
+    showToast(L==="en"?"Not enough paper":"Nedostatek papíru",
+      [`${L==="en"?"Need":"Potřeba"} ${good.req.paper}× ${L==="en"?"paper":"papír"}`]);
+    return;
+  }
+  if((good.req.ink||0)>0 && G.res.ink<good.req.ink){
+    showToast(L==="en"?"Not enough ink":"Nedostatek inkoustu",
+      [`${L==="en"?"Need":"Potřeba"} ${good.req.ink}× ${L==="en"?"ink":"inkoust"}`]);
+    return;
+  }
+  // Post-reformation indulgence warning
+  if(good.toxic && G.reformation){
+    if(!confirm(L==="en"?"Indulgences are politically dangerous since the Reformation. Print anyway?":"Odpustky jsou politicky nebezpečné od reformace. Přesto tisknout?")){
+      return;
+    }
+  }
+  // Consume
+  if(good.req.paper) G.res.paper -= good.req.paper;
+  if(good.req.ink)   G.res.ink   -= (good.req.ink||0);
+  // Add to quickGoods inventory
+  if(!G.quickGoods) G.quickGoods={};
+  G.quickGoods[goodId] = (G.quickGoods[goodId]||0) + good.output;
+  G.log.push(`__PROD__${good.icon} ${L==="en"?"Made":"Vyrobeno"} ${good.output}× ${L==="en"?good.en:good.cs}`);
+  render();
+}
+
+function sellQuickGood(goodId, qty){
+  const L=G.lang;
+  const good=QUICK_PRODUCE[goodId];
+  if(!good||!G.quickGoods||!(G.quickGoods[goodId]>0)) return;
+  const have=G.quickGoods[goodId]||0;
+  const selling=Math.min(qty, have);
+  // Price calculation
+  const isLeipzig=LEIPZIG_ROUNDS.includes(G.round);
+  const isSeason=good.season && good.season.includes(G.round);
+  const hasAgent=G.workers.some(w=>w.prof==="agent"&&w.task==="sell"&&w.traits?.includes("obchodnik"));
+  const seasonMult=isSeason?good.seasonMult:1.0;
+  const leipsellMult=isLeipzig?1.8:1.0;
+  const agentMult=hasAgent?1.1:1.0;
+  const unitPrice=Math.round(good.basePrice*seasonMult*leipsellMult*agentMult*10)/10;
+  const earned=Math.round(selling*unitPrice);
+  G.quickGoods[goodId]=have-selling;
+  G.quickSoldTotal=(G.quickSoldTotal||0)+selling;
+  if(isLeipzig) G.leipzigSales=(G.leipzigSales||0)+selling;
+  G.gold+=earned;
+  const bonusStr=[isSeason?"🌸":"",isLeipzig?"🏪":"",hasAgent?"🗺️":""].filter(Boolean).join("");
+  G.log.push(`__ECO__💰 ${L==="en"?"Sold":"Prodáno"} ${selling}× ${L==="en"?good.en:good.cs} → +${earned}g${bonusStr?" "+bonusStr:""}`);
+  render();
+}
+
+// ── ACHIEVEMENTS ──────────────────────────────────────────────
+const ACHIEVEMENTS=[
+  // 📜 Craft
+  {id:"first_print",     cat:"craft",   icon:"🖨️",rarity:"common",
+   en:"First Impression",    cs:"První otisk",
+   desc_en:"Complete your first order.",
+   desc_cs:"Dokonči svou první zakázku.",
+   check:()=>(G.completedOrders||0)>=1},
+  {id:"ten_orders",      cat:"craft",   icon:"📜",rarity:"common",
+   en:"Prolific Press",      cs:"Plodný lis",
+   desc_en:"Complete 10 orders.",
+   desc_cs:"Dokonči 10 zakázek.",
+   check:()=>(G.completedOrders||0)>=10},
+  {id:"all_formats",     cat:"craft",   icon:"📚",rarity:"rare",
+   en:"Master of Forms",     cs:"Mistr formátů",
+   desc_en:"Unlock all five book formats.",
+   desc_cs:"Odemkni všech pět formátů.",
+   check:()=>["plano","folio","quarto","octavo","duodecimo"].every(f=>(G.formatUnlocks||[]).includes(f))},
+  {id:"press_lv3",       cat:"craft",   icon:"⚙️",rarity:"rare",
+   en:"Steel & Sweat",       cs:"Ocel a pot",
+   desc_en:"Upgrade your press to Level 3.",
+   desc_cs:"Upgraduj lis na úroveň 3.",
+   check:()=>(G.pressLevel||1)>=3},
+  {id:"quick_all",       cat:"craft",   icon:"🪞",rarity:"common",
+   en:"Peddler's Pride",     cs:"Hrdost kramáře",
+   desc_en:"Produce all five types of quick goods.",
+   desc_cs:"Vyrobte všech pět druhů kramářského zboží.",
+   check:()=>Object.keys(G.quickGoods||{}).length>=5},
+  {id:"debt_free",       cat:"craft",   icon:"💰",rarity:"common",
+   en:"Clear Ledger",        cs:"Čisté účty",
+   desc_en:"Finish a year with zero debt.",
+   desc_cs:"Dokonči rok bez dluhu.",
+   check:()=>(G.debt||0)===0&&(G.year||1468)>1468},
+  {id:"illuminated",     cat:"craft",   icon:"🎨",rarity:"rare",
+   en:"Illuminator's Touch", cs:"Iluminátorův dotek",
+   desc_en:"Sell an illuminated work.",
+   desc_cs:"Prodej iluminované dílo.",
+   check:()=>(G.illuminatedSold||0)>=1},
+  // ⭐ Prestige
+  {id:"prestige_50",     cat:"prestige",icon:"★", rarity:"common",
+   en:"Name in the City",    cs:"Jméno ve městě",
+   desc_en:"Reach 50 Prestige.",
+   desc_cs:"Dosáhni 50 Prestiže.",
+   check:()=>(G.prestige||0)>=50},
+  {id:"prestige_200",    cat:"prestige",icon:"★★",rarity:"rare",
+   en:"The Olomouc Press",   cs:"Olomoucká tiskárna",
+   desc_en:"Reach 200 Prestige.",
+   desc_cs:"Dosáhni 200 Prestiže.",
+   check:()=>(G.prestige||0)>=200},
+  {id:"rep_max",         cat:"prestige",icon:"🏅",rarity:"rare",
+   en:"Beyond Reproach",     cs:"Bez úhony",
+   desc_en:"Reach maximum Reputation (10/10).",
+   desc_cs:"Dosáhni maximální Reputace (10/10).",
+   check:()=>(G.reputation||0)>=10},
+  {id:"leipzig_sale",    cat:"prestige",icon:"🏪",rarity:"common",
+   en:"Leipzig Bound",       cs:"Na lipský trh",
+   desc_en:"Complete an order during the Leipzig Fair.",
+   desc_cs:"Dokonči zakázku v době Lipského jarmarku.",
+   check:()=>LEIPZIG_ROUNDS.includes(G.round)&&(G.completedOrders||0)>=1},
+  {id:"patron_secured",  cat:"prestige",icon:"🤝",rarity:"rare",
+   en:"Well Connected",      cs:"Dobře zapojen",
+   desc_en:"Secure a patron.",
+   desc_cs:"Získej mecenáše.",
+   check:()=>(G.activePatrons||[]).length>=1},
+  // 🕵️ Secret
+  {id:"malleus_accepted",cat:"secret",icon:"🔨",rarity:"legendary",
+   en:"The Hammer",          cs:"Kladivo",
+   desc_en:"Accept the Malleus Maleficarum commission.",
+   desc_cs:"Přijmi zakázku Malleus Maleficarum.",
+   check:()=>(G.storyLog||[]).some(e=>e.bookId==="malleus"&&e.decision==="accept")},
+  {id:"malleus_refused", cat:"secret",icon:"🕊️",rarity:"legendary",
+   en:"The Conscience",      cs:"Svědomí",
+   desc_en:"Refuse Kramer at the door.",
+   desc_cs:"Odmítni Kamera ve dveřích.",
+   check:()=>(G.storyLog||[]).some(e=>e.bookId==="malleus"&&e.decision==="decline")},
+  {id:"clavicula",       cat:"secret",icon:"🗝️",rarity:"legendary",
+   en:"Key of Solomon",      cs:"Klíč Šalomounův",
+   desc_en:"Print the Clavicula Salomonis.",
+   desc_cs:"Vytiskni Claviculu Salomonis.",
+   check:()=>(G.storyLog||[]).some(e=>e.bookId==="clavicula"&&e.decision==="accept")},
+  {id:"censor_5",        cat:"secret",icon:"⚠️",rarity:"rare",
+   en:"On the List",         cs:"Na seznamu",
+   desc_en:"Accumulate 5 censor tokens.",
+   desc_cs:"Nahromaď 5 cenzurních tokenů.",
+   check:()=>(G.censorTokens||0)>=5},
+  {id:"survivor",        cat:"secret",icon:"💀",rarity:"rare",
+   en:"Still Standing",      cs:"Stále stojím",
+   desc_en:"Survive 5 years of printing.",
+   desc_cs:"Přežij 5 let tisku.",
+   check:()=>(G.year||1468)>=1473},
+];
+
+const ACHIEVEMENT_CATS={
+  craft:   {icon:"📜",en:"The Craft",  cs:"Řemeslo"},
+  prestige:{icon:"⭐",en:"Prestige",   cs:"Prestiž"},
+  secret:  {icon:"🕵️",en:"Hidden",    cs:"Skryté"},
+};
+const RARITY_COLOR={common:"#888",rare:"var(--gold)",legendary:"#cc4444"};
+const RARITY_LABEL_EN={common:"Common",rare:"Rare",legendary:"Legendary"};
+const RARITY_LABEL_CS={common:"Běžné", rare:"Vzácné",legendary:"Legendární"};
+
+function checkAchievements(){
+  if(!G.achievements) G.achievements=[];
+  ACHIEVEMENTS.forEach(a=>{
+    if(G.achievements.includes(a.id)) return;
+    try{
+      if(a.check()){
+        G.achievements.push(a.id);
+        const L=G.lang;
+        showToast(`🏆 ${L==="en"?"Achievement":"Úspěch"}: ${L==="en"?a.en:a.cs}`,
+          [L==="en"?a.desc_en:a.desc_cs]);
+        G.log.push(`__EVT__🏆 ${L==="en"?a.en:a.cs}`);
+        // Codex cross-link
+        const codexMap={malleus_accepted:"malleus",malleus_refused:"malleus",clavicula:"picatrix"};
+        if(codexMap[a.id]) unlockCodex(codexMap[a.id]);
+      }
+    }catch(e){}
+  });
+}
+
+// ── CODEX ─────────────────────────────────────────────────────
+const CODEX=[
+  {id:"gutenberg",    cat:"history",icon:"🖨️",unlock:"always",
+   en:"Johannes Gutenberg",        cs:"Johannes Gutenberg",
+   body_en:"Around 1450 in Mainz, Johannes Gutenberg combined movable metal type with a screw press adapted from wine presses. His 42-line Bible (c.1455) set the standard for European printing for generations. He lost his workshop to his creditor Fust in 1455 and died largely unrecognised.",
+   body_cs:"Kolem roku 1450 v Mohuči Johannes Gutenberg spojil pohyblivé kovové litery s šroubovým lisem upraveným z vinných lisů. Jeho 42řádková Bible (cca 1455) stanovila standard evropského tisku na generace. V roce 1455 přišel o dílnu věřiteli Fustovi a zemřel prakticky neznám."},
+  {id:"olomouc",      cat:"history",icon:"🏙️",unlock:"always",
+   en:"Printing Comes to Olomouc", cs:"Tisk přichází do Olomouce",
+   body_en:"The first printing press in Moravia appeared in Olomouc around 1468, making it one of the earliest printing centres in the Bohemian Crown lands. The city was then the capital of Moravia, seat of the bishop, and home to a cathedral school — a ready market for learned and devotional texts.",
+   body_cs:"První tiskařský lis na Moravě se objevil v Olomouci kolem roku 1468. Město bylo tehdy hlavním městem Moravy, sídlem biskupa a domovem katedrální školy — připraveným trhem pro učené a pobožnostní texty."},
+  {id:"type_metal",   cat:"craft",  icon:"🔩",unlock:"always",
+   en:"The Alloy of Type",         cs:"Slitina liter",
+   body_en:"Movable type was cast from an alloy of approximately 80% lead, 5–10% tin, and 8–15% antimony. Lead provided mass, tin aided flow into the mould, and antimony hardened the final letter. This composition remained essentially unchanged for 500 years.",
+   body_cs:"Pohyblivé litery se odlévaly ze slitiny přibližně 80% olova, 5–10% cínu a 8–15% antimonu. Olovo zajišťovalo hmotnost, cín pomáhal vtékání do formy, antimon tvrdil hotové písmo. Složení zůstalo v podstatě nezměněno po 500 let."},
+  {id:"paper_making", cat:"craft",  icon:"📄",unlock:"always",
+   en:"Paper from Rags",           cs:"Papír z hadrů",
+   body_en:"European papermaking used linen and cotton rags soaked in water, beaten to a pulp, spread on a mesh screen, and dried under pressure. Olomouc had no local mill — paper had to be imported, making it the most expensive basic material in the printshop.",
+   body_cs:"Evropská výroba papíru využívala lněné a bavlněné hadry namočené ve vodě, rozbité na kašičku a sušené pod tlakem. Olomouc neměla místní mlýn — papír se musel dovážet, což z něj činilo nejdražší základní materiál tiskárny."},
+  {id:"book_formats", cat:"craft",  icon:"📚",unlock:"always",
+   en:"Book Formats Explained",    cs:"Formáty knih",
+   body_en:"A printer's format describes how a sheet is folded. A folio (2°) is folded once: 4 pages. Quarto (4°) twice: 8 pages. Octavo (8°) three times: 16 pages. The smaller the format, the more complex the typesetting — pages must be arranged so that folding produces the correct reading order.",
+   body_cs:"Formát tiskaře popisuje, jak se arch složí. Folio (2°) jednou: 4 strany. Kvart (4°) dvakrát: 8 stran. Oktáv (8°) třikrát: 16 stran. Čím menší formát, tím složitější sazba — strany musí být impozicí uspořádány tak, aby skládáním vzniklo správné pořadí čtení."},
+  {id:"vellum",       cat:"craft",  icon:"📜",unlock:"always",
+   en:"The Making of Vellum",      cs:"Výroba pergamenu",
+   body_en:"Vellum is prepared from the skin of a calf, lamb, or kid — not tanned like leather, but scraped, stretched on a frame while wet, and dried under tension. Far more expensive than paper, it was reserved for prestigious or liturgical works.",
+   body_cs:"Pergamen se připravuje z kůže telete, jehněte nebo kůzlete — nekáže se jako kůže, ale škrábá, za mokra natahuje na rám a suší pod napětím. Mnohem dražší než papír, byl vyhrazen pro prestižní nebo liturgická díla."},
+  // Unlockable
+  {id:"malleus",      cat:"history",icon:"🔨",unlock:"story_malleus",
+   en:"Malleus Maleficarum",       cs:"Malleus Maleficarum",
+   body_en:"'The Hammer of Witches' was written by Dominican inquisitor Heinrich Kramer and first printed in Speyer in 1487. The book provided a theological justification and practical manual for witch trials. It was rejected by theologians at the time but became widely cited by later prosecutors.",
+   body_cs:"'Kladivo na čarodějnice' napsal dominikánský inkvizitor Heinrich Kramer a poprvé vytiskl ve Speyeru v roce 1487. Kniha poskytla teologické zdůvodnění a praktický manuál pro čarodějnické procesy. Dobovými teology odmítnuta, pozdějšími vyšetřovateli hojně citována."},
+  {id:"summis",       cat:"history",icon:"⚜️",unlock:"story_summis",
+   en:"Summis Desiderantes",       cs:"Summis Desiderantes",
+   body_en:"The papal bull issued by Innocent VIII in 1484 granted Heinrich Kramer authority to prosecute witchcraft across the German lands. Printed in large quantities, it showed how the press could amplify papal power at continental scale.",
+   body_cs:"Papežská bula vydaná Inocencem VIII. v roce 1484 udělila Heinrichu Kramerovi moc pronásledovat čarodějnictví po německých zemích. Vytištěna ve velkém množství, ukázala jak lis mohl zesilovat papežskou moc v kontinentálním měřítku."},
+  {id:"reformation",  cat:"history",icon:"⚡",unlock:"hist_reformation",
+   en:"The Storm of Reform",       cs:"Bouře reformace",
+   body_en:"The Hussite movement had already disrupted Rome's authority before Gutenberg. By the 1470s, reformist ideas spread through printed pamphlets faster than any authority could suppress them. The bishop of Olomouc found himself trying to control not just ideas but the machines that multiplied them.",
+   body_cs:"Husitské hnutí narušilo autoritu Říma ještě před Gutenbergem. V 70. letech se reformní myšlenky šířily tištěnými pamflety rychleji, než je jakákoli autorita mohla potlačit. Olomoucký biskup se ocitl v situaci, kdy se snažil kontrolovat nejen myšlenky, ale stroje, které je rozmnožovaly."},
+  {id:"index",        cat:"history",icon:"📕",unlock:"hist_index",
+   en:"Index Librorum Prohibitorum",cs:"Index zakázaných knih",
+   body_en:"The formal Index was established by the Roman Inquisition in 1559. Paradoxically it drove demand — collectors wanted precisely what was forbidden. Printers who risked contraband could charge three times the market price.",
+   body_cs:"Formální Index byl ustanoven římskou inkvizicí v roce 1559. Paradoxně zvyšoval poptávku — sběratelé chtěli přesně to, co bylo zakázáno. Tiskaři riskující kontraband mohli účtovat trojnásobek tržní ceny."},
+  {id:"picatrix",     cat:"history",icon:"🌙",unlock:"story_picatrix",
+   en:"Picatrix — The Hidden Book", cs:"Picatrix — Skrytá kniha",
+   body_en:"Picatrix (Ghāyat al-Ḥakīm) is an Arabic compendium of magic and astrology, compiled in the 10th–11th century and translated into Latin in the 13th. Cardinals studied it openly; the Inquisition condemned it. Its paradoxical status made it a perfect example of the grey zone printers navigated.",
+   body_cs:"Picatrix (Ghāyat al-Ḥakīm) je arabská encyklopedie magie a astrologie, sestavená v 10.–11. stol. a přeložená do latiny ve 13. stol. Kardinálové ho studovali otevřeně; inkvizice ho odsoudila. Jeho paradoxní postavení z něj učinilo dokonalý příklad šedé zóny tiskaře."},
+  {id:"aldus",        cat:"history",icon:"🏛️",unlock:"format_octavo",
+   en:"Aldus Manutius & the Octavo",cs:"Aldus Manutius a Oktáv",
+   body_en:"Aldus Manutius (c.1449–1515) introduced italic type (1501), the portable octavo format, and the concept of a publishing programme. His anchor-and-dolphin device was the first recognisable publisher brand in history.",
+   body_cs:"Aldus Manutius (cca 1449–1515) zavedl kurzívu (1501), přenosný oktáv a koncept vydavatelského programu. Jeho motiv kotvy a delfína byl první rozpoznatelnou vydavatelskou značkou v historii."},
+  {id:"hussite",      cat:"history",icon:"🍷",unlock:"story_husitsky",
+   en:"The Hussite Legacy",        cs:"Husitský odkaz",
+   body_en:"The Hussite movement established Czech as a language of religious life and created vernacular literacy that predisposed Moravia to embrace printing early. Utraquists demanding communion in both kinds continued to face Roman opposition — printing allowed their theology to circulate despite episcopal censorship.",
+   body_cs:"Husitské hnutí zavedlo češtinu jako jazyk náboženského života a vytvořilo lidovou gramotnost, která předurčila Moravu k brzkému přijetí tisku. Utrakvisté požadující přijímání pod obojí nadále čelili Římu — tisk umožnil šíření jejich teologie navzdory biskupské cenzuře."},
+];
+
+const CODEX_CATS={
+  history:{icon:"📜",en:"History",cs:"Historie"},
+  craft:  {icon:"⚙️",en:"Craft",  cs:"Řemeslo"},
+};
+
+function unlockCodex(entryId){
+  if(!G.codexUnlocked) G.codexUnlocked=[];
+  if(!G.codexUnlocked.includes(entryId)) G.codexUnlocked.push(entryId);
+}
+
+function checkCodexUnlocks(){
+  if(!G.codexUnlocked) G.codexUnlocked=[];
+  CODEX.filter(e=>e.unlock==="always").forEach(e=>unlockCodex(e.id));
+  (G.storyLog||[]).forEach(s=>{
+    const e=CODEX.find(c=>c.unlock==="story_"+s.bookId);
+    if(e) unlockCodex(e.id);
+  });
+  if((G.histEvents||[]).includes("reformation")) unlockCodex("reformation");
+  if((G.histEvents||[]).includes("index"))       unlockCodex("index");
+  if((G.formatUnlocks||[]).includes("octavo"))   unlockCodex("aldus");
+}
+
+function renderAchievementsModal(app){
+  const L=G.lang;
+  const earned=G.achievements||[];
+  const modal=h("div",{class:"modal-bg",onClick:()=>{G._showAchievements=false;render();}},
+    h("div",{class:"modal",style:{maxWidth:"460px",padding:"0",overflow:"hidden"},
+      onClick:ev=>ev.stopPropagation()},
+      h("div",{style:{padding:"12px 16px 10px",borderBottom:"1px solid var(--border)",
+        display:"flex",justifyContent:"space-between",alignItems:"center"}},
+        h("div",null,
+          h("div",{style:{fontSize:"13px",fontWeight:"700",letterSpacing:"1px"}},
+            `🏆 ${L==="en"?"Achievements":"Úspěchy"}`),
+          h("div",{style:{fontSize:"10px",color:"#555",marginTop:"2px"}},
+            `${earned.length} / ${ACHIEVEMENTS.length} ${L==="en"?"earned":"získáno"}`)),
+        h("button",{class:"btn btn-s",onClick:()=>{G._showAchievements=false;render();}},"✕")),
+      h("div",{style:{height:"3px",background:"rgba(255,255,255,.05)"}},
+        h("div",{style:{width:`${Math.round(earned.length/ACHIEVEMENTS.length*100)}%`,
+          height:"100%",background:"var(--gold)",transition:"width .6s"}})),
+      h("div",{style:{maxHeight:"68vh",overflowY:"auto"}},
+        ...Object.entries(ACHIEVEMENT_CATS).map(([catId,cat])=>{
+          const items=ACHIEVEMENTS.filter(a=>a.cat===catId);
+          const done=items.filter(a=>earned.includes(a.id));
+          const sec=h("div",{style:{borderBottom:"1px solid var(--border)"}});
+          sec.append(h("div",{style:{
+            padding:"7px 16px",background:"rgba(0,0,0,.25)",
+            display:"flex",justifyContent:"space-between",alignItems:"center"}},
+            h("span",{style:{fontSize:"10px",fontWeight:"700",color:"var(--red)",
+              textTransform:"uppercase",letterSpacing:"1.5px"}},
+              `${cat.icon} ${L==="en"?cat.en:cat.cs}`),
+            h("span",{style:{fontSize:"9px",color:"#555"}},`${done.length}/${items.length}`)));
+          items.forEach(a=>{
+            const isDone=earned.includes(a.id);
+            const rlabel=L==="en"?RARITY_LABEL_EN[a.rarity]:RARITY_LABEL_CS[a.rarity];
+            sec.append(h("div",{style:{
+              display:"flex",alignItems:"center",gap:"10px",
+              padding:"8px 16px",borderBottom:"1px solid rgba(255,255,255,.03)",
+              opacity:isDone?1:0.35}},
+              h("span",{style:{fontSize:"20px",flexShrink:0,filter:isDone?"none":"grayscale(1)"}},a.icon),
+              h("div",{style:{flex:1,minWidth:0}},
+                h("div",{style:{fontSize:"11px",fontWeight:"700",
+                  color:isDone?"var(--paper)":"#555"}},L==="en"?a.en:a.cs),
+                h("div",{style:{fontSize:"10px",color:"#666",lineHeight:"1.4",marginTop:"1px"}},
+                  L==="en"?a.desc_en:a.desc_cs)),
+              isDone
+                ?h("span",{style:{fontSize:"9px",padding:"1px 5px",flexShrink:0,
+                    border:`1px solid ${RARITY_COLOR[a.rarity]}`,color:RARITY_COLOR[a.rarity]}},rlabel)
+                :h("span",{style:{fontSize:"15px",color:"#2a2a2a",flexShrink:0}},"🔒")));
+          });
+          return sec;
+        }))));
+  app.append(modal);
+}
+
+
+// ── JOUZA MEDIEVAL AMBIENT ────────────────────────────────────
+// Author: Magnus Aurelius / Jouza Audio Labs
+// Integrated into The Press — generative background music engine
+class JouzaMedievalAmbient {
+  constructor() {
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    this.masterGain = this.ctx.createGain();
+    this.masterGain.gain.value = 0.7;
+    this.reverb = this.ctx.createConvolver();
+    this._generateProceduralReverb();
+    this.reverb.connect(this.masterGain);
+    this.masterGain.connect(this.ctx.destination);
+    this.isPlaying = false;
+    this.tempo = 65;
+    this.scale = [0, 2, 3, 5, 7, 9, 10];
+    this.rootFreq = 146.83;
+    this.tick = 0;
+    this.activeSoloist = 'flutes';
+    this.isFirstMeasure = true;
+    this._moodLocked = false;
+    this._preMuteVol = 0.7;
+    this.processors = [
+      { id: 'voice1', note: 3, notesLeft: 0, restBeatsLeft: 0 },
+      { id: 'voice2', note: 5, notesLeft: 0, restBeatsLeft: 0 }
+    ];
+    this.droneOscillators = [];
+  }
+  _generateProceduralReverb() {
+    const length = this.ctx.sampleRate * 4.5;
+    const impulse = this.ctx.createBuffer(2, length, this.ctx.sampleRate);
+    for (let i = 0; i < 2; i++) {
+      const channelData = impulse.getChannelData(i);
+      for (let j = 0; j < length; j++)
+        channelData[j] = (Math.random() * 2 - 1) * Math.pow(1 - j / length, 3.5);
+    }
+    this.reverb.buffer = impulse;
+  }
+  getFreq(degree, octave = 0) {
+    const note = this.scale[Math.abs(degree) % 7] + (Math.floor(degree / 7) * 12) + (octave * 12);
+    return this.rootFreq * Math.pow(2, note / 12);
+  }
+  playBell(freq, time) {
+    const carrier = this.ctx.createOscillator();
+    const modulator = this.ctx.createOscillator();
+    const modGain = this.ctx.createGain();
+    const gain = this.ctx.createGain();
+    carrier.type = 'sine'; modulator.type = 'sine';
+    modulator.frequency.value = freq * 2.76;
+    modGain.gain.value = freq * 1.5;
+    modulator.connect(modGain); modGain.connect(carrier.frequency);
+    gain.gain.setValueAtTime(0, time);
+    gain.gain.linearRampToValueAtTime(0.15, time + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + 4.0);
+    carrier.connect(gain); gain.connect(this.reverb);
+    carrier.start(time); modulator.start(time);
+    carrier.stop(time + 4.0); modulator.stop(time + 4.0);
+  }
+  playSitar(freq, time, duration) {
+    const osc = this.ctx.createOscillator();
+    const filter = this.ctx.createBiquadFilter();
+    const gain = this.ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(freq * 0.94, time);
+    osc.frequency.exponentialRampToValueAtTime(freq, time + 0.15);
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(1500, time);
+    filter.frequency.exponentialRampToValueAtTime(500, time + duration);
+    filter.Q.value = 3;
+    gain.gain.setValueAtTime(0, time);
+    gain.gain.linearRampToValueAtTime(0.3, time + 0.05);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + duration);
+    osc.connect(filter); filter.connect(gain);
+    gain.connect(this.masterGain); gain.connect(this.reverb);
+    osc.start(time); osc.stop(time + duration);
+  }
+  playFlute(freq, time, duration) {
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    const vibrato = this.ctx.createOscillator();
+    const vibratoGain = this.ctx.createGain();
+    osc.type = 'sine'; osc.frequency.value = freq;
+    vibrato.frequency.value = 5.5;
+    vibratoGain.gain.value = freq * 0.012;
+    vibrato.connect(vibratoGain); vibratoGain.connect(osc.frequency);
+    gain.gain.setValueAtTime(0, time);
+    gain.gain.linearRampToValueAtTime(0.35, time + duration * 0.15);
+    gain.gain.setValueAtTime(0.35, time + duration * 0.8);
+    gain.gain.linearRampToValueAtTime(0, time + duration);
+    osc.connect(gain); gain.connect(this.reverb); gain.connect(this.masterGain);
+    osc.start(time); vibrato.start(time);
+    osc.stop(time + duration); vibrato.stop(time + duration);
+  }
+  playLute(freq, time, velocity = 0.3) {
+    const osc = this.ctx.createOscillator();
+    const filter = this.ctx.createBiquadFilter();
+    const gain = this.ctx.createGain();
+    osc.type = 'sawtooth'; osc.frequency.value = freq;
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(4000, time);
+    filter.frequency.exponentialRampToValueAtTime(100, time + 1.5);
+    gain.gain.setValueAtTime(0, time);
+    gain.gain.linearRampToValueAtTime(velocity, time + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + 2.5);
+    osc.connect(filter); filter.connect(gain);
+    const dryGain = this.ctx.createGain(); dryGain.gain.value = 0.6;
+    const wetGain = this.ctx.createGain(); wetGain.gain.value = 0.4;
+    gain.connect(dryGain); gain.connect(wetGain);
+    dryGain.connect(this.masterGain); wetGain.connect(this.reverb);
+    osc.start(time); osc.stop(time + 2.5);
+  }
+  playFrameDrum(time, isAccent = true) {
+    const osc = this.ctx.createOscillator();
+    const oscGain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(isAccent ? 85 : 65, time);
+    osc.frequency.exponentialRampToValueAtTime(30, time + 0.6);
+    oscGain.gain.setValueAtTime(isAccent ? 0.6 : 0.2, time);
+    oscGain.gain.exponentialRampToValueAtTime(0.001, time + 0.6);
+    const noiseSize = this.ctx.sampleRate * 0.05;
+    const noiseBuffer = this.ctx.createBuffer(1, noiseSize, this.ctx.sampleRate);
+    const data = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < noiseSize; i++) data[i] = Math.random() * 2 - 1;
+    const noiseSource = this.ctx.createBufferSource();
+    noiseSource.buffer = noiseBuffer;
+    const noiseFilter = this.ctx.createBiquadFilter();
+    noiseFilter.type = 'bandpass';
+    noiseFilter.frequency.value = isAccent ? 1200 : 800;
+    const noiseGain = this.ctx.createGain();
+    noiseGain.gain.setValueAtTime(isAccent ? 0.25 : 0.05, time);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, time + 0.05);
+    osc.connect(oscGain); noiseSource.connect(noiseFilter); noiseFilter.connect(noiseGain);
+    oscGain.connect(this.reverb); noiseGain.connect(this.masterGain);
+    osc.start(time); noiseSource.start(time); osc.stop(time + 0.6);
+    const delayMs = Math.max(0, (time - this.ctx.currentTime) * 1000);
+    setTimeout(() => window.dispatchEvent(new CustomEvent('jouzaAudio:drumHit',
+      {detail:{isAccent}})), delayMs);
+  }
+  startDrone() {
+    const startOsc = (freqMulti, vol) => {
+      const osc = this.ctx.createOscillator();
+      const filter = this.ctx.createBiquadFilter();
+      const lfo = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sawtooth'; osc.frequency.value = this.rootFreq * freqMulti;
+      lfo.type = 'sine'; lfo.frequency.value = 0.1 + Math.random() * 0.1;
+      const lfoGain = this.ctx.createGain(); lfoGain.gain.value = 400;
+      filter.type = 'lowpass'; filter.frequency.value = 600;
+      lfo.connect(lfoGain); lfoGain.connect(filter.frequency);
+      gain.gain.value = vol;
+      osc.connect(filter); filter.connect(gain); gain.connect(this.reverb);
+      osc.start(); lfo.start();
+      this.droneOscillators.push(osc, lfo);
+    };
+    startOsc(0.5, 0.08); startOsc(0.75, 0.04);
+  }
+  stopDrone() { this.droneOscillators.forEach(n => { try{n.stop();}catch(e){} }); this.droneOscillators = []; }
+  _processVoice(processor, time, stepDuration, instrument, isSecondary) {
+    if (processor.restBeatsLeft > 0) { processor.restBeatsLeft--; return; }
+    if (processor.notesLeft <= 0) {
+      processor.restBeatsLeft = Math.floor(Math.random() * 3) + 1;
+      processor.notesLeft = Math.floor(Math.random() * 6) + 5;
+      return;
+    }
+    const intervals = [-2, -1, -1, 0, 1, 1, 1, 2, 3];
+    processor.note += intervals[Math.floor(Math.random() * intervals.length)];
+    if (processor.note < 0) processor.note = 2;
+    if (processor.note > 14) processor.note = 12;
+    const noteDuration = stepDuration * (0.5 + Math.random() * 1.5);
+    const freq = this.getFreq(processor.note, 1);
+    if (instrument === 'flutes') this.playFlute(freq, time, isSecondary ? noteDuration * 0.8 : noteDuration);
+    else if (instrument === 'sitar' && !isSecondary) this.playSitar(freq, time, noteDuration * 0.8);
+    else if (instrument === 'lute' && !isSecondary) this.playLute(freq, time, 0.4);
+    processor.notesLeft--;
+  }
+  scheduler() {
+    if (!this.isPlaying) return;
+    const stepDuration = 60 / this.tempo;
+    const now = this.ctx.currentTime;
+    for (let i = 0; i < 4; i++) {
+      const time = now + (i * stepDuration);
+      if (this.tick === 0 && this.isFirstMeasure) {
+        this.activeSoloist = 'flutes';
+        this.playFrameDrum(time, true);
+        this.playLute(this.getFreq(0, -1), time, 0.6);
+        this.processors[0].restBeatsLeft = 0; this.processors[0].notesLeft = 6;
+        this.processors[1].restBeatsLeft = 0; this.processors[1].notesLeft = 4;
+        this.isFirstMeasure = false;
+      }
+      if (i === 0 && this.tick > 0 && this.tick % 32 === 0) {
+        const roles = ['flutes', 'sitar', 'lute', 'atmosphere'];
+        if (!this._moodLocked) this.activeSoloist = roles[Math.floor(Math.random() * roles.length)];
+      }
+      if (i === 0 && this.tick % 8 === 0 && Math.random() > 0.7)
+        this.playBell(this.getFreq(Math.floor(Math.random() * 5), 2), time);
+      if (this.activeSoloist !== 'lute' && Math.random() > 0.85)
+        this.playLute(this.getFreq(Math.floor(Math.random() * 5), -1), time, 0.2);
+      if (this.activeSoloist !== 'atmosphere') {
+        const shouldPlay = (i % 2 === 0) || (this.tick < 4) || (Math.random() > 0.6);
+        if (shouldPlay) {
+          this._processVoice(this.processors[0], time, stepDuration, this.activeSoloist, false);
+          if (this.activeSoloist === 'flutes' && (this.tick < 4 || Math.random() > 0.2))
+            this._processVoice(this.processors[1], time, stepDuration, this.activeSoloist, true);
+        }
+      }
+      this.tick++;
+    }
+    setTimeout(() => this.scheduler(), stepDuration * 4000 - 100);
+  }
+  async start() {
+    if (this.ctx.state === 'suspended') await this.ctx.resume();
+    this.isPlaying = true; this.tick = 0; this.isFirstMeasure = true;
+    this.startDrone(); this.scheduler();
+    console.log("🏰 Jouza Audio Labs: Engine aktivován.");
+  }
+  stop() { this.isPlaying = false; this.stopDrone(); }
+  // Press Integration API (Magnus Aurelius pattern)
+  setTempo(newTempo) { this.tempo = Math.max(50, Math.min(newTempo, 120)); }
+  forceMood(mood) {
+    const valid = ['flutes', 'sitar', 'lute', 'atmosphere'];
+    if (!valid.includes(mood)) return;
+    this.activeSoloist = mood;
+    this._moodLocked = true;
+    this.tick = 0;
+    setTimeout(() => { this._moodLocked = false; }, (60 / this.tempo) * 32 * 1000);
+  }
+  setVolume(v) { this.masterGain.gain.value = Math.max(0, Math.min(1, v)); }
+  mute()   { this._preMuteVol = this.masterGain.gain.value; this.masterGain.gain.value = 0; }
+  unmute() { this.masterGain.gain.value = this._preMuteVol || 0.7; }
+}
+
+
 function applyRoleBonus(roleId){
   switch(roleId){
     case "apprentice": G.res.rags+=4; G.res.lead+=2; break;
@@ -3357,6 +4060,12 @@ function render(){
   const _scrollTop = app.querySelector?.(".content")?.scrollTop||0;
   app.innerHTML="";
 
+  // ── VERDICT SCREEN (end game) ──
+  if(p._verdictScreen){
+    renderVerdictScreen(app);
+    return;
+  }
+
   // ── Hero modal overlay (above everything) ──
   if(p._heroModal){
     const w = p.workers.find(x=>x.id===p._heroModal);
@@ -3521,6 +4230,31 @@ function render(){
       h("small",null,`OLOMOUC · ${L==="en"?"ANNO DOMINI":"ANNO DOMINI"}`)),
     h("div",{style:{display:"flex",gap:"6px",alignItems:"center"}},
       h("button",{class:"btn btn-s",onClick:()=>{G.lang=G.lang==="en"?"cs":"en";render();}},L==="en"?"CS":"EN"),
+      h("button",{class:"btn btn-s",
+        title:L==="en"?"Achievements":"Úspěchy",
+        style:{position:"relative"},
+        onClick:()=>{G._showAchievements=!G._showAchievements;render();}},
+        "🏆",
+        (G.achievements||[]).length>0
+          ?h("span",{style:{position:"absolute",top:"-4px",right:"-4px",
+              fontSize:"8px",background:"var(--gold)",color:"#000",
+              borderRadius:"50%",width:"14px",height:"14px",
+              display:"flex",alignItems:"center",justifyContent:"center",
+              fontWeight:"700",lineHeight:"1"}},
+              String((G.achievements||[]).length))
+          :null),
+      // 🎵 Music button
+      h("button",{class:"btn btn-s",
+        title:L==="en"?"Generative Music (Jouza Audio Labs)":"Generativní hudba (Jouza Audio Labs)",
+        style:{position:"relative"},
+        onClick:()=>{G._showMusicPanel=!G._showMusicPanel;render();}},
+        p.musicEnabled?"🎵":"🎵",
+        h("span",{style:{
+          position:"absolute",bottom:"-3px",right:"-3px",
+          width:"7px",height:"7px",borderRadius:"50%",
+          background:p.musicEnabled?"#88cc88":"#555",
+          border:"1px solid var(--bg)",
+        }})),
       h("button",{class:"btn btn-s",onClick:()=>{G.help=!G.help;render();}},"?")));
   app.append(hdr);
 
@@ -3575,8 +4309,18 @@ function render(){
     pillTip("🏅",p.reputation+"/10","",
       `${L==="en"?"Reputation — unlocks better orders":"Reputace — odemyká lepší zakázky"}<br>${p.reputation<4?(L==="en"?"&lt;4: No State/Luxury orders":"&lt;4: Žádné Státní/Luxusní"):p.reputation<7?(L==="en"?"&lt;7: No Luxury orders":"&lt;7: Žádné Luxusní"):(L==="en"?"All orders unlocked":"Vše odemčeno")}`,"reputation"),
     (p.censorTokens||0)>0?h("span",{class:"pill-sep"},"|"):"",
-    (p.censorTokens||0)>0?pillTip("⚠",(p.censorTokens||0),"warn",L==="en"?"Censor tokens — forbidden books printed":"Cenzurní tokeny — vytisktěny zakázané knihy","censorTokens"):"",
-    p.debt>0?pillTip("💸","Debt "+p.debt+"g","warn",L==="en"?"Unpaid wages owed — loyalty drops":"Dluh na mzdách — loajalita klesá","debt"):"");
+    (p.censorTokens||0)>0?pillTip("⚠",(p.censorTokens||0),"warn",L==="en"?"Censor tokens — forbidden books printed":"Cenzurní tokeny — za vytištěné zakázané knihy","censorTokens"):"",
+    p.debt>0?pillTip("💸","Debt "+p.debt+"g","warn",L==="en"?"Unpaid wages owed — loyalty drops":"Dluh na mzdách — loajalita klesá","debt"):"",
+    h("span",{class:"pill-sep"},"|"),
+    h("button",{
+      style:{background:"none",border:"none",cursor:"pointer",padding:"0 2px",
+        fontSize:"14px",lineHeight:"1",opacity:.7,transition:"opacity .15s"},
+      title:L==="en"?"Achievements":"Achievementy",
+      onMouseenter:e=>e.target.style.opacity="1",
+      onMouseleave:e=>e.target.style.opacity=".7",
+      onClick:()=>{G.showAchievements=!G.showAchievements;render();}},
+      `🏆${(G.achievements||[]).length>0?h("span",{style:{fontSize:"9px",verticalAlign:"top",color:"var(--gold)"}}," "+(G.achievements||[]).length):""}`,
+    ));
   resBar.append(ecoRow);
 
   // Row 2: Raw materials
@@ -3656,7 +4400,8 @@ function render(){
     {id:"market",   icon:"🛒", en:"Market",      cs:"Trh"},
     {id:"party",    icon:"👥", en:"Workers",     cs:"Parta"},
     {id:"tabularium",icon:"💰",en:"Tabularium",  cs:"Tabulárium"},
-    {id:"log",      icon:"📖", en:"Journal",    cs:"Deník"},
+    {id:"log",      icon:"📋", en:"Journal",    cs:"Deník"},
+    {id:"codex",    icon:"📖", en:"Codex",      cs:"Kodex"},
     {id:"settings", icon:"⚙",  en:"Settings",   cs:"Nastavení"},
   ];
   const tabRow=h("div",{class:"tabs"});
@@ -4451,6 +5196,29 @@ function render(){
 
   // ── TAB: PRODUCE ──
   } else if(p.tab==="produce"){
+    // ── SUBTAB NAV ──
+    const prodSubtabs=[
+      {id:"formats", en:"Book Formats", cs:"Formáty knih"},
+      {id:"quick",   en:"Quick Produce", cs:"Rychlovýroba"},
+    ];
+    const prodNav=h("div",{style:{display:"flex",gap:"0",borderBottom:"1px solid var(--border2)",
+      background:"var(--card)",flexShrink:0}});
+    prodSubtabs.forEach(st=>{
+      const isActive=(p.produceSubtab||"formats")===st.id;
+      const btn=h("button",{style:{
+        padding:"7px 14px",fontSize:"11px",fontWeight:isActive?"700":"500",
+        color:isActive?"var(--paper)":"#666",background:"none",border:"none",
+        borderBottom:isActive?"2px solid var(--gold)":"2px solid transparent",
+        cursor:"pointer",fontFamily:"inherit",letterSpacing:".3px",
+        marginBottom:"-1px",
+      },onClick:()=>{G.produceSubtab=st.id;render();}},
+      L==="en"?st.en:st.cs);
+      prodNav.append(btn);
+    });
+    content.append(prodNav);
+
+    // ── SUBTAB: BOOK FORMATS ──
+    if((p.produceSubtab||"formats")==="formats"){
     // ── FORMATS SECTION ──
     const fmtSec=h("div",{class:"sec"});
     fmtSec.append(h("div",{class:"sec-title"},L==="en"?"Book Formats":"Formáty knih"));
@@ -4798,10 +5566,147 @@ function render(){
     }
     content.append(taskSec);
 
+    } // end formats subtab
+
+    // ── SUBTAB: QUICK PRODUCE ──
+    else if(p.produceSubtab==="quick"){
+      const qSec=h("div",{class:"sec"});
+      qSec.append(h("div",{class:"sec-title"},L==="en"?"Quick Produce — Peddler's Goods":"Rychlovýroba — Kramářské zboží"));
+      qSec.append(h("div",{style:{fontSize:"10px",color:"#8a7a6a",fontStyle:"italic",
+        lineHeight:"1.6",marginBottom:"10px",padding:"6px 8px",
+        borderLeft:"2px solid rgba(139,0,0,.3)"}},
+        L==="en"
+          ?"Fast runs that don't need orders. Buy materials, make goods, sell at market. Always profitable — more so in season."
+          :"Rychlá výroba bez zakázek. Kup suroviny, vyrobti zboží, prodej na trhu. Vždy ziskové — více v sezóně."));
+
+      // Economic rule hint
+      const econHint=h("div",{style:{
+        display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"4px",marginBottom:"10px",
+        fontSize:"9px",textAlign:"center",
+      }});
+      [
+        {icon:"🛒",label:L==="en"?"Buy at market":"Nakup na trhu",val:L==="en"?"small profit":"malý zisk",color:"#888"},
+        {icon:"⚙️",label:L==="en"?"Own production":"Vlastní výroba",val:L==="en"?"bigger profit":"větší zisk",color:"var(--gold)"},
+        {icon:"🌸",label:L==="en"?"In season":"V sezóně",val:L==="en"?"peak profit":"nejvyšší zisk",color:"#88cc88"},
+      ].forEach(({icon,label,val,color})=>{
+        econHint.append(h("div",{style:{padding:"5px",border:"1px solid var(--border)",background:"rgba(0,0,0,.2)"}},
+          h("div",{style:{fontSize:"13px",marginBottom:"2px"}},icon),
+          h("div",{style:{color:"#666"}},label),
+          h("div",{style:{fontWeight:"700",color}},val)));
+      });
+      qSec.append(econHint);
+
+      // Each quick good — make card
+      Object.values(QUICK_PRODUCE).forEach(good=>{
+        const isSeason=good.season && good.season.includes(p.round);
+        const isToxic=good.toxic && p.reformation;
+        const canMake=(good.req.paper||0)<=(G.res.paper||0) && (good.req.ink||0)<=(G.res.ink||0);
+        const inStock=(G.quickGoods||{})[good.id]||0;
+        // Current sell price
+        const isLeipzig=LEIPZIG_ROUNDS.includes(p.round);
+        const hasAgent=p.workers.some(w=>w.prof==="agent"&&w.task==="sell"&&w.traits?.includes("obchodnik"));
+        const seasonMult=isSeason?good.seasonMult:1.0;
+        const leipsellMult=isLeipzig?1.8:1.0;
+        const agentMult=hasAgent?1.1:1.0;
+        const unitPrice=Math.round(good.basePrice*seasonMult*leipsellMult*agentMult*10)/10;
+        // Cost if buying at market
+        const paperCost=(good.req.paper||0)*(G.marketPrices?.paper||3);
+        const inkCost=(good.req.ink||0)*(G.marketPrices?.ink||3);
+        const totalCost=Math.round(paperCost+inkCost);
+        const totalRevenue=Math.round(good.output*unitPrice);
+        const profit=totalRevenue-totalCost;
+
+        const card=h("div",{style:{
+          padding:"10px",marginBottom:"6px",
+          border:`1px solid ${isSeason?"rgba(42,90,42,.4)":isToxic?"rgba(200,0,0,.3)":"var(--border2)"}`,
+          background:isSeason?"rgba(42,90,42,.04)":isToxic?"rgba(139,0,0,.06)":"rgba(0,0,0,.02)",
+        }});
+
+        // Header row
+        card.append(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"5px"}},
+          h("div",null,
+            h("div",{style:{display:"flex",alignItems:"center",gap:"6px",marginBottom:"2px"}},
+              h("span",{style:{fontSize:"18px"}},good.icon),
+              h("span",{style:{fontWeight:"700",fontSize:"12px"}},L==="en"?good.en:good.cs),
+              isSeason?h("span",{style:{fontSize:"9px",color:"#88cc88",border:"1px solid rgba(42,90,42,.4)",padding:"1px 4px"}},
+                L==="en"?"🌸 IN SEASON":"🌸 V SEZÓNĚ"):"",
+              isToxic?h("span",{style:{fontSize:"9px",color:"#ff9999",border:"1px dashed rgba(200,0,0,.4)",padding:"1px 4px"}},
+                L==="en"?"⚠ RISKY":"⚠ RIZIKOVÉ"):"",
+              isLeipzig?h("span",{style:{fontSize:"9px",color:"var(--gold)",border:"1px solid rgba(201,149,43,.3)",padding:"1px 4px"}},
+                "🏪 ×1.8"):""),
+            h("div",{style:{fontSize:"10px",color:"#666",lineHeight:"1.4"}},
+              L==="en"?good.desc_en:good.desc_cs)),
+          // Profit badge
+          h("div",{style:{textAlign:"right",flexShrink:0,marginLeft:"8px"}},
+            h("div",{style:{fontSize:"14px",fontWeight:"700",color:profit>0?"#88cc88":"#ff9999"}},
+              `+${profit}g`),
+            h("div",{style:{fontSize:"9px",color:"#555"}},L==="en"?"profit":"zisk"))));
+
+        // Recipe + output row
+        const reqParts=[];
+        if(good.req.paper) reqParts.push(`📄×${good.req.paper}`);
+        if(good.req.ink)   reqParts.push(`⬛×${good.req.ink}`);
+        card.append(h("div",{style:{display:"flex",gap:"10px",fontSize:"10px",color:"#888",marginBottom:"6px",flexWrap:"wrap"}},
+          h("span",null,reqParts.join(" ")+" → "),
+          h("span",{style:{color:"var(--paper)",fontWeight:"700"}},`${good.output}× ${good.icon}`),
+          h("span",{style:{color:"#555"}},`· ${unitPrice}g/${L==="en"?"unit":"ks"}`),
+          h("span",{style:{color:"#555"}},`· total ~${totalRevenue}g`)));
+
+        // Action row
+        card.append(h("div",{style:{display:"flex",gap:"6px",alignItems:"center",flexWrap:"wrap"}},
+          h("button",{
+            class:"btn btn-s"+(canMake?" btn-p":""),
+            style:{opacity:canMake?1:.4},
+            onClick:()=>makeQuickGood(good.id)},
+            `${L==="en"?"Make":"Vyrobit"} (${reqParts.join("+")})`),
+          inStock>0?h("span",{style:{fontSize:"10px",color:"#888"}},
+            `${L==="en"?"In stock":"Na skladě"}: ${inStock}×`):"",
+          inStock>0?h("button",{class:"btn btn-s btn-ok",
+            onClick:()=>sellQuickGood(good.id,inStock)},
+            `${L==="en"?"Sell all":"Prodat vše"} → +${Math.round(inStock*unitPrice)}g`):"",
+          inStock>0?h("button",{class:"btn btn-s",
+            onClick:()=>sellQuickGood(good.id,1)},
+            "1×"):""));
+
+        qSec.append(card);
+      });
+      content.append(qSec);
+    } // end quick subtab
+
   // ── TAB: MARKET ──
   } else if(p.tab==="market"){
     const closed=MARKET_CLOSED[p.round];
     const isLeipzig=LEIPZIG_ROUNDS.includes(p.round);
+
+    // ── MARKET SUBTAB NAV ──
+    const mktSubtabs=[
+      {id:"buy",    en:"Buy",    cs:"Nakoupit"},
+      {id:"sell",   en:"Sell",   cs:"Prodat"},
+      {id:"square", en:"Square", cs:"Náměstí"},
+    ];
+    const mktNav=h("div",{style:{display:"flex",gap:"0",borderBottom:"1px solid var(--border2)",
+      background:"var(--card)",flexShrink:0}});
+    const mktNavRight=h("div",{style:{marginLeft:"auto",display:"flex",alignItems:"center",
+      paddingRight:"10px",fontSize:"9px",fontWeight:"700",
+      color:isLeipzig?"var(--gold2)":closed?"#ff6666":"#88cc88"}},
+      isLeipzig?"🏪 LEIPZIG":closed?"⛔ CLOSED":"✅ OPEN");
+    mktSubtabs.forEach(st=>{
+      const isActive=(p.marketSubtab||"buy")===st.id;
+      const btn=h("button",{style:{
+        padding:"7px 14px",fontSize:"11px",fontWeight:isActive?"700":"500",
+        color:isActive?"var(--paper)":"#666",background:"none",border:"none",
+        borderBottom:isActive?"2px solid var(--red)":"2px solid transparent",
+        cursor:"pointer",fontFamily:"inherit",letterSpacing:".3px",
+        marginBottom:"-1px",
+      },onClick:()=>{G.marketSubtab=st.id;render();}},
+      L==="en"?st.en:st.cs);
+      mktNav.append(btn);
+    });
+    mktNav.append(mktNavRight);
+    content.append(mktNav);
+
+    // ── BUY SUBTAB ──
+    if((p.marketSubtab||"buy")==="buy"){
 
     // Market status banner
     const mktBanner=h("div",{class:"sec"});
@@ -4823,6 +5728,102 @@ function render(){
         :"Pošli obchodního agenta na trh — všechny prodejní ceny ×1.8 jen tento měsíc. Kupci přijíždějí z Frankfurtu, Norimberku, Krakova."));
     }
     content.append(mktBanner);
+
+
+    // ── DYNAMIC PRICE BOARD ──
+    const priceSec=h("div",{class:"sec"});
+    priceSec.append(h("div",{class:"sec-title"},L==="en"?"Price Board":"Cenová tabule"));
+    const PRICE_ITEMS=[
+      {key:"rags",       icon:"🧻",en:"Rags",       cs:"Hadry",      buyQty:6, tip_en:"Paper (4→1)",      tip_cs:"Papír (4→1)"},
+      {key:"lead",       icon:"🔩",en:"Lead",        cs:"Olovo",      buyQty:4, tip_en:"Alloy (2+1Sn→1)", tip_cs:"Liteřina (2+1Sn)"},
+      {key:"tin",        icon:"🥈",en:"Tin",         cs:"Cín",        buyQty:3, tip_en:"Alloy 20%",        tip_cs:"Slitina 20%"},
+      {key:"antimony",   icon:"⬜",en:"Antimony",    cs:"Antimon",    buyQty:2, tip_en:"Hardener (+qual)", tip_cs:"Tvrdidlo (+kval)"},
+      {key:"soot",       icon:"🖤",en:"Soot",        cs:"Saze",       buyQty:4, tip_en:"Ink base (1+1→3)", tip_cs:"Inkoust (1+1→3)"},
+      {key:"linseed_oil",icon:"🫙",en:"Linseed oil", cs:"Lněný olej", buyQty:3, tip_en:"Ink + lube",       tip_cs:"Inkoust + mazivo"},
+      {key:"paper",      icon:"📄",en:"Paper",       cs:"Papír",      buyQty:3, tip_en:"Ready sheets",     tip_cs:"Hotové archy"},
+      {key:"ink",        icon:"⬛",en:"Ink",         cs:"Inkoust",    buyQty:2, tip_en:"Printing ink",     tip_cs:"Tiskový inkoust"},
+      {key:"typemetal",  icon:"⚙️",en:"Type metal",  cs:"Liteřina",   buyQty:2, tip_en:"Cast letters",     tip_cs:"Odlít litery"},
+      {key:"vellum",     icon:"📜",en:"Vellum",      cs:"Pergamen",   buyQty:1, tip_en:"Luxury orders",    tip_cs:"Luxusní zakázky"},
+    ];
+    const priceGrid=h("div",{style:{display:"flex",flexDirection:"column",gap:"3px"}});
+    PRICE_ITEMS.forEach(({key,icon,en,cs,buyQty,tip_en,tip_cs})=>{
+      if(!BASE_PRICES[key]) return;
+      const curPrice=G.marketPrices[key]||BASE_PRICES[key];
+      const basePrice=BASE_PRICES[key];
+      const trend=getPriceTrend(key);
+      const stock=G.res[key]||0;
+      const totalCost=Math.ceil(curPrice*buyQty);
+      const canBuy=G.gold>=totalCost;
+      const trendIcon=trend==="up"?"↑":trend==="down"?"↓":"↔";
+      const trendColor=trend==="up"?"#cc4444":trend==="down"?"#44aa44":"#666";
+      const pricePct=Math.round((curPrice/basePrice-1)*100);
+      const priceColor=pricePct>15?"#cc4444":pricePct<-15?"#44aa44":"var(--paper)";
+      const hist=G.priceHistory[key]||[];
+      const sparkStr=hist.map(v=>{const r=v/basePrice;return r>1.15?"▇":r>1.05?"▅":r>0.95?"▃":r>0.85?"▂":"▁";}).join("");
+      const card=h("div",{style:{
+        display:"flex",alignItems:"center",gap:"8px",padding:"6px 8px",
+        border:`1px solid ${trend==="up"?"rgba(180,40,40,.25)":trend==="down"?"rgba(40,140,40,.2)":"var(--border)"}`,
+        background:trend==="up"?"rgba(139,0,0,.04)":trend==="down"?"rgba(20,60,20,.04)":"rgba(255,255,255,.01)",
+      }});
+      card.append(
+        h("span",{style:{fontSize:"14px",flexShrink:0}},icon),
+        h("div",{style:{flex:1,minWidth:0},title:L==="en"?tip_en:tip_cs},
+          h("div",{style:{fontSize:"11px",fontWeight:"700",color:"var(--paper)"}},L==="en"?en:cs),
+          h("div",{style:{fontSize:"9px",color:"#555",fontFamily:"'Courier New',monospace"}},sparkStr||"—")),
+        h("div",{style:{textAlign:"center",minWidth:"28px",flexShrink:0}},
+          h("div",{style:{fontSize:"9px",color:"#555"}},L==="en"?"stock":"sklad"),
+          h("div",{style:{fontSize:"11px",fontWeight:"700",color:stock<2?"#cc6666":"var(--paper)"}},stock)),
+        h("div",{style:{textAlign:"right",minWidth:"48px",flexShrink:0}},
+          h("div",{style:{display:"flex",alignItems:"center",gap:"3px",justifyContent:"flex-end"}},
+            h("span",{style:{fontSize:"12px",fontWeight:"700",color:priceColor}},curPrice+"g"),
+            h("span",{style:{fontSize:"11px",color:trendColor,fontWeight:"700"}},trendIcon)),
+          h("div",{style:{fontSize:"8px",color:"#555"}},`base ${basePrice}g`)),
+        h("button",{
+          class:"btn btn-s"+(canBuy?" btn-p":""),
+          style:{flexShrink:0,opacity:canBuy?1:.35,fontSize:"9px",padding:"3px 6px"},
+          title:`${L==="en"?"Buy":"Koupit"} ${buyQty}× = ${totalCost}g`,
+          onClick:()=>{if(canBuy)buyResource(key,buyQty,totalCost);}},
+          `+${buyQty}`));
+      priceGrid.append(card);
+    });
+    priceSec.append(priceGrid);
+    const smPct=Math.round((SEASON_PRICE_MULT[p.round]-1)*100);
+    priceSec.append(h("div",{style:{fontSize:"9px",color:"#555",marginTop:"8px",fontStyle:"italic",
+      padding:"5px 8px",borderTop:"1px solid var(--border)"}},
+      smPct>0
+        ?`⚠️ ${L==="en"?"Seasonal premium":"Sezónní příplatek"}: +${smPct}% — ${L==="en"?"winter scarcity":"zimní nedostatek"}`
+        :smPct<0
+          ?`✅ ${L==="en"?"Seasonal discount":"Sezónní sleva"}: ${smPct}% — ${L==="en"?"summer abundance":"letní hojnost"}`
+          :`${L==="en"?"Market at normal prices this month.":"Trh za normální ceny tento měsíc."}`));
+    content.append(priceSec);
+
+
+    } // end BUY subtab
+
+    // ── SELL SUBTAB ──
+    else if(p.marketSubtab==="sell"){
+
+    // Market status banner (sell context)
+    const mktBanner=h("div",{class:"sec"});
+    mktBanner.append(
+      h("div",{style:{
+        padding:"8px",marginBottom:"0",
+        background:isLeipzig?"rgba(201,149,43,.12)":closed?"rgba(139,0,0,.08)":"rgba(42,90,42,.08)",
+        border:`1px solid ${isLeipzig?"rgba(201,149,43,.4)":closed?"rgba(139,0,0,.2)":"rgba(42,90,42,.2)"}`,
+        fontSize:"11px",
+        color:isLeipzig?"var(--gold2)":closed?"#ff9999":"#88cc88",
+        fontWeight:"700"
+      }}, L==="en"?rd.mkt_en:rd.mkt_cs));
+    if(isLeipzig){
+      mktBanner.append(h("div",{style:{
+        padding:"6px 8px",fontSize:"10px",color:"#aaa",lineHeight:"1.5",
+        background:"rgba(201,149,43,.05)",borderTop:"1px solid rgba(201,149,43,.15)"
+      }}, L==="en"
+        ?"Send your Trade Agent to market — all sell prices ×1.8 this month only. Merchants come from Frankfurt, Nuremberg, Kraków."
+        :"Pošli obchodního agenta na trh — všechny prodejní ceny ×1.8 jen tento měsíc. Kupci přijíždějí z Frankfurtu, Norimberku, Krakova."));
+    }
+    content.append(mktBanner);
+
 
     // ── SELL SECTION ──
     const sellSec=h("div",{class:"sec"});
@@ -4933,6 +5934,43 @@ function render(){
     }
     content.append(sellSec);
 
+
+    // ── Quick Goods in stock (Kramářské zboží) ──
+    const hasQuickGoods=G.quickGoods&&Object.values(G.quickGoods).some(v=>v>0);
+    if(hasQuickGoods){
+      const qSellSec=h("div",{class:"sec"});
+      qSellSec.append(h("div",{class:"sec-title"},L==="en"?"Peddler's Goods":"Kramářské zboží"));
+      const leipsellMult2=isLeipzig?1.8:1.0;
+      const hasAgent2=p.workers.some(w=>w.prof==="agent"&&w.task==="sell"&&w.traits?.includes("obchodnik"));
+      Object.entries(G.quickGoods||{}).forEach(([goodId,qty])=>{
+        if(!qty) return;
+        const good=QUICK_PRODUCE[goodId]; if(!good) return;
+        const isSeason2=good.season&&good.season.includes(p.round);
+        const unitPrice2=Math.round(good.basePrice*(isSeason2?good.seasonMult:1.0)*leipsellMult2*(hasAgent2?1.1:1.0)*10)/10;
+        const row=h("div",{class:"sell-item-row",style:{
+          borderLeft:isSeason2?"2px solid rgba(42,90,42,.5)":"",
+          background:isSeason2?"rgba(42,90,42,.03)":""}});
+        row.append(
+          h("div",{style:{display:"flex",gap:"6px",alignItems:"center",flex:1}},
+            h("span",{style:{fontSize:"14px"}},good.icon),
+            h("div",null,
+              h("div",{class:"sell-item-name"},L==="en"?good.en:good.cs),
+              h("div",{class:"sell-item-qty"},`${qty}× · ${unitPrice2}g/${L==="en"?"unit":"ks"}${isSeason2?" 🌸":""}`))),
+          h("div",{style:{display:"flex",gap:"4px",alignItems:"center"}},
+            h("span",{class:"sell-item-price"},`~${Math.round(qty*unitPrice2)}g`),
+            h("button",{class:"btn btn-s",onClick:()=>sellQuickGood(goodId,1)},"1×"),
+            h("button",{class:"btn btn-s btn-p",onClick:()=>sellQuickGood(goodId,qty)},
+              L==="en"?"All":"Vše")));
+        qSellSec.append(row);
+      });
+      content.append(qSellSec);
+    }
+
+    } // end SELL subtab
+
+    // ── SQUARE SUBTAB ──
+    else if(p.marketSubtab==="square"){
+
     // ── MARKET ATMOSPHERE ──
     initMarketPrices();
     const buyers=genMarketBuyers();
@@ -4970,44 +6008,38 @@ function render(){
     }
     content.append(atmSec);
 
-    // ── DYNAMIC PRICE BOARD ──
-    const priceSec=h("div",{class:"sec"});
-    priceSec.append(h("div",{class:"sec-title"},L==="en"?"Price Board":"Cenová tabule"));
-    const PRICE_ITEMS=[
-      {key:"rags",       icon:"🧻",en:"Rags",       cs:"Hadry",      buyQty:6, tip_en:"Paper (4→1)",      tip_cs:"Papír (4→1)"},
-      {key:"lead",       icon:"🔩",en:"Lead",        cs:"Olovo",      buyQty:4, tip_en:"Alloy (2+1Sn→1)", tip_cs:"Liteřina (2+1Sn)"},
-      {key:"tin",        icon:"🥈",en:"Tin",         cs:"Cín",        buyQty:3, tip_en:"Alloy 20%",        tip_cs:"Slitina 20%"},
-      {key:"antimony",   icon:"⬜",en:"Antimony",    cs:"Antimon",    buyQty:2, tip_en:"Hardener (+qual)", tip_cs:"Tvrdidlo (+kval)"},
-      {key:"soot",       icon:"🖤",en:"Soot",        cs:"Saze",       buyQty:4, tip_en:"Ink base (1+1→3)", tip_cs:"Inkoust (1+1→3)"},
-      {key:"linseed_oil",icon:"🫙",en:"Linseed oil", cs:"Lněný olej", buyQty:3, tip_en:"Ink + lube",       tip_cs:"Inkoust + mazivo"},
-      {key:"paper",      icon:"📄",en:"Paper",       cs:"Papír",      buyQty:3, tip_en:"Ready sheets",     tip_cs:"Hotové archy"},
-      {key:"ink",        icon:"⬛",en:"Ink",         cs:"Inkoust",    buyQty:2, tip_en:"Printing ink",     tip_cs:"Tiskový inkoust"},
-      {key:"typemetal",  icon:"⚙️",en:"Type metal",  cs:"Liteřina",   buyQty:2, tip_en:"Cast letters",     tip_cs:"Odlít litery"},
-      {key:"vellum",     icon:"📜",en:"Vellum",      cs:"Pergamen",   buyQty:1, tip_en:"Luxury orders",    tip_cs:"Luxusní zakázky"},
+
+    // ── PRICE TRENDS (read-only, no buy buttons) ──
+    initMarketPrices();
+    const trendSec=h("div",{class:"sec"});
+    trendSec.append(h("div",{class:"sec-title"},L==="en"?"Price Trends":"Cenové trendy"));
+    const TREND_ITEMS=[
+      {key:"rags",icon:"🧻",en:"Rags",cs:"Hadry"},{key:"lead",icon:"🔩",en:"Lead",cs:"Olovo"},
+      {key:"tin",icon:"🥈",en:"Tin",cs:"Cín"},{key:"paper",icon:"📄",en:"Paper",cs:"Papír"},
+      {key:"ink",icon:"⬛",en:"Ink",cs:"Inkoust"},{key:"vellum",icon:"📜",en:"Vellum",cs:"Pergamen"},
+      {key:"linseed_oil",icon:"🫙",en:"Linseed oil",cs:"Lněný olej"},
     ];
-    const priceGrid=h("div",{style:{display:"flex",flexDirection:"column",gap:"3px"}});
-    PRICE_ITEMS.forEach(({key,icon,en,cs,buyQty,tip_en,tip_cs})=>{
+    const trendGrid=h("div",{style:{display:"flex",flexDirection:"column",gap:"3px"}});
+    TREND_ITEMS.forEach(({key,icon,en,cs})=>{
       if(!BASE_PRICES[key]) return;
-      const curPrice=G.marketPrices[key]||BASE_PRICES[key];
+      const curPrice=G.marketPrices?.[key]||BASE_PRICES[key];
       const basePrice=BASE_PRICES[key];
       const trend=getPriceTrend(key);
       const stock=G.res[key]||0;
-      const totalCost=Math.ceil(curPrice*buyQty);
-      const canBuy=G.gold>=totalCost;
       const trendIcon=trend==="up"?"↑":trend==="down"?"↓":"↔";
       const trendColor=trend==="up"?"#cc4444":trend==="down"?"#44aa44":"#666";
       const pricePct=Math.round((curPrice/basePrice-1)*100);
       const priceColor=pricePct>15?"#cc4444":pricePct<-15?"#44aa44":"var(--paper)";
-      const hist=G.priceHistory[key]||[];
+      const hist=G.priceHistory?.[key]||[];
       const sparkStr=hist.map(v=>{const r=v/basePrice;return r>1.15?"▇":r>1.05?"▅":r>0.95?"▃":r>0.85?"▂":"▁";}).join("");
-      const card=h("div",{style:{
-        display:"flex",alignItems:"center",gap:"8px",padding:"6px 8px",
-        border:`1px solid ${trend==="up"?"rgba(180,40,40,.25)":trend==="down"?"rgba(40,140,40,.2)":"var(--border)"}`,
-        background:trend==="up"?"rgba(139,0,0,.04)":trend==="down"?"rgba(20,60,20,.04)":"rgba(255,255,255,.01)",
+      const row=h("div",{style:{
+        display:"flex",alignItems:"center",gap:"8px",padding:"5px 8px",
+        border:`1px solid ${trend==="up"?"rgba(180,40,40,.2)":trend==="down"?"rgba(40,140,40,.15)":"var(--border)"}`,
+        background:trend==="up"?"rgba(139,0,0,.03)":trend==="down"?"rgba(20,60,20,.03)":"rgba(255,255,255,.01)",
       }});
-      card.append(
+      row.append(
         h("span",{style:{fontSize:"14px",flexShrink:0}},icon),
-        h("div",{style:{flex:1,minWidth:0},title:L==="en"?tip_en:tip_cs},
+        h("div",{style:{flex:1,minWidth:0}},
           h("div",{style:{fontSize:"11px",fontWeight:"700",color:"var(--paper)"}},L==="en"?en:cs),
           h("div",{style:{fontSize:"9px",color:"#555",fontFamily:"'Courier New',monospace"}},sparkStr||"—")),
         h("div",{style:{textAlign:"center",minWidth:"28px",flexShrink:0}},
@@ -5017,25 +6049,11 @@ function render(){
           h("div",{style:{display:"flex",alignItems:"center",gap:"3px",justifyContent:"flex-end"}},
             h("span",{style:{fontSize:"12px",fontWeight:"700",color:priceColor}},curPrice+"g"),
             h("span",{style:{fontSize:"11px",color:trendColor,fontWeight:"700"}},trendIcon)),
-          h("div",{style:{fontSize:"8px",color:"#555"}},`base ${basePrice}g`)),
-        h("button",{
-          class:"btn btn-s"+(canBuy?" btn-p":""),
-          style:{flexShrink:0,opacity:canBuy?1:.35,fontSize:"9px",padding:"3px 6px"},
-          title:`${L==="en"?"Buy":"Koupit"} ${buyQty}× = ${totalCost}g`,
-          onClick:()=>{if(canBuy)buyResource(key,buyQty,totalCost);}},
-          `+${buyQty}`));
-      priceGrid.append(card);
+          h("div",{style:{fontSize:"8px",color:"#555"}},`base ${basePrice}g`)));
+      trendGrid.append(row);
     });
-    priceSec.append(priceGrid);
-    const smPct=Math.round((SEASON_PRICE_MULT[p.round]-1)*100);
-    priceSec.append(h("div",{style:{fontSize:"9px",color:"#555",marginTop:"8px",fontStyle:"italic",
-      padding:"5px 8px",borderTop:"1px solid var(--border)"}},
-      smPct>0
-        ?`⚠️ ${L==="en"?"Seasonal premium":"Sezónní příplatek"}: +${smPct}% — ${L==="en"?"winter scarcity":"zimní nedostatek"}`
-        :smPct<0
-          ?`✅ ${L==="en"?"Seasonal discount":"Sezónní sleva"}: ${smPct}% — ${L==="en"?"summer abundance":"letní hojnost"}`
-          :`${L==="en"?"Market at normal prices this month.":"Trh za normální ceny tento měsíc."}`));
-    content.append(priceSec);
+    trendSec.append(trendGrid);
+    content.append(trendSec);
 
     // ── REPUTATION TRACK ──
     const repSec=h("div",{class:"sec"});
@@ -5055,6 +6073,10 @@ function render(){
       h("span",{style:{color:"#666"}},L==="en"?"State orders ≥4":"Státní ≥4"),
       h("span",{style:{color:p.reputation>=7?"var(--gold)":"#444"}},L==="en"?"Luxury ≥7":"Luxus ≥7")));
     content.append(repSec);
+
+
+    } // end SQUARE subtab
+
 
   // ── TAB: PARTY (Workers) ──
   } else if(p.tab==="party"){
@@ -5175,6 +6197,31 @@ function render(){
 
   // ── TAB: LOG ──
   } else if(p.tab==="log"){
+
+    // ── JOURNAL SUBTAB NAV ──
+    const jSubtabs=[
+      {id:"journal",   en:"Journal",         cs:"Deník"},
+      {id:"character", en:"Character Sheet",  cs:"List postavy"},
+      {id:"incoming",  en:"Incoming",         cs:"Příchozí"},
+    ];
+    const jNav=h("div",{style:{display:"flex",gap:"0",borderBottom:"1px solid var(--border2)",
+      background:"var(--card)",flexShrink:0}});
+    jSubtabs.forEach(st=>{
+      const isActive=(p.journalSubtab||"journal")===st.id;
+      jNav.append(h("button",{style:{
+        padding:"7px 14px",fontSize:"11px",fontWeight:isActive?"700":"500",
+        color:isActive?"var(--paper)":"#666",background:"none",border:"none",
+        borderBottom:isActive?"2px solid var(--gold)":"2px solid transparent",
+        cursor:"pointer",fontFamily:"inherit",letterSpacing:".3px",marginBottom:"-1px",
+      },onClick:()=>{G.journalSubtab=st.id;render();}},L==="en"?st.en:st.cs));
+    });
+    content.append(jNav);
+
+    if((p.journalSubtab||"journal")==="character"){
+      renderCharacterSheet(content,L);
+    } else if(p.journalSubtab==="incoming"){
+      renderIncomingTab(content,L);
+    } else {
     // ── JOURNAL TAB — two columns ──
     const jWrap=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px",alignItems:"start"}});
 
@@ -5282,6 +6329,8 @@ function render(){
 
     jWrap.append(jLeft,jRight);
     content.append(jWrap);
+
+    } // end journal subtab
 
   // ── TAB: TABULARIUM ──
   } else if(p.tab==="tabularium"){
@@ -5428,7 +6477,6 @@ function render(){
         }},txt));
       });
     }
-    content.append(incSec);
 
   // ── TAB: SETTINGS ──
   } else if(p.tab==="settings"){
@@ -5453,6 +6501,76 @@ function render(){
     });
     beerRow.append(beerBtns);
     setsSec.append(beerRow);
+
+    // ── MUSIC SECTION ──
+    const musicSec=h("div",{class:"sec"});
+    musicSec.append(h("div",{class:"sec-title"},"🎵 "+(L==="en"?"Generative Music":"Generativní hudba")));
+    musicSec.append(h("div",{style:{fontSize:"10px",color:"#666",fontStyle:"italic",
+      marginBottom:"8px",lineHeight:"1.5"}},
+      L==="en"?"Medieval ambient procedural music. D Dorian, polyphonic. Jouza Audio Labs."
+             :"Středověká ambientní procedurální hudba. D Dórský, polyfonní. Jouza Audio Labs."));
+    // On/Off
+    musicSec.append(h("div",{class:"settings-row"},
+      h("div",{class:"settings-label"},L==="en"?"Music":"Hudba"),
+      h("button",{class:"btn btn-s"+(p.musicEnabled?" btn-p":""),
+        style:{fontSize:"9px",minWidth:"44px"},
+        onClick:()=>{
+          if(!p.musicEnabled){
+            G.musicEnabled=true;
+            if(!pressMusic) initMusic(); else pressMusic.unmute();
+            syncMusicMood();
+          } else {
+            G.musicEnabled=false;
+            if(pressMusic) pressMusic.mute();
+          }
+          render();
+        }},
+        p.musicEnabled?(L==="en"?"ON":"ZAP"):(L==="en"?"OFF":"VYP"))));
+    // Volume
+    musicSec.append(h("div",{class:"settings-row",style:{flexDirection:"column",alignItems:"stretch",gap:"4px"}},
+      h("div",{style:{display:"flex",justifyContent:"space-between",fontSize:"9px",color:"#666"}},
+        h("span",null,L==="en"?"Volume":"Hlasitost"),
+        h("span",null,Math.round((p.musicVolume||0.6)*100)+"%")),
+      h("input",{type:"range",min:"0",max:"1",step:"0.05",
+        value:String(p.musicVolume||0.6),
+        style:{width:"100%",accentColor:"var(--gold)",cursor:"pointer"},
+        onInput:e=>{
+          const v=parseFloat(e.target.value);
+          G.musicVolume=v;
+          if(!pressMusic&&v>0){G.musicEnabled=true;initMusic();}
+          if(pressMusic) pressMusic.setVolume(v);
+          if(v>0&&!G.musicEnabled)G.musicEnabled=true;
+          if(v===0)G.musicEnabled=false;
+          render();
+        }})));
+    content.append(musicSec);
+
+    // ── SAVE / LOAD ──
+    const saveSec=h("div",{class:"sec"});
+    saveSec.append(h("div",{class:"sec-title"},L==="en"?"Save & Load":"Uložit & Načíst"));
+    saveSec.append(h("div",{style:{fontSize:"10px",color:"#666",fontStyle:"italic",
+      marginBottom:"8px",lineHeight:"1.5"}},
+      L==="en"?"Export your game as a JSON file or load a previously saved game."
+             :"Exportuj hru jako JSON soubor nebo načti dříve uloženou hru."));
+    saveSec.append(h("div",{style:{display:"flex",gap:"6px",flexWrap:"wrap"}},
+      h("button",{class:"btn btn-s btn-p",
+        style:{display:"flex",alignItems:"center",gap:"5px"},
+        onClick:()=>saveGame()},
+        `💾 ${L==="en"?"Save JSON":"Uložit JSON"}`),
+      h("button",{class:"btn btn-s",
+        style:{display:"flex",alignItems:"center",gap:"5px"},
+        onClick:()=>loadGame()},
+        `📂 ${L==="en"?"Load JSON":"Načíst JSON"}`),
+      h("button",{class:"btn btn-s",
+        style:{fontSize:"9px"},
+        onClick:()=>{
+          localStorage.setItem('kt_v1',JSON.stringify(G));
+          showToast(L==="en"?"Saved to browser":"Uloženo do prohlížeče",
+            [L==="en"?"Quick save complete":"Rychlé uložení dokončeno"]);
+        }},
+        `⚡ ${L==="en"?"Quick Save":"Rychlé uložení"}`)));
+    content.append(saveSec);
+
     // Reset
     setsSec.append(h("div",{class:"settings-row"},
       h("div",{class:"settings-label"},L==="en"?"Reset game":"Smazat hru"),
@@ -5461,6 +6579,15 @@ function render(){
           localStorage.removeItem("kt_v1");G=initState();G.availOrders=genOrderPool(1,5);render();
         }
       }},L==="en"?"Reset":"Smazat")));
+
+    // Dev: preview end screen
+    setsSec.append(h("div",{class:"settings-row"},
+      h("div",{class:"settings-label",style:{color:"#444",fontSize:"9px"}},
+        L==="en"?"Preview end screen":"Náhled závěrečné obrazovky"),
+      h("button",{class:"btn btn-s",style:{fontSize:"9px",opacity:.5},
+        onClick:()=>{G._verdictScreen=true;render();}},
+        L==="en"?"⚖ Verdict":"⚖ Verdikt")));
+
     content.append(setsSec);
 
     // Stats
@@ -5476,6 +6603,10 @@ function render(){
         h("div",{class:"settings-val"},val)));
     });
     content.append(statsSec);
+
+  // ── TAB: CODEX ──
+  } else if(p.tab==="codex"){
+    renderCodexTab(content, L);
   }
 
   // ── Action bar ──
@@ -5540,11 +6671,93 @@ function render(){
   const _newContent=app.querySelector(".content");
   if(_newContent&&_scrollTop)_newContent.scrollTop=_scrollTop;
 
+  // Achievements overlay
+  if(p.showAchievements) renderAchievementsOverlay(app);
+
   // Footer
   renderFooter(app);
 
   // About modal
   if(p._showAbout) renderAboutModal(app);
+  if(p._showAchievements) renderAchievementsModal(app);
+
+  // ── MUSIC PANEL (dropdown from 🎵 button) ──
+  if(p._showMusicPanel){
+    const mp=h("div",{style:{
+      position:"fixed",top:"44px",right:"8px",zIndex:"200",
+      background:"var(--card)",border:"1px solid var(--border2)",
+      padding:"10px 14px",minWidth:"190px",
+      boxShadow:"0 4px 16px rgba(0,0,0,.7)",
+    }});
+    mp.append(
+      h("div",{style:{fontSize:"9px",color:"var(--gold)",textTransform:"uppercase",
+        letterSpacing:"1.5px",fontWeight:"700",marginBottom:"6px"}},
+        "🎵 "+(L==="en"?"Generative Music":"Generativní hudba")),
+      h("div",{style:{fontSize:"9px",color:"#555",marginBottom:"10px",fontStyle:"italic"}},
+        "Jouza Audio Labs · D Dorian"),
+      // On/Off
+      h("div",{style:{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px"}},
+        h("span",{style:{fontSize:"11px",color:"#888",flex:1}},L==="en"?"Music":"Hudba"),
+        h("button",{
+          class:"btn btn-s"+(p.musicEnabled?" btn-p":""),
+          style:{fontSize:"9px",minWidth:"44px"},
+          onClick:()=>{
+            if(!p.musicEnabled){
+              G.musicEnabled=true;
+              if(!pressMusic) initMusic();
+              else pressMusic.unmute();
+              syncMusicMood();
+            } else {
+              G.musicEnabled=false;
+              if(pressMusic) pressMusic.mute();
+            }
+            render();
+          }},
+          p.musicEnabled?(L==="en"?"ON":"ZAP"):(L==="en"?"OFF":"VYP"))),
+      // Volume
+      h("div",{style:{marginBottom:"8px"}},
+        h("div",{style:{display:"flex",justifyContent:"space-between",
+          fontSize:"9px",color:"#666",marginBottom:"4px"}},
+          h("span",null,L==="en"?"Volume":"Hlasitost"),
+          h("span",null,Math.round((p.musicVolume||0.6)*100)+"%")),
+        h("input",{type:"range",min:"0",max:"1",step:"0.05",
+          value:String(p.musicVolume||0.6),
+          style:{width:"100%",accentColor:"var(--gold)",cursor:"pointer"},
+          onInput:e=>{
+            const v=parseFloat(e.target.value);
+            G.musicVolume=v;
+            if(!pressMusic&&v>0){G.musicEnabled=true;initMusic();}
+            if(pressMusic) pressMusic.setVolume(v);
+            if(v>0&&!G.musicEnabled){G.musicEnabled=true;}
+            if(v===0){G.musicEnabled=false;}
+            render();
+          }})),
+      // Current mood
+      h("div",{style:{fontSize:"9px",color:"#444",borderTop:"1px solid var(--border)",
+        paddingTop:"6px",display:"flex",justifyContent:"space-between"}},
+        h("span",null,L==="en"?"Soloist":"Sólista"),
+        h("span",{style:{color:"var(--paper)"}},
+          pressMusic?pressMusic.activeSoloist:"—")),
+      // Drum pulse indicator
+      h("div",{style:{display:"flex",alignItems:"center",gap:"6px",marginTop:"6px"}},
+        h("span",{style:{fontSize:"9px",color:"#444"}},L==="en"?"Rhythm":"Rytmus"),
+        h("div",{id:"press-drum-pulse",style:{
+          width:"8px",height:"8px",borderRadius:"50%",
+          background:"var(--gold)",opacity:"0.2",
+          transition:"all 0.08s ease",
+        }})));
+    // Close on outside click
+    setTimeout(()=>{
+      const close=e=>{
+        if(!mp.contains(e.target)){G._showMusicPanel=false;render();document.removeEventListener('click',close);}
+      };
+      document.addEventListener('click',close);
+    },10);
+    app.append(mp);
+  }
+
+  // Sync music mood each render
+  syncMusicMood();
 
   // Audio hooks
   if(typeof AUDIO!=="undefined" && AUDIO.enabled){
@@ -5719,6 +6932,42 @@ class PrintshopAudio {
 }
 
 const AUDIO = new PrintshopAudio();
+
+// ── JOUZA AUDIO LABS: JouzaMedievalAmbient ────────────────────
+let pressMusic=null;
+
+function initMusic(){
+  if(pressMusic)return;
+  pressMusic=new JouzaMedievalAmbient();
+  pressMusic.setVolume(G.musicVolume||0.6);
+  pressMusic.start();
+}
+
+function destroyMusic(){
+  if(!pressMusic)return;
+  pressMusic.stop();
+  try{pressMusic.ctx.close();}catch(e){}
+  pressMusic=null;
+}
+
+function syncMusicMood(){
+  if(!pressMusic||!G.musicEnabled)return;
+  if(G._verdictScreen)                      {pressMusic.forceMood('atmosphere');pressMusic.setTempo(52);}
+  else if(G.indexActive)                    {pressMusic.forceMood('atmosphere');pressMusic.setTempo(58);}
+  else if(LEIPZIG_ROUNDS.includes(G.round)) {pressMusic.forceMood('lute');      pressMusic.setTempo(78);}
+  else if(G.reformation)                    {pressMusic.forceMood('sitar');      pressMusic.setTempo(72);}
+  else if((G.censorTokens||0)>=3)           {pressMusic.forceMood('atmosphere');pressMusic.setTempo(60);}
+  else                                      {pressMusic.forceMood('flutes');     pressMusic.setTempo(65);}
+}
+
+// Drum pulse UI
+window.addEventListener('jouzaAudio:drumHit',e=>{
+  const el=document.getElementById('press-drum-pulse');
+  if(!el)return;
+  el.style.opacity=e.detail.isAccent?'1':'0.5';
+  el.style.transform=e.detail.isAccent?'scale(1.4)':'scale(1.15)';
+  setTimeout(()=>{el.style.opacity='0.2';el.style.transform='scale(1)';},150);
+});
 render(); // First render — AUDIO now exists
 
 // Hook audio into game actions
@@ -5773,7 +7022,94 @@ function showAbout(){
   render();
 }
 
-// ── FOOTER RENDER ─────────────────────────────────────────
+// ── ACHIEVEMENTS OVERLAY ───────────────────────────────────────
+function renderAchievementsOverlay(app){
+  const L=G.lang;
+  const earned=new Set(G.achievements||[]);
+  const overlay=h("div",{style:{
+    position:"fixed",inset:"0",background:"rgba(0,0,0,.85)",zIndex:"900",
+    display:"flex",alignItems:"flex-start",justifyContent:"center",
+    overflowY:"auto",padding:"20px 10px",
+  },onClick:e=>{if(e.target===overlay){G.showAchievements=false;render();}}});
+
+  const modal=h("div",{style:{
+    width:"100%",maxWidth:"480px",background:"var(--card)",
+    border:"1px solid var(--border2)",padding:"0",flexShrink:0,
+  }});
+
+  // Header
+  const mHead=h("div",{style:{
+    display:"flex",justifyContent:"space-between",alignItems:"center",
+    padding:"12px 14px",borderBottom:"1px solid var(--border2)",
+    background:"rgba(201,149,43,.06)",
+  }});
+  mHead.append(
+    h("div",null,
+      h("div",{style:{fontSize:"13px",fontWeight:"700",letterSpacing:"1px",
+        textTransform:"uppercase",color:"var(--gold)"}},
+        `🏆 ${L==="en"?"Achievements":"Achievementy"}`),
+      h("div",{style:{fontSize:"10px",color:"#666",marginTop:"2px"}},
+        `${earned.size} / ${ACHIEVEMENTS.length} ${L==="en"?"earned":"získáno"}`)),
+    h("button",{style:{background:"none",border:"none",color:"#888",fontSize:"18px",
+      cursor:"pointer",padding:"0",lineHeight:"1"},
+      onClick:()=>{G.showAchievements=false;render();}},"✕"));
+  modal.append(mHead);
+
+  // Progress bar
+  const pct=Math.round(earned.size/ACHIEVEMENTS.length*100);
+  const progRow=h("div",{style:{padding:"8px 14px",borderBottom:"1px solid var(--border)"}});
+  progRow.append(
+    h("div",{style:{height:"4px",background:"var(--border)",borderRadius:"2px"}},
+      h("div",{style:{height:"4px",width:pct+"%",background:"var(--gold)",borderRadius:"2px",transition:"width .4s"}})));
+  modal.append(progRow);
+
+  // Categories
+  Object.entries(ACHIEVEMENT_CATS).forEach(([catId,cat])=>{
+    const catAchs=ACHIEVEMENTS.filter(a=>a.cat===catId);
+    const catEarned=catAchs.filter(a=>earned.has(a.id)).length;
+
+    const catHead=h("div",{style:{
+      padding:"8px 14px 4px",fontSize:"10px",fontWeight:"700",
+      textTransform:"uppercase",letterSpacing:"1.5px",
+      color:"#555",borderTop:"1px solid var(--border)",
+      display:"flex",justifyContent:"space-between",alignItems:"center",
+    }});
+    catHead.append(
+      h("span",null,`${cat.icon} ${L==="en"?cat.en:cat.cs}`),
+      h("span",{style:{color:"var(--gold)",fontWeight:"400"}},`${catEarned}/${catAchs.length}`));
+    modal.append(catHead);
+
+    const achGrid=h("div",{style:{padding:"4px 10px 8px",display:"flex",flexDirection:"column",gap:"4px"}});
+    catAchs.forEach(a=>{
+      const isEarned=earned.has(a.id);
+      const isSecret=catId==="secret"&&!isEarned;
+      const row=h("div",{style:{
+        display:"flex",gap:"10px",alignItems:"center",
+        padding:"7px 10px",
+        background:isEarned?"rgba(201,149,43,.07)":"rgba(255,255,255,.01)",
+        border:`1px solid ${isEarned?"rgba(201,149,43,.3)":"var(--border)"}`,
+        opacity:isEarned?1:.5,
+      }});
+      row.append(
+        h("div",{style:{fontSize:"20px",flexShrink:0,filter:isEarned?"none":"grayscale(1)"}},
+          isSecret?"🔒":a.icon),
+        h("div",{style:{flex:1,minWidth:0}},
+          h("div",{style:{fontSize:"11px",fontWeight:"700",color:isEarned?"var(--paper)":"#555"}},
+            isSecret?(L==="en"?"Secret Achievement":"Tajný achievement"):
+              (L==="en"?a.en:a.cs)),
+          h("div",{style:{fontSize:"9px",color:isEarned?"#888":"#444",marginTop:"2px",lineHeight:"1.4"}},
+            isSecret?(L==="en"?"Complete hidden requirements to unlock":"Splňte skrytou podmínku pro odemčení"):
+              (L==="en"?a.desc_en:a.desc_cs))));
+      achGrid.append(row);
+    });
+    modal.append(achGrid);
+  });
+
+  overlay.append(modal);
+  app.append(overlay);
+}
+
+// ── CODEX TAB RENDER ──────────────────────────────────────────
 function renderFooter(app){
   const L=G.lang;
   const footer=h("div",{class:"game-footer"});
@@ -5786,6 +7122,784 @@ function renderFooter(app){
 }
 
 // ── ABOUT MODAL ───────────────────────────────────────────
+// Career progression levels based on Vývoj role tiskaře doc
+const CAREER_LEVELS=[
+  {id:"ucterec",    layer:1, icon:"🧹", en:"Wiper",            cs:"Utěrač",
+   desc_en:"You clean the type, haul the paper, and watch the masters work. The ink stains never come out.",
+   desc_cs:"Čistíš litery, nosíš papír a sleduješ mistry při práci. Skvrny od inkoustu nikdy nevyjdou.",
+   unlock:()=>true},
+  {id:"klouc",      layer:1, icon:"🖌️", en:"Ink Ball Boy",      cs:"Kloučník",
+   desc_en:"Thousands of strokes a day, two leather balls, perfect pressure. Your arms will ache for years.",
+   desc_cs:"Tisíce tahů denně, dva kožené tampóny, dokonalý tlak. Ruce tě budou bolet roky.",
+   unlock:()=>(G.completedOrders||0)>=3},
+  {id:"papirnick",  layer:1, icon:"📄", en:"Sheet Handler",     cs:"Papírník",
+   desc_en:"Paper is the most expensive thing in the shop. One misplaced sheet costs more than your day's wage.",
+   desc_cs:"Papír je nejdražší věc v dílně. Jeden špatně vložený arch stojí víc než tvůj denní žold.",
+   unlock:()=>(G.res?.paper||0)>=10||(G.completedOrders||0)>=5},
+  {id:"prasar",     layer:2, icon:"💪", en:"Pressman",          cs:"Presař",
+   desc_en:"The physical backbone of the press. 400 pulls of the lever a day, each one precise. Your right arm is stronger than your left.",
+   desc_cs:"Fyzická páteř tiskárny. 400 tahů pákou denně, každý přesný. Pravá ruka je silnější než levá.",
+   unlock:()=>(G.pressRunIn||0)>=30||(G.completedOrders||0)>=8},
+  {id:"sazec",      layer:2, icon:"🔠", en:"Compositor",        cs:"Sazeč",
+   desc_en:"You read every text before the author does — backwards, upside down, letter by letter. You know things you were never meant to know.",
+   desc_cs:"Čteš každý text dřív než sám autor — pozpátku, hlavou dolů, písmeno po písmenu. Víš věci, které jsi nikdy vědět neměl.",
+   unlock:()=>G.workers?.some(w=>w.prof==="compositor"&&(w.lv||1)>=2)},
+  {id:"pismolijec",  layer:2, icon:"⚗️", en:"Type Founder",     cs:"Písmolijec",
+   desc_en:"Gutenberg himself was a type founder first, a printer second. The alloy ratio is your family secret.",
+   desc_cs:"Gutenberg byl primárně písmolijec, tiskař až sekundárně. Poměr slitiny je tvoje rodinné tajemství.",
+   unlock:()=>(G.letters||0)>=10||(G.res?.typemetal||0)>=5},
+  {id:"korektor",   layer:2, icon:"🔍", en:"Corrector",         cs:"Korektor",
+   desc_en:"One foot in the workshop, one in the academy. You read heresy before it is published — and you know what it means.",
+   desc_cs:"Jednou nohou v dílně, druhou v akademii. Čteš hereze dřív než jsou vydány — a víš, co to znamená.",
+   unlock:()=>G.workers?.some(w=>w.prof==="corrector")},
+  {id:"faktor",     layer:3, icon:"📋", en:"Factor",            cs:"Faktor",
+   desc_en:"You run the press while the master takes the credit. Every order, every worker, every sheet — your responsibility.",
+   desc_cs:"Řídíš tiskárnu zatímco mistr sklízí slávu. Každá zakázka, každý dělník, každý arch — tvoje odpovědnost.",
+   unlock:()=>(G.completedOrders||0)>=15&&(G.workers?.length||0)>=3},
+  {id:"mistr",      layer:3, icon:"🖨️", en:"Master Printer",    cs:"Mistr tiskař",
+   desc_en:"Your press, your ink, your reputation. The guild has recognised you. Now the city's patrons come to your door.",
+   desc_cs:"Tvůj lis, tvůj inkoust, tvoje pověst. Cech tě uznal. Teď přicházejí městští patroni ke tvým dveřím.",
+   unlock:()=>(G.prestige||0)>=50&&(G.pressLevel||1)>=2},
+  {id:"knihkupec",  layer:3, icon:"📚", en:"Bookseller",        cs:"Knihkupec",
+   desc_en:"You realised: it is not the one who prints who profits most — it is the one who sells. Leipzig will know your name.",
+   desc_cs:"Uvědomil jsi si: neprofituje nejvíc ten, kdo tiskne — ale ten, kdo prodává. Lipsko bude znát tvé jméno.",
+   unlock:()=>LEIPZIG_ROUNDS.includes(G.round)&&(G.completedOrders||0)>=10},
+  {id:"nakladatel", layer:4, icon:"👑", en:"Publisher",         cs:"Velkonakladatel",
+   desc_en:"You no longer touch the press. Capital and judgement are your tools now. The city's ideas flow through your decisions.",
+   desc_cs:"Lisu se již nedotýkáš. Kapital a úsudek jsou teď tvoje nástroje. Myšlenky města protékají tvými rozhodnutími.",
+   unlock:()=>(G.prestige||0)>=200&&(G.activePatrons?.length||0)>=2},
+];
+
+const CAREER_LAYER_LABELS={
+  1:{en:"The Apprentice Years",  cs:"Učednická léta"},
+  2:{en:"The Craft",             cs:"Řemeslo"},
+  3:{en:"The Trade",             cs:"Obchod"},
+  4:{en:"The Legacy",            cs:"Odkaz"},
+};
+
+function renderCodexCareer(content,L){
+  const sec=h("div",{style:{padding:"10px 14px",borderBottom:"1px solid var(--border)"}});
+  sec.append(
+    h("div",{class:"sec-title",style:{marginBottom:"4px"}},
+      L==="en"?"Career Path":"Kariérní cesta"),
+    h("div",{style:{fontSize:"10px",color:"#8a7a6a",fontStyle:"italic",
+      lineHeight:"1.5",marginBottom:"10px"}},
+      L==="en"?"Your path from apprentice to master — unlock milestones by playing."
+             :"Tvá cesta od učně k mistru — odemykej milníky hrou."));
+
+  // Progress bar
+  const unlocked=CAREER_LEVELS.filter(l=>{try{return l.unlock();}catch(e){return false;}});
+  sec.append(
+    h("div",{style:{display:"flex",justifyContent:"space-between",
+      fontSize:"9px",color:"#555",marginBottom:"4px"}},
+      h("span",null,L==="en"?"Progress":"Pokrok"),
+      h("span",null,`${unlocked.length} / ${CAREER_LEVELS.length}`)),
+    h("div",{style:{height:"3px",background:"rgba(255,255,255,.05)",marginBottom:"12px"}},
+      h("div",{style:{width:`${Math.round(unlocked.length/CAREER_LEVELS.length*100)}%`,
+        height:"100%",background:"var(--gold)",transition:"width .5s"}})));
+
+  content.append(sec);
+
+  // Layers
+  [1,2,3,4].forEach(layer=>{
+    const layerLevels=CAREER_LEVELS.filter(l=>l.layer===layer);
+    const label=CAREER_LAYER_LABELS[layer];
+    const layerSec=h("div",{style:{borderBottom:"1px solid var(--border)"}});
+    layerSec.append(h("div",{style:{
+      padding:"6px 14px",background:"rgba(0,0,0,.2)",
+      fontSize:"9px",fontWeight:"700",color:"var(--red)",
+      textTransform:"uppercase",letterSpacing:"1.5px",
+    }},`${layer}. ${L==="en"?label.en:label.cs}`));
+
+    layerLevels.forEach(lvl=>{
+      let isUnlocked=false;
+      try{isUnlocked=lvl.unlock();}catch(e){}
+      const isOpen=(G._careerOpen||{})[lvl.id];
+
+      const row=h("div",{style:{
+        display:"flex",alignItems:"center",gap:"10px",padding:"10px 14px",
+        cursor:"pointer",userSelect:"none",
+        opacity:isUnlocked?1:0.35,
+        borderBottom:"1px solid rgba(255,255,255,.03)",
+        background:isOpen&&isUnlocked?"rgba(201,149,43,.03)":"transparent",
+      },onClick:()=>{
+        if(!isUnlocked)return;
+        if(!G._careerOpen)G._careerOpen={};
+        G._careerOpen[lvl.id]=!G._careerOpen[lvl.id];
+        render();
+      }});
+
+      row.append(
+        h("span",{style:{fontSize:"20px",flexShrink:0,
+          filter:isUnlocked?"none":"grayscale(1)"}},lvl.icon),
+        h("div",{style:{flex:1,minWidth:0}},
+          h("div",{style:{fontSize:"12px",fontWeight:"700",
+            color:isUnlocked?"var(--paper)":"#555"}},
+            L==="en"?lvl.en:lvl.cs),
+          h("div",{style:{fontSize:"9px",color:isUnlocked?"var(--gold)":"#333",
+            textTransform:"uppercase",letterSpacing:".8px",marginTop:"1px"}},
+            isUnlocked?(L==="en"?"✓ Unlocked":"✓ Odemčeno"):(L==="en"?"Locked":"Zamčeno"))),
+        isUnlocked?h("span",{style:{fontSize:"11px",color:"#444",flexShrink:0}},
+          isOpen?"▲":"▼"):"");
+      layerSec.append(row);
+
+      if(isUnlocked&&isOpen){
+        layerSec.append(h("div",{style:{
+          padding:"0 14px 12px 44px",fontSize:"11px",color:"#bbb",
+          lineHeight:"1.8",borderTop:"1px solid rgba(255,255,255,.04)",paddingTop:"8px",
+        }},L==="en"?lvl.desc_en:lvl.desc_cs));
+      }
+    });
+    content.append(layerSec);
+  });
+
+  // Alternative paths teaser
+  const altSec=h("div",{style:{padding:"10px 14px"}});
+  altSec.append(
+    h("div",{style:{fontSize:"9px",color:"#333",textTransform:"uppercase",
+      letterSpacing:"1px",marginBottom:"6px"}},
+      L==="en"?"Alternative Paths":"Alternativní stezky"),
+    ...[
+      {icon:"🕯️",en:"Forbidden Printer",cs:"Tiskař zakázaných spisů"},
+      {icon:"🎨",en:"Engraver & Illustrator",cs:"Rytec a Ilustrátor"},
+      {icon:"🗝️",en:"Counterfeiter",cs:"Padělatel"},
+      {icon:"💡",en:"Innovator",cs:"Inovátor"},
+    ].map(p=>h("div",{style:{
+      display:"flex",alignItems:"center",gap:"8px",padding:"5px 0",
+      borderBottom:"1px solid rgba(255,255,255,.03)",opacity:.3,
+    }},
+      h("span",{style:{fontSize:"15px"}},p.icon),
+      h("span",{style:{fontSize:"11px",color:"#555",fontStyle:"italic"}},
+        L==="en"?p.en:p.cs),
+      h("span",{style:{fontSize:"9px",color:"#333"}},
+        L==="en"?"(story-driven)":"(příběhové)")))
+  );
+  content.append(altSec);
+}
+
+function renderCodexTab(content, L){
+  checkCodexUnlocks();
+
+  // ── CODEX SUBTAB NAV ──
+  const codexSubtabs=[
+    {id:"history", en:"History",  cs:"Historie"},
+    {id:"career",  en:"Career",   cs:"Kariéra"},
+  ];
+  const cNav=h("div",{style:{display:"flex",gap:"0",borderBottom:"1px solid var(--border2)",
+    background:"var(--card)",flexShrink:0}});
+  codexSubtabs.forEach(st=>{
+    const isActive=(G._codexSubtab||"history")===st.id;
+    cNav.append(h("button",{style:{
+      padding:"7px 14px",fontSize:"11px",fontWeight:isActive?"700":"500",
+      color:isActive?"var(--paper)":"#666",background:"none",border:"none",
+      borderBottom:isActive?"2px solid var(--gold)":"2px solid transparent",
+      cursor:"pointer",fontFamily:"inherit",letterSpacing:".3px",marginBottom:"-1px",
+    },onClick:()=>{G._codexSubtab=st.id;render();}},L==="en"?st.en:st.cs));
+  });
+  content.append(cNav);
+
+  if((G._codexSubtab||"history")==="career"){
+    renderCodexCareer(content,L);
+    return;
+  }
+
+  const unlocked=CODEX.filter(e=>(G.codexUnlocked||[]).includes(e.id)||e.unlock==="always");
+  const locked=CODEX.filter(e=>!unlocked.find(u=>u.id===e.id));
+  const cat=G._codexCat||"all";
+
+  // Header
+  const hdr=h("div",{style:{padding:"10px 14px 8px",borderBottom:"1px solid var(--border)"}});
+  hdr.append(
+    h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"4px"}},
+      h("div",{class:"sec-title",style:{marginBottom:0}},
+        L==="en"?"Historical Codex":"Historický kodex"),
+      h("div",{style:{fontSize:"10px",color:"#555"}},
+        `${unlocked.length} / ${CODEX.length} ${L==="en"?"unlocked":"odemčeno"}`)),
+    h("div",{style:{fontSize:"10px",color:"#8a7a6a",fontStyle:"italic",lineHeight:"1.5",marginBottom:"8px"}},
+      L==="en"
+        ?"Records unlock as you print, trade, and make choices. Some remain hidden until discovered."
+        :"Záznamy se odemykají jak tiskneš, obchoduješ a rozhoduješ. Některé jsou skryté do jejich objevení."),
+    h("div",{style:{height:"3px",background:"rgba(255,255,255,.05)",marginBottom:"8px"}},
+      h("div",{style:{width:`${Math.round(unlocked.length/CODEX.length*100)}%`,
+        height:"100%",background:"var(--gold)",transition:"width .5s"}})),
+    h("div",{style:{display:"flex",gap:"4px",flexWrap:"wrap"}},
+      ...[{id:"all",icon:"",en:"All",cs:"Vše"},
+        ...Object.entries(CODEX_CATS).map(([id,c])=>({id,...c}))
+      ].map(c=>{
+        const active=cat===c.id;
+        return h("button",{class:"btn btn-s"+(active?" btn-active":""),
+          style:{fontSize:"9px",padding:"2px 7px"},
+          onClick:()=>{G._codexCat=c.id;render();}},
+          `${c.icon||""} ${L==="en"?c.en:c.cs}`);
+      })));
+  content.append(hdr);
+
+  // Entries
+  const filtered=cat==="all"?unlocked:unlocked.filter(e=>e.cat===cat);
+  if(!filtered.length){
+    content.append(h("div",{style:{padding:"24px 14px",fontSize:"11px",color:"#444",
+      fontStyle:"italic",textAlign:"center"}},
+      L==="en"?"No entries here yet. Keep printing.":"Zatím žádné záznamy. Pokračuj v tisku."));
+  }
+  filtered.forEach(entry=>{
+    const catInfo=CODEX_CATS[entry.cat];
+    const isOpen=(G._codexOpen||{})[entry.id];
+    const card=h("div",{style:{borderBottom:"1px solid var(--border)",
+      background:isOpen?"rgba(201,149,43,.03)":"transparent"}});
+    const entryHdr=h("div",{style:{display:"flex",alignItems:"center",gap:"10px",
+      padding:"10px 14px",cursor:"pointer",userSelect:"none"},
+      onClick:()=>{
+        if(!G._codexOpen) G._codexOpen={};
+        G._codexOpen[entry.id]=!G._codexOpen[entry.id];
+        render();
+      }});
+    entryHdr.append(
+      h("span",{style:{fontSize:"20px",flexShrink:0}},entry.icon),
+      h("div",{style:{flex:1,minWidth:0}},
+        h("div",{style:{fontSize:"12px",fontWeight:"700",color:"var(--paper)"}},
+          L==="en"?entry.en:entry.cs),
+        h("div",{style:{fontSize:"9px",color:"#555",textTransform:"uppercase",
+          letterSpacing:"1px",marginTop:"1px"}},
+          `${catInfo?.icon||""} ${L==="en"?catInfo?.en||"":catInfo?.cs||""}`)),
+      h("span",{style:{fontSize:"11px",color:"#444",flexShrink:0}},isOpen?"▲":"▼"));
+    card.append(entryHdr);
+    if(isOpen){
+      card.append(h("div",{style:{padding:"0 14px 12px 44px",fontSize:"11px",
+        color:"#bbb",lineHeight:"1.8",borderTop:"1px solid rgba(255,255,255,.04)",
+        paddingTop:"8px"}},L==="en"?entry.body_en:entry.body_cs));
+    }
+    content.append(card);
+  });
+
+  // Locked teaser
+  if(locked.length&&cat==="all"){
+    const ls=h("div",{style:{padding:"10px 14px",borderTop:"1px solid var(--border)"}});
+    ls.append(h("div",{style:{fontSize:"9px",color:"#333",textTransform:"uppercase",
+      letterSpacing:"1px",marginBottom:"6px"}},
+      `${locked.length} ${L==="en"?"entries still locked":"záznamy dosud zamčené"}`));
+    locked.slice(0,4).forEach(()=>{
+      ls.append(h("div",{style:{display:"flex",alignItems:"center",gap:"8px",
+        padding:"4px 0",borderBottom:"1px solid rgba(255,255,255,.03)",opacity:.28}},
+        h("span",{style:{fontSize:"16px"}},"🔒"),
+        h("div",{style:{fontSize:"11px",color:"#555",fontStyle:"italic"}},
+          L==="en"?"(unlock by playing)":"(odemkni hrou)")));
+    });
+    if(locked.length>4) ls.append(
+      h("div",{style:{fontSize:"10px",color:"#333",marginTop:"4px"}},
+        `+ ${locked.length-4} ${L==="en"?"more…":"dalších…"}`));
+    content.append(ls);
+  }
+}
+
+
+function renderIncomingTab(content,L){
+  const incSec=h("div",{class:"sec"});
+  incSec.append(h("div",{class:"sec-title"},L==="en"?"Recent Income":"Nedávné příjmy"));
+  const ecoLogs=(G.log||[]).filter(l=>l.startsWith("__ECO__")).slice(-20).reverse();
+  if(!ecoLogs.length){
+    incSec.append(h("div",{style:{fontSize:"11px",color:"#555",fontStyle:"italic"}},
+      L==="en"?"No transactions yet.":"Žádné transakce zatím."));
+  } else {
+    ecoLogs.forEach(l=>{
+      const txt=l.replace("__ECO__","");
+      const isPos=txt.includes("+")&&!txt.includes("debt")&&!txt.includes("dluh");
+      incSec.append(h("div",{style:{
+        fontSize:"10px",padding:"4px 6px",borderBottom:"1px solid var(--border)",
+        color:isPos?"#88cc88":"#888",lineHeight:"1.5",
+      }},txt));
+    });
+  }
+  content.append(incSec);
+}
+
+function renderCharacterSheet(content,L){
+  const p=G;
+
+  // ── SECTION 1: IDENTITY ──
+  const idSec=h("div",{style:{padding:"12px 14px",borderBottom:"1px solid var(--border)"}});
+  const avatarRow=h("div",{style:{display:"flex",gap:"14px",alignItems:"flex-start",marginBottom:"12px"}});
+
+  // Avatar column
+  const avatarWrap=h("div",{style:{flexShrink:0}});
+  const SZ="72px";
+  if(p.playerAvatar){
+    avatarWrap.append(h("img",{src:p.playerAvatar,style:{
+      width:SZ,height:SZ,objectFit:"cover",display:"block",
+      filter:"grayscale(100%) contrast(1.25) brightness(.9)",
+      border:"2px solid var(--border2)",
+    }}));
+    avatarWrap.append(h("button",{class:"btn btn-s",
+      style:{fontSize:"9px",marginTop:"4px",width:"100%"},
+      onClick:()=>{G.playerAvatar=null;render();}},
+      L==="en"?"Clear":"Smazat"));
+  } else {
+    const ph=h("div",{style:{
+      width:SZ,height:SZ,border:"1px dashed #333",cursor:"pointer",
+      display:"flex",flexDirection:"column",alignItems:"center",
+      justifyContent:"center",gap:"4px",color:"#444",
+    },onClick:()=>document.getElementById("cs-avatar-input")?.click()});
+    ph.append(h("span",{style:{fontSize:"22px"}},"👤"),
+      h("span",{style:{fontSize:"8px",textTransform:"uppercase",letterSpacing:"1px"}},
+        L==="en"?"Upload":"Nahrát"));
+    avatarWrap.append(ph);
+    avatarWrap.append(h("button",{class:"btn btn-s",
+      style:{fontSize:"9px",marginTop:"4px",width:"100%"},
+      onClick:()=>document.getElementById("cs-avatar-input")?.click()},
+      L==="en"?"Upload":"Nahrát"));
+  }
+  const fileInput=h("input",{type:"file",accept:"image/*",id:"cs-avatar-input",style:{display:"none"}});
+  fileInput.onchange=ev=>{
+    const file=ev.target.files[0]; if(!file) return;
+    const reader=new FileReader();
+    reader.onload=e=>{G.playerAvatar=e.target.result;render();};
+    reader.readAsDataURL(file);
+  };
+  avatarWrap.append(fileInput);
+  avatarRow.append(avatarWrap);
+
+  // Name + info column
+  const nameBlock=h("div",{style:{flex:1,minWidth:0}});
+  const printerName=p.printerName||(L==="en"?"Unknown Printer":"Neznámý tiskař");
+  const shopName=p.shopName||(L==="en"?"The Press":"Tiskárna");
+  const roleLabels={
+    gutenberg:L==="en"?"Mainz Tradition":"Mohučská tradice",
+    venetian:L==="en"?"Venetian Press":"Benátský tisk",
+    paris:L==="en"?"Paris Bookseller":"Pařížský knihkupec",
+    flemish:L==="en"?"Flemish Typecaster":"Vlámský písmolijec",
+    master:L==="en"?"Master Printer":"Mistr tiskař",
+  };
+  const roleLabel=roleLabels[p.role]||p.role||"—";
+
+  if(p._csEditIdentity){
+    const ni=h("input",{type:"text",value:p.printerName||"",
+      placeholder:L==="en"?"Printer name":"Jméno tiskaře",
+      style:{width:"100%",marginBottom:"4px",padding:"5px 8px",fontSize:"11px",
+        background:"var(--bg)",border:"1px solid var(--border2)",
+        color:"var(--paper)",fontFamily:"inherit"}});
+    const si=h("input",{type:"text",value:p.shopName||"",
+      placeholder:L==="en"?"Printshop name":"Název tiskárny",
+      style:{width:"100%",marginBottom:"6px",padding:"5px 8px",fontSize:"11px",
+        background:"var(--bg)",border:"1px solid var(--border2)",
+        color:"var(--paper)",fontFamily:"inherit"}});
+    nameBlock.append(ni,si,
+      h("button",{class:"btn btn-s btn-p",style:{fontSize:"9px"},
+        onClick:()=>{
+          if(ni.value.trim()) G.printerName=ni.value.trim();
+          if(si.value.trim()) G.shopName=si.value.trim();
+          G._csEditIdentity=false; render();
+        }},L==="en"?"Save":"Uložit"));
+  } else {
+    nameBlock.append(
+      h("div",{style:{fontSize:"16px",fontWeight:"700",color:"var(--paper)",
+        letterSpacing:".5px",marginBottom:"2px"}},printerName),
+      h("div",{style:{fontSize:"11px",color:"var(--gold)",marginBottom:"6px"}},shopName),
+      h("div",{style:{display:"flex",flexDirection:"column",gap:"3px"}},
+        h("div",{style:{fontSize:"10px",color:"#666"}},
+          `📍 ${L==="en"?"Olomouc, Moravia":"Olomouc, Morava"} · ${L==="en"?"est.":"zal."} ${p.foundingYear||p.year||1468}`),
+        h("div",{style:{fontSize:"10px",color:"#666"}},`🎭 ${roleLabel}`),
+        h("div",{style:{fontSize:"10px",color:"#666"}},
+          `📅 ${L==="en"?"Year":"Rok"}: ${p.year||1468}`)),
+      h("button",{class:"btn btn-s",style:{fontSize:"9px",marginTop:"6px"},
+        onClick:()=>{G._csEditIdentity=true;render();}},
+        L==="en"?"✏ Edit":"✏ Upravit"));
+  }
+  avatarRow.append(nameBlock);
+  idSec.append(avatarRow);
+  content.append(idSec);
+
+  // ── SECTION 2: STATS ──
+  const statSec=h("div",{style:{padding:"10px 14px",borderBottom:"1px solid var(--border)"}});
+  statSec.append(h("div",{class:"sec-title",style:{marginBottom:"8px"}},
+    L==="en"?"Career Stats":"Kariérní statistiky"));
+  const stats=[
+    {icon:"⭐",label:L==="en"?"Prestige":"Prestiž",           val:p.prestige||0},
+    {icon:"🏅",label:L==="en"?"Reputation":"Reputace",         val:`${p.reputation||0}/10`},
+    {icon:"💰",label:L==="en"?"Gold":"Zlato",                  val:`${p.gold||0}g`},
+    {icon:"📜",label:L==="en"?"Orders done":"Zakázek hotovo",  val:p.completedOrders||0},
+    {icon:"⚠️",label:L==="en"?"Censor tokens":"Cenzura",       val:p.censorTokens||0},
+    {icon:"📅",label:L==="en"?"Years active":"Let v provozu",  val:(p.year||1468)-(p.foundingYear||1468)},
+    {icon:"🏆",label:L==="en"?"Achievements":"Úspěchy",        val:`${(p.achievements||[]).length}/${ACHIEVEMENTS.length}`},
+    {icon:"📖",label:L==="en"?"Codex entries":"Kodex",         val:`${(p.codexUnlocked||[]).length}/${CODEX.length}`},
+  ];
+  const statGrid=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"4px"}});
+  stats.forEach(({icon,label,val})=>{
+    statGrid.append(h("div",{style:{
+      display:"flex",alignItems:"center",gap:"7px",padding:"6px 8px",
+      border:"1px solid var(--border)",background:"rgba(0,0,0,.15)",
+    }},
+      h("span",{style:{fontSize:"14px",flexShrink:0}},icon),
+      h("div",null,
+        h("div",{style:{fontSize:"9px",color:"#555",textTransform:"uppercase",letterSpacing:".8px"}},label),
+        h("div",{style:{fontSize:"12px",fontWeight:"700",color:"var(--paper)"}},String(val)))));
+  });
+  statSec.append(statGrid);
+  content.append(statSec);
+
+  // ── SECTION 3: CAREER TIMELINE ──
+  const tlSec=h("div",{style:{padding:"10px 14px",borderBottom:"1px solid var(--border)"}});
+  tlSec.append(h("div",{class:"sec-title",style:{marginBottom:"8px"}},
+    L==="en"?"Career Timeline":"Kariérní timeline"));
+
+  const tlEvents=[];
+  tlEvents.push({year:p.foundingYear||1468,icon:"🏗️",
+    text:L==="en"?`${p.shopName||"The Press"} — founded in Olomouc`
+                :`${p.shopName||"Tiskárna"} — založena v Olomouci`});
+  (p.storyLog||[]).forEach(s=>{
+    const book=STORY_BOOKS?.[s.bookId];
+    if(!book) return;
+    const dec=s.decision==="accept"?(L==="en"?"Accepted":"Přijato"):(L==="en"?"Refused":"Odmítnuto");
+    tlEvents.push({year:s.year||p.year,icon:s.decision==="accept"?"📜":"🚫",
+      text:`${dec}: ${L==="en"?book.en||book.title||s.bookId:book.cs||book.title||s.bookId}`});
+  });
+  (p.achievements||[]).slice(0,4).forEach(id=>{
+    const a=ACHIEVEMENTS.find(x=>x.id===id); if(!a) return;
+    tlEvents.push({year:p.year,icon:"🏆",text:L==="en"?a.en:a.cs});
+  });
+  if((p.histEvents||[]).includes("reformation"))
+    tlEvents.push({year:1517,icon:"⚡",text:L==="en"?"Reformation — Europe shaken":"Reformace otřásá Evropou"});
+  if((p.histEvents||[]).includes("index"))
+    tlEvents.push({year:1559,icon:"📕",text:L==="en"?"Index of Forbidden Books":"Index zakázaných knih"});
+  tlEvents.sort((a,b)=>a.year-b.year);
+
+  if(!tlEvents.length){
+    tlSec.append(h("div",{style:{fontSize:"11px",color:"#555",fontStyle:"italic"}},
+      L==="en"?"Your story is just beginning…":"Tvůj příběh teprve začíná…"));
+  } else {
+    const tlList=h("div",{style:{position:"relative",paddingLeft:"20px"}});
+    tlList.append(h("div",{style:{position:"absolute",left:"7px",top:"6px",bottom:"6px",
+      width:"1px",background:"rgba(201,149,43,.2)"}}));
+    tlEvents.forEach(ev=>{
+      const row=h("div",{style:{display:"flex",gap:"8px",marginBottom:"8px",alignItems:"flex-start",position:"relative"}});
+      row.append(
+        h("span",{style:{fontSize:"13px",flexShrink:0,position:"relative",zIndex:1,
+          background:"var(--bg)",lineHeight:"1.2"}},ev.icon),
+        h("div",null,
+          h("div",{style:{fontSize:"9px",color:"var(--gold)",fontWeight:"700",
+            letterSpacing:".5px",marginBottom:"1px"}},String(ev.year)),
+          h("div",{style:{fontSize:"11px",color:"#bbb",lineHeight:"1.4"}},ev.text)));
+      tlList.append(row);
+    });
+    tlSec.append(tlList);
+  }
+  content.append(tlSec);
+
+  // ── SECTION 4: MORAL PROFILE ──
+  const mpSec=h("div",{style:{padding:"10px 14px"}});
+  mpSec.append(h("div",{class:"sec-title",style:{marginBottom:"8px"}},
+    L==="en"?"Moral Profile":"Morální profil"));
+
+  const accepted=(p.storyLog||[]).filter(s=>s.decision==="accept").length;
+  const declined=(p.storyLog||[]).filter(s=>s.decision==="decline").length;
+  const hasMalleus=(p.storyLog||[]).some(s=>s.bookId==="malleus"&&s.decision==="accept");
+  const hasClavicula=(p.storyLog||[]).some(s=>s.bookId==="clavicula"&&s.decision==="accept");
+
+  let archetype, archetypeDesc;
+  if(hasMalleus&&hasClavicula){
+    archetype=L==="en"?"The Opportunist":"Oportunista";
+    archetypeDesc=L==="en"?"You print what pays. Conscience is a luxury."
+      :"Tiskneš co se vyplatí. Svědomí je luxus.";
+  } else if(hasMalleus){
+    archetype=L==="en"?"The Instrument":"Nástroj";
+    archetypeDesc=L==="en"?"You served power when it came knocking."
+      :"Sloužil jsi moci, když zaklepala.";
+  } else if((p.censorTokens||0)>=4&&accepted>declined){
+    archetype=L==="en"?"The Rebel":"Rebel";
+    archetypeDesc=L==="en"?"You push every boundary. The bishop has your name on a list."
+      :"Tlačíš každou hranici. Biskup má tvé jméno na seznamu.";
+  } else if((p.reputation||0)>=8&&declined>accepted){
+    archetype=L==="en"?"The Careful Craftsman":"Opatrný řemeslník";
+    archetypeDesc=L==="en"?"Safe choices, solid legacy."
+      :"Bezpečné volby, solidní odkaz.";
+  } else if(accepted>declined){
+    archetype=L==="en"?"The Ambitious":"Ambiciózní";
+    archetypeDesc=L==="en"?"Risk is your trade."
+      :"Riziko je tvůj obchod.";
+  } else {
+    archetype=L==="en"?"The Steady Press":"Spolehlivý lis";
+    archetypeDesc=L==="en"?"Reliable. The city trusts you."
+      :"Spolehlivý. Město ti důvěřuje.";
+  }
+
+  mpSec.append(h("div",{style:{padding:"10px 12px",border:"1px solid rgba(201,149,43,.3)",
+    background:"rgba(201,149,43,.04)",marginBottom:"10px"}},
+    h("div",{style:{fontSize:"13px",fontWeight:"700",color:"var(--gold)",marginBottom:"4px"}},
+      `"${archetype}"`),
+    h("div",{style:{fontSize:"11px",color:"#bbb",lineHeight:"1.6"}},archetypeDesc)));
+
+  // Story decisions
+  if((p.storyLog||[]).length){
+    const decGrid=h("div",{style:{display:"flex",flexDirection:"column",gap:"3px",marginBottom:"10px"}});
+    p.storyLog.forEach(s=>{
+      const book=STORY_BOOKS?.[s.bookId];
+      const dec=s.decision==="accept";
+      decGrid.append(h("div",{style:{
+        display:"flex",alignItems:"center",gap:"8px",padding:"5px 8px",
+        border:`1px solid ${dec?"rgba(42,90,42,.3)":"rgba(100,100,100,.2)"}`,
+        background:dec?"rgba(42,90,42,.04)":"rgba(0,0,0,.1)",
+      }},
+        h("span",{style:{fontSize:"13px"}},dec?"✅":"🚫"),
+        h("div",{style:{flex:1,fontSize:"11px",color:dec?"#88cc88":"#666"}},
+          L==="en"?book?.en||s.bookId:book?.cs||s.bookId),
+        h("span",{style:{fontSize:"9px",color:"#444"}},String(s.year||""))));
+    });
+    mpSec.append(decGrid);
+  }
+
+  // Achievement badges
+  if((p.achievements||[]).length){
+    mpSec.append(h("div",{style:{fontSize:"9px",color:"#444",textTransform:"uppercase",
+      letterSpacing:"1px",marginBottom:"6px"}},L==="en"?"Achievements":"Úspěchy"));
+    const badgeGrid=h("div",{style:{display:"flex",flexWrap:"wrap",gap:"4px"}});
+    p.achievements.forEach(id=>{
+      const a=ACHIEVEMENTS.find(x=>x.id===id); if(!a) return;
+      badgeGrid.append(h("div",{
+        title:L==="en"?a.en:a.cs,
+        style:{fontSize:"18px",padding:"3px",
+          border:`1px solid ${RARITY_COLOR?.[a.rarity]||"#333"}`,
+          background:"rgba(0,0,0,.2)",cursor:"default"}},a.icon));
+    });
+    mpSec.append(badgeGrid);
+  } else {
+    mpSec.append(h("div",{style:{fontSize:"11px",color:"#555",fontStyle:"italic"}},
+      L==="en"?"No story decisions or achievements yet.":"Zatím žádná rozhodnutí ani úspěchy."));
+  }
+  content.append(mpSec);
+}
+
+function renderVerdictScreen(app){
+  const L=G.lang;
+  const p=G;
+
+  // ── DERIVE CAREER TITLE ──
+  const earned=(p.achievements||[]);
+  let careerTitle, careerTitle_cs;
+  if((p.prestige||0)>=200&&(p.activePatrons?.length||0)>=2){
+    careerTitle="The Great Publisher"; careerTitle_cs="Velkonakladatel";
+  } else if((p.prestige||0)>=150&&(p.pressLevel||1)>=3){
+    careerTitle="Master Printer of Olomouc"; careerTitle_cs="Mistr tiskař Olomouce";
+  } else if(LEIPZIG_ROUNDS.includes(p.round)&&(p.completedOrders||0)>=15){
+    careerTitle="The Bookseller"; careerTitle_cs="Knihkupec";
+  } else if((p.prestige||0)>=80){
+    careerTitle="Established Printer"; careerTitle_cs="Zavedený tiskař";
+  } else if((p.completedOrders||0)>=10){
+    careerTitle="Journeyman of the Press"; careerTitle_cs="Tovaryš lisu";
+  } else {
+    careerTitle="Apprentice Printer"; careerTitle_cs="Učeň tiskaře";
+  }
+
+  // ── MORAL VERDICT ──
+  const accepted=(p.storyLog||[]).filter(s=>s.decision==="accept").length;
+  const declined=(p.storyLog||[]).filter(s=>s.decision==="decline").length;
+  const hasMalleus=(p.storyLog||[]).some(s=>s.bookId==="malleus"&&s.decision==="accept");
+  const hasLuther=(p.storyLog||[]).some(s=>s.bookId==="luther"&&s.decision==="accept");
+  const hasClavicula=(p.storyLog||[]).some(s=>s.bookId==="clavicula"&&s.decision==="accept");
+  const censor=p.censorTokens||0;
+
+  let verdict_en, verdict_cs, historian_en, historian_cs;
+
+  if(hasMalleus&&hasLuther){
+    verdict_en="The Opportunist";
+    verdict_cs="Oportunista";
+    historian_en=`${p.printerName||"The printer"} of Olomouc served every master who came with coin — the Inquisitor and the Reformer alike. History does not judge such men harshly; it simply forgets them.`;
+    historian_cs=`${p.printerName||"Tiskař"} olomoucký sloužil každému pánu, který přišel s penězi — inkvizitorovi i reformátorovi. Historie takovéto muže neposkytuje přísně; prostě na ně zapomíná.`;
+  } else if(hasMalleus&&!hasLuther){
+    verdict_en="The Instrument of Power";
+    verdict_cs="Nástroj moci";
+    historian_en=`${p.printerName||"The printer"} chose the side of established power. The Hammer of Witches bears their name in the colophon — a fact that would haunt their legacy for centuries.`;
+    historian_cs=`${p.printerName||"Tiskař"} si zvolil stranu zavedené moci. Kladivo na čarodějnice nese jejich jméno v kolofonem — skutečnost, která bude pronásledovat jejich odkaz po staletí.`;
+  } else if(hasLuther&&censor>=3){
+    verdict_en="The Rebel Press";
+    verdict_cs="Rebelující lis";
+    historian_en=`${p.printerName||"The printer"} of Olomouc stood at the fault line of history. They printed what the powerful feared. The bishop's men came — but the words had already spread.`;
+    historian_cs=`${p.printerName||"Tiskař"} olomoucký stál na zlomové linii dějin. Tiskli to, čeho se mocní báli. Biskupovi muži přišli — ale slova se již rozšířila.`;
+  } else if((p.prestige||0)>=200){
+    verdict_en="The Legacy Builder";
+    verdict_cs="Budovatel odkazu";
+    historian_en=`Through ten years of careful work, ${p.printerName||"the printer"} built one of Moravia's most respected presses. Their name appears in the colophons of ${p.completedOrders||0} works — a testament to craft over ambition.`;
+    historian_cs=`Deseti lety pečlivé práce vybudoval ${p.printerName||"tiskař"} jednu z nejváženějších tiskáren Moravy. Jejich jméno se objevuje v kolofonu ${p.completedOrders||0} děl — svědectví řemeslu nad ctižádostí.`;
+  } else if(declined>accepted&&(p.reputation||0)>=7){
+    verdict_en="The Careful Craftsman";
+    verdict_cs="Opatrný řemeslník";
+    historian_en=`${p.printerName||"The printer"} refused what others accepted — the dangerous commissions, the political risks. A quiet reputation, honestly earned. Not every printer burns; some simply work.`;
+    historian_cs=`${p.printerName||"Tiskař"} odmítl to, co jiní přijali — nebezpečné zakázky, politická rizika. Tichá pověst, čestně vydělaná. Ne každý tiskař hoří; někteří prostě pracují.`;
+  } else {
+    verdict_en="The Steady Press";
+    verdict_cs="Spolehlivý lis";
+    historian_en=`${p.printerName||"The printer"} of Olomouc kept the press running through plague, war, and political upheaval. Ten years of work. ${p.completedOrders||0} commissions completed. The city was better informed for it.`;
+    historian_cs=`${p.printerName||"Tiskař"} olomoucký udržoval lis v chodu přes mor, válku a politické otřesy. Deset let práce. ${p.completedOrders||0} dokončených zakázek. Město bylo díky tomu lépe informované.`;
+  }
+
+  // ── BUILD SCREEN ──
+  const screen=h("div",{style:{
+    minHeight:"100vh",background:"#0a0805",
+    display:"flex",flexDirection:"column",alignItems:"center",
+    justifyContent:"flex-start",padding:"0",overflowY:"auto",
+    fontFamily:"'Palatino Linotype','Palatino',serif",
+  }});
+
+  // Top banner
+  const banner=h("div",{style:{
+    width:"100%",borderBottom:"1px solid rgba(201,149,43,.3)",
+    padding:"28px 24px 20px",textAlign:"center",
+    background:"linear-gradient(180deg,rgba(0,0,0,.8) 0%,transparent 100%)",
+  }});
+  banner.append(
+    h("div",{style:{fontSize:"9px",color:"var(--red)",textTransform:"uppercase",
+      letterSpacing:"3px",fontFamily:"inherit",marginBottom:"8px"}},
+      L==="en"?"The Historical Tribunal · Anno Domini":"Historický soud · Anno Domini"),
+    h("div",{style:{fontSize:"28px",fontWeight:"700",color:"var(--paper)",
+      letterSpacing:"1px",marginBottom:"4px"}},
+      `${p.year||1478}`),
+    h("div",{style:{fontSize:"13px",color:"var(--gold)",letterSpacing:"2px",
+      textTransform:"uppercase",fontFamily:"inherit"}},
+      L==="en"?careerTitle:careerTitle_cs));
+  screen.append(banner);
+
+  // Main verdict card
+  const card=h("div",{style:{
+    maxWidth:"560px",width:"100%",padding:"28px 24px",
+    margin:"0 auto",
+  }});
+
+  // Verdict title
+  card.append(
+    h("div",{style:{textAlign:"center",marginBottom:"24px",
+      borderBottom:"1px solid rgba(201,149,43,.2)",paddingBottom:"20px"}},
+      h("div",{style:{fontSize:"10px",color:"#555",textTransform:"uppercase",
+        letterSpacing:"2px",marginBottom:"8px"}},
+        L==="en"?"Moral Verdict":"Morální verdikt"),
+      h("div",{style:{fontSize:"22px",color:"var(--gold)",fontWeight:"700",
+        fontFamily:"inherit",marginBottom:"12px"}},
+        `"${L==="en"?verdict_en:verdict_cs}"`),
+      h("div",{style:{fontSize:"12px",color:"#bbb",lineHeight:"1.9",
+        fontStyle:"italic",fontFamily:"inherit"}},
+        L==="en"?historian_en:historian_cs)));
+
+  // Stats grid
+  const stats=[
+    {icon:"⭐",label:L==="en"?"Final Prestige":"Finální prestiž",     val:p.prestige||0,     highlight:(p.prestige||0)>=100},
+    {icon:"📜",label:L==="en"?"Orders Completed":"Zakázek hotovo",    val:p.completedOrders||0},
+    {icon:"💰",label:L==="en"?"Gold Remaining":"Zbývající zlato",     val:`${p.gold||0}g`},
+    {icon:"🏅",label:L==="en"?"Final Reputation":"Finální reputace",  val:`${p.reputation||0}/10`},
+    {icon:"⚠️",label:L==="en"?"Censor Tokens":"Cenzurní tokeny",      val:p.censorTokens||0, highlight:(p.censorTokens||0)>=3},
+    {icon:"📅",label:L==="en"?"Years Active":"Let v provozu",         val:p.totalYears||10},
+    {icon:"🏆",label:L==="en"?"Achievements":"Úspěchy",               val:`${earned.length}/${ACHIEVEMENTS.length}`},
+    {icon:"⚙️",label:L==="en"?"Press Level":"Úroveň lisu",            val:`Lv${p.pressLevel||1}`},
+  ];
+  const statGrid=h("div",{style:{
+    display:"grid",gridTemplateColumns:"1fr 1fr",gap:"6px",marginBottom:"24px"}});
+  stats.forEach(({icon,label,val,highlight})=>{
+    statGrid.append(h("div",{style:{
+      padding:"8px 10px",border:`1px solid ${highlight?"rgba(201,149,43,.4)":"rgba(255,255,255,.06)"}`,
+      background:highlight?"rgba(201,149,43,.05)":"rgba(0,0,0,.2)",
+    }},
+      h("div",{style:{display:"flex",alignItems:"center",gap:"6px"}},
+        h("span",{style:{fontSize:"14px"}},icon),
+        h("div",null,
+          h("div",{style:{fontSize:"9px",color:"#555",textTransform:"uppercase",
+            letterSpacing:".8px"}},label),
+          h("div",{style:{fontSize:"14px",fontWeight:"700",
+            color:highlight?"var(--gold)":"var(--paper)"}},String(val))))));
+  });
+  card.append(statGrid);
+
+  // Story decisions
+  if((p.storyLog||[]).length){
+    const decSec=h("div",{style:{marginBottom:"20px",borderTop:"1px solid rgba(255,255,255,.06)",
+      paddingTop:"16px"}});
+    decSec.append(h("div",{style:{fontSize:"9px",color:"#555",textTransform:"uppercase",
+      letterSpacing:"2px",marginBottom:"10px"}},
+      L==="en"?"Chronicle of Decisions":"Kronika rozhodnutí"));
+    p.storyLog.forEach(s=>{
+      const book=STORY_BOOKS?.[s.bookId];
+      const acc=s.decision==="accept";
+      decSec.append(h("div",{style:{
+        display:"flex",alignItems:"center",gap:"10px",padding:"7px 10px",
+        marginBottom:"4px",border:`1px solid ${acc?"rgba(42,90,42,.3)":"rgba(80,80,80,.2)"}`,
+        background:acc?"rgba(42,90,42,.05)":"rgba(0,0,0,.1)",
+      }},
+        h("span",{style:{fontSize:"14px"}},acc?"✅":"🚫"),
+        h("div",{style:{flex:1}},
+          h("div",{style:{fontSize:"11px",color:acc?"#88cc88":"#666",fontWeight:"600"}},
+            L==="en"?book?.en||s.bookId:book?.cs||s.bookId),
+          h("div",{style:{fontSize:"9px",color:"#444"}},
+            `${L==="en"?"Year":"Rok"} ${s.year||p.year}`)),
+        h("span",{style:{fontSize:"10px",color:acc?"#88cc88":"#555",fontStyle:"italic"}},
+          acc?(L==="en"?"Accepted":"Přijato"):(L==="en"?"Refused":"Odmítnuto"))));
+    });
+    card.append(decSec);
+  }
+
+  // Achievement badges
+  if(earned.length){
+    const achSec=h("div",{style:{marginBottom:"24px",borderTop:"1px solid rgba(255,255,255,.06)",
+      paddingTop:"16px"}});
+    achSec.append(h("div",{style:{fontSize:"9px",color:"#555",textTransform:"uppercase",
+      letterSpacing:"2px",marginBottom:"10px"}},
+      L==="en"?"Achievements Earned":"Získané úspěchy"));
+    const badges=h("div",{style:{display:"flex",flexWrap:"wrap",gap:"5px"}});
+    earned.forEach(id=>{
+      const a=ACHIEVEMENTS.find(x=>x.id===id); if(!a) return;
+      badges.append(h("div",{
+        title:L==="en"?a.desc_en:a.desc_cs,
+        style:{
+          display:"flex",alignItems:"center",gap:"5px",
+          padding:"4px 8px",fontSize:"10px",
+          border:`1px solid ${RARITY_COLOR?.[a.rarity]||"#333"}`,
+          color:RARITY_COLOR?.[a.rarity]||"#888",
+          background:"rgba(0,0,0,.2)",
+        }},
+        h("span",null,a.icon),
+        h("span",null,L==="en"?a.en:a.cs)));
+    });
+    achSec.append(badges);
+    card.append(achSec);
+  }
+
+  // Actions
+  const actions=h("div",{style:{
+    display:"flex",gap:"8px",flexWrap:"wrap",justifyContent:"center",
+    borderTop:"1px solid rgba(255,255,255,.06)",paddingTop:"20px",marginBottom:"8px"}});
+  actions.append(
+    h("button",{class:"btn btn-p",
+      style:{padding:"10px 20px",fontSize:"12px",letterSpacing:"1px"},
+      onClick:()=>{
+        if(confirm(L==="en"?"Start a new game? Current progress will be saved first."
+                           :"Začít novou hru? Aktuální pokrok bude nejdřív uložen.")){
+          saveGame();
+          G=initState();
+          G.availOrders=genOrderPool(1,5);
+          render();
+        }
+      }},
+      L==="en"?"🖨️ New Game":"🖨️ Nová hra"),
+    h("button",{class:"btn btn-s",
+      style:{padding:"10px 20px",fontSize:"12px"},
+      onClick:()=>saveGame()},
+      L==="en"?"💾 Save Record":"💾 Uložit záznam"),
+    h("button",{class:"btn btn-s",
+      style:{padding:"10px 20px",fontSize:"12px"},
+      onClick:()=>{
+        // Export verdict as text
+        const txt=`THE PRESS · OLOMOUC · ${p.year}\n${"─".repeat(40)}\n${L==="en"?careerTitle:careerTitle_cs}\n\n"${L==="en"?verdict_en:verdict_cs}"\n\n${L==="en"?historian_en:historian_cs}\n\n${"─".repeat(40)}\nPrestige: ${p.prestige} · Orders: ${p.completedOrders} · Achievements: ${earned.length}/${ACHIEVEMENTS.length}`;
+        const blob=new Blob([txt],{type:"text/plain"});
+        const url=URL.createObjectURL(blob);
+        const a=document.createElement("a");
+        a.href=url;a.download=`ThePressVerdict_${p.year}.txt`;a.click();
+        URL.revokeObjectURL(url);
+      }},
+      L==="en"?"📜 Export Verdict":"📜 Exportovat verdikt"));
+  card.append(actions);
+
+  // Latin footer
+  card.append(h("div",{style:{textAlign:"center",fontSize:"10px",color:"#2a2520",
+    fontStyle:"italic",fontFamily:"inherit",marginBottom:"16px"}},
+    "Veritas vos liberabit · Olomucii, Anno Domini MCDLXVIII"));
+
+  screen.append(card);
+  app.append(screen);
+}
+
 function renderAboutModal(app){
   const L=G.lang;
   const modal=h("div",{class:"modal-bg",onClick:()=>{G._showAbout=false;render();}},
