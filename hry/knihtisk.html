@@ -847,6 +847,48 @@ const ORDER_POOL = [
   {id:"lux_08", type:"luxury", en:"Diplomatic Correspondence — Royal Seals", cs:"Diplomatická korespondence — Královské pečeti",
    req:{paper:8,ink:3,vellum:5}, workers:["engraver","compositor"], reward:55, prestige:6, duration:5,
    tip_en:"Letters patent between King Matthias and the Bohemian estates.", tip_cs:"Listiny mezi králem Matyášem a českými stavy."},
+
+  // ── STORY ORDERS (forbidden & dangerous books) ───────────
+  {id:"story_summis",    type:"religious", story:true, storyId:"summis",
+   en:"Commission — Papal Bull (Summis Desiderantes)", cs:"Zakázka — Papežská bula (Summis Desiderantes)",
+   req:{paper:4,ink:2,letters:true}, workers:["compositor"], reward:18, prestige:3, duration:2,
+   availFromYear:2, tip_en:"A church official needs 200 copies of the papal bull by Sunday.",
+   tip_cs:"Církevní úředník potřebuje 200 kopií papežské buly do neděle."},
+  {id:"story_formicarius", type:"religious", story:true, storyId:"formicarius",
+   en:"Commission — Formicarius (Nider)", cs:"Zakázka — Formicarius (Nider)",
+   req:{paper:3,ink:1,letters:true}, workers:["compositor"], reward:11, prestige:2, duration:2,
+   availFromYear:2, tip_en:"A Vienna scholar carries a worn manuscript on witchcraft as moral failure.",
+   tip_cs:"Vídeňský učenec nese opotřebovaný rukopis o čarodějnictví jako morálním selhání."},
+  {id:"story_directorium", type:"state", story:true, storyId:"directorium",
+   en:"Commission — Directorium Inquisitorum", cs:"Zakázka — Directorium Inquisitorum",
+   req:{paper:6,ink:3,letters:true}, workers:["compositor","corrector"], reward:22, prestige:3, duration:3,
+   availFromYear:3, tip_en:"The bishop's commission. Eight hundred pages. Protection guaranteed.",
+   tip_cs:"Biskupova zakázka. Osm set stran. Ochrana zaručena."},
+  {id:"story_practica", type:"religious", story:true, storyId:"practica",
+   en:"Commission — Practica Inquisitionis (Bernard Gui)", cs:"Zakázka — Practica Inquisitionis (Bernard Gui)",
+   req:{paper:4,ink:2,letters:true}, workers:["compositor"], reward:19, prestige:2, duration:2,
+   availFromYear:2, tip_en:"The bishop is generous. Your next three commissions will be his to assign.",
+   tip_cs:"Biskup je velkorysý. Tvé příští tři zakázky budou jeho na přidělení."},
+  {id:"story_malleus", type:"religious", story:true, storyId:"malleus",
+   en:"Commission — Malleus Maleficarum (Kramer)", cs:"Zakázka — Malleus Maleficarum (Kramer)",
+   req:{paper:8,ink:4,letters:true}, workers:["compositor","corrector"], reward:35, prestige:6, duration:3,
+   availFromYear:4, tip_en:"Kramer himself stands at your door. Papal endorsement. Imperial decree. The highest fee you have seen.",
+   tip_cs:"Kramer sám stojí u tvých dveří. Papežské zmocnění. Císařský dekret. Nejvyšší honorář, jaký jsi viděl."},
+  {id:"story_picatrix", type:"luxury", story:true, storyId:"picatrix",
+   en:"Commission — Picatrix (anonymous client)", cs:"Zakázka — Picatrix (anonymní zákazník)",
+   req:{paper:5,ink:3,letters:true}, workers:["compositor","corrector"], reward:28, prestige:4, duration:2,
+   availFromYear:3, tip_en:"A Venetian merchant. Payment in advance. No questions asked.",
+   tip_cs:"Benátský obchodník. Platba předem. Žádné otázky."},
+  {id:"story_clavicula", type:"luxury", story:true, storyId:"clavicula",
+   en:"Commission — Clavicula Salomonis (secret)", cs:"Zakázka — Clavicula Salomonis (tajná)",
+   req:{paper:6,ink:3,letters:true}, workers:["compositor","engraver"], reward:42, prestige:5, duration:3,
+   availFromYear:4, tip_en:"A hooded figure at closing time. Gold on the compositing stone. No name.",
+   tip_cs:"Zahalená postava při zavírání. Zlato na sazbovém kameni. Žádné jméno."},
+  {id:"story_husitsky", type:"religious", story:true, storyId:"husitsky",
+   en:"Commission — Hussite Tract (Czech nobility)", cs:"Zakázka — Husitský traktát (česká šlechta)",
+   req:{paper:3,ink:2,letters:true}, workers:["compositor"], reward:16, prestige:3, duration:2,
+   availFromYear:2, tip_en:"A Czech nobleman's steward. Utraquist theology. The bishop is watching.",
+   tip_cs:"Správce českého šlechtice. Utrakvistická teologie. Biskup sleduje."},
 ];
 
 // ── HISTORICAL EVENTS ────────────────────────────────────────
@@ -1359,6 +1401,10 @@ function initState(){
     // Journal
     journal: [],        // [{type:"note"|"story"|"auto", gameYear, gameRound, text, ts}]
 
+    censorTokens: 0,      // accumulates from story book prints
+    storyLog: [],         // [{bookId, decision, year, round}]
+    dismissedStory: [],   // bookIds dismissed — can return later
+
     log: [],
     events: [],
     curEvt: null,
@@ -1601,12 +1647,26 @@ function genSingleOrder(gameYear, excludeIds){
   let pool = [...ORDER_POOL];
   if(G.reputation < 4) pool = pool.filter(o=>o.type!=="state"&&o.type!=="luxury");
   if(G.reputation < 7) pool = pool.filter(o=>o.type!=="luxury");
+  // Filter story orders: only show if gameYear >= availFromYear and not dismissed
+  const dismissed = new Set(G.dismissedStory||[]);
+  pool = pool.filter(o=>{
+    if(!o.story) return true;
+    if((o.availFromYear||1) > gameYear) return false;
+    if(dismissed.has(o.storyId)) return false;
+    // Don't show if already in active orders or availOrders
+    const activeIds = new Set((G.activeOrders||[]).map(x=>x.id));
+    const availIds = new Set((G.availOrders||[]).map(x=>x.id));
+    if(activeIds.has(o.id)||availIds.has(o.id)) return false;
+    return true;
+  });
   // Exclude already visible and recently shown
   const excluded = new Set(excludeIds||[]);
   pool = pool.filter(o=>!excluded.has(o.id));
   if(!pool.length) pool = [...ORDER_POOL].filter(o=>{
     if(G.reputation<4&&(o.type==="state"||o.type==="luxury")) return false;
     if(G.reputation<7&&o.type==="luxury") return false;
+    if(o.story&&((o.availFromYear||1)>gameYear)) return false;
+    if(o.story&&(G.dismissedStory||[]).includes(o.storyId)) return false;
     return true;
   });
   const pick = pool[Math.floor(Math.random()*pool.length)];
@@ -2867,6 +2927,181 @@ const ROLES = {
   }
 };
 
+// ── STORY BOOKS ──────────────────────────────────────────────
+const STORY_BOOKS = {
+  summis: {
+    id:"summis",
+    side:"inquisition",
+    en:"Summis Desiderantes Affectibus",
+    cs:"Summis Desiderantes Affectibus",
+    subtitle_en:"Papal Bull of Innocent VIII · 1484",
+    subtitle_cs:"Papežská bula Inocenta VIII. · 1484",
+    icon:"⚜️",
+    context_en:"Pope Innocent VIII has issued a bull granting Heinrich Kramer full authority to prosecute witchcraft across the German lands. A church official stands at your door — he needs 200 copies by Sunday. The text is legitimate, papally endorsed. And it pays well.",
+    context_cs:"Papež Inocent VIII. vydal bulu udělující Heinrichu Kramerovi plnou moc pronásledovat čarodějnictví v německých zemích. Církevní úředník stojí u tvých dveří — potřebuje 200 kopií do neděle. Text je legitimní, papežsky schválený. A dobře placený.",
+    dilemma_en:"This bull will be used to justify persecution. But it is the Pope's word — refusing it means refusing Rome.",
+    dilemma_cs:"Tato bula bude použita k ospravedlnění pronásledování. Ale je to slovo papeže — odmítnutí znamená odmítnutí Říma.",
+    censorTokens:1,
+    reward:18, prestige:3, duration:2,
+    req:{paper:4,ink:2,letters:true},
+    workers:["compositor"],
+    journalAccept_en:"I printed the Pope's bull. The ink was black and the gold was real. I told myself I was just the press.",
+    journalAccept_cs:"Vytiskl jsem papežovu bulu. Inkoust byl černý a zlato skutečné. Říkal jsem si, že jsem jen lis.",
+    journalDecline_en:"I sent the church official away. He did not look surprised.",
+    journalDecline_cs:"Odeslal jsem církevního úředníka pryč. Nevypadal překvapeně.",
+  },
+  formicarius: {
+    id:"formicarius",
+    side:"heresy",
+    en:"Formicarius",
+    cs:"Formicarius",
+    subtitle_en:"Johannes Nider · 1475 — The Anthill",
+    subtitle_cs:"Johannes Nider · 1475 — Mraveniště",
+    icon:"📜",
+    context_en:"A scholar from Vienna carries a worn manuscript — Nider's Formicarius, written forty years ago. It speaks of witchcraft as moral failure, not conspiracy. Thoughtful, cautious. The first book to describe a sabbath in print. It predates the Malleus, but it opened the door.",
+    context_cs:"Učenec z Vídně nese opotřebovaný rukopis — Niderův Formicarius, napsaný před čtyřiceti lety. Hovoří o čarodějnictví jako o morálním selhání, nikoli spiknutí. Promyšlený, opatrný. První kniha popisující sabat v tisku. Předchází Malleu, ale otevřela dveře.",
+    dilemma_en:"Harmless theology — or the seed of something worse? It is already in libraries across Europe. You would not be the first to print it.",
+    dilemma_cs:"Neškodná teologie — nebo zárodek něčeho horšího? Již je v knihovnách po celé Evropě. Nebyl bys první, kdo ji tiskne.",
+    censorTokens:1,
+    reward:11, prestige:2, duration:2,
+    req:{paper:3,ink:1,letters:true},
+    workers:["compositor"],
+    journalAccept_en:"I printed Nider's Formicarius. A mild book about moral failure. I told myself it was just theology.",
+    journalAccept_cs:"Vytiskl jsem Niderův Formicarius. Mírná kniha o morálním selhání. Říkal jsem si, že je to jen teologie.",
+    journalDecline_en:"I declined the Vienna scholar. He said he would find another press. He probably did.",
+    journalDecline_cs:"Odmítl jsem vídeňského učence. Řekl, že najde jiný lis. Pravděpodobně našel.",
+  },
+  directorium: {
+    id:"directorium",
+    side:"inquisition",
+    en:"Directorium Inquisitorum",
+    cs:"Directorium Inquisitorum",
+    subtitle_en:"Nicolaus Eymerich · 1376, first printed 1503",
+    subtitle_cs:"Nicolaus Eymerich · 1376, první tisk 1503",
+    icon:"⚖️",
+    context_en:"A Dominican friar arrives with a commission from the bishop. Eymerich's Directorium — the great manual of inquisition, reclassifying magic as heresy. Eight hundred pages. It will take three months. The bishop guarantees payment and protection. Protection is a word that cuts both ways.",
+    context_cs:"Dominikánský mnich přichází s komisí od biskupa. Eymerichovo Directorium — velký manuál inkvizice, překlasifikující magii jako herezi. Osm set stran. Bude to trvat tři měsíce. Biskup garantuje platbu a ochranu. Ochrana je slovo, které řeže oběma směry.",
+    dilemma_en:"The bishop's patronage is security. But printing this manual means the Inquisitor arrives sooner.",
+    dilemma_cs:"Biskupovo mecenášství je jistota. Ale tisk tohoto manuálu znamená, že Inkvizitor přijde dříve.",
+    censorTokens:1,
+    reward:22, prestige:3, duration:3,
+    req:{paper:6,ink:3,letters:true},
+    workers:["compositor","corrector"],
+    journalAccept_en:"I took the bishop's commission. Three months of work. The Directorium will teach magistrates to see heresy in a shadow.",
+    journalAccept_cs:"Přijal jsem biskupovu zakázku. Tři měsíce práce. Directorium naučí soudce vidět herezi ve stínu.",
+    journalDecline_en:"I refused the bishop's commission. He will find a Venetian press. They have fewer scruples.",
+    journalDecline_cs:"Odmítl jsem biskupovu zakázku. Najde benátský lis. Ti mají méně skrupulí.",
+  },
+  practica: {
+    id:"practica",
+    side:"inquisition",
+    en:"Practica Inquisitionis",
+    cs:"Practica Inquisitionis",
+    subtitle_en:"Bernard Gui · 1323 — Manual of Inquisition",
+    subtitle_cs:"Bernard Gui · 1323 — Příručka inkvizice",
+    icon:"🔒",
+    context_en:"The local bishop requests a print run of Bernard Gui's practical guide for inquisitors. Written a century ago, still used in trials today. The bishop has been generous. He mentions, almost in passing, that your next three commissions will be his to assign.",
+    context_cs:"Místní biskup žádá o tisk Bernardovy praktické příručky pro inkvizitory. Napsána před sto lety, stále používána při procesech. Biskup byl velkorysý. Zmiňuje, téměř mimochodem, že tvé příští tři zakázky budou jeho na přidělení.",
+    dilemma_en:"Accepting means security and gold. It also means the bishop controls your press for three rounds.",
+    dilemma_cs:"Přijetí znamená jistotu a zlato. Také to znamená, že biskup ovládá tvůj lis po tři kola.",
+    censorTokens:1,
+    reward:19, prestige:2, duration:2,
+    req:{paper:4,ink:2,letters:true},
+    workers:["compositor"],
+    mechanic:"patron_lock", // future: locks next order slot
+    journalAccept_en:"I accepted the bishop's Practica. Good money. I am now his printer, whether I like it or not.",
+    journalAccept_cs:"Přijal jsem biskupovu Practicu. Dobré peníze. Jsem teď jeho tiskařem, ať chci nebo ne.",
+    journalDecline_en:"I refused the bishop's gentle offer. He smiled. Bishops always smile when they are making a note.",
+    journalDecline_cs:"Odmítl jsem biskupovu laskavou nabídku. Usmál se. Biskupové se vždy usmívají, když si dělají poznámku.",
+  },
+  malleus: {
+    id:"malleus",
+    side:"inquisition",
+    en:"Malleus Maleficarum",
+    cs:"Malleus Maleficarum",
+    subtitle_en:"Heinrich Kramer · Speyer 1487 — The Hammer of Witches",
+    subtitle_cs:"Heinrich Kramer · Speyer 1487 — Kladivo na čarodějnice",
+    icon:"🔨",
+    context_en:"Heinrich Kramer himself stands in your doorway. He is older than you expected — a Dominican friar, inquisitor, author. He has already been thrown out of Innsbruck by the bishop there. His manuscript combines theology with a practical guide for witch-hunters. He is confident. He has a papal bull and an imperial endorsement. He needs a printer willing to put his name on it.",
+    context_cs:"Heinrich Kramer sám stojí ve tvých dveřích. Je starší, než jsi čekal — dominikánský mnich, inkvizitor, autor. Již byl vyhozen z Innsbrucku tamním biskupem. Jeho rukopis kombinuje teologii s praktickým průvodcem pro lovce čarodějnic. Je sebejistý. Má papežskou bulu a císařské schválení. Potřebuje tiskaře ochotného dát pod to své jméno.",
+    dilemma_en:"The highest paying commission you have ever seen. Kramer's confidence is unsettling. You have heard what happened in Ravensburg.",
+    dilemma_cs:"Nejlépe placená zakázka, jakou jsi kdy viděl. Kramerova sebejistota je znepokojivá. Slyšel jsi, co se stalo v Ravensburgu.",
+    censorTokens:2,
+    reward:35, prestige:6, duration:3,
+    req:{paper:8,ink:4,letters:true},
+    workers:["compositor","corrector"],
+    isBlackCard:true,
+    journalAccept_en:"Kramer left satisfied. I printed the Hammer. God forgive me — or don't. The gold is real either way.",
+    journalAccept_cs:"Kramer odešel spokojen. Vytiskl jsem Kladivo. Bůh mi odpusť — nebo ne. Zlato je skutečné tak jako tak.",
+    journalDecline_en:"I sent Kramer away. He said Speyer would print it. He was right.",
+    journalDecline_cs:"Odeslal jsem Kamera pryč. Řekl, že to vytisknou ve Speyeru. Měl pravdu.",
+  },
+  picatrix: {
+    id:"picatrix",
+    side:"heresy",
+    en:"Picatrix",
+    cs:"Picatrix",
+    subtitle_en:"Ghāyat al-Ḥakīm · Arabic origin, Latin trans. 13th c.",
+    subtitle_cs:"Ghāyat al-Ḥakīm · Arabský původ, latinský překlad 13. stol.",
+    icon:"🌙",
+    context_en:"A Venetian merchant arrives with an unusual manuscript — Picatrix, the great Arabic compendium of astrology and hermetic magic. Translated into Latin two centuries ago, copied by monks and studied by cardinals. The customer says it is philosophy. The Inquisition says it is sorcery. The customer pays in advance.",
+    context_cs:"Benátský obchodník přichází s neobvyklým rukopisem — Picatrix, velkou arabskou encyklopedií astrologie a hermetické magie. Přeložena do latiny před dvěma staletími, opisována mnichy a studována kardinály. Zákazník říká, že je to filozofie. Inkvizice říká, že je to čarodějnictví. Zákazník platí předem.",
+    dilemma_en:"It is in cardinal's libraries. It is also on the Index. The customer pays in advance and asks no questions. Neither should you.",
+    dilemma_cs:"Je v kardinalských knihovnách. Je také na Indexu. Zákazník platí předem a neptá se. Neměl bys ani ty.",
+    censorTokens:2,
+    reward:28, prestige:4, duration:2,
+    req:{paper:5,ink:3,letters:true},
+    workers:["compositor","corrector"],
+    journalAccept_en:"I printed the Picatrix for a Venetian who did not give his name. The manuscript smelled of the sea and old ink. I did not read it.",
+    journalAccept_cs:"Vytiskl jsem Picatrix pro Benátčana, který nedal své jméno. Rukopis voněl mořem a starým inkoustem. Nečetl jsem ho.",
+    journalDecline_en:"I refused the Venetian. He smiled and said he had other options. I believe him.",
+    journalDecline_cs:"Odmítl jsem Benátčana. Usmál se a řekl, že má jiné možnosti. Věřím mu.",
+  },
+  clavicula: {
+    id:"clavicula",
+    side:"heresy",
+    en:"Clavicula Salomonis",
+    cs:"Clavicula Salomonis",
+    subtitle_en:"The Key of Solomon · grimoire, manuscript tradition",
+    subtitle_cs:"Klíč Šalomounův · grimoár, rukopisná tradice",
+    icon:"🗝️",
+    context_en:"A hooded figure at closing time. No name. Payment in gold coin, counted out on your compositing stone. The manuscript is in careful Latin — protective seals, summoning circles, planetary invocations attributed to Solomon himself. He wants it printed quietly. He will collect personally. He says it is for a private library.",
+    context_cs:"Zahalená postava při zavírání. Žádné jméno. Platba zlatými mincemi, počítanými na tvém sazbovém kameni. Rukopis je v pečlivé latině — ochranné pečeti, vyvolávací kruhy, planetární invokace připisované samotnému Šalomounovi. Chce to vytisknout tiše. Vyzvedne osobně. Říká, že je to pro soukromou knihovnu.",
+    dilemma_en:"The highest risk in your workshop. No patronage. No cover. If found, this is not a fine — it is a trial.",
+    dilemma_cs:"Nejvyšší riziko ve tvé dílně. Žádné mecenášství. Žádné krytí. Pokud bude nalezeno, nejde o pokutu — jde o proces.",
+    censorTokens:3,
+    reward:42, prestige:5, duration:3,
+    req:{paper:6,ink:3,letters:true},
+    workers:["compositor","engraver"],
+    isSecret:true,
+    journalAccept_en:"I printed it at night. One copy. The seals were beautiful. I burned the compositing notes.",
+    journalAccept_cs:"Tiskl jsem v noci. Jeden výtisk. Pečeti byly krásné. Spálil jsem sazební poznámky.",
+    journalDecline_en:"I sent the hooded figure away without lighting the lamp. Some commissions are better refused in the dark.",
+    journalDecline_cs:"Odeslal jsem zahalenou postavu pryč bez rozsvícení lampy. Některé zakázky je lepší odmítat ve tmě.",
+  },
+  husitsky: {
+    id:"husitsky",
+    side:"heresy",
+    en:"Hussite Tract — On Communion in Both Kinds",
+    cs:"Husitský traktát — O přijímání pod obojí způsobou",
+    subtitle_en:"Czech theological writing · post-1420",
+    subtitle_cs:"Česky psaná teologie · po roce 1420",
+    icon:"🍷",
+    context_en:"A Czech nobleman's steward arrives. His lord requires a treatise on Utraquist theology — communion in both kinds, the cup for the laity. In Bohemia this is accepted practice. In Rome it is heresy. Your press is in Olomouc. The bishop is watching.",
+    context_cs:"Přichází správce českého šlechtice. Jeho pán požaduje pojednání o utrakvismu — přijímání pod obojí způsobou, kalich pro laiky. V Čechách je to přijatá praxe. V Římě je to hereze. Tvůj lis je v Olomouci. Biskup sleduje.",
+    dilemma_en:"Czech nobility protects you. The bishop can override them. It depends which way the political wind blows this season.",
+    dilemma_cs:"Česká šlechta tě chrání. Biskup je může přebít. Záleží na tom, jakým směrem tento rok fouká politický vítr.",
+    censorTokens:2,
+    reward:16, prestige:3, duration:2,
+    req:{paper:3,ink:2,letters:true},
+    workers:["compositor"],
+    journalAccept_en:"I printed the Hussite tract. The nobleman's steward paid well. The bishop will hear of it.",
+    journalAccept_cs:"Vytiskl jsem husitský traktát. Správce šlechtice platil dobře. Biskup to uslyší.",
+    journalDecline_en:"I declined the Czech commission. The steward shrugged. He said Kutná Hora would do it.",
+    journalDecline_cs:"Odmítl jsem českou zakázku. Správce pokrčil rameny. Řekl, že to udělá Kutná Hora.",
+  },
+};
+
 function applyRoleBonus(roleId){
   switch(roleId){
     case "apprentice": G.res.rags+=4; G.res.lead+=2; break;
@@ -2893,6 +3128,130 @@ function confirmRole(roleId, name, workshop, gender){
   G.journal.push({type:"story", gameYear:G.gameYear, gameRound:G.round, text:firstEntry, ts:Date.now()});
   G.log.push(`__EVT__🖨️ ${L==="en"?`${G.workshopName} established. ${title}${G.playerName} takes the press.`:`${G.workshopName} založena. ${title}${G.playerName} přebírá lis.`}`);
   G.phase="playing";
+  persistModal.innerHTML="";
+  persistModal.style.pointerEvents="none";
+  autoSave(); render();
+}
+
+// ── STORY MODAL ───────────────────────────────────────────────
+function showStoryModal(instanceId){
+  const order = (G.availOrders||[]).find(o=>o.instanceId===instanceId);
+  if(!order||!order.story) return;
+  const book = STORY_BOOKS[order.storyId];
+  if(!book) return;
+  const L=G.lang;
+
+  persistModal.innerHTML="";
+  persistModal.style.pointerEvents="all";
+
+  const overlay=h("div",{class:"modal-bg"},
+    h("div",{class:"modal",style:{maxWidth:"560px",padding:"0",overflow:"hidden"},
+      onClick:e=>e.stopPropagation()},
+
+      // Header
+      h("div",{style:{padding:"16px 20px 12px",borderBottom:"1px solid var(--border)",
+        background:book.isBlackCard?"#0d0000":"var(--card)"}},
+        h("div",{style:{fontSize:"9px",letterSpacing:"2px",color:book.side==="heresy"?"#aa4444":"var(--red)",
+          textTransform:"uppercase",marginBottom:"4px"}},
+          `${L==="en"?"Commission":"Zakázka"} · ${book.side==="heresy"?(L==="en"?"Forbidden":"Zakázané"):(L==="en"?"Inquisition":"Inkvizice")}`),
+        h("div",{style:{display:"flex",alignItems:"center",gap:"10px",marginBottom:"4px"}},
+          h("span",{style:{fontSize:"22px"}},book.icon),
+          h("div",null,
+            h("div",{style:{fontSize:"15px",fontWeight:"700",color:book.isBlackCard?"#cc3333":"var(--paper)"}},
+              L==="en"?book.en:book.cs),
+            h("div",{style:{fontSize:"10px",color:"#555",fontStyle:"italic"}},
+              L==="en"?book.subtitle_en:book.subtitle_cs))),
+        // Censor tokens warning
+        book.censorTokens>0 && h("div",{style:{fontSize:"10px",color:"#cc4444",marginTop:"6px"}},
+          `⚠ ${L==="en"?"This print will add":"Tento tisk přidá"} ${book.censorTokens} ${L==="en"?"censor token(s)":"cenzurní token(y)"} · ${L==="en"?"Current":"Aktuálně"}: ${G.censorTokens||0}`)),
+
+      // Body — context + dilemma
+      h("div",{style:{padding:"16px 20px"}},
+        h("div",{style:{fontSize:"11px",color:"#aaa",lineHeight:"1.7",marginBottom:"12px",
+          fontStyle:"italic",borderLeft:"2px solid var(--border)",paddingLeft:"10px"}},
+          L==="en"?book.context_en:book.context_cs),
+        h("div",{style:{fontSize:"11px",color:"#cc9944",lineHeight:"1.6",marginBottom:"16px",
+          padding:"8px 10px",background:"rgba(201,149,43,0.05)",border:"1px solid var(--border)"}},
+          `⚖ ${L==="en"?book.dilemma_en:book.dilemma_cs}`),
+
+        // Reward summary
+        h("div",{style:{display:"flex",gap:"12px",marginBottom:"16px",fontSize:"10px",color:"#666"}},
+          h("span",null,`💰 ${order.reward}g`),
+          h("span",null,`★ ${order.prestige} ${L==="en"?"prestige":"prestiže"}`),
+          h("span",null,`⏱ ${order.duration} ${L==="en"?"rounds":"kol"}`)),
+
+        // Buttons
+        h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px"}},
+          h("button",{class:"btn",style:{padding:"10px",fontSize:"11px",
+            borderColor:"#444",color:"#888"},
+            onClick:()=>declineStoryOrder(instanceId)},
+            L==="en"?"Decline — send away":"Odmítnout — odeslat pryč"),
+          h("button",{class:"btn btn-p",style:{padding:"10px",fontSize:"11px",
+            background:book.isBlackCard?"#4a0000":""},
+            onClick:()=>acceptStoryOrder(instanceId)},
+            L==="en"?"Accept the commission →":"Přijmout zakázku →")))));
+
+  persistModal.append(overlay);
+}
+
+function acceptStoryOrder(instanceId){
+  const order = (G.availOrders||[]).find(o=>o.instanceId===instanceId);
+  if(!order) return;
+  const book = STORY_BOOKS[order.storyId];
+  const L=G.lang;
+
+  // Add censor tokens
+  G.censorTokens = (G.censorTokens||0) + (book.censorTokens||0);
+
+  // Journal entry
+  if(!G.journal) G.journal=[];
+  const title = G.gender==="master"?(L==="en"?"Master ":"Mistr "):G.gender==="mistress"?(L==="en"?"Mistress ":"Mistrová "):"";
+  G.journal.push({
+    type:"story",
+    gameYear:G.gameYear, gameRound:G.round,
+    text:`[${book.icon} ${L==="en"?book.en:book.cs}] ${L==="en"?book.journalAccept_en:book.journalAccept_cs}`,
+    ts:Date.now()
+  });
+
+  // Log
+  G.storyLog = G.storyLog||[];
+  G.storyLog.push({bookId:book.id, decision:"accept", year:G.year, round:G.round});
+  G.log.push(`__EVT__${book.icon} ${L==="en"?"Commission accepted":"Zakázka přijata"}: ${L==="en"?book.en:book.cs}`);
+  if(G.censorTokens>0) G.log.push(`__EVT__⚠ ${L==="en"?"Censor tokens":"Cenzurní tokeny"}: ${G.censorTokens}`);
+
+  // Move from availOrders to activeOrders (standard acceptOrder logic)
+  G.availOrders = (G.availOrders||[]).filter(o=>o.instanceId!==instanceId);
+  const activeOrder = {...order, accepted:true, deadline:G.round+order.duration, progress:0};
+  G.activeOrders = [...(G.activeOrders||[]), activeOrder];
+
+  persistModal.innerHTML="";
+  persistModal.style.pointerEvents="none";
+  autoSave(); render();
+}
+
+function declineStoryOrder(instanceId){
+  const order = (G.availOrders||[]).find(o=>o.instanceId===instanceId);
+  if(!order) return;
+  const book = STORY_BOOKS[order.storyId];
+  const L=G.lang;
+
+  // Journal entry
+  if(!G.journal) G.journal=[];
+  G.journal.push({
+    type:"story",
+    gameYear:G.gameYear, gameRound:G.round,
+    text:`[${book.icon} ${L==="en"?book.en:book.cs}] ${L==="en"?book.journalDecline_en:book.journalDecline_cs}`,
+    ts:Date.now()
+  });
+
+  G.storyLog = G.storyLog||[];
+  G.storyLog.push({bookId:book.id, decision:"decline", year:G.year, round:G.round});
+  G.log.push(`__EVT__${book.icon} ${L==="en"?"Commission declined":"Zakázka odmítnuta"}: ${L==="en"?book.en:book.cs}`);
+
+  // Remove from availOrders, add to dismissedStory (can return later)
+  G.availOrders = (G.availOrders||[]).filter(o=>o.instanceId!==instanceId);
+  G.dismissedStory = [...(G.dismissedStory||[]), book.id];
+
   persistModal.innerHTML="";
   persistModal.style.pointerEvents="none";
   autoSave(); render();
@@ -3215,6 +3574,8 @@ function render(){
     h("span",{class:"pill-sep"},"|"),
     pillTip("🏅",p.reputation+"/10","",
       `${L==="en"?"Reputation — unlocks better orders":"Reputace — odemyká lepší zakázky"}<br>${p.reputation<4?(L==="en"?"&lt;4: No State/Luxury orders":"&lt;4: Žádné Státní/Luxusní"):p.reputation<7?(L==="en"?"&lt;7: No Luxury orders":"&lt;7: Žádné Luxusní"):(L==="en"?"All orders unlocked":"Vše odemčeno")}`,"reputation"),
+    (p.censorTokens||0)>0?h("span",{class:"pill-sep"},"|"):"",
+    (p.censorTokens||0)>0?pillTip("⚠",(p.censorTokens||0),"warn",L==="en"?"Censor tokens — forbidden books printed":"Cenzurní tokeny — vytisktěny zakázané knihy","censorTokens"):"",
     p.debt>0?pillTip("💸","Debt "+p.debt+"g","warn",L==="en"?"Unpaid wages owed — loyalty drops":"Dluh na mzdách — loajalita klesá","debt"):"");
   resBar.append(ecoRow);
 
@@ -3935,10 +4296,11 @@ function render(){
             ? h("span",{style:{fontSize:"9px",color:"#555",flexShrink:0,marginLeft:"8px",
                 border:"1px solid #2a2a2a",padding:"2px 5px",whiteSpace:"nowrap"}},
                 `🏅 Rep ≥${repNeeded}`)
-            : h("button",{class:"btn btn-s btn-p",
-                style:{flexShrink:0,marginLeft:"8px",fontSize:"10px",padding:"3px 8px"},
-                onClick:()=>acceptOrder(o.instanceId)},
-                L==="en"?"Accept":"Přijmout"));
+            : h("button",{class:"btn btn-s"+(o.story?" btn-story":"")+" btn-p",
+                style:{flexShrink:0,marginLeft:"8px",fontSize:"10px",padding:"3px 8px",
+                  background:o.story&&STORY_BOOKS[o.storyId]?.isBlackCard?"#3a0000":""},
+                onClick:()=>o.story?showStoryModal(o.instanceId):acceptOrder(o.instanceId)},
+                o.story?(L==="en"?"Read →":"Číst →"):(L==="en"?"Accept":"Přijmout")));
         oCard.append(titleRow);
         // Requirements
         const info=[];
