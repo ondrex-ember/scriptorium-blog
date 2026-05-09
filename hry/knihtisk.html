@@ -472,6 +472,7 @@ body{
 const ROUNDS_PER_YEAR = 12; // Jan–Dec
 const INIT_YEAR = 1468;
 const MAX_WORKERS = 10;
+const MAX_YEARS = 10;       // Game ends after 10 years
 const XP_PER_LEVEL = [20, 45, 80, 130];
 
 // ── YEAR DATA ─────────────────────────────────────────────────
@@ -1447,6 +1448,7 @@ function initState(){
     achievements:     [],
     codexUnlocked:    [],
     _showAchievements:false,
+    _verdictScreen:   false,
 
     // Music (JouzaMedievalAmbient)
     musicEnabled:    false,   // off by default, user enables
@@ -1455,6 +1457,8 @@ function initState(){
     _codexCat:        "all",
     _codexSubtab:     "history",
     _careerOpen:      {},
+    _workshopCat:    'formats',
+    _workshopOpen:   {},
     _codexOpen:       {},
 
     // Journal & Character Sheet
@@ -2857,6 +2861,13 @@ function startInterseason(){
     G.phase="roleSelect";
     autoSave(); render(); return;
   }
+  // END GAME after MAX_YEARS
+  if(G.gameYear > MAX_YEARS){
+    G._verdictScreen=true;
+    if(pressMusic&&G.musicEnabled){pressMusic.forceMood('atmosphere');pressMusic.setTempo(52);}
+    checkAchievements();
+    autoSave(); render(); return;
+  }
   autoSave(); render();
 }
 
@@ -4064,6 +4075,9 @@ function render(){
   if(isDesktop) app.classList.add("desktop"); else app.classList.remove("desktop");
   const _scrollTop = app.querySelector?.(".content")?.scrollTop||0;
   app.innerHTML="";
+
+  // ── VERDICT SCREEN ──
+  if(p._verdictScreen){ renderVerdictScreen(app); return; }
 
   // ── Hero modal overlay (above everything) ──
   if(p._heroModal){
@@ -6583,6 +6597,13 @@ function render(){
           localStorage.removeItem("kt_v1");G=initState();G.availOrders=genOrderPool(1,5);render();
         }
       }},L==="en"?"Reset":"Smazat")));
+    // Dev: preview verdict
+    setsSec.append(h("div",{class:"settings-row"},
+      h("div",{class:"settings-label",style:{color:"#888",fontSize:"9px"}},
+        L==="en"?"View verdict / end screen":"Zobrazit verdikt"),
+      h("button",{class:"btn btn-s",style:{fontSize:"9px"},
+        onClick:()=>{G._verdictScreen=true;render();}},
+        "⚖ "+( L==="en"?"Verdict":"Verdikt"))));
     content.append(setsSec);
 
     // Stats
@@ -7121,8 +7142,9 @@ function renderCodexTab(content, L){
 
   // ── CODEX SUBTAB NAV ──
   const codexSubtabs=[
-    {id:"history", en:"History",  cs:"Historie"},
-    {id:"career",  en:"Career",   cs:"Kariéra"},
+    {id:"history",  en:"History",   cs:"Historie"},
+    {id:"career",   en:"Career",    cs:"Kariéra"},
+    {id:"workshop", en:"Workshop",  cs:"Dílna"},
   ];
   const cNav=h("div",{style:{display:"flex",gap:"0",borderBottom:"1px solid var(--border2)",
     background:"var(--card)",flexShrink:0}});
@@ -7139,6 +7161,10 @@ function renderCodexTab(content, L){
 
   if((G._codexSubtab||"history")==="career"){
     renderCodexCareer(content,L);
+    return;
+  }
+  if((G._codexSubtab||"history")==="workshop"){
+    renderCodexWorkshop(content,L);
     return;
   }
 
@@ -7346,6 +7372,9 @@ function renderCharacterSheet(content,L){
   idSec.append(avatarRow);
   content.append(idSec);
 
+  // ── SECTION 1b: CAREER PROGRESS ──
+  renderCareerProgress(content,L);
+
   // ── SECTION 2: STATS ──
   const statSec=h("div",{style:{padding:"10px 14px",borderBottom:"1px solid var(--border)"}});
   statSec.append(h("div",{class:"sec-title",style:{marginBottom:"8px"}},
@@ -7503,6 +7532,429 @@ function renderCharacterSheet(content,L){
       L==="en"?"No story decisions or achievements yet.":"Zatím žádná rozhodnutí ani úspěchy."));
   }
   content.append(mpSec);
+}
+
+
+// ══════════════════════════════════════════════════════════
+// VERDICT SCREEN
+// ══════════════════════════════════════════════════════════
+function renderVerdictScreen(app){
+  const L=G.lang, p=G;
+
+  // Career title
+  let title_en,title_cs;
+  if((p.prestige||0)>=200&&(p.activePatrons?.length||0)>=2){title_en="The Great Publisher";title_cs="Velkonakladatel";}
+  else if((p.prestige||0)>=150&&(p.pressLevel||1)>=3){title_en="Master Printer of Olomouc";title_cs="Mistr tiskař Olomouce";}
+  else if((p.prestige||0)>=80){title_en="Established Printer";title_cs="Zavedený tiskař";}
+  else if((p.completedOrders||0)>=10){title_en="Journeyman of the Press";title_cs="Tovaryš lisu";}
+  else{title_en="Apprentice Printer";title_cs="Učeň tiskaře";}
+
+  // Moral verdict
+  const hasMalleus=(p.storyLog||[]).some(s=>s.bookId==="malleus"&&s.decision==="accept");
+  const hasLuther=(p.storyLog||[]).some(s=>s.bookId==="luther"&&s.decision==="accept");
+  const accepted=(p.storyLog||[]).filter(s=>s.decision==="accept").length;
+  const declined=(p.storyLog||[]).filter(s=>s.decision==="decline").length;
+  const censor=p.censorTokens||0;
+  const name=p.printerName||"The printer";
+
+  let verdict_en,verdict_cs,hist_en,hist_cs;
+  if(hasMalleus&&hasLuther){
+    verdict_en="The Opportunist"; verdict_cs="Oportunista";
+    hist_en=`${name} served every master who came with coin — the Inquisitor and the Reformer alike. History does not judge such men harshly; it simply forgets them.`;
+    hist_cs=`${name} sloužil každému pánu, který přišel s penězi — inkvizitorovi i reformátorovi. Historie takovéto muže neodsuzuje; prostě na ně zapomíná.`;
+  } else if(hasMalleus){
+    verdict_en="The Instrument of Power"; verdict_cs="Nástroj moci";
+    hist_en=`${name} chose the side of established power. The Hammer of Witches bears their name in the colophon — a fact that would haunt their legacy for centuries.`;
+    hist_cs=`${name} si zvolil stranu zavedené moci. Kladivo na čarodějnice nese jejich jméno v kolofonem — skutečnost, která bude pronásledovat jejich odkaz po staletí.`;
+  } else if(hasLuther&&censor>=3){
+    verdict_en="The Rebel Press"; verdict_cs="Rebelující lis";
+    hist_en=`${name} stood at the fault line of history. They printed what the powerful feared. The bishop's men came — but the words had already spread.`;
+    hist_cs=`${name} stál na zlomové linii dějin. Tiskl to, čeho se mocní báli. Biskupovi muži přišli — ale slova se již rozšířila.`;
+  } else if((p.prestige||0)>=200){
+    verdict_en="The Legacy Builder"; verdict_cs="Budovatel odkazu";
+    hist_en=`Through ten years of careful work, ${name} built one of Moravia's most respected presses. Their name appears in the colophons of ${p.completedOrders||0} works — a testament to craft over ambition.`;
+    hist_cs=`Deseti lety pečlivé práce vybudoval ${name} jednu z nejváženějších tiskáren Moravy. Jejich jméno se objevuje v kolofonu ${p.completedOrders||0} děl.`;
+  } else if(declined>accepted&&(p.reputation||0)>=7){
+    verdict_en="The Careful Craftsman"; verdict_cs="Opatrný řemeslník";
+    hist_en=`${name} refused what others accepted — the dangerous commissions, the political risks. A quiet reputation, honestly earned.`;
+    hist_cs=`${name} odmítl to, co jiní přijali — nebezpečné zakázky, politická rizika. Tichá pověst, čestně vydělaná.`;
+  } else {
+    verdict_en="The Steady Press"; verdict_cs="Spolehlivý lis";
+    hist_en=`${name} kept the press running through plague, war, and political upheaval. ${p.completedOrders||0} commissions completed. The city was better informed for it.`;
+    hist_cs=`${name} udržoval lis v chodu přes mor, válku a politické otřesy. ${p.completedOrders||0} dokončených zakázek. Město bylo díky tomu lépe informované.`;
+  }
+
+  const earned=p.achievements||[];
+
+  // ── BUILD ──
+  const screen=h("div",{style:{minHeight:"100vh",background:"#09070a",
+    display:"flex",flexDirection:"column",alignItems:"center",overflowY:"auto",
+    fontFamily:"'Palatino Linotype','Palatino',serif"}});
+
+  // Banner
+  screen.append(h("div",{style:{width:"100%",borderBottom:"1px solid rgba(201,149,43,.25)",
+    padding:"28px 24px 20px",textAlign:"center",
+    background:"linear-gradient(180deg,rgba(0,0,0,.7) 0%,transparent 100%)"}},
+    h("div",{style:{fontSize:"9px",color:"var(--red)",textTransform:"uppercase",
+      letterSpacing:"3px",marginBottom:"8px"}},
+      L==="en"?"The Historical Tribunal · Anno Domini":"Historický soud · Anno Domini"),
+    h("div",{style:{fontSize:"30px",fontWeight:"700",color:"var(--paper)",marginBottom:"4px"}},
+      String(p.year||1478)),
+    h("div",{style:{fontSize:"13px",color:"var(--gold)",letterSpacing:"2px",
+      textTransform:"uppercase"}},L==="en"?title_en:title_cs)));
+
+  const card=h("div",{style:{maxWidth:"560px",width:"100%",padding:"24px"}});
+
+  // Verdict
+  card.append(h("div",{style:{textAlign:"center",marginBottom:"24px",
+    borderBottom:"1px solid rgba(201,149,43,.15)",paddingBottom:"20px"}},
+    h("div",{style:{fontSize:"10px",color:"#555",textTransform:"uppercase",
+      letterSpacing:"2px",marginBottom:"8px"}},L==="en"?"Moral Verdict":"Morální verdikt"),
+    h("div",{style:{fontSize:"22px",color:"var(--gold)",fontWeight:"700",
+      fontFamily:"inherit",marginBottom:"12px"}},
+      `"${L==="en"?verdict_en:verdict_cs}"`),
+    h("div",{style:{fontSize:"12px",color:"#bbb",lineHeight:"1.9",fontStyle:"italic"}},
+      L==="en"?hist_en:hist_cs)));
+
+  // Stats
+  const sg=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"6px",marginBottom:"24px"}});
+  [{icon:"⭐",label:L==="en"?"Final Prestige":"Finální prestiž",val:p.prestige||0,hi:(p.prestige||0)>=100},
+   {icon:"📜",label:L==="en"?"Orders":"Zakázky",val:p.completedOrders||0},
+   {icon:"💰",label:L==="en"?"Gold":"Zlato",val:`${p.gold||0}g`},
+   {icon:"🏅",label:L==="en"?"Reputation":"Reputace",val:`${p.reputation||0}/10`},
+   {icon:"⚠️",label:L==="en"?"Censor tokens":"Cenzura",val:censor,hi:censor>=3},
+   {icon:"📅",label:L==="en"?"Years":"Roků",val:p.totalYears||10},
+   {icon:"🏆",label:L==="en"?"Achievements":"Úspěchy",val:`${earned.length}/${ACHIEVEMENTS.length}`},
+   {icon:"⚙️",label:L==="en"?"Press level":"Lis",val:`Lv${p.pressLevel||1}`},
+  ].forEach(({icon,label,val,hi})=>{
+    sg.append(h("div",{style:{padding:"8px 10px",
+      border:`1px solid ${hi?"rgba(201,149,43,.4)":"rgba(255,255,255,.05)"}`,
+      background:hi?"rgba(201,149,43,.05)":"rgba(0,0,0,.2)"}},
+      h("div",{style:{display:"flex",alignItems:"center",gap:"6px"}},
+        h("span",{style:{fontSize:"13px"}},icon),
+        h("div",null,
+          h("div",{style:{fontSize:"9px",color:"#555",textTransform:"uppercase",letterSpacing:".8px"}},label),
+          h("div",{style:{fontSize:"14px",fontWeight:"700",color:hi?"var(--gold)":"var(--paper)"}},String(val))))));
+  });
+  card.append(sg);
+
+  // Story decisions
+  if((p.storyLog||[]).length){
+    const ds=h("div",{style:{marginBottom:"20px",borderTop:"1px solid rgba(255,255,255,.05)",paddingTop:"16px"}});
+    ds.append(h("div",{style:{fontSize:"9px",color:"#555",textTransform:"uppercase",
+      letterSpacing:"2px",marginBottom:"10px"}},L==="en"?"Chronicle of Decisions":"Kronika rozhodnutí"));
+    p.storyLog.forEach(s=>{
+      const book=STORY_BOOKS?.[s.bookId];
+      const acc=s.decision==="accept";
+      ds.append(h("div",{style:{display:"flex",alignItems:"center",gap:"8px",
+        padding:"6px 8px",marginBottom:"4px",
+        border:`1px solid ${acc?"rgba(42,90,42,.3)":"rgba(80,80,80,.2)"}`,
+        background:acc?"rgba(42,90,42,.05)":"rgba(0,0,0,.1)"}},
+        h("span",{style:{fontSize:"13px"}},acc?"✅":"🚫"),
+        h("div",{style:{flex:1}},
+          h("div",{style:{fontSize:"11px",color:acc?"#88cc88":"#666",fontWeight:"600"}},
+            L==="en"?book?.en||s.bookId:book?.cs||s.bookId),
+          h("div",{style:{fontSize:"9px",color:"#444"}},`${L==="en"?"Year":"Rok"} ${s.year||p.year}`)),
+        h("span",{style:{fontSize:"10px",color:acc?"#88cc88":"#555",fontStyle:"italic"}},
+          acc?(L==="en"?"Accepted":"Přijato"):(L==="en"?"Refused":"Odmítnuto"))));
+    });
+    card.append(ds);
+  }
+
+  // Achievements
+  if(earned.length){
+    const as=h("div",{style:{marginBottom:"24px",borderTop:"1px solid rgba(255,255,255,.05)",paddingTop:"16px"}});
+    as.append(h("div",{style:{fontSize:"9px",color:"#555",textTransform:"uppercase",
+      letterSpacing:"2px",marginBottom:"10px"}},L==="en"?"Achievements Earned":"Získané úspěchy"));
+    const bg=h("div",{style:{display:"flex",flexWrap:"wrap",gap:"5px"}});
+    earned.forEach(id=>{
+      const a=ACHIEVEMENTS.find(x=>x.id===id); if(!a) return;
+      bg.append(h("div",{title:L==="en"?a.desc_en:a.desc_cs,style:{
+        display:"flex",alignItems:"center",gap:"5px",padding:"4px 8px",fontSize:"10px",
+        border:`1px solid ${RARITY_COLOR?.[a.rarity]||"#333"}`,
+        color:RARITY_COLOR?.[a.rarity]||"#888",background:"rgba(0,0,0,.2)"}},
+        h("span",null,a.icon),h("span",null,L==="en"?a.en:a.cs)));
+    });
+    as.append(bg); card.append(as);
+  }
+
+  // Actions
+  const acts=h("div",{style:{display:"flex",gap:"8px",flexWrap:"wrap",
+    justifyContent:"center",borderTop:"1px solid rgba(255,255,255,.05)",
+    paddingTop:"20px",marginBottom:"8px"}});
+  acts.append(
+    h("button",{class:"btn btn-s",style:{padding:"10px 20px",fontSize:"12px"},
+      onClick:()=>{G._verdictScreen=false;render();}},
+      L==="en"?"▶ Continue Printing":"▶ Pokračovat v tisku"),
+    h("button",{class:"btn btn-p",style:{padding:"10px 20px",fontSize:"12px"},
+      onClick:()=>{
+        if(confirm(L==="en"?"Start new game? Progress will be saved first."
+                           :"Nová hra? Pokrok bude nejdřív uložen.")){
+          saveGame(); G=initState(); G.availOrders=genOrderPool(1,5); render();
+        }}},L==="en"?"🖨️ New Game":"🖨️ Nová hra"),
+    h("button",{class:"btn btn-s",style:{padding:"10px 20px",fontSize:"12px"},
+      onClick:()=>saveGame()},L==="en"?"💾 Save Record":"💾 Uložit"),
+    h("button",{class:"btn btn-s",style:{padding:"10px 20px",fontSize:"12px"},
+      onClick:()=>{
+        const txt=`THE PRESS · OLOMOUC · ${p.year}\n${"─".repeat(40)}\n${L==="en"?title_en:title_cs}\n\n"${L==="en"?verdict_en:verdict_cs}"\n\n${L==="en"?hist_en:hist_cs}\n\n${"─".repeat(40)}\nPrestige: ${p.prestige} · Orders: ${p.completedOrders} · Achievements: ${earned.length}/${ACHIEVEMENTS.length}`;
+        const blob=new Blob([txt],{type:"text/plain"});
+        const url=URL.createObjectURL(blob);
+        const a2=document.createElement("a");
+        a2.href=url; a2.download=`ThePressVerdict_${p.year}.txt`; a2.click();
+        URL.revokeObjectURL(url);
+      }},L==="en"?"📜 Export":"📜 Export"));
+  card.append(acts);
+  card.append(h("div",{style:{textAlign:"center",fontSize:"10px",color:"#1a1510",
+    fontStyle:"italic",marginBottom:"16px"}},
+    "Veritas vos liberabit · Olomucii, Anno Domini MCDLXVIII"));
+
+  screen.append(card);
+  app.append(screen);
+}
+
+// ══════════════════════════════════════════════════════════
+// CODEX WORKSHOP TAB
+// ══════════════════════════════════════════════════════════
+const WORKSHOP_ENTRIES={
+  formats:{
+    label_en:"Book Formats", label_cs:"Formáty knih", icon:"📚",
+    items:()=>Object.values(BOOK_FORMATS||{}).map(f=>({
+      id:f.id, icon:"📄",
+      en:f.en||f.id, cs:f.cs||f.id,
+      unlocked:(G.formatUnlocks||[]).includes(f.id)||f.id==="plano",
+      details_en:`Symbol: ${f.symbol||"—"} · Paper req: ${f.reqPaper||"?"} · Ink: ${f.reqInk||"?"} · Duration: ${f.baseDuration||"?"}mo · Base value: ${f.baseValue||"?"}g`,
+      details_cs:`Symbol: ${f.symbol||"—"} · Papír: ${f.reqPaper||"?"} · Inkoust: ${f.reqInk||"?"} · Trvání: ${f.baseDuration||"?"}m · Základní cena: ${f.baseValue||"?"}g`,
+      lore_en:f.lore_en||"", lore_cs:f.lore_cs||"",
+    })),
+  },
+  resources:{
+    label_en:"Resources", label_cs:"Suroviny", icon:"⚗️",
+    items:()=>[
+      {id:"rags",icon:"🧻",en:"Rags",cs:"Hadry",unlocked:true,
+       details_en:"Basic raw material → Paper. Collected from rag-pickers, cheapest input.",
+       details_cs:"Základní surovina → Papír. Sbírají je hadrníci, nejlevnější vstup."},
+      {id:"paper",icon:"📄",en:"Paper",cs:"Papír",unlocked:true,
+       details_en:"The most expensive basic material. Olomouc has no paper mill — must import.",
+       details_cs:"Nejdražší základní materiál. Olomouc nemá papírenský mlýn — nutno dovážet."},
+      {id:"lead",icon:"🔩",en:"Lead",cs:"Olovo",unlocked:true,
+       details_en:"~80% of type alloy. Heavy, cheap. Combined with tin and antimony.",
+       details_cs:"~80% slitiny liter. Těžké, levné. Kombinuje se s cínem a antimonem."},
+      {id:"tin",icon:"🥈",en:"Tin",cs:"Cín",unlocked:(G.res?.tin||0)>0,
+       details_en:"5–10% of type alloy. Improves flow into moulds.",
+       details_cs:"5–10% slitiny. Zlepšuje vtékání do formy."},
+      {id:"antimony",icon:"⬜",en:"Antimony",cs:"Antimon",unlocked:(G.res?.antimony||0)>0,
+       details_en:"8–15% of type alloy. Hardens the finished letter, keeps sharp edges.",
+       details_cs:"8–15% slitiny. Tvrdí hotové písmo, udržuje ostré hrany."},
+      {id:"ink",icon:"⬛",en:"Ink",cs:"Inkoust",unlocked:true,
+       details_en:"Linseed oil + soot. Consistency is everything — too thick clogs, too thin smears.",
+       details_cs:"Lněný olej + saze. Konzistence je vše — příliš husté ucpe, příliš řídké rozmaže."},
+      {id:"vellum",icon:"📜",en:"Vellum",cs:"Pergamen",unlocked:(G.res?.vellum||0)>0||(G.completedOrders||0)>=5,
+       details_en:"Calfskin, scraped and stretched. Far more expensive than paper — reserved for luxury work.",
+       details_cs:"Telecí kůže, škrábaná a natahovaná. Mnohem dražší než papír — pro luxusní díla."},
+      {id:"linseed_oil",icon:"🫙",en:"Linseed oil",cs:"Lněný olej",unlocked:true,
+       details_en:"Base of printing ink. Also used to lubricate the press screw.",
+       details_cs:"Základ tiskařského inkoustu. Také se používá k mazání šroubu lisu."},
+    ],
+  },
+  workers:{
+    label_en:"Worker Types", label_cs:"Typy dělníků", icon:"👥",
+    items:()=>[
+      {id:"compositor",icon:"🔠",en:"Compositor",cs:"Sazeč",
+       unlocked:G.workers?.some(w=>w.prof==="compositor")||true,
+       details_en:"Sets type letter by letter, backwards and upside down. The intellectual backbone of the press. Reads everything — including what they shouldn't.",
+       details_cs:"Sází písmo písmeno po písmenu, pozpátku a hlavou dolů. Intelektuální páteř tiskárny. Čte vše — včetně toho, co by neměl."},
+      {id:"pressman",icon:"💪",en:"Pressman",cs:"Presař",
+       unlocked:G.workers?.some(w=>w.prof==="pressman")||true,
+       details_en:"Pulls the lever 400+ times a day with precise force. Physical elite of the shop. Right arm noticeably stronger than left by year three.",
+       details_cs:"Táhne páku 400× denně s přesnou silou. Fyzická elita dílny. Pravá ruka viditelně silnější než levá do třetího roku."},
+      {id:"corrector",icon:"🔍",en:"Corrector",cs:"Korektor",
+       unlocked:G.workers?.some(w=>w.prof==="corrector"),
+       details_en:"Reads proof against manuscript, marks errors. One foot in the workshop, one in the academy. Reads heresy before it is published.",
+       details_cs:"Čte korekturní otisk proti rukopisu, označuje chyby. Jednou nohou v dílně, druhou v akademii. Čte hereze dřív než jsou vydány."},
+      {id:"engraver",icon:"🎨",en:"Engraver",cs:"Rytec",
+       unlocked:G.workers?.some(w=>w.prof==="engraver"),
+       details_en:"Cuts woodblocks or copper plates for illustrations. Woodcut = cheaper, coarser. Intaglio = finer, requires separate press.",
+       details_cs:"Řeže dřevoryty nebo měděné desky pro ilustrace. Dřevoryt = levnější, hrubší. Mědirytin = jemnější, vyžaduje jiný lis."},
+      {id:"inkmaker",icon:"⬛",en:"Ink Maker",cs:"Barvíř",
+       unlocked:G.workers?.some(w=>w.prof==="inkmaker"),
+       details_en:"Mixes linseed oil and lampblack to the correct viscosity. A secret recipe — every shop has their own. Affects print quality directly.",
+       details_cs:"Míchá lněný olej a saze na správnou viskozitu. Tajný recept — každá dílna má svůj. Přímo ovlivňuje kvalitu tisku."},
+      {id:"agent",icon:"🗺️",en:"Trade Agent",cs:"Obchodní agent",
+       unlocked:G.workers?.some(w=>w.prof==="agent"),
+       details_en:"Travels to distant markets, negotiates sales. Access to Leipzig and Frankfurt fairs. Can block competitor orders.",
+       details_cs:"Cestuje na vzdálené trhy, vyjednává prodeje. Přístup na lipský a frankfurtský jarmark. Může blokovat konkurenční zakázky."},
+    ],
+  },
+  press:{
+    label_en:"Press Upgrades", label_cs:"Upgrady lisu", icon:"⚙️",
+    items:()=>[
+      {id:"press_lv1",icon:"🔧",en:"Basic Screw Press",cs:"Základní šroubový lis",
+       unlocked:true,
+       details_en:"The Gutenberg original. A wine press screw adapted for printing. Slow but reliable. 200 sheets/day maximum.",
+       details_cs:"Gutenbergův originál. Vinný šroubový lis adaptovaný pro tisk. Pomalý ale spolehlivý. Maximum 200 archů/den."},
+      {id:"press_lv2",icon:"⚙️",en:"Improved Press (Lv.2)",cs:"Vylepšený lis (Lv.2)",
+       unlocked:(G.pressLevel||1)>=2,
+       details_en:"Better screw mechanism, improved platen alignment. +1 sheet per press run. More consistent pressure across the full forme.",
+       details_cs:"Lepší šroubový mechanismus, lepší vyrovnání platenu. +1 arch za tiskový běh. Rovnoměrnější tlak po celé formě."},
+      {id:"press_lv3",icon:"🔩",en:"Master Press (Lv.3)",cs:"Mistrovský lis (Lv.3)",
+       unlocked:(G.pressLevel||1)>=3,
+       details_en:"Iron components replace wooden ones. Handles larger formes, higher pressure. The press a master printer is known by.",
+       details_cs:"Železné součásti nahrazují dřevěné. Zvládne větší formy, vyšší tlak. Lis, podle kterého je mistr tiskař poznán."},
+      {id:"type_quality",icon:"🔡",en:"Type Metal Quality",cs:"Kvalita slitiny liter",
+       unlocked:(G.letters||0)>=5,
+       details_en:"The secret alloy ratio: 80% lead, 5-10% tin, 8-15% antimony. Wrong proportions = letters that crumble, smear, or deform under heat.",
+       details_cs:"Tajný poměr slitiny: 80% olova, 5-10% cínu, 8-15% antimonu. Špatný poměr = litery, které se drolí, rozmazávají nebo deformují teplem."},
+      {id:"illumination",icon:"🎨",en:"Illumination Workshop",cs:"Iluminátorská dílna",
+       unlocked:(G.illuminatedWorks?.length||0)>0||(G.completedOrders||0)>=8,
+       details_en:"Space left in the forme for hand-painted miniatures after printing. Commands a premium price — the bishop will pay three times the base rate.",
+       details_cs:"Místo ponechané ve formě pro ručně malované miniatury po tisku. Velká přirážka — biskup zaplatí třikrát základní sazbu."},
+    ],
+  },
+};
+
+function renderCodexWorkshop(content,L){
+  const wscat=G._workshopCat||"formats";
+  const cats=Object.entries(WORKSHOP_ENTRIES);
+
+  // Category nav
+  const catNav=h("div",{style:{display:"flex",gap:"4px",flexWrap:"wrap",
+    padding:"10px 14px 8px",borderBottom:"1px solid var(--border)"}});
+  cats.forEach(([key,cat])=>{
+    const active=wscat===key;
+    catNav.append(h("button",{class:"btn btn-s"+(active?" btn-active":""),
+      style:{fontSize:"9px",padding:"2px 8px"},
+      onClick:()=>{G._workshopCat=key;render();}},
+      `${cat.icon} ${L==="en"?cat.label_en:cat.label_cs}`));
+  });
+  content.append(catNav);
+
+  const cat=WORKSHOP_ENTRIES[wscat];
+  if(!cat) return;
+  const items=cat.items();
+
+  if(!items.length){
+    content.append(h("div",{style:{padding:"20px 14px",fontSize:"11px",
+      color:"#444",fontStyle:"italic",textAlign:"center"}},
+      L==="en"?"Nothing here yet — keep printing.":"Zatím nic — pokračuj v tisku."));
+    return;
+  }
+
+  items.forEach(item=>{
+    const isOpen=(G._workshopOpen||{})[item.id];
+    const card=h("div",{style:{borderBottom:"1px solid var(--border)",
+      opacity:item.unlocked?1:0.35,
+      background:isOpen&&item.unlocked?"rgba(201,149,43,.02)":"transparent"}});
+
+    const row=h("div",{style:{display:"flex",alignItems:"center",gap:"10px",
+      padding:"10px 14px",cursor:item.unlocked?"pointer":"default",userSelect:"none"},
+      onClick:()=>{
+        if(!item.unlocked)return;
+        if(!G._workshopOpen)G._workshopOpen={};
+        G._workshopOpen[item.id]=!G._workshopOpen[item.id];
+        render();
+      }});
+    row.append(
+      h("span",{style:{fontSize:"18px",flexShrink:0,filter:item.unlocked?"none":"grayscale(1)"}},item.icon),
+      h("div",{style:{flex:1,minWidth:0}},
+        h("div",{style:{fontSize:"12px",fontWeight:"700",
+          color:item.unlocked?"var(--paper)":"#444"}},L==="en"?item.en:item.cs),
+        h("div",{style:{fontSize:"9px",color:item.unlocked?"#555":"#333",
+          textTransform:"uppercase",letterSpacing:".8px",marginTop:"1px"}},
+          item.unlocked?(L==="en"?"✓ Known":"✓ Známo"):(L==="en"?"🔒 Locked":"🔒 Zamčeno"))),
+      item.unlocked?h("span",{style:{fontSize:"11px",color:"#444",flexShrink:0}},
+        isOpen?"▲":"▼"):"");
+    card.append(row);
+
+    if(item.unlocked&&isOpen){
+      const body=h("div",{style:{padding:"0 14px 12px 42px",
+        borderTop:"1px solid rgba(255,255,255,.04)",paddingTop:"8px"}});
+      if(item.details_en||item.details_cs){
+        body.append(h("div",{style:{fontSize:"10px",color:"var(--gold)",
+          marginBottom:"6px",fontFamily:"'Courier New',monospace"}},
+          L==="en"?item.details_en:item.details_cs));
+      }
+      if(item.lore_en||item.lore_cs){
+        body.append(h("div",{style:{fontSize:"11px",color:"#888",
+          lineHeight:"1.7",fontStyle:"italic"}},
+          L==="en"?item.lore_en:item.lore_cs));
+      }
+      card.append(body);
+    }
+    content.append(card);
+  });
+}
+
+// ══════════════════════════════════════════════════════════
+// CHARACTER SHEET PROGRESS (inserted into renderCharacterSheet)
+// ══════════════════════════════════════════════════════════
+function renderCareerProgress(content,L){
+  const unlocked=CAREER_LEVELS.filter(l=>{try{return l.unlock();}catch(e){return false;}});
+  const current=unlocked[unlocked.length-1];
+  const nextLocked=CAREER_LEVELS.find(l=>!unlocked.includes(l));
+
+  const sec=h("div",{style:{padding:"10px 14px",borderBottom:"1px solid var(--border)"}});
+  sec.append(h("div",{class:"sec-title",style:{marginBottom:"8px"}},
+    L==="en"?"Career Progress":"Kariérní postup"));
+
+  // Progress bar
+  sec.append(
+    h("div",{style:{display:"flex",justifyContent:"space-between",
+      fontSize:"9px",color:"#555",marginBottom:"4px"}},
+      h("span",null,current?`${L==="en"?"Current":"Aktuální"}: ${L==="en"?current.en:current.cs}`:"—"),
+      h("span",null,`${unlocked.length}/${CAREER_LEVELS.length}`)),
+    h("div",{style:{height:"4px",background:"rgba(255,255,255,.05)",marginBottom:"10px",
+      borderRadius:"2px"}},
+      h("div",{style:{
+        width:`${Math.round(unlocked.length/CAREER_LEVELS.length*100)}%`,
+        height:"100%",background:"var(--gold)",borderRadius:"2px",transition:"width .5s"}})));
+
+  // Current position badge
+  if(current){
+    sec.append(h("div",{style:{
+      display:"flex",alignItems:"center",gap:"10px",padding:"10px 12px",
+      border:"1px solid rgba(201,149,43,.3)",background:"rgba(201,149,43,.04)",
+      marginBottom:"8px"}},
+      h("span",{style:{fontSize:"24px"}},current.icon),
+      h("div",null,
+        h("div",{style:{fontSize:"13px",fontWeight:"700",color:"var(--gold)"}},
+          L==="en"?current.en:current.cs),
+        h("div",{style:{fontSize:"10px",color:"#888",lineHeight:"1.5",
+          fontStyle:"italic",marginTop:"2px"}},
+          L==="en"?current.desc_en:current.desc_cs))));
+  }
+
+  // Unlocked milestones (compact)
+  if(unlocked.length>1){
+    const trail=h("div",{style:{display:"flex",flexWrap:"wrap",gap:"4px",marginBottom:"8px"}});
+    unlocked.slice(0,-1).forEach(l=>{
+      trail.append(h("span",{title:L==="en"?l.en:l.cs,style:{
+        fontSize:"9px",padding:"2px 6px",
+        border:"1px solid rgba(42,90,42,.4)",color:"#88cc88",
+        background:"rgba(42,90,42,.04)"}},
+        `${l.icon} ${L==="en"?l.en:l.cs}`));
+    });
+    sec.append(trail);
+  }
+
+  // Next milestone hint
+  if(nextLocked){
+    sec.append(h("div",{style:{
+      display:"flex",alignItems:"center",gap:"8px",padding:"7px 10px",
+      border:"1px solid rgba(255,255,255,.06)",background:"rgba(0,0,0,.2)",opacity:.7}},
+      h("span",{style:{fontSize:"16px",filter:"grayscale(1)"}},nextLocked.icon),
+      h("div",null,
+        h("div",{style:{fontSize:"10px",color:"#555",textTransform:"uppercase",
+          letterSpacing:".8px",marginBottom:"2px"}},L==="en"?"Next milestone":"Další milník"),
+        h("div",{style:{fontSize:"11px",color:"#666"}},L==="en"?nextLocked.en:nextLocked.cs))));
+  }
+
+  // Link to Codex
+  sec.append(h("button",{class:"btn btn-s",
+    style:{fontSize:"9px",marginTop:"8px",width:"100%"},
+    onClick:()=>{G.tab="codex";G._codexSubtab="career";render();}},
+    `📖 ${L==="en"?"Full Career Path in Codex":"Plná kariérní cesta v Codexu"}`));
+
+  content.append(sec);
 }
 
 function renderAboutModal(app){
