@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Aplikace — Scriptorium Blog</title>
+  <meta name="description" content="Zápisky o vývoji mobilních aplikací, veřejném testování a nových digitálních nástrojích z dílny Ondrexe." />
+
+  <meta property="og:title" content="Aplikace — Scriptorium Blog" />
+  <meta property="og:description" content="Zápisky o vývoji mobilních aplikací a veřejném testování." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://blog.myscriptorium.cz/tag/aplikace" />
+
+  <link rel="canonical" href="https://blog.myscriptorium.cz/tag/aplikace" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": "Aplikace",
+    "description": "Zápisky o vývoji mobilních aplikací a veřejném testování.",
+    "url": "https://blog.myscriptorium.cz/tag/aplikace",
+    "publisher": {
+      "@type": "Organization",
+      "name": "Scriptorium Blog",
+      "url": "https://blog.myscriptorium.cz"
+    }
+  }
+  </script>
+
+  <link rel="stylesheet" href="/assets/css/style.css" />
+  <link rel="icon" href="/assets/img/favicon.ico" />
+</head>
+<body>
+
+<div class="page-wrap">
+  <div class="parchment">
+
+    <header class="site-header">
+      <a href="/" class="site-logo"><span>S</span>criptorium</a>
+      <p class="site-tagline">Deník z dílny inkoustu a kódu</p>
+      <nav class="site-nav" aria-label="Hlavní navigace">
+        <a href="/">Vše</a>
+        <a href="/tag/historie">Historie</a>
+        <a href="/tag/hry">Hry</a>
+        <a href="/tag/aplikace" aria-current="page">Aplikace</a>
+        <a href="/tag/skripty">Skripty</a>
+        <a href="/o-autorovi">O autorovi</a>
+        <a href="https://myscriptorium.cz" target="_blank" rel="noopener">↗ Hra</a>
+      </nav>
+    </header>
+
+    <main class="article-list" id="main">
+      <p class="section-title">Aplikace</p>
+
+      <!-- Výpis článků pro tag Aplikace -->
+      <article style="margin-bottom: 2.5rem; border-bottom: 1px dashed #8b7355; padding-bottom: 1.5rem;">
+        <p class="article-card-meta" style="font-size: 0.9em; color: #8b7355; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;">20. června 2026 &nbsp;·&nbsp; Aplikace &nbsp;·&nbsp; Testování</p>
+        <h2 style="margin-top: 0; font-family: 'IM Fell English', serif;"><a href="/clanky/app-ember-chime" style="text-decoration: none; color: inherit;">Ember Chime: Hledáme průzkumníky</a></h2>
+        <p style="line-height: 1.6;">Výzkumná stanice je otevřena. Aplikace Ember Chime právě vstoupila do fáze veřejného testování (Open Beta). Zveme vás k prozkoumání a prosíme o vaši zpětnou vazbu.</p>
+      </article>
+
+    </main>
+
+    <footer class="site-footer">
+      <p class="site-footer-ornament">☩</p>
+      <p>
+        Blog od <a href="https://ember-pa.cz" target="_blank" rel="noopener">Ondrexe</a>
+        &nbsp;·&nbsp;
+        <a href="https://myscriptorium.cz" target="_blank" rel="noopener">Hrát Scriptorium</a>
+      </p>
+    </footer>
+
+  </div>
+</div>
+
+<script src="/assets/js/blog-cat.js"></script>
+</body>
+</html>
