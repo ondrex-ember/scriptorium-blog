@@ -228,14 +228,14 @@
 <!-- JAVASCRIPT PRO ODESLÁNÍ FORMULÁŘE -->
 <script>
   document.getElementById('bug-report-form').addEventListener('submit', function(e) {
-    e.preventDefault();
+    e.preventDefault(); 
     
     var honeypot = document.getElementById('honeypot').value;
     var messageBox = document.getElementById('form-message');
     var submitBtn = document.getElementById('submit-btn');
     
     if (honeypot !== "") {
-      messageBox.textContent = "Hlášení bylo odesláno. Děkujeme!";
+      messageBox.textContent = "Hlášení bylo odesláno. Děkuji!";
       messageBox.style.display = "block";
       this.reset();
       return;
@@ -244,30 +244,27 @@
     submitBtn.textContent = "Odesílám...";
     submitBtn.disabled = true;
 
-    var endpointUrl = "https://formspree.io/f/VÁŠ_KÓD_ZDE"; 
+    // SEM VLOŽTE ZKOPÍROVANOU URL ADRESU Z APPS SCRIPTU
+    var endpointUrl = "https://script.google.com/macros/library/d/18Yh6XqI5Z9BexOFz14oW7Ki12p1ADLYZAxJVEkS2Mhi72Ipa1vXu2OT7/1"; 
     
     var formData = new FormData(this);
 
     fetch(endpointUrl, {
       method: 'POST',
-      body: formData,
-      headers: {
-        'Accept': 'application/json'
-      }
-    }).then(response => {
-      if (response.ok) {
-        messageBox.textContent = "Hlášení úspěšně dorazilo do naší badatelny. Děkujeme za pomoc!";
-        messageBox.style.color = "#2d5a27";
-        this.reset();
-      } else {
-        messageBox.textContent = "Jejda, cestou se někde rozlil inkoust. Zkuste to prosím znovu.";
-        messageBox.style.color = "#8b0000";
-      }
+      body: formData
+    })
+    .then(response => {
+      // GAS často vrací úspěch jako přesměrování (opaque odpověď), 
+      // takže pokud fetch nespadne, považujeme to za úspěch.
+      messageBox.textContent = "Hlášení úspěšně dorazilo do badatelny. Díky za pomoc!";
+      messageBox.style.color = "#2d5a27"; 
+      this.reset();
       messageBox.style.display = "block";
       submitBtn.textContent = "Odeslat hlášení";
       submitBtn.disabled = false;
-    }).catch(error => {
-      messageBox.textContent = "Chyba spojení. Náš posel zřejmě zabloudil.";
+    })
+    .catch(error => {
+      messageBox.textContent = "Chyba spojení. Můj posel zřejmě zabloudil.";
       messageBox.style.color = "#8b0000";
       messageBox.style.display = "block";
       submitBtn.textContent = "Odeslat hlášení";
