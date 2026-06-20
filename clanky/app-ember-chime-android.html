@@ -1,14 +1,15 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-  <!-- Vaše standardní meta tagy, GTM a CSS linky -->
+  <!-- Vaše standardní meta tagy a CSS linky -->
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ember Chime: Otevřené testování — Scriptorium Blog</title>
   <link rel="stylesheet" href="/assets/css/style.css" />
   
-  <!-- Přidané styly jen pro formulář a QR kód, aby ladily s pergamenem -->
+  <!-- Přidané styly pro formulář, QR kód a rozklikávací sekce (akordeony) -->
   <style>
+    /* Styly promo boxu a formuláře */
     .app-promo-box {
       border: 1px dashed #8b7355;
       padding: 2rem;
@@ -26,6 +27,7 @@
       align-items: center;
       justify-content: center;
       font-size: 0.8rem;
+      text-align: center;
     }
     .btn-test {
       display: inline-block;
@@ -38,7 +40,6 @@
     }
     .btn-test:hover { background: #555; }
     
-    /* Styly formuláře */
     .bug-form {
       margin-top: 2rem;
       display: flex;
@@ -65,47 +66,33 @@
     }
     .bug-form button:hover { background: #6b5840; }
     #form-message { display: none; margin-top: 1rem; font-weight: bold; color: #5a4634; }
-    
-    /* PAST NA ROBOTY - uživatel ji nevidí */
     .honeypot-field { display: none !important; }
+
+    /* Styly pro rozklikávací panely (Akordeony) */
+    .chime-features details {
+      background: rgba(139, 115, 85, 0.05);
+      border: 1px solid #8b7355;
+      margin-bottom: 1rem;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+    }
+    .chime-features summary {
+      font-weight: bold;
+      font-size: 1.1rem;
+      color: #333;
+      outline: none;
+      padding: 0.5rem 0;
+    }
+    .chime-features summary::marker {
+      color: #8b7355;
+    }
+    .chime-features .details-content {
+      padding-top: 1rem;
+      border-top: 1px dashed #8b7355;
+      line-height: 1.6;
+    }
   </style>
 </head>
-  <h2>Nástroj pro ukotvení v čase i prostoru</h2>
-  <p>
-    V dnešní době vnímáme čas jako neúprosnou přímku ubíhajících sekund. <strong>Ember Chime</strong> nám vrací jeho původní podobu – čas jako cyklus. Jako tlukot srdce, střídání světla a stínu, pohyb nebeských těles. 
-  </p>
-  <p>
-    Aplikace byla vytvořena s hlubokou úctou k naprosté spirituální, náboženské a kulturní neutralitě. Nenutí vám jedinou správnou cestu. Místo toho funguje jako tichá a respektující nádoba pro váš vlastní duševní profil. Ať už hledáte nástroj pro sekulární mindfulness, nebo chcete svůj den sladit se starodávnými tradicemi, Ember Chime vám poskytne rytmus.
-  </p>
-</div>
-
-<!-- ROZKLIKÁVACÍ SEKCE (AKORDEONY) -->
-<style>
-  /* Styly pro krásné rozklikávací panely ladící s pergamenem */
-  .chime-features details {
-    background: rgba(139, 115, 85, 0.05);
-    border: 1px solid #8b7355;
-    margin-bottom: 1rem;
-    padding: 0.5rem 1rem;
-    cursor: pointer;
-  }
-  .chime-features summary {
-    font-weight: bold;
-    font-size: 1.1rem;
-    color: #333;
-    outline: none;
-    padding: 0.5rem 0;
-  }
-  .chime-features summary::marker {
-    color: #8b7355;
-  }
-  .chime-features .details-content {
-    padding-top: 1rem;
-    border-top: 1px dashed #8b7355;
-    line-height: 1.6;
-  }
-</style>
-
 <body>
 
 <div class="page-wrap">
@@ -125,62 +112,73 @@
         Výzkumná stanice je otevřena. Aplikace Ember Chime právě vstoupila do fáze veřejného testování (Open Beta). Zveme vás k prozkoumání a prosíme o vaši zpětnou vazbu.
       </p>
     </header>
-    <div class="chime-features">
-
-  <details>
-    <summary>Kruh první: Zvuk přítomnosti (Mindfulness Chime)</summary>
-    <div class="details-content">
-      <p>
-        Základní srdce aplikace. Ember Chime vás v nastavených intervalech (například každých 30 minut) jemným zvukem či vibrací upozorní, abyste se nadechli a uvědomili si přítomný okamžik. 
-      </p>
-      <p>
-        Sleduje přesný čas východu a západu slunce pro vaši polohu, a dokonce vám umožňuje vybrat si, zda vnímáte soumrak z pohledu občanského, námořního či astronomického. Na noc lze samozřejmě nastavit noční klid, aby byl váš spánek nerušený.
-      </p>
-    </div>
-  </details>
-
-  <details>
-    <summary>Kruh druhý: Kosmické a planetární hodiny</summary>
-    <div class="details-content">
-      <p>
-        Odpoutejte se od mechanických hodinek a nahlédněte na den optikou starověké astrologie. Aplikace rozděluje den na planetární hodiny. 
-      </p>
-      <p>
-        Zjistíte tak, kdy vládne hodina Venuše (ideální pro umění, krásu a vztahy), kdy nastupuje striktní Saturn pro hlubokou práci, nebo kdy vládne komunikativní Merkur. Je to připomínka, že ne každá hodina dne má stejnou kvalitu a energii.
-      </p>
-    </div>
-  </details>
-
-  <details>
-    <summary>Kruh třetí: Cykly Slunce a Měsíce</summary>
-    <div class="details-content">
-      <p>
-        Příroda nedbá na lidské kalendáře. V sekci lunárního a solárního kalendáře můžete sledovat aktuální fázi Měsíce, jeho procentuální osvětlení a data nadcházejících úplňků či novoluní. 
-      </p>
-      <p>
-        Solární panel vás naopak udrží v kontaktu se střídáním ročních období, informuje o přesné délce denního světla a blížících se slunovratech či rovnodennostech.
-      </p>
-    </div>
-  </details>
-
-  <details>
-    <summary>Kruh čtvrtý: Váš svobodný spirituální profil</summary>
-    <div class="details-content">
-      <p>
-        Čas vnímáme různě. Ember Chime vám v nastavení umožňuje zvolit si osobní spirituální profil – k dispozici je cesta Křesťanská, Islámská, Keltská, Židovská i univerzální (Regula Gallinarum). Zvolit můžete samozřejmě i čistě sekulární režim.
-      </p>
-      <p>
-        Tato volba dynamicky promění vnitřní uspořádání tradičního kalendáře. Můžete tak být upozorněni na univerzální Letní slunovrat, slovanskou Noc Sv. Jana či keltský Lughnasadh. Aplikace nikoho nesoudí a nehodnotí, pouze nabízí zrcadlo pro vaše vlastní vnímání posvátna a životní filozofie.
-      </p>
-    </div>
-  </details>
-
-</div>
 
     <p class="article-divider">✦ &nbsp; ✦ &nbsp; ✦</p>
 
     <!-- TĚLO ČLÁNKU -->
     <article class="article-body">
+
+      <!-- PŘEDSTAVENÍ APLIKACE -->
+      <div class="app-intro">
+        <h2>Nástroj pro ukotvení v čase i prostoru</h2>
+        <p>
+          V dnešní době vnímáme čas jako neúprosnou přímku ubíhajících sekund. <strong>Ember Chime</strong> nám vrací jeho původní podobu – čas jako cyklus. Jako tlukot srdce, střídání světla a stínu, pohyb nebeských těles. 
+        </p>
+        <p>
+          Aplikace byla vytvořena s hlubokou úctou k naprosté spirituální, náboženské a kulturní neutralitě. Nenutí vám jedinou správnou cestu. Místo toho funguje jako tichá a respektující nádoba pro váš vlastní duševní profil. Ať už hledáte nástroj pro sekulární mindfulness, nebo chcete svůj den sladit se starodávnými tradicemi, Ember Chime vám poskytne rytmus.
+        </p>
+      </div>
+
+      <!-- ROZKLIKÁVACÍ SEKCE -->
+      <div class="chime-features">
+        <details>
+          <summary>Kruh první: Zvuk přítomnosti (Mindfulness Chime)</summary>
+          <div class="details-content">
+            <p>
+              Základní srdce aplikace. Ember Chime vás v nastavených intervalech (například každých 30 minut) jemným zvukem či vibrací upozorní, abyste se nadechli a uvědomili si přítomný okamžik. 
+            </p>
+            <p>
+              Sleduje přesný čas východu a západu slunce pro vaši polohu, a dokonce vám umožňuje vybrat si, zda vnímáte soumrak z pohledu občanského, námořního či astronomického. Na noc lze samozřejmě nastavit noční klid, aby byl váš spánek nerušený.
+            </p>
+          </div>
+        </details>
+
+        <details>
+          <summary>Kruh druhý: Kosmické a planetární hodiny</summary>
+          <div class="details-content">
+            <p>
+              Odpoutejte se od mechanických hodinek a nahlédněte na den optikou starověké astrologie. Aplikace rozděluje den na planetární hodiny. 
+            </p>
+            <p>
+              Zjistíte tak, kdy vládne hodina Venuše (ideální pro umění, krásu a vztahy), kdy nastupuje striktní Saturn pro hlubokou práci, nebo kdy vládne komunikativní Merkur. Je to připomínka, že ne každá hodina dne má stejnou kvalitu a energii.
+            </p>
+          </div>
+        </details>
+
+        <details>
+          <summary>Kruh třetí: Cykly Slunce a Měsíce</summary>
+          <div class="details-content">
+            <p>
+              Příroda nedbá na lidské kalendáře. V sekci lunárního a solárního kalendáře můžete sledovat aktuální fázi Měsíce, jeho procentuální osvětlení a data nadcházejících úplňků či novoluní. 
+            </p>
+            <p>
+              Solární panel vás naopak udrží v kontaktu se střídáním ročních období, informuje o přesné délce denního světla a blížících se slunovratech či rovnodennostech.
+            </p>
+          </div>
+        </details>
+
+        <details>
+          <summary>Kruh čtvrtý: Váš svobodný spirituální profil</summary>
+          <div class="details-content">
+            <p>
+              Čas vnímáme různě. Ember Chime vám v nastavení umožňuje zvolit si osobní spirituální profil – k dispozici je cesta Křesťanská, Islámská, Keltská, Židovská i univerzální (Regula Gallinarum). Zvolit můžete samozřejmě i čistě sekulární režim.
+            </p>
+            <p>
+              Tato volba dynamicky promění vnitřní uspořádání tradičního kalendáře. Můžete tak být upozorněni na univerzální Letní slunovrat, slovanskou Noc Sv. Jana či keltský Lughnasadh. Aplikace nikoho nesoudí a nehodnotí, pouze nabízí zrcadlo pro vaše vlastní vnímání posvátna a životní filozofie.
+            </p>
+          </div>
+        </details>
+      </div>
 
       <p>
         Ember Chime je momentálně ve fázi předběžného přístupu. Co to znamená? Aplikace je plně funkční a připravená na zařízeních se systémem Android 7 a novějším, ale k její finální podobě v obchodu Google Play ještě kousek cesty zbývá.
@@ -194,9 +192,8 @@
         <h3>Jak se zapojit do testování?</h3>
         <p>Naskenujte QR kód svým telefonem, nebo klikněte na tlačítko níže. Otevře se vám oficiální stránka Google Play, kde potvrdíte účast v testování.</p>
         
-        <!-- Sem vložte vygenerovaný obrázek QR kódu -->
         <div class="qr-placeholder">
-          [Zde bude obrázek<br>QR kódu]
+          [Zde vložte tag img<br>s vaším QR kódem]
         </div>
         
         <a href="https://play.google.com/apps/testing/com.ember.chime" target="_blank" rel="noopener" class="btn-test">Stát se testerem na Google Play</a>
@@ -209,7 +206,6 @@
 
       <!-- FORMULÁŘ PRO ZPĚTNOU VAZBU -->
       <form id="bug-report-form" class="bug-form">
-        <!-- HONEYPOT (Past na spamovací roboty) -->
         <input type="text" name="website" id="honeypot" class="honeypot-field" tabindex="-1" autocomplete="off" placeholder="If you are human, leave this blank.">
         
         <input type="email" name="email" id="email" placeholder="Váš e-mail (nepovinné, pokud chcete odpověď)" />
@@ -232,15 +228,13 @@
 <!-- JAVASCRIPT PRO ODESLÁNÍ FORMULÁŘE -->
 <script>
   document.getElementById('bug-report-form').addEventListener('submit', function(e) {
-    e.preventDefault(); // Zabrání znovunačtení stránky
+    e.preventDefault();
     
     var honeypot = document.getElementById('honeypot').value;
     var messageBox = document.getElementById('form-message');
     var submitBtn = document.getElementById('submit-btn');
     
-    // Kontrola pasti na roboty
     if (honeypot !== "") {
-      // Robot se chytil. Tváříme se, že vše prošlo, ale data neodešleme.
       messageBox.textContent = "Hlášení bylo odesláno. Děkujeme!";
       messageBox.style.display = "block";
       this.reset();
@@ -250,7 +244,6 @@
     submitBtn.textContent = "Odesílám...";
     submitBtn.disabled = true;
 
-    // ZDE VLOŽTE URL VAŠÍ SLUŽBY (např. z Formspree.io nebo Google Apps Script)
     var endpointUrl = "https://formspree.io/f/VÁŠ_KÓD_ZDE"; 
     
     var formData = new FormData(this);
@@ -264,11 +257,11 @@
     }).then(response => {
       if (response.ok) {
         messageBox.textContent = "Hlášení úspěšně dorazilo do naší badatelny. Děkujeme za pomoc!";
-        messageBox.style.color = "#2d5a27"; // Tmavě zelená
+        messageBox.style.color = "#2d5a27";
         this.reset();
       } else {
         messageBox.textContent = "Jejda, cestou se někde rozlil inkoust. Zkuste to prosím znovu.";
-        messageBox.style.color = "#8b0000"; // Tmavě červená
+        messageBox.style.color = "#8b0000";
       }
       messageBox.style.display = "block";
       submitBtn.textContent = "Odeslat hlášení";
