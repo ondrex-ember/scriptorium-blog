@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <!-- Vaše standardní meta tagy, GTM a CSS linky -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ember Chime: Otevřené testování — Scriptorium Blog</title>
+  <link rel="stylesheet" href="/assets/css/style.css" />
+  
+  <!-- Přidané styly jen pro formulář a QR kód, aby ladily s pergamenem -->
+  <style>
+    .app-promo-box {
+      border: 1px dashed #8b7355;
+      padding: 2rem;
+      text-align: center;
+      margin: 2rem 0;
+      background: rgba(139, 115, 85, 0.05);
+    }
+    .qr-placeholder {
+      width: 150px;
+      height: 150px;
+      margin: 0 auto 1rem;
+      background-color: #fff;
+      border: 2px solid #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+    }
+    .btn-test {
+      display: inline-block;
+      padding: 10px 20px;
+      background: #333;
+      color: #f4f1ea;
+      text-decoration: none;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+    .btn-test:hover { background: #555; }
+    
+    /* Styly formuláře */
+    .bug-form {
+      margin-top: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .bug-form input, .bug-form textarea {
+      width: 100%;
+      padding: 0.8rem;
+      background: transparent;
+      border: 1px solid #8b7355;
+      font-family: inherit;
+      color: #333;
+    }
+    .bug-form button {
+      align-self: flex-start;
+      padding: 10px 20px;
+      background: #8b7355;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      font-family: inherit;
+    }
+    .bug-form button:hover { background: #6b5840; }
+    #form-message { display: none; margin-top: 1rem; font-weight: bold; color: #5a4634; }
+    
+    /* PAST NA ROBOTY - uživatel ji nevidí */
+    .honeypot-field { display: none !important; }
+  </style>
+</head>
+<body>
+
+<div class="page-wrap">
+  <div class="parchment">
+
+    <!-- ZPĚT -->
+    <a href="/tag/aplikace" class="back-link">← Aplikace</a>
+
+    <!-- HLAVIČKA ČLÁNKU -->
+    <header class="article-header">
+      <p class="article-card-meta">20. června 2026 &nbsp;·&nbsp; Aplikace &nbsp;·&nbsp; Testování</p>
+      <h1 class="article-h1">
+        <span class="drop-cap-word">Ember</span> Chime:<br>
+        Hledáme průzkumníky
+      </h1>
+      <p class="article-lead">
+        Výzkumná stanice je otevřena. Aplikace Ember Chime právě vstoupila do fáze veřejného testování (Open Beta). Zveme vás k prozkoumání a prosíme o vaši zpětnou vazbu.
+      </p>
+    </header>
+
+    <p class="article-divider">✦ &nbsp; ✦ &nbsp; ✦</p>
+
+    <!-- TĚLO ČLÁNKU -->
+    <article class="article-body">
+
+      <p>
+        Ember Chime je momentálně ve fázi předběžného přístupu. Co to znamená? Aplikace je plně funkční a připravená na zařízeních se systémem Android 7 a novějším, ale k její finální podobě v obchodu Google Play ještě kousek cesty zbývá.
+      </p>
+      <p>
+        Jako správní výzkumníci víme, že žádný nástroj nepřežije první střet s realitou bez šrámů. Proto hledáme odvážné testery, kteří si aplikaci nainstalují a pomohou nám odhalit skryté chyby dříve, než s ní vyjdeme na světlo světa.
+      </p>
+
+      <!-- INSTALAČNÍ BOX S QR KÓDEM -->
+      <div class="app-promo-box">
+        <h3>Jak se zapojit do testování?</h3>
+        <p>Naskenujte QR kód svým telefonem, nebo klikněte na tlačítko níže. Otevře se vám oficiální stránka Google Play, kde potvrdíte účast v testování.</p>
+        
+        <!-- Sem vložte vygenerovaný obrázek QR kódu -->
+        <div class="qr-placeholder">
+          [Zde bude obrázek<br>QR kódu]
+        </div>
+        
+        <a href="https://play.google.com/apps/testing/com.ember.chime" target="_blank" rel="noopener" class="btn-test">Stát se testerem na Google Play</a>
+      </div>
+
+      <h2>Hlášení chyb a nápadů</h2>
+      <p>
+        Objevili jste tmu tam, kde mělo být světlo? Něco nefunguje, nebo máte nápad na vylepšení? Prosím, nezanechávejte tyto poznatky v recenzích na Google Play, ale využijte náš přímý komunikační kanál. Každý záznam bude pečlivě prozkoumán.
+      </p>
+
+      <!-- FORMULÁŘ PRO ZPĚTNOU VAZBU -->
+      <form id="bug-report-form" class="bug-form">
+        <!-- HONEYPOT (Past na spamovací roboty) -->
+        <input type="text" name="website" id="honeypot" class="honeypot-field" tabindex="-1" autocomplete="off" placeholder="If you are human, leave this blank.">
+        
+        <input type="email" name="email" id="email" placeholder="Váš e-mail (nepovinné, pokud chcete odpověď)" />
+        <textarea name="message" id="message" rows="5" placeholder="Popište chybu nebo nápad... (povinné)" required></textarea>
+        <button type="submit" id="submit-btn">Odeslat hlášení</button>
+        <div id="form-message"></div>
+      </form>
+
+    </article>
+
+    <!-- FOOTER -->
+    <footer class="site-footer">
+      <p class="site-footer-ornament">☩</p>
+      <p>Deník z dílny inkoustu a kódu</p>
+    </footer>
+
+  </div>
+</div>
+
+<!-- JAVASCRIPT PRO ODESLÁNÍ FORMULÁŘE -->
+<script>
+  document.getElementById('bug-report-form').addEventListener('submit', function(e) {
+    e.preventDefault(); // Zabrání znovunačtení stránky
+    
+    var honeypot = document.getElementById('honeypot').value;
+    var messageBox = document.getElementById('form-message');
+    var submitBtn = document.getElementById('submit-btn');
+    
+    // Kontrola pasti na roboty
+    if (honeypot !== "") {
+      // Robot se chytil. Tváříme se, že vše prošlo, ale data neodešleme.
+      messageBox.textContent = "Hlášení bylo odesláno. Děkujeme!";
+      messageBox.style.display = "block";
+      this.reset();
+      return;
+    }
+    
+    submitBtn.textContent = "Odesílám...";
+    submitBtn.disabled = true;
+
+    // ZDE VLOŽTE URL VAŠÍ SLUŽBY (např. z Formspree.io nebo Google Apps Script)
+    var endpointUrl = "https://formspree.io/f/VÁŠ_KÓD_ZDE"; 
+    
+    var formData = new FormData(this);
+
+    fetch(endpointUrl, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Accept': 'application/json'
+      }
+    }).then(response => {
+      if (response.ok) {
+        messageBox.textContent = "Hlášení úspěšně dorazilo do naší badatelny. Děkujeme za pomoc!";
+        messageBox.style.color = "#2d5a27"; // Tmavě zelená
+        this.reset();
+      } else {
+        messageBox.textContent = "Jejda, cestou se někde rozlil inkoust. Zkuste to prosím znovu.";
+        messageBox.style.color = "#8b0000"; // Tmavě červená
+      }
+      messageBox.style.display = "block";
+      submitBtn.textContent = "Odeslat hlášení";
+      submitBtn.disabled = false;
+    }).catch(error => {
+      messageBox.textContent = "Chyba spojení. Náš posel zřejmě zabloudil.";
+      messageBox.style.color = "#8b0000";
+      messageBox.style.display = "block";
+      submitBtn.textContent = "Odeslat hlášení";
+      submitBtn.disabled = false;
+    });
+  });
+</script>
+
+</body>
+</html>
