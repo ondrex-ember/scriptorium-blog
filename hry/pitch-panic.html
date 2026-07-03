@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pitch Panic — Prototype v0.2</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#080810;display:flex;justify-content:center;padding:20px;min-height:100vh;}
+#pp{font-family:'Courier New',Courier,monospace;background:#0d0d1a;color:#e8e8f0;width:100%;max-width:860px;border-radius:8px;overflow:hidden;position:relative;border:1px solid #1e2040;}
+.pph{background:#111128;border-bottom:2px solid #2980b9;padding:8px 16px;display:flex;justify-content:space-between;align-items:center;}
+.pp-logo{color:#2980b9;font-size:13px;font-weight:bold;letter-spacing:3px;}
+.pp-hud-top{display:flex;gap:18px;align-items:center;font-size:12px;}
+.pp-clock{color:#f39c12;font-size:14px;font-weight:bold;}
+.pp-phase-lbl{font-size:10px;color:#445;letter-spacing:2px;}
+#pp-content{padding:14px;}
+@keyframes fi{from{opacity:0;transform:translateY(3px)}to{opacity:1}}
+.ani{animation:fi .25s ease;}
+.bar{height:8px;background:#1a1a2e;border-radius:1px;overflow:hidden;}
+.bi{height:100%;transition:width .4s;border-radius:1px;}
+.bf{background:#2980b9;}.bs{background:#c0392b;}.bd{background:#27ae60;}.bq{background:#e67e22;}
+.btn{background:transparent;border:1.5px solid #2980b9;color:#2980b9;padding:7px 14px;font-family:'Courier New',monospace;font-size:12px;cursor:pointer;border-radius:2px;transition:all .15s;display:inline-block;}
+.btn:hover{background:#2980b9;color:#0d0d1a;}.btn:active{transform:scale(.97);}
+.btn.g{border-color:#27ae60;color:#27ae60;}.btn.g:hover{background:#27ae60;color:#0d0d1a;}
+.btn.r{border-color:#c0392b;color:#c0392b;}.btn.r:hover{background:#c0392b;color:#0d0d1a;}
+.btn.y{border-color:#e67e22;color:#e67e22;}.btn.y:hover{background:#e67e22;color:#0d0d1a;}
+.btn.p{border-color:#8e44ad;color:#8e44ad;}.btn.p:hover{background:#8e44ad;color:#0d0d1a;}
+.btn:disabled{opacity:.4;cursor:not-allowed;pointer-events:none;}
+.card{background:#111128;border:1.5px solid #1e2040;padding:12px 14px;border-radius:3px;}
+.idea-badge{font-size:10px;color:#2980b9;letter-spacing:3px;margin-bottom:5px;}
+.idea-name{font-size:19px;color:#ecf0f1;margin-bottom:4px;line-height:1.2;}
+.idea-tag{font-size:12px;color:#95a5a6;font-style:italic;margin-bottom:10px;line-height:1.5;}
+.tags{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px;}
+.tag{background:#1a1a2e;border:1px solid #2c3e50;padding:2px 8px;font-size:10px;color:#8899aa;border-radius:1px;}
+.flavor{font-size:11px;color:#667;border-left:2px solid #2980b9;padding-left:9px;font-style:italic;margin-bottom:14px;line-height:1.6;}
+.stat-row{display:flex;gap:8px;margin-bottom:10px;}
+.stat-item{flex:1;min-width:80px;}
+.stat-lbl{font-size:10px;color:#778;letter-spacing:1px;margin-bottom:3px;}
+.stat-val{font-size:10px;color:#9ab;margin-top:2px;}
+.desk-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:8px;}
+.dobj{background:#111128;border:1.5px solid #1e2040;padding:10px;border-radius:3px;cursor:pointer;text-align:center;transition:border-color .15s;}
+.dobj:hover{border-color:#2980b9;background:#13132a;}
+.dobj-ico{font-size:18px;display:block;margin-bottom:3px;}
+.dobj-nm{font-size:11px;color:#bcd;}
+.dobj-ds{font-size:10px;color:#556;margin-top:2px;}
+.doc-sections{margin-bottom:8px;}
+.dsec{background:#111128;border:1.5px solid #1e2040;padding:8px 10px;border-radius:3px;margin-bottom:5px;cursor:pointer;transition:border-color .15s;}
+.dsec:hover{border-color:#2980b9;}.dsec.active{border-color:#27ae60;}
+.dsec-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+.dsec-n{font-size:11px;color:#dde;}.dsec-pct{font-size:10px;color:#778;}
+.log-area{background:#080815;border:1px solid #1a1a2e;padding:7px 9px;border-radius:2px;height:72px;overflow-y:auto;}
+.log-line{font-size:10px;color:#445;margin-bottom:2px;line-height:1.35;}
+.log-line.ok{color:#27ae60;}.log-line.bad{color:#c0392b;}.log-line.info{color:#2980b9;}.log-line.warn{color:#e67e22;}
+.ev-overlay{position:absolute;inset:0;background:rgba(0,0,0,.82);display:flex;align-items:center;justify-content:center;z-index:20;}
+.ev-card{background:#111128;border:2px solid #c0392b;padding:18px 20px;border-radius:4px;max-width:400px;width:90%;}
+.ev-title{color:#c0392b;font-size:13px;letter-spacing:1px;margin-bottom:7px;}
+.ev-desc{font-size:11px;color:#bcd;margin-bottom:14px;line-height:1.65;}
+.ev-choices{display:flex;flex-direction:column;gap:6px;}
+.ans-btn{background:transparent;border:1.5px solid #2c3e50;color:#bcd;padding:8px 11px;font-family:'Courier New',monospace;font-size:11px;cursor:pointer;border-radius:2px;transition:all .15s;text-align:left;width:100%;display:block;margin-bottom:5px;line-height:1.5;}
+.ans-btn:hover{border-color:#2980b9;background:#13132a;}
+.stk-wrap{display:flex;gap:12px;margin-bottom:12px;}
+.stk-av{width:48px;height:48px;background:#1a1a2e;border:2px solid #c0392b;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.stk-bub{background:#1a1a2e;padding:10px 12px;border-radius:3px;font-size:12px;line-height:1.65;color:#dde;flex:1;border-left:2.5px solid #c0392b;font-style:italic;}
+.res-score{text-align:center;padding:10px 0 14px;}
+.res-num{font-size:54px;font-weight:bold;display:block;}
+.res-label{font-size:11px;color:#778;letter-spacing:2px;}
+.res-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:10px 0;}
+.res-item{background:#111128;border:1.5px solid #1e2040;padding:9px;border-radius:3px;text-align:center;}
+.res-rlbl{font-size:10px;color:#667;letter-spacing:1px;margin-bottom:2px;}
+.res-rval{font-size:15px;color:#dde;}
+.verdict{background:#111128;border-left:3px solid #2980b9;padding:9px 11px;font-size:12px;color:#9ab;line-height:1.65;font-style:italic;margin:9px 0;}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.section-lbl{font-size:10px;color:#778;letter-spacing:1px;margin-bottom:5px;display:block;}
+.time-bar{height:3px;background:#1a1a2e;border-radius:1px;overflow:hidden;margin-bottom:9px;}
+.sec-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.tr-card{background:#111128;border:1.5px solid #1e2040;padding:14px 16px;border-radius:3px;margin-bottom:8px;cursor:pointer;transition:all .15s;}
+.tr-card:hover{border-color:#8e44ad;background:#13132a;}
+.tr-ico{font-size:22px;margin-bottom:5px;}
+.tr-title{font-size:13px;color:#dde;margin-bottom:3px;}
+.tr-desc{font-size:11px;color:#778;line-height:1.5;}
+.tr-tag{font-size:10px;margin-top:5px;color:#8e44ad;}
+.stress-warn{font-size:10px;color:#e67e22;text-align:center;margin-bottom:6px;}
+</style>
+</head>
+<body>
+<div id="pp">
+  <div class="pph">
+    <span class="pp-logo">PITCH PANIC <span style="font-size:10px;color:#445;letter-spacing:1px;">prototype v0.2</span></span>
+    <div class="pp-hud-top">
+      <span id="pp-clock" class="pp-clock">08:00</span>
+      <span id="pp-phase-lbl" class="pp-phase-lbl">IDEA DELIVERY</span>
+    </div>
+  </div>
+  <div id="pp-content"></div>
+</div>
+<script>
+const IDEAS=[
+{name:"MindfulPark",tagline:"AI-powered parking finder pro agresivní řidiče — ale ty jsi ten algoritmus",category:"B2C",difficulty:1.3,flavor:"Navigace a meditace. Pro lidi, kteří parkují jako závodníci F1. Zároveň.",tags:["AI","B2C","parking","mindfulness"]},
+{name:"CoFoundr",tagline:"Blockchain co-founder matcher pro vaše rodiče — ale neexistuje app, jen PDF",category:"Absurd",difficulty:1.8,flavor:"Vaši rodiče potřebují co-foundera. Nebo ne. Ale co kdyby potřebovali?",tags:["Blockchain","Absurd","PDF","family"]},
+{name:"MoodChain",tagline:"Blockchain mood tracker pro Gen Z — ale gamifikuje úplně vše",category:"B2C",difficulty:1.5,flavor:"Měříš náladu. Na blockchainu. NFT za každou depresi. Proč? Protože jsme mohli.",tags:["Blockchain","B2C","wellness","Gen Z"]},
+{name:"GroceryGhost",tagline:"Anonymní nákupní seznam pro seniory — ale AI je jen formulář",category:"B2C",difficulty:1.2,flavor:"Pro lidi, kteří nechtějí, aby Amazon věděl o jejich jogurtech.",tags:["B2C","privacy","seniors","AI"]},
+{name:"PetFindr",tagline:"Subscription dog walker pro remote workery — ale gamifikuje procházky",category:"marketplace",difficulty:1.1,flavor:"Ubers for dogs. Ale pejsci nemají rating. Zatím.",tags:["marketplace","pets","subscription","remote"]},
+{name:"ZenDebt",tagline:"Mindful debt tracker pro vaše rodiče — ale AI je jen spreadsheet",category:"FinTech",difficulty:1.4,flavor:"Meditace ti nepomůže splatit hypotéku. Ale aspoň budeš v klidu.",tags:["FinTech","mindfulness","B2C","parents"]},
+{name:"QuantumNap",tagline:"AI-powered nap optimizer pro small business owners — ale app neexistuje, jen PDF",category:"Absurd",difficulty:1.7,flavor:"Optimalizovaný šlofík = 23% vyšší produktivita. Zdroj: důvěra v sebe sama.",tags:["Absurd","AI","wellness","B2B"]},
+{name:"BioHack.io",tagline:"Anonymous biohacking tracker pro Gen Z — ale blockchain ví vše",category:"HealthTech",difficulty:1.6,flavor:"Anonymně trackuješ biologii. Na veřejném blockchainu. Ironie je feature.",tags:["HealthTech","blockchain","Gen Z","privacy"]},
+{name:"RetireMode",tagline:"Subscription retirement planner pro seniory — ale gamifikuje zbývající roky",category:"FinTech",difficulty:1.9,flavor:"Achievement unlocked: 70 narozeniny. Boss fight: zdravotní pojišťovna.",tags:["FinTech","seniors","gamification","subscription"]},
+{name:"SlumDog",tagline:"Hyper-local invoice tool pro freelancery — ale ty jsi i zákaznická podpora",category:"B2B",difficulty:1.0,flavor:"Fakturuj rychleji. Pak čekej 90 dní. Pak fakturuj znovu. Startup life.",tags:["B2B","SaaS","invoicing","freelance"]}
+];
+const EVENTS=[
+{id:"coffee",rep:false,minG:0,maxG:200,w:1.2,title:"☕ KÁVOVAR JE ROZBITÝ",desc:"Ranní rituál zničen. Kávovar vydal zvuky bez jména a zemřel. Improvizuj.",outcomes:[{label:"🏪 Kavárna (−30 hern. min)",fx:{focus:32,gMin:30,stress:-6},txt:"Barista tě zná jménem. To je buď dobré nebo špatné."},{label:"☕ Instantní kafe",fx:{focus:8,stress:4},txt:"Chutná jako špína. Mozek trochu funguje."},{label:"💪 Vydržet bez kafe",fx:{focus:-22,stress:14},txt:"Tohle bude velmi těžké ráno."}]},
+{id:"inspiration",rep:false,minG:0,maxG:300,w:0.6,title:"💡 EPIFANIE!",desc:"Najednou to všechno dává smysl. Celá architektura nápadu se otevírá jako lotos.",outcomes:[{label:"📝 Okamžitě zapsat vše!",fx:{secBonus:"active",bonus:24,qualBonus:18},txt:"Zachyceno! Insight stojí za to."},{label:"🤔 Počkat, až to dozraje",fx:{secBonus:"active",bonus:9,qualBonus:4},txt:"Dobrý nápad. Ale první záblesk byl lepší."},{label:"😴 Ztratit se v myšlenkách",fx:{gMin:20,stress:-8,focus:7},txt:"Produktivní prokrastinace. Je to věc."}]},
+{id:"competitor",rep:false,minG:60,maxG:480,w:0.4,title:"📰 KONKURENT SPUSTIL PŘESNĚ TVOJI APPKU",desc:'TechCrunch: "YC-backed startup raises $2M for [tvůj nápad]." Screenshot vypadá... povědomě.',outcomes:[{label:"🎯 Najít odlišující úhel",fx:{secBonus:"competition",bonus:22,stress:8},txt:"Jejich verze je pro enterprise. Tvoje pro lidi. Snad."},{label:"🙈 Ignorovat a doufat",fx:{stress:22},txt:"Co nevidíš, to neexistuje. Pravděpodobně."},{label:"🔥 PANIKA — přepsat vše",fx:{secPenalty:"all",penalty:12,stress:38,focus:-18},txt:"Přepsal jsi vše. Horší verze. Skvěle."}]},
+{id:"slack",rep:false,minG:0,maxG:300,w:0.7,title:"💬 URGENTNÍ ZPRÁVA OD ŠÉFA",desc:'"Potřebuju brief do 10 minut." Bylo 8:47. Vstával jsi v 8:30.',outcomes:[{label:"✍️ Rychlý bullshit brief",fx:{gMin:18,stress:7,focus:-4},txt:"Copy-paste z posledního brifingu. Funguje 9/10 šéfů."},{label:"🚫 Ignorovat",fx:{stress:3},txt:'"Read at 8:49." Přečteno. Žádná odpověď. Profesionální.'},{label:"📞 Zavolat a vysvětlit",fx:{gMin:25,stress:-10,focus:13},txt:"Šéf ocenil upřímnost. Nebo tak aspoň zněla ta pauza."}]},
+{id:"linkedin",rep:true,maxFires:4,minG:0,maxG:480,w:0.9,title:'🔔 LINKEDIN: "Gratulujeme k výročí!"',desc:'"Váš post získal 14 views." Čtrnáct. Celých čtrnáct lidí vidělo váš thought leadership obsah.',outcomes:[{label:"👍 Dát si like vlastnímu postu",fx:{stress:2,focus:-3},txt:'"Toto bude mít dopad." Nebude.'},{label:"🚫 Zavřít LinkedIn",fx:{focus:5},txt:"Správné rozhodnutí. Udělal sis ho za 3 minuty znovu."},{label:"✍️ Napsat post o entrepreneurship",fx:{gMin:14,stress:5,focus:-8},txt:'"Failure is just success in disguise." 47 likes. 0 deals.'}]},
+{id:"whatsapp",rep:true,maxFires:3,minG:0,maxG:480,w:0.8,title:"💬 FIREMNÍ WHATSAPP — 23 ZPRÁV",desc:'"Kdo vzal moje mléko z lednice?" — tato debata trvá od roku 2019.',outcomes:[{label:"🔇 Mute na 8 hodin",fx:{stress:-4},txt:"Klid. Dočasný."},{label:"💬 Přispět do debaty",fx:{stress:9,gMin:10,focus:-10},txt:'"Bylo označeno. To vaše mléko." Nová debata začíná.'},{label:"📵 Vymazat appku",fx:{stress:-8,focus:9},txt:"Reinstaloval sis ji za hodinu. Bylo to skvělých 60 minut."}]},
+{id:"meme",rep:true,maxFires:5,minG:0,maxG:480,w:1.1,title:"😂 JAN POSLAL MEME",desc:'"Tohle musíš vidět." Jan vždy posílá memy. Jan nikdy nepracuje. Jan má vždy dobrou náladu.',outcomes:[{label:"😂 Zasmát se a pokračovat",fx:{stress:-7,focus:-2},txt:"Byl dobrý. Ale teď jsou 4 minuty pryč."},{label:"🔁 Přeposlat celé skupině",fx:{stress:-9,focus:-9,gMin:7},txt:"Síť zábavy roste. Dokumentace méně."},{label:"💼 \"Jan, please, pracuji.\"",fx:{stress:3},txt:"Jan pošle další meme za 20 minut."}]},
+{id:"news_ai",rep:true,maxFires:3,minG:0,maxG:480,w:0.7,title:"📰 BREAKING: AI VYNALEZLO TVŮJ NÁPAD",desc:"GPT-∞ právě vyřešil přesně ten problém, na který jsi stavěl pitch. Za 0,002 centa.",outcomes:[{label:"🤖 \"Naše AI je jiná AI\"",fx:{stress:10,secBonus:"solution",bonus:10},txt:'"Naše AI má osobnost." Boris to zapsal.'},{label:"🙄 Číst dál (rabbit hole)",fx:{stress:6,focus:-6,gMin:18},txt:"Přečetl jsi ještě 6 článků. Byl to rabbit hole."},{label:"📊 Přidat AI slide do pitche",fx:{secBonus:"solution",bonus:16,stress:7,gMin:18},txt:'"AI-powered everything." Boris to nenávidí. Ale funguje.'}]},
+{id:"twitter",rep:true,maxFires:3,minG:30,maxG:480,w:0.7,title:"🐦 STARTUP TWITTER JE V OHNI",desc:"VC napsal thread: 'Všechny B2C appky jsou mrtvé.' 847 komentářů. Tvoje kategorie je B2C.",outcomes:[{label:"🔥 Číst celý thread (−25 min)",fx:{gMin:25,stress:15,focus:-10},txt:"Thread byl špatný. Odpovědi horší. Přečetl jsi i ty."},{label:"💪 \"Jsem výjimka z pravidla\"",fx:{stress:8,secBonus:"competition",bonus:10},txt:'Přidal jsi slide "Proč jsem jiný." Možná to pomůže.'},{label:"📵 Odhlásit se z Twitteru",fx:{focus:10,stress:-5},txt:"Přihlásil ses zpět za 15 minut. Bylo to krásné čtvrthodiny."}]},
+{id:"prebrief",rep:false,minG:180,maxG:380,w:0.8,title:"😰 BORIS CHCE PRE-BRIEF ZA 30 MINUT",desc:'"Pošlete executive summary do 11:30." Jsou 11:12. Nemáš nic napsané.',outcomes:[{label:"⚡ Napsat rychlý 1-pager",fx:{gMin:22,secBonus:"problem",bonus:14,stress:14},txt:'Poslal jsi. Boris odpověděl: "OK." To je hodně.'},{label:"📧 \"Bude za 20 minut\" (a koupit čas)",fx:{stress:20,gMin:20},txt:"Boris nekomunikoval. To je horší než 'OK'."},{label:"🤙 Zavolat, nabídnout live brief",fx:{stress:9,secBonus:"problem",bonus:9,qualBonus:12},txt:"Telefonát: 8 minut. Boris byl méně skeptický. Trochu."}]},
+{id:"cofounder",rep:false,minG:200,maxG:400,w:0.6,title:"🤝 CO-FOUNDER CHCE PIVOTOVAT NA NFT",desc:'"Slyšel jsem že NFT jsou zpátky. Co kdybychom..." — Jsou 13:45. Pitch ve 16:00.',outcomes:[{label:"💀 \"NFT nejsou zpátky, nikdy nebyly\"",fx:{stress:-10,focus:15},txt:"Debata: 7 minut. Vyhrál jsi. Co-founder tiše naštvaný."},{label:"🤔 Poslechnout celý nápad",fx:{gMin:35,stress:18,focus:-14},txt:"Nápad byl špatný. Ale detailně špatný."},{label:"📊 \"Po pitchi to probereme\"",fx:{stress:5},txt:'"OK." Co-founder si dal Slack status: 🤔. Nevíš co to znamená.'}]},
+{id:"techcrisis",rep:false,minG:200,maxG:420,w:0.5,title:"💻 PRODUKČNÍ SERVER PADL",desc:"Beta appky, kterou jsi slíbil ukázat jako LIVE DEMO, je offline. HTTP 503.",outcomes:[{label:"🔧 Opravit sám (−45 min)",fx:{gMin:45,focus:-20,stress:25,secBonus:"solution",bonus:22},txt:"Opravil jsi. Demo funguje. Ztratil jsi 45 minut a část duše."},{label:"📸 Screenshot místo live dema",fx:{stress:14,gMin:12,secBonus:"solution",bonus:9},txt:'"Demo bude live příští týden." Boris ví, co to znamená.'},{label:"🙏 Přiznat situaci Borisu předem",fx:{stress:-8,secBonus:"problem",bonus:6},txt:"Transparentnost jako strategie. Boris to... ocenil? Nečekaně."}]},
+{id:"podcast",rep:false,minG:100,maxG:380,w:0.5,title:"🎤 PODCAST CHCE INTERVIEW — TEĎKA",desc:'"Máme okno za 20 minut, 15 minut rozhovor." Nevíš jak vědí. Ale vědí.',outcomes:[{label:"🎙️ Jít do živého interview",fx:{gMin:35,stress:9,secBonus:"market",bonus:18,qualBonus:12},txt:"Zmínil jsi pitch. Boris to uslyší. PR nebo PR blunder?"},{label:"⏰ \"Příště, po launchi\"",fx:{stress:3,focus:5},txt:"Podcast přestal psát. Příležitost gone, čas saved."},{label:"📝 Poslat written statement",fx:{gMin:18,secBonus:"market",bonus:10},txt:"Krátký, silný, bez trapných tiché pauzy."}]},
+{id:"investor_cancel",rep:false,minG:180,maxG:400,w:0.5,title:"📵 ANGEL INVESTOR RUŠÍ SCHŮZKU",desc:'"Omlouvám se, zítra letím do Singapuru." Tvůj backup plán. Gone.',outcomes:[{label:"📧 Navrhnout video call",fx:{stress:5,gMin:13},txt:'"Možná příští týden." Klasická investorská odpověď.'},{label:"🎯 Zdvojnásobit focus na Borise",fx:{stress:7,secBonus:"competition",bonus:14,focus:9},txt:"Jeden investor. Maximální koncentrace. Všechno nebo nic."},{label:"🍺 \"Hodím si pivo s Janem\"",fx:{stress:-18,focus:-14,gMin:28},txt:"Jan měl dobré rady. Nebo tak aspoň znělo po druhém pivu."}]}
+];
+const TRANSIT=[
+{id:"metro",ico:"🚇",title:"Metro",desc:"Levné, pomalé, plné lidí kteří mají AirPods a neslyší tě.",tag:"−0 min  •  náhodné setkání",events:[{roll:0.35,txt:"V metru zachytíš hovor: někdo mluví o Borisu. 'Je dnes v dobré náladě, prý má rande...'",fx:{qualBonus:"competition",q:10},log:"Hint: Boris má dnes dobrý den → competition bonus"},{roll:0.35,txt:"Starší pán se ptá co děláš. Vysvětluješ mu app. Zjednodušuješ. Najednou to dává mnohem větší smysl.",fx:{qualBonus:"problem",q:14},log:"Vysvětlil jsi seniorovi → problem clarity +14"},{roll:0.3,txt:"Metro stojí 8 minut v tunelu. Přemýšlíš. Stress pomalu opadá.",fx:{stress:-12,focus:8},log:"Metro delay: stres −12, focus +8"}]},
+{id:"taxi",ico:"🚕",title:"Taxi",desc:"Drahé. Ale řidič chce konverzaci a ty nemáš na výběr.",tag:"−0 min  •  nucený elevator pitch",events:[{roll:0.4,txt:'"Takže, co děláte?" Vysvětluješ. Řidič: "To je jako Uber, ale pro..." — Ano. Přesně. Ale jinak.',fx:{qualBonus:"solution",q:16,focus:12},log:"Taxi pitch: solution +16, focus +12"},{roll:0.3,txt:'"Můj syn dělá taky startup." Řidič ti dá číslo na svého syna. Seed investor? Nebo jen pyšný táta?',fx:{focus:10,stress:-8},log:"Taxi networking: focus +10, stress −8"},{roll:0.3,txt:"Řidič hraje české rádio. Cesta trvá 22 minut. Nemyslíš na nic. Je to skvělé.",fx:{stress:-18,focus:14},log:"Taxi detox: stress −18, focus +14"}]},
+{id:"walk",ico:"🚶",title:"Pěšky",desc:"Zdarma. Počasí nerozhoduje za tebe, ale rozhoduje o tobě.",tag:"−15 hern. min  •  počasí random",events:[{roll:0.33,txt:"Sluníčko, čerstvý vzduch. Mozek se probral. Proč sedíš doma každý den?",fx:{stress:-20,focus:22,gMin:15},log:"Krásné počasí: stress −20, focus +22 (−15 min)"},{roll:0.33,txt:"Liják. Přijdeš mokrý. Boris uvidí, že jsi šel pěšky. Neuvidí. Ale ty to víš.",fx:{stress:18,focus:-8,gMin:15},log:"Déšť: stress +18, focus −8 (−15 min)"},{roll:0.34,txt:"Potká tě bývalý kolega z korporátu. 'Stále ten startup?' Přikývneš. Trochu zrychleně.",fx:{stress:6,focus:5,gMin:15},log:"Awkward meeting: stress +6, focus +5 (−15 min)"}]}
+];
+const BORIS_QS=[
+{txt:'"Tak. [NAME]. Proč to vůbec dělat? Proč bych já, jako člověk který investoval do 40 startupů a z toho 38 zkrachovalo, měl věřit, že tento problém existuje a stojí za řešení?"',sec:"problem",ans:[{lbl:"Citovat konkrétní data + uživatelský výzkum",score:30,rxn:"Boris přikývl. Pomalu. Ale přikývl. To je maximum."},{lbl:'Osobní příběh: "Sám jsem tento problém zažil..."',score:16,rxn:'"Hezký příběh. Ale to není pitch." Zapsal si poznámku.'},{lbl:'"Lidi to prostě potřebují, víte..."',score:5,rxn:'Boris si zapsal jedno slovo. Pravděpodobně "slabé".'}]},
+{txt:'"Trh. Jak velký. Číslo. Teď. A nepovídejte mi o miliardách bez metodologie, to dělají junioři."',sec:"market",ans:[{lbl:"TAM/SAM/SOM s konkrétní metodologií a zdroji",score:30,rxn:'"Hmm." Toto je nejvyšší kompliment, jaký Boris dává.'},{lbl:"Konzervativní odhad dolů s vysvětlením logiky",score:19,rxn:'"Konzervatismus. Trochu to cením."'},{lbl:'"Trh je obrovský, určitě miliardy..."',score:3,rxn:"Boris zavřel notebook. Velmi špatné znamení."}]},
+{txt:'"Proč ne existující řešení? V čem jste jiní, kromě toho, že jste přišli o rok a půl později a máte méně peněz?"',sec:"competition",ans:[{lbl:"Konkrétní differenciace + unfair advantage + proč teď",score:30,rxn:"Boris se téměř usmál. Téměř. Historický moment."},{lbl:"Pivot story — proč vám konkurence paradoxně pomohla",score:20,rxn:'"Zajímavý frame. Uvidíme v termsheet."'},{lbl:'"Naše UX je prostě lepší."',score:4,rxn:'"UX." Opakoval slovo s neskrývaným despektem.'}]}
+];
+const SECS=["problem","solution","market","competition"];
+const SN={problem:"Problem & Pain",solution:"Naše řešení",market:"Velikost trhu",competition:"Konkurence"};
+let S={phase:"idea",idea:null,doc:{problem:{p:0,q:0},solution:{p:0,q:0},market:{p:0,q:0},competition:{p:0,q:0}},focus:80,stress:15,gMin:0,selSec:"problem",log:[],event:null,pitch:{qi:0,score:0,log:[],handicap:0},coffees:0,eCnt:{},timerRef:null,wCd:0,lastEvMin:-999};
+function cl(v,a,b){return Math.max(a,Math.min(b,v));}
+function cs(m){let h=Math.floor(m/60)+8,mn=m%60;return String(h).padStart(2,"0")+":"+String(mn).padStart(2,"0");}
+function pct(v){return Math.round(cl(v,0,100));}
+function bar(v,cls,h){return`<div class="bar${h===5?" ":""}" style="height:${h||8}px"><div class="bi ${cls}" style="width:${pct(v)}%;height:100%;"></div></div>`;}
+function addLog(txt,cls){S.log.unshift({txt,cls});if(S.log.length>25)S.log.pop();}
+function docP(){let t=0;SECS.forEach(s=>t+=S.doc[s].p);return t/4;}
+function docQ(){let t=0;SECS.forEach(s=>t+=S.doc[s].q);return t/4;}
+function applyFx(fx){
+  if(fx.focus!==undefined)S.focus=cl(S.focus+fx.focus,0,100);
+  if(fx.stress!==undefined)S.stress=cl(S.stress+fx.stress,0,100);
+  if(fx.gMin!==undefined)S.gMin=Math.min(S.gMin+fx.gMin,480);
+  let sec=fx.secBonus==="active"?S.selSec:fx.secBonus;
+  if(sec&&S.doc[sec]){S.doc[sec].p=cl(S.doc[sec].p+(fx.bonus||0),0,100);S.doc[sec].q=cl(S.doc[sec].q+(fx.qualBonus||0),0,100);}
+  if(fx.qualBonus&&!fx.secBonus){S.doc[S.selSec].q=cl(S.doc[S.selSec].q+fx.qualBonus,0,100);}
+  if(fx.secPenalty==="all")SECS.forEach(s=>{S.doc[s].p=cl(S.doc[s].p-(fx.penalty||0),0,100);});
+}
+function trySpawnEvent(){
+  if(S.event)return;
+  let cd=S.gMin>240?70:90;
+  if(S.gMin-S.lastEvMin<cd)return;
+  let eligible=EVENTS.filter(e=>{
+    if(e.minG!==undefined&&S.gMin<e.minG)return false;
+    if(e.maxG!==undefined&&S.gMin>e.maxG)return false;
+    let cnt=S.eCnt[e.id]||0;
+    if(e.rep)return cnt<(e.maxFires||3);
+    return cnt===0;
+  });
+  if(!eligible.length)return;
+  let totalW=eligible.reduce((s,e)=>s+e.w,0);
+  if(Math.random()*totalW>totalW*0.45)return;
+  let r=Math.random()*totalW,acc=0,sel=eligible[eligible.length-1];
+  for(let e of eligible){acc+=e.w;if(r<=acc){sel=e;break;}}
+  S.event=sel;S.eCnt[sel.id]=(S.eCnt[sel.id]||0)+1;S.lastEvMin=S.gMin;
+  render();
+}
+function tick(){
+  if(S.phase!=="home")return;
+  S.gMin=Math.min(S.gMin+3,480);
+  if(S.wCd>0)S.wCd=Math.max(0,S.wCd-3);
+  let aft=S.gMin>240;
+  S.stress=cl(S.stress+(aft?0.28:0.13),0,100);
+  S.focus=cl(S.focus-(aft?0.14:0.07),0,100);
+  trySpawnEvent();
+  if(S.gMin>=480&&!S.event){startTransit();return;}
+  updateHUD();if(!S.event)updateHomePartial();
+}
+function startDay(){
+  S.phase="home";S.gMin=0;S.focus=80;S.stress=15;S.wCd=0;
+  S.log=[];S.eCnt={};S.lastEvMin=-999;
+  addLog("Den začíná. Šéfe, ty to zvládneš.","info");
+  document.getElementById("pp-phase-lbl").textContent="HOME PHASE";
+  S.timerRef=setInterval(tick,1000);render();
+}
+function workOnSection(){
+  if(S.wCd>0||S.phase!=="home")return;
+  let sec=S.selSec,fm=S.focus/100;
+  let gain=Math.max(2,13*fm*(1-S.doc[sec].p/120));
+  let qg=Math.max(1,5*fm);
+  S.doc[sec].p=cl(S.doc[sec].p+gain,0,100);S.doc[sec].q=cl(S.doc[sec].q+qg,0,100);
+  S.stress=cl(S.stress+2.5,0,100);S.focus=cl(S.focus-1.5,0,100);S.wCd=30;
+  addLog(`[${SN[sec]}] +${Math.round(gain)}% progress`,"ok");
+  if(S.doc[sec].p>=100)addLog(`✓ ${SN[sec]} dokončeno!`,"ok");
+  render();
+}
+function drinkCoffee(){
+  S.coffees++;
+  if(S.coffees<=3){S.focus=cl(S.focus+22,0,100);S.stress=cl(S.stress-8,0,100);addLog("☕ Kafe #"+S.coffees+" vypito. Mozek se probral.","ok");}
+  else{S.focus=cl(S.focus+5,0,100);S.stress=cl(S.stress+16,0,100);addLog("☕ Kafe #"+S.coffees+". Srdce klepe podezřele.","warn");}
+  render();
+}
+function doResearch(){
+  if(S.wCd>0)return;
+  let sec=S.selSec;
+  S.doc[sec].q=cl(S.doc[sec].q+17,0,100);S.doc[sec].p=cl(S.doc[sec].p+4,0,100);
+  S.focus=cl(S.focus-6,0,100);S.wCd=45;
+  addLog(`📚 Research: ${SN[sec]} quality +17`,"info");render();
+}
+function checkPhone(){
+  S.stress=cl(S.stress+4,0,100);addLog("📱 Twitter. LinkedIn. Nic důležitého. (lže)","warn");
+  if(!S.event&&Math.random()<0.65){
+    let rep=EVENTS.filter(e=>e.rep&&(S.eCnt[e.id]||0)<(e.maxFires||3));
+    if(rep.length){S.event=rep[Math.floor(Math.random()*rep.length)];S.eCnt[S.event.id]=(S.eCnt[S.event.id]||0)+1;}
+  }
+  render();
+}
+function resolveEvent(idx){
+  let o=S.event.outcomes[idx];
+  applyFx(o.fx||{});addLog("→ "+o.txt,"info");S.event=null;render();
+}
+function startTransit(){
+  clearInterval(S.timerRef);S.phase="transit";
+  document.getElementById("pp-phase-lbl").textContent="TRANSIT";render();
+}
+function chooseTransit(idx){
+  let tr=TRANSIT[idx];
+  let roll=Math.random(),acc=0,outcome=tr.events[tr.events.length-1];
+  for(let e of tr.events){acc+=e.roll;if(roll<=acc){outcome=e;break;}}
+  if(outcome.fx){
+    if(outcome.fx.focus!==undefined)S.focus=cl(S.focus+outcome.fx.focus,0,100);
+    if(outcome.fx.stress!==undefined)S.stress=cl(S.stress+outcome.fx.stress,0,100);
+    if(outcome.fx.gMin!==undefined)S.gMin=Math.min(S.gMin+outcome.fx.gMin,480);
+    if(outcome.fx.qualBonus){let s=outcome.fx.qualBonus;if(S.doc[s])S.doc[s].q=cl(S.doc[s].q+outcome.fx.q,0,100);}
+  }
+  addLog("🚌 Transit: "+outcome.log,"info");
+  S.pitch.handicap=S.stress>70?Math.round((S.stress-70)*0.4):0;
+  S.phase="pitch";document.getElementById("pp-phase-lbl").textContent="PITCH PHASE";render();
+}
+function answerBoris(idx){
+  let qi=S.pitch.qi,q=BORIS_QS[qi],a=q.ans[idx];
+  let qMod=S.doc[q.sec].q/100;
+  let bonus=Math.round(a.score*cl(0.45+qMod*0.8,0.45,1.2));
+  S.pitch.score+=bonus;S.pitch.log.push({rxn:a.rxn,bonus});S.pitch.qi++;
+  if(S.pitch.qi>=BORIS_QS.length){S.phase="result";document.getElementById("pp-phase-lbl").textContent="VÝSLEDEK";}
+  render();
+}
+function finalScore(){
+  let dp=docP(),dq=docQ(),pp=S.pitch.score,h=S.pitch.handicap;
+  let docPts=Math.round((dp*0.35+dq*0.65)*0.45);
+  return cl(pp+docPts-h,0,100);
+}
+function verdict(sc){
+  if(sc>=80)return{e:"🚀",t:"Boris byl překvapen — i když to nedal najevo. Termsheet přichází. Možná. Ale přichází.",c:"#27ae60"};
+  if(sc>=60)return{e:"😅",t:"Solidní pitch. Základy tam jsou. Boris si tě zapamatoval jako 'ten s potenciálem'.",c:"#2980b9"};
+  if(sc>=40)return{e:"🤕",t:"Přežil jsi. Prezentace nebyla katastrofa — jen nezapomenutelná ze špatných důvodů.",c:"#e67e22"};
+  return{e:"💀",t:"Boris si sbalil věci uprostřed prezentace. Odcházel, aniž by se otočil. Existuje horší feedback. Ale ne mnoho.",c:"#c0392b"};
+}
+function updateHUD(){let c=document.getElementById("pp-clock");if(c)c.textContent=cs(S.gMin);}
+function updateHomePartial(){
+  let tf=document.getElementById("tf"),ts=document.getElementById("ts"),tp=document.getElementById("tp");
+  if(tf)tf.style.width=pct(S.focus)+"%";
+  if(ts)ts.style.width=pct(S.stress)+"%";
+  if(tp){let aft=S.gMin>240;tp.style.width=pct(S.gMin/480*100)+"%";tp.style.background=aft?"#c0392b":"#e67e22";}
+  let wb=document.getElementById("work-btn");if(wb)wb.disabled=S.wCd>0;
+  let rb=document.getElementById("res-btn");if(rb)rb.disabled=S.wCd>0;
+  SECS.forEach(s=>{
+    let pb=document.getElementById("pb-"+s),qb=document.getElementById("qb-"+s);
+    if(pb)pb.style.width=pct(S.doc[s].p)+"%";if(qb)qb.style.width=pct(S.doc[s].q)+"%";
+  });
+  let la=document.getElementById("log-area");
+  if(la)la.innerHTML=S.log.slice(0,7).map(l=>`<div class="log-line ${l.cls||""}">${l.txt}</div>`).join("");
+}
+function render(){
+  let c=document.getElementById("pp-content");if(!c)return;
+  document.getElementById("pp-clock").textContent=cs(S.gMin);
+  if(S.phase==="idea")c.innerHTML=renderIdea();
+  else if(S.phase==="home")c.innerHTML=renderHome();
+  else if(S.phase==="transit")c.innerHTML=renderTransit();
+  else if(S.phase==="pitch")c.innerHTML=renderPitch();
+  else if(S.phase==="result")c.innerHTML=renderResult();
+  let ov=document.querySelector(".ev-overlay");if(ov)ov.remove();
+  if(S.event&&S.phase==="home"){
+    let d=document.createElement("div");d.className="ev-overlay";d.innerHTML=renderEvent();
+    document.getElementById("pp").appendChild(d);
+  }
+}
+function renderIdea(){
+  let i=S.idea;
+  return`<div class="ani" style="max-width:500px;margin:0 auto;">
+<div class="card" style="border-color:#2980b9;margin-bottom:10px;">
+  <div class="idea-badge">📱 NOVÝ NÁPAD — DEN 1</div>
+  <div class="idea-name">${i.name}</div>
+  <div class="idea-tag">"${i.tagline}"</div>
+  <div class="tags">${i.tags.map(t=>`<span class="tag">${t}</span>`).join("")}</div>
+  <div class="flavor">${i.flavor}</div>
+  <div class="tags"><span class="tag" style="border-color:#e67e22;color:#e67e22;">Kategorie: ${i.category}</span><span class="tag" style="border-color:#c0392b;color:#c0392b;">Obtížnost: ${i.difficulty}x</span></div>
+</div>
+<div class="card" style="margin-bottom:10px;font-size:11px;color:#6a7a8a;line-height:1.7;">
+  Připrav pitch dokument, ve 16:00 ho odpitchuj <span style="color:#c0392b">Borisu Skeptikovi</span>.<br>
+  Sekce: <span style="color:#bcd">Problem · Řešení · Trh · Konkurence</span><br>
+  Čas: <span style="color:#e67e22">08:00 → 16:00</span> · Poledne = stres eskaluje · 1s = 3 hern. minuty
+</div>
+<button class="btn g" style="width:100%;padding:11px;" onclick="startDay()">▶  ZAČÍT DEN</button>
+</div>`;}
+function renderHome(){
+  let aft=S.gMin>240,tp=S.gMin/480*100;
+  return`<div class="ani">
+<div class="time-bar"><div id="tp" class="bi" style="width:${pct(tp)}%;background:${aft?"#c0392b":"#e67e22"};height:3px;transition:width .5s;"></div></div>
+${aft?`<div class="stress-warn">⚠ ODPOLEDNE — stres eskaluje rychleji</div>`:""}
+<div class="stat-row">
+  <div class="stat-item"><div class="stat-lbl">FOCUS</div>${bar(S.focus,"bf")}<div class="stat-val">${pct(S.focus)}%</div></div>
+  <div class="stat-item"><div class="stat-lbl">STRESS</div>${bar(S.stress,"bs")}<div class="stat-val">${pct(S.stress)}%</div></div>
+  <div class="stat-item"><div class="stat-lbl">DOC PROGRESS</div>${bar(docP(),"bd")}<div class="stat-val">${pct(docP())}%</div></div>
+</div>
+<div class="two-col">
+<div>
+  <div class="sec-hdr"><span class="section-lbl">STŮL</span>${S.wCd>0?`<span style="font-size:10px;color:#e67e22">CD ${S.wCd}min</span>`:""}</div>
+  <div class="desk-grid">
+    <div class="dobj"><span class="dobj-ico">💻</span><div class="dobj-nm">Monitor</div><div class="dobj-ds">+progress, +quality</div><button id="work-btn" class="btn g" style="margin-top:5px;width:100%;padding:4px;font-size:10px;" onclick="workOnSection()" ${S.wCd>0?"disabled":""}>PRACOVAT</button></div>
+    <div class="dobj"><span class="dobj-ico">☕</span><div class="dobj-nm">Kafe (${S.coffees}x)</div><div class="dobj-ds">${S.coffees>=3?"⚠️ moc kofeinu":"+focus, −stress"}</div><button class="btn" style="margin-top:5px;width:100%;padding:4px;font-size:10px;" onclick="drinkCoffee()">PÍT KAFE</button></div>
+    <div class="dobj"><span class="dobj-ico">📚</span><div class="dobj-nm">Knihovna</div><div class="dobj-ds">+quality na sekci</div><button id="res-btn" class="btn y" style="margin-top:5px;width:100%;padding:4px;font-size:10px;" onclick="doResearch()" ${S.wCd>0?"disabled":""}>ZKOUMAT</button></div>
+    <div class="dobj"><span class="dobj-ico">📱</span><div class="dobj-nm">Mobil</div><div class="dobj-ds">event trigger</div><button class="btn r" style="margin-top:5px;width:100%;padding:4px;font-size:10px;" onclick="checkPhone()">ZKONTROLOVAT</button></div>
+  </div>
+  <button class="btn r" style="width:100%;padding:7px;margin-top:7px;font-size:11px;" onclick="startTransit()">⏩ SKIP → TRANSIT (${cs(S.gMin)})</button>
+</div>
+<div>
+  <div class="sec-hdr"><span class="section-lbl">PITCH DOC — ${S.idea.name}</span><span style="font-size:10px;color:#2980b9">← klikni sekci</span></div>
+  <div class="doc-sections">
+    ${SECS.map(s=>`<div class="dsec ${S.selSec===s?"active":""}" onclick="S.selSec='${s}';render()">
+      <div class="dsec-h"><span class="dsec-n">${SN[s]}</span><span class="dsec-pct">P:${pct(S.doc[s].p)}% Q:${pct(S.doc[s].q)}%</span></div>
+      <div style="height:5px;background:#1a1a2e;border-radius:1px;overflow:hidden;"><div class="bi bd" id="pb-${s}" style="width:${pct(S.doc[s].p)}%;height:5px;"></div></div>
+      <div style="height:3px;background:#1a1a2e;border-radius:1px;overflow:hidden;margin-top:2px;"><div class="bi bq" id="qb-${s}" style="width:${pct(S.doc[s].q)}%;height:3px;"></div></div>
+    </div>`).join("")}
+  </div>
+  <div id="log-area" class="log-area">${S.log.slice(0,7).map(l=>`<div class="log-line ${l.cls||""}">${l.txt}</div>`).join("")}</div>
+</div>
+</div></div>`;}
+function renderEvent(){
+  let e=S.event;
+  return`<div class="ev-card"><div class="ev-title">${e.title}</div><div class="ev-desc">${e.desc}</div><div class="ev-choices">${e.outcomes.map((o,i)=>`<button class="ans-btn" onclick="resolveEvent(${i})">${o.label}</button>`).join("")}</div></div>`;}
+function renderTransit(){
+  let dp=pct(docP()),dq=pct(docQ());
+  return`<div class="ani" style="max-width:480px;margin:0 auto;">
+<div class="card" style="margin-bottom:12px;border-color:#8e44ad;">
+  <div class="section-lbl" style="color:#8e44ad;">16:00 — ČAS NA PITCH</div>
+  <div style="font-size:13px;color:#dde;margin-bottom:5px;">Den práce za tebou. Boris čeká.</div>
+  <div class="stat-row" style="margin:8px 0 4px;">
+    <div class="stat-item"><div class="stat-lbl">DOC PROGRESS</div>${bar(docP(),"bd")}<div class="stat-val">${dp}%</div></div>
+    <div class="stat-item"><div class="stat-lbl">DOC QUALITY</div>${bar(docQ(),"bq")}<div class="stat-val">${dq}%</div></div>
+    <div class="stat-item"><div class="stat-lbl">STRESS</div>${bar(S.stress,"bs")}<div class="stat-val">${pct(S.stress)}%${S.stress>70?" ⚠️":""}</div></div>
+  </div>
+  ${S.stress>70?`<div style="font-size:11px;color:#c0392b;margin-top:4px;">⚠ Vysoký stres ovlivní výkon u Borise (−${Math.round((S.stress-70)*0.4)} bodů)</div>`:""}
+</div>
+<div class="section-lbl">JAK SE DOSTANEŠ NA PITCH?</div>
+${TRANSIT.map((t,i)=>`<div class="tr-card" onclick="chooseTransit(${i})">
+  <div class="tr-ico">${t.ico}</div>
+  <div class="tr-title">${t.title}</div>
+  <div class="tr-desc">${t.desc}</div>
+  <div class="tr-tag">${t.tag}</div>
+</div>`).join("")}
+</div>`;}
+function renderPitch(){
+  let qi=S.pitch.qi;
+  if(qi>=BORIS_QS.length)return"";
+  let q=BORIS_QS[qi],prev=S.pitch.log.slice(-1)[0];
+  return`<div class="ani" style="max-width:500px;margin:0 auto;">
+<div style="font-size:10px;color:#778;letter-spacing:2px;margin-bottom:8px;">OTÁZKA ${qi+1} / ${BORIS_QS.length}  •  Skóre: ${S.pitch.score} bodů</div>
+${prev?`<div class="card" style="margin-bottom:10px;border-color:#27ae60;font-size:11px;"><span style="color:#27ae60">→</span> ${prev.rxn} <span style="color:#27ae60;float:right">+${prev.bonus}</span></div>`:""}
+${S.pitch.handicap>0?`<div style="font-size:11px;color:#e67e22;margin-bottom:8px;">⚠ Stres handicap: −${S.pitch.handicap} bodů z finálního skóre</div>`:""}
+<div class="stk-wrap">
+  <div><div class="stk-av">🧔</div><div style="font-size:10px;color:#c0392b;letter-spacing:1px;text-align:center;margin-top:3px;">BORIS</div></div>
+  <div class="stk-bub">${q.txt.replace("[NAME]",S.idea.name)}</div>
+</div>
+<div class="section-lbl">Sekce [${SN[q.sec]}] — quality: ${pct(S.doc[q.sec].q)}% → ovlivňuje sílu odpovědi</div>
+${q.ans.map((a,i)=>`<button class="ans-btn" onclick="answerBoris(${i})">${a.lbl}</button>`).join("")}
+</div>`;}
+function renderResult(){
+  let sc=finalScore(),v=verdict(sc);
+  return`<div class="ani" style="max-width:460px;margin:0 auto;">
+<div class="res-score"><span class="res-num" style="color:${v.c}">${sc}</span><span class="res-label">/ 100 bodů</span></div>
+<div style="text-align:center;font-size:26px;margin-bottom:7px;">${v.e}</div>
+<div class="verdict">${v.t}</div>
+<div class="res-grid">
+  <div class="res-item"><div class="res-rlbl">PITCH SCORE</div><div class="res-rval" style="color:#2980b9">${S.pitch.score}</div></div>
+  <div class="res-item"><div class="res-rlbl">DOC PROGRESS</div><div class="res-rval" style="color:#27ae60">${pct(docP())}%</div></div>
+  <div class="res-item"><div class="res-rlbl">DOC QUALITY</div><div class="res-rval" style="color:#e67e22">${pct(docQ())}%</div></div>
+  <div class="res-item"><div class="res-rlbl">STRESS HANDICAP</div><div class="res-rval" style="color:#c0392b">−${S.pitch.handicap}</div></div>
+</div>
+${S.pitch.log.length?`<div class="section-lbl" style="margin-top:6px;">BORISOVY REAKCE</div>${S.pitch.log.map((l,i)=>`<div class="card" style="margin-bottom:5px;font-size:11px;padding:7px 10px;"><span style="color:#778">Q${i+1}:</span> ${l.rxn}<span style="color:#27ae60;float:right">+${l.bonus}</span></div>`).join("")}`:""}
+<button class="btn g" style="width:100%;padding:11px;margin-top:10px;" onclick="restartGame()">↩ HRÁT ZNOVU (nová idea)</button>
+</div>`;}
+function restartGame(){
+  clearInterval(S.timerRef);
+  S={phase:"idea",idea:null,doc:{problem:{p:0,q:0},solution:{p:0,q:0},market:{p:0,q:0},competition:{p:0,q:0}},focus:80,stress:15,gMin:0,selSec:"problem",log:[],event:null,pitch:{qi:0,score:0,log:[],handicap:0},coffees:0,eCnt:{},timerRef:null,wCd:0,lastEvMin:-999};
+  document.getElementById("pp-phase-lbl").textContent="IDEA DELIVERY";
+  pickIdea();render();
+}
+function pickIdea(){S.idea=IDEAS[Math.floor(Math.random()*IDEAS.length)];}
+pickIdea();render();
+</script>
+</body>
+</html>
