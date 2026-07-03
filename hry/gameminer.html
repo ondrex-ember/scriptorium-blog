@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kreditový Těžař</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#0d0d0f;
+  --bg2:#16161a;
+  --bg3:#1e1e24;
+  --card:#1e1e24;
+  --card2:#252530;
+  --border:#2a2a35;
+  --text:#f0f0f5;
+  --text2:#9090a8;
+  --text3:#5a5a72;
+  --accent:#e63946;
+  --accent2:#ff6b6b;
+  --gold:#f4a261;
+  --green:#52b788;
+  --blue:#4895ef;
+  --badge-earn-bg:#1a3a25;
+  --badge-earn-text:#52b788;
+  --badge-spend-bg:#3a1a1a;
+  --badge-spend-text:#ff6b6b;
+  --timer-color:#4895ef;
+  --hero-name-color:#f0f0f5;
+  --btn-theme-bg:#252530;
+  --btn-theme-active:#e63946;
+  --btn-theme-text:#9090a8;
+  --btn-theme-active-text:#fff;
+}
+
+body.theme-light{
+  --bg:#f5f5f0;
+  --bg2:#ebebE5;
+  --bg3:#e0e0da;
+  --card:#ffffff;
+  --card2:#f0f0ea;
+  --border:#d0d0c8;
+  --text:#1a1a2e;
+  --text2:#555568;
+  --text3:#999aaa;
+  --accent:#e63946;
+  --accent2:#c1121f;
+  --gold:#e76f51;
+  --green:#2d6a4f;
+  --blue:#1d4e89;
+  --badge-earn-bg:#d8f3dc;
+  --badge-earn-text:#2d6a4f;
+  --badge-spend-bg:#ffe0e0;
+  --badge-spend-text:#c1121f;
+  --timer-color:#1d4e89;
+  --hero-name-color:#1a1a2e;
+  --btn-theme-bg:#e0e0da;
+  --btn-theme-active:#e63946;
+  --btn-theme-text:#555568;
+  --btn-theme-active-text:#fff;
+}
+
+body.theme-colorful{
+  --bg:#0a0a1a;
+  --bg2:#0f0f28;
+  --bg3:#14143a;
+  --card:#14143a;
+  --card2:#1a1a50;
+  --border:#2a2a70;
+  --text:#ffffff;
+  --text2:#b0b0e8;
+  --text3:#6060a8;
+  --accent:#ff006e;
+  --accent2:#fb5607;
+  --gold:#ffbe0b;
+  --green:#06d6a0;
+  --blue:#3a86ff;
+  --badge-earn-bg:#003a2a;
+  --badge-earn-text:#06d6a0;
+  --badge-spend-bg:#3a001a;
+  --badge-spend-text:#ff006e;
+  --timer-color:#3a86ff;
+  --hero-name-color:#ffffff;
+  --btn-theme-bg:#1a1a50;
+  --btn-theme-active:#ff006e;
+  --btn-theme-text:#b0b0e8;
+  --btn-theme-active-text:#fff;
+}
+
+body.theme-bw{
+  --bg:#000000;
+  --bg2:#0a0a0a;
+  --bg3:#111111;
+  --card:#111111;
+  --card2:#1a1a1a;
+  --border:#333333;
+  --text:#ffffff;
+  --text2:#888888;
+  --text3:#444444;
+  --accent:#ffffff;
+  --accent2:#cccccc;
+  --gold:#ffffff;
+  --green:#ffffff;
+  --blue:#aaaaaa;
+  --badge-earn-bg:#1a1a1a;
+  --badge-earn-text:#ffffff;
+  --badge-spend-bg:#2a2a2a;
+  --badge-spend-text:#ffffff;
+  --timer-color:#ffffff;
+  --hero-name-color:#ffffff;
+  --btn-theme-bg:#1a1a1a;
+  --btn-theme-active:#ffffff;
+  --btn-theme-text:#888888;
+  --btn-theme-active-text:#000;
+}
+
+body{
+  font-family:'Barlow',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  transition:background 0.3s,color 0.3s;
+}
+
+.app{max-width:900px;margin:0 auto;padding:0 0 4rem}
+
+/* THEME SWITCHER */
+.theme-bar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:6px;
+  padding:1rem 1.5rem 0;
+}
+.theme-switch{display:flex;gap:6px}
+.settings-gear{
+  width:32px;height:32px;
+  border-radius:50%;
+  border:1px solid var(--border);
+  background:var(--btn-theme-bg);
+  color:var(--btn-theme-text);
+  font-size:15px;
+  cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all 0.2s;
+  flex-shrink:0;
+}
+.settings-gear:hover{border-color:var(--text3);color:var(--text)}
+.theme-btn{
+  padding:5px 14px;
+  border-radius:20px;
+  border:1px solid var(--border);
+  background:var(--btn-theme-bg);
+  color:var(--btn-theme-text);
+  font-family:'Barlow',sans-serif;
+  font-size:12px;
+  font-weight:600;
+  letter-spacing:0.05em;
+  text-transform:uppercase;
+  cursor:pointer;
+  transition:all 0.2s;
+}
+.theme-btn:hover{border-color:var(--text3)}
+.theme-btn.active{
+  background:var(--btn-theme-active);
+  color:var(--btn-theme-active-text);
+  border-color:var(--btn-theme-active);
+}
+
+/* HERO */
+.hero{
+  padding:2rem 1.5rem 1.5rem;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:1rem;
+  border-bottom:1px solid var(--border);
+}
+.hero-left{display:flex;align-items:center;gap:1.25rem}
+.avatar{
+  width:72px;height:72px;
+  border-radius:50%;
+  background:var(--bg3);
+  border:2px solid var(--accent);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:28px;font-weight:700;
+  color:var(--accent);
+  flex-shrink:0;
+  position:relative;
+  overflow:hidden;
+}
+.avatar-ring{
+  position:absolute;inset:-3px;
+  border-radius:50%;
+  border:2px solid transparent;
+  border-top-color:var(--gold);
+  animation:spin 3s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.hero-info{}
+.hero-title{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:11px;font-weight:600;
+  letter-spacing:0.15em;text-transform:uppercase;
+  color:var(--text3);margin-bottom:2px;
+}
+.hero-name{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:28px;font-weight:700;
+  color:var(--hero-name-color);
+  line-height:1;
+}
+.hero-sub{font-size:13px;color:var(--text2);margin-top:4px}
+
+.balance-panel{
+  background:var(--bg3);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:1rem 1.5rem;
+  text-align:center;
+  min-width:160px;
+}
+.balance-label{
+  font-size:11px;font-weight:600;letter-spacing:0.12em;
+  text-transform:uppercase;color:var(--text3);margin-bottom:4px;
+}
+.balance-amount{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:44px;font-weight:700;
+  color:var(--gold);
+  line-height:1;
+  transition:transform 0.3s;
+}
+.balance-amount.pop{animation:pop 0.35s ease}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.18)}100%{transform:scale(1)}}
+.balance-unit{font-size:13px;color:var(--text2);margin-top:2px}
+
+/* SECTION HEADERS */
+.section-hdr{
+  display:flex;align-items:center;gap:10px;
+  padding:1.5rem 1.5rem 0.75rem;
+}
+.section-hdr-line{flex:1;height:1px;background:var(--border)}
+.section-hdr-text{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:13px;font-weight:700;letter-spacing:0.15em;
+  text-transform:uppercase;color:var(--text3);
+  white-space:nowrap;
+}
+.section-hdr-icon{font-size:16px;color:var(--text3)}
+
+/* ACTIVITY GRID */
+.act-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(190px,1fr));
+  gap:10px;
+  padding:0 1.5rem;
+}
+
+.act-card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:1rem;
+  cursor:pointer;
+  transition:border-color 0.15s,transform 0.1s,background 0.15s;
+  position:relative;
+  overflow:hidden;
+}
+.act-card.maxed{
+  cursor:not-allowed;
+  opacity:0.5;
+}
+.act-card.maxed:hover{
+  border-color:var(--border);
+  transform:none;
+}
+.act-badge.maxed{
+  background:var(--bg3);
+  color:var(--text3);
+}
+.act-card::before{
+  content:'';
+  position:absolute;top:0;left:0;right:0;height:2px;
+  background:var(--accent);
+  transform:scaleX(0);
+  transform-origin:left;
+  transition:transform 0.2s;
+}
+.act-card:hover{border-color:var(--text3);background:var(--card2)}
+.act-card:hover::before{transform:scaleX(1)}
+.act-card:active{transform:scale(0.97)}
+
+.act-icon{
+  width:40px;height:40px;
+  border-radius:10px;
+  background:var(--bg3);
+  border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;
+  margin-bottom:10px;
+  color:var(--text2);
+}
+.act-name{
+  font-weight:600;font-size:14px;
+  color:var(--text);line-height:1.3;
+  margin-bottom:3px;
+}
+.act-meta{font-size:12px;color:var(--text2);margin-bottom:8px}
+.act-badge{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:3px 8px;
+  border-radius:20px;
+  font-size:11px;font-weight:600;
+  letter-spacing:0.04em;
+}
+.act-badge.earn{background:var(--badge-earn-bg);color:var(--badge-earn-text)}
+.act-badge.spend{background:var(--badge-spend-bg);color:var(--badge-spend-text)}
+
+/* SPEND GRID */
+.spend-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+  gap:10px;
+  padding:0 1.5rem;
+}
+.spend-card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:1rem;
+  cursor:pointer;
+  transition:border-color 0.15s,transform 0.1s,background 0.15s;
+  display:flex;align-items:center;gap:12px;
+}
+.spend-card:hover{border-color:var(--accent);background:var(--card2)}
+.spend-card:active{transform:scale(0.97)}
+.spend-icon{
+  width:44px;height:44px;flex-shrink:0;
+  border-radius:12px;
+  background:var(--bg3);
+  border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;color:var(--text2);
+}
+.spend-info{flex:1;min-width:0}
+.spend-name{font-weight:600;font-size:14px;color:var(--text)}
+.spend-meta{font-size:12px;color:var(--text2)}
+.spend-cost{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:20px;font-weight:700;
+  color:var(--accent);
+  white-space:nowrap;
+}
+
+/* LOG */
+.log-wrap{padding:0 1.5rem}
+.log-box{
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:14px;
+  overflow:hidden;
+}
+.log-hdr{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 14px;
+  border-bottom:1px solid var(--border);
+}
+.log-hdr-title{font-size:12px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text3)}
+.log-list{max-height:180px;overflow-y:auto}
+.log-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:8px 14px;
+  border-bottom:1px solid var(--border);
+  font-size:13px;
+}
+.log-row:last-child{border-bottom:none}
+.log-row-name{color:var(--text2)}
+.log-row-time{font-size:11px;color:var(--text3);margin-left:8px}
+.log-val.pos{color:var(--green);font-weight:600}
+.log-val.neg{color:var(--accent);font-weight:600}
+.log-empty{padding:1.5rem;text-align:center;color:var(--text3);font-size:13px}
+
+/* TIMER OVERLAY */
+.timer-overlay{
+  display:none;
+  position:fixed;inset:0;
+  background:rgba(0,0,0,0.75);
+  z-index:200;
+  align-items:center;justify-content:center;
+}
+.timer-overlay.on{display:flex}
+.timer-box{
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:20px;
+  padding:2.5rem 2rem;
+  text-align:center;
+  width:min(340px,90vw);
+}
+.timer-act-icon{
+  width:56px;height:56px;
+  border-radius:14px;
+  background:var(--bg3);
+  border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:24px;color:var(--text2);
+  margin:0 auto 1rem;
+}
+.timer-name{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:22px;font-weight:700;
+  color:var(--text);margin-bottom:0.5rem;
+}
+.timer-display{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:64px;font-weight:700;
+  color:var(--timer-color);
+  line-height:1;
+  margin:1rem 0;
+  letter-spacing:0.02em;
+}
+.timer-status{
+  font-size:13px;color:var(--text2);
+  min-height:2.5em;
+  margin-bottom:1.5rem;
+}
+.timer-btns{display:flex;gap:10px}
+.timer-btn{
+  flex:1;padding:12px;
+  border-radius:12px;
+  border:1px solid var(--border);
+  background:var(--bg3);
+  color:var(--text2);
+  font-family:'Barlow',sans-serif;
+  font-size:14px;font-weight:600;
+  cursor:pointer;
+  transition:all 0.15s;
+}
+.timer-btn:hover{border-color:var(--text3);color:var(--text)}
+.timer-btn.confirm{
+  background:var(--badge-earn-bg);
+  color:var(--badge-earn-text);
+  border-color:var(--badge-earn-text);
+}
+.timer-btn.confirm:hover:not(:disabled){
+  background:var(--green);color:#fff;border-color:var(--green);
+}
+.timer-btn.confirm:disabled{opacity:0.35;cursor:not-allowed}
+
+/* SETTINGS PANEL */
+.settings-overlay{
+  display:none;
+  position:fixed;inset:0;
+  background:rgba(0,0,0,0.75);
+  z-index:200;
+  align-items:center;justify-content:center;
+  padding:1.5rem;
+}
+.settings-overlay.on{display:flex}
+.settings-box{
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:20px;
+  padding:1.75rem;
+  width:min(420px,100%);
+  max-height:85vh;
+  overflow-y:auto;
+}
+.settings-hdr{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:1.25rem;
+}
+.settings-title{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:20px;font-weight:700;color:var(--text);
+}
+.settings-close{
+  background:none;border:1px solid var(--border);
+  border-radius:8px;width:30px;height:30px;
+  color:var(--text2);cursor:pointer;font-size:14px;
+  transition:all 0.15s;
+  flex-shrink:0;
+}
+.settings-close:hover{border-color:var(--text3);color:var(--text)}
+.settings-section{margin-bottom:1.5rem}
+.settings-section:last-child{margin-bottom:0}
+.settings-section-title{
+  font-size:11px;font-weight:600;letter-spacing:0.1em;
+  text-transform:uppercase;color:var(--text3);
+  margin-bottom:0.5rem;
+}
+.settings-row{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:12px;
+  padding:12px 0;
+  border-bottom:1px solid var(--border);
+}
+.settings-row:last-child{border-bottom:none}
+.settings-row-name{font-size:14px;font-weight:600;color:var(--text)}
+.settings-row-desc{font-size:12px;color:var(--text2);margin-top:2px}
+.settings-btn{
+  padding:8px 16px;
+  border-radius:10px;
+  border:1px solid var(--border);
+  background:var(--bg3);
+  color:var(--text2);
+  font-family:'Barlow',sans-serif;
+  font-size:13px;font-weight:600;
+  cursor:pointer;
+  white-space:nowrap;
+  transition:all 0.15s;
+}
+.settings-btn:hover{border-color:var(--text3);color:var(--text)}
+.settings-btn.danger:hover{border-color:var(--accent);color:var(--accent)}
+.settings-btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.settings-btn.primary:hover{opacity:0.9;color:#fff;border-color:var(--accent)}
+.settings-btn.add-btn{width:100%;text-align:center;margin-top:4px}
+
+.editor-list{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+.editor-row{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 10px;
+  background:var(--bg3);
+  border:1px solid var(--border);
+  border-radius:10px;
+}
+.editor-row-icon{font-size:16px;flex-shrink:0}
+.editor-row-name{font-size:13px;font-weight:600;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.editor-row-val{font-size:12px;color:var(--text2);flex-shrink:0}
+.editor-icon-btn{
+  background:none;border:none;cursor:pointer;
+  font-size:14px;padding:2px 4px;flex-shrink:0;
+  opacity:0.7;transition:opacity 0.15s;
+}
+.editor-icon-btn:hover{opacity:1}
+.editor-row.editing{
+  flex-direction:column;
+  align-items:stretch;
+  gap:8px;
+}
+.editor-form{display:flex;flex-direction:column;gap:6px}
+.editor-form-line1{display:flex;gap:6px}
+.editor-input{
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:7px 9px;
+  font-family:'Barlow',sans-serif;
+  font-size:13px;
+  color:var(--text);
+  width:100%;
+}
+.editor-input.icon-input{width:52px;flex-shrink:0;text-align:center}
+.editor-form-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.editor-form-row label{font-size:11px;color:var(--text2);white-space:nowrap}
+.editor-form-row .editor-input{width:80px}
+.editor-form-btns{display:flex;gap:6px;justify-content:flex-end;margin-top:2px}
+
+/* COLORFUL THEME EXTRAS */
+body.theme-colorful .act-card::before{background:linear-gradient(90deg,#ff006e,#3a86ff,#06d6a0)}
+body.theme-colorful .balance-amount{color:#ffbe0b}
+body.theme-colorful .avatar{border-color:#ff006e}
+body.theme-colorful .act-icon{border-color:var(--border)}
+
+/* BW EXTRAS */
+body.theme-bw .act-card::before{background:#ffffff}
+body.theme-bw .avatar-ring{border-top-color:#ffffff}
+body.theme-bw .balance-amount{color:#ffffff}
+body.theme-bw .act-icon{border-radius:0}
+body.theme-bw .act-card{border-radius:0}
+body.theme-bw .spend-card{border-radius:0}
+body.theme-bw .act-badge.earn{border:1px solid #ffffff}
+body.theme-bw .act-badge.spend{border:1px solid #888}
+
+/* TOAST */
+.toast{
+  position:fixed;bottom:2rem;right:2rem;
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:12px 18px;
+  font-size:14px;
+  color:var(--text);
+  z-index:300;
+  transform:translateY(20px);opacity:0;
+  transition:all 0.3s;
+  pointer-events:none;
+}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.err{border-color:var(--accent);color:var(--accent)}
+</style>
+</head>
+<body class="theme-dark">
+
+<div class="app">
+
+<div class="theme-bar">
+  <button class="settings-gear" onclick="openSettings()" title="Nastavení">⚙</button>
+  <div class="theme-switch">
+    <button class="theme-btn active" data-theme="theme-dark" onclick="setTheme('theme-dark',this)">Dark</button>
+    <button class="theme-btn" data-theme="theme-light" onclick="setTheme('theme-light',this)">Light</button>
+    <button class="theme-btn" data-theme="theme-colorful" onclick="setTheme('theme-colorful',this)">Colorful</button>
+    <button class="theme-btn" data-theme="theme-bw" onclick="setTheme('theme-bw',this)">B&W</button>
+  </div>
+</div>
+
+<div class="hero">
+  <div class="hero-left">
+    <div class="avatar">
+      <div class="avatar-ring"></div>
+      <span id="avatarInitials">?</span>
+    </div>
+    <div class="hero-info">
+      <div class="hero-title">Hráč</div>
+      <div class="hero-name" id="heroName" onclick="editName()" title="Klikni pro změnu jména" style="cursor:pointer">Nastav jméno</div>
+      <div class="hero-sub" id="heroSub">Úroveň: Nováček</div>
+    </div>
+  </div>
+  <div class="balance-panel">
+    <div class="balance-label">Kredity</div>
+    <div class="balance-amount" id="balanceAmt">0</div>
+    <div class="balance-unit">kreditů celkem</div>
+  </div>
+</div>
+
+<div class="section-hdr">
+  <span class="section-hdr-icon">⛏</span>
+  <span class="section-hdr-text">Těžení kreditů</span>
+  <div class="section-hdr-line"></div>
+</div>
+
+<div class="act-grid" id="earnGrid"></div>
+
+<div class="section-hdr">
+  <span class="section-hdr-icon">🎮</span>
+  <span class="section-hdr-text">Utrat kredity</span>
+  <div class="section-hdr-line"></div>
+</div>
+
+<div class="spend-grid" id="spendGrid"></div>
+
+<div class="section-hdr">
+  <span class="section-hdr-icon">📋</span>
+  <span class="section-hdr-text">Historie</span>
+  <div class="section-hdr-line"></div>
+</div>
+
+<div class="log-wrap">
+  <div class="log-box">
+    <div class="log-hdr">
+      <span class="log-hdr-title">Posledních 20 akcí</span>
+    </div>
+    <div class="log-list" id="logList"></div>
+  </div>
+</div>
+
+</div>
+
+<!-- TIMER -->
+<div class="timer-overlay" id="timerOverlay">
+  <div class="timer-box">
+    <div class="timer-act-icon" id="timerIcon"></div>
+    <div class="timer-name" id="timerName"></div>
+    <div class="timer-display" id="timerDisplay">00:00</div>
+    <div class="timer-status" id="timerStatus"></div>
+    <div class="timer-btns">
+      <button class="timer-btn" onclick="cancelTimer()">Zrušit</button>
+      <button class="timer-btn confirm" id="timerConfirm" onclick="confirmTimer()" disabled>Hotovo!</button>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div class="settings-overlay" id="settingsOverlay">
+  <div class="settings-box">
+    <div class="settings-hdr">
+      <span class="settings-title">⚙ Nastavení</span>
+      <button class="settings-close" onclick="closeSettings()">✕</button>
+    </div>
+    <div class="settings-section">
+      <div class="settings-section-title">Reset</div>
+      <div class="settings-row">
+        <div class="settings-row-text">
+          <div class="settings-row-name">Reset hry</div>
+          <div class="settings-row-desc">Vynuluje zůstatek a historii</div>
+        </div>
+        <button class="settings-btn danger" onclick="resetGame()">Resetovat</button>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-text">
+          <div class="settings-row-name">Reset nastavení</div>
+          <div class="settings-row-desc">Vrátí jméno a téma na výchozí</div>
+        </div>
+        <button class="settings-btn danger" onclick="resetSettings()">Resetovat</button>
+      </div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-section-title">Záloha</div>
+      <div class="settings-row">
+        <div class="settings-row-text">
+          <div class="settings-row-name">Stáhnout zálohu</div>
+          <div class="settings-row-desc">Uloží zůstatek, historii, jméno a téma do souboru</div>
+        </div>
+        <button class="settings-btn" onclick="exportBackup()">Stáhnout</button>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-text">
+          <div class="settings-row-name">Nahrát zálohu</div>
+          <div class="settings-row-desc">Přepíše současná data souborem zálohy</div>
+        </div>
+        <button class="settings-btn" onclick="document.getElementById('importFile').click()">Nahrát</button>
+        <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="importBackup(event)">
+      </div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-section-title">Editor aktivit — Těžení</div>
+      <div class="editor-list" id="earnEditorList"></div>
+      <button class="settings-btn add-btn" onclick="addEarnItem()">+ Přidat aktivitu</button>
+    </div>
+    <div class="settings-section">
+      <div class="settings-section-title">Editor aktivit — Odměny</div>
+      <div class="editor-list" id="spendEditorList"></div>
+      <button class="settings-btn add-btn" onclick="addSpendItem()">+ Přidat odměnu</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const DEFAULT_EARN = [
+  {id:"e1",icon:"🧹",name:"Úklid pokojíčku",meta:"min. 1 min.",rate:2,minSec:60,dailyLimit:2},
+  {id:"e2",icon:"🤫",name:"Nejdéle nemluvit",meta:"každá minuta ticha",rate:0.9,minSec:60,dailyLimit:3},
+  {id:"e3",icon:"🌿",name:"Úklid zahrady",meta:"min. 5 min.",rate:0.8,minSec:300,dailyLimit:1},
+  {id:"e4",icon:"📖",name:"Čtení",meta:"min. 10 min.",rate:3,minSec:600,dailyLimit:3},
+  {id:"e5",icon:"✏️",name:"Učení",meta:"min. 10 min.",rate:0.5,minSec:600,dailyLimit:3},
+  {id:"e6",icon:"🎒",name:"Školní úkoly",meta:"min. 10 min.",rate:1,minSec:600,dailyLimit:2},
+  {id:"e7",icon:"🍽️",name:"Pomoc s nádobím",meta:"min. 5 min.",rate:2,minSec:300,dailyLimit:3},
+  {id:"e8",icon:"🐕",name:"Venčení psa",meta:"min. 10 min.",rate:5,minSec:600,dailyLimit:3},
+  {id:"e9",icon:"👕",name:"Složení prádla",meta:"min. 5 min.",rate:3,minSec:300,dailyLimit:2},
+  {id:"e10",icon:"🚴",name:"Pohyb venku",meta:"min. 20 min.",rate:1.5,minSec:1200,dailyLimit:2},
+  {id:"e11",icon:"🎨",name:"Kreslení / stavebnice",meta:"min. 10 min.",rate:2,minSec:600,dailyLimit:3},
+  {id:"e12",icon:"🔧",name:"Pomoc s opravou",meta:"min. 10 min.",rate:6,minSec:600,dailyLimit:1},
+];
+const DEFAULT_SPEND = [
+  {id:"s1",icon:"🖥️",name:"Hraní na PC",meta:"10 minut hraní",cost:50},
+  {id:"s2",icon:"📺",name:"YouTube / video",meta:"10 minut sledování",cost:30},
+  {id:"s3",icon:"🍦",name:"Zmrzlina",meta:"1 kopička",cost:80},
+  {id:"s4",icon:"🌙",name:"Pozdější spánek",meta:"+ 30 minut večer",cost:120},
+];
+
+function genId(){ return 'x'+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+
+function loadEarnItems(){
+  const raw=localStorage.getItem('kt_earn_items');
+  if(raw){ try{ const p=JSON.parse(raw); if(Array.isArray(p)&&p.length) return p; }catch(e){} }
+  const seed=JSON.parse(JSON.stringify(DEFAULT_EARN));
+  localStorage.setItem('kt_earn_items',JSON.stringify(seed));
+  return seed;
+}
+function loadSpendItems(){
+  const raw=localStorage.getItem('kt_spend_items');
+  if(raw){ try{ const p=JSON.parse(raw); if(Array.isArray(p)&&p.length) return p; }catch(e){} }
+  const seed=JSON.parse(JSON.stringify(DEFAULT_SPEND));
+  localStorage.setItem('kt_spend_items',JSON.stringify(seed));
+  return seed;
+}
+function saveEarnItems(){ localStorage.setItem('kt_earn_items',JSON.stringify(earnItems)); }
+function saveSpendItems(){ localStorage.setItem('kt_spend_items',JSON.stringify(spendItems)); }
+
+const LEVELS = [
+  [0,"Nováček"],[100,"Těžař"],[300,"Hrdina"],[600,"Šampion"],[1000,"Legenda"],[2000,"Nesmrtelný"]
+];
+
+let balance = parseFloat(localStorage.getItem('kt_balance')||'0');
+let log = JSON.parse(localStorage.getItem('kt_log')||'[]');
+let playerName = localStorage.getItem('kt_name')||'';
+let currentTheme = localStorage.getItem('kt_theme')||'theme-dark';
+let earnItems = loadEarnItems();
+let spendItems = loadSpendItems();
+let editingEarnId = null, editingSpendId = null;
+
+let timerAct = null, timerActId = null, timerIv = null, timerSec = 0;
+let dailyData = JSON.parse(localStorage.getItem('kt_daily')||'{}');
+
+function todayStr(){
+  const d=new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function checkDailyReset(){
+  const t=todayStr();
+  if(dailyData.date!==t){
+    dailyData={date:t,counts:{}};
+    localStorage.setItem('kt_daily',JSON.stringify(dailyData));
+  }
+}
+function getDailyCount(id){
+  checkDailyReset();
+  return dailyData.counts[id]||0;
+}
+function incrementDaily(id){
+  checkDailyReset();
+  dailyData.counts[id]=(dailyData.counts[id]||0)+1;
+  localStorage.setItem('kt_daily',JSON.stringify(dailyData));
+}
+
+function save(){
+  localStorage.setItem('kt_balance',balance.toFixed(2));
+  localStorage.setItem('kt_log',JSON.stringify(log.slice(-50)));
+  localStorage.setItem('kt_name',playerName);
+}
+
+function getLevel(b){
+  let l = LEVELS[0][1];
+  for(const [min,name] of LEVELS) if(b>=min) l=name;
+  return l;
+}
+
+function renderBalance(){
+  document.getElementById('balanceAmt').textContent = Math.floor(balance);
+  document.getElementById('heroSub').textContent = 'Úroveň: '+getLevel(balance);
+  const el = document.getElementById('balanceAmt');
+  el.classList.remove('pop');
+  void el.offsetWidth;
+  el.classList.add('pop');
+}
+
+function renderName(){
+  const n = playerName||'Nastav jméno';
+  document.getElementById('heroName').textContent = n;
+  document.getElementById('avatarInitials').textContent = playerName ? playerName.slice(0,2).toUpperCase() : '?';
+}
+
+function editName(){
+  const n = prompt('Zadej své jméno:',playerName);
+  if(n!==null){playerName=n.trim()||playerName;save();renderName();}
+}
+
+function renderLog(){
+  const el = document.getElementById('logList');
+  if(!log.length){el.innerHTML='<div class="log-empty">Zatím žádná aktivita</div>';return;}
+  el.innerHTML = [...log].reverse().slice(0,20).map(e=>`
+    <div class="log-row">
+      <span>${escHtml(e.icon)} <span class="log-row-name">${escHtml(e.name)}</span> <span class="log-row-time">${e.time}</span></span>
+      <span class="log-val ${e.earn?'pos':'neg'}">${e.earn?'+':'-'}${Math.abs(e.val).toFixed(1)} kr</span>
+    </div>`).join('');
+}
+
+function addLog(icon,name,val,earn){
+  const d=new Date();
+  log.push({icon,name,val,earn,time:`${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`});
+  save();renderLog();
+}
+
+function escHtml(s){
+  return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function showToast(msg,err){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.className='toast'+(err?' err':'');
+  void t.offsetWidth;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+function buildEarn(){
+  document.getElementById('earnGrid').innerHTML = earnItems.map((a,i)=>{
+    const count=getDailyCount(a.id);
+    const maxed=count>=a.dailyLimit;
+    return `
+    <div class="act-card${maxed?' maxed':''}" onclick="startTimer('${a.id}')">
+      <div class="act-icon">${escHtml(a.icon)}</div>
+      <div class="act-name">${escHtml(a.name)}</div>
+      <div class="act-meta">${maxed?'Zítra znovu':escHtml(a.meta)}</div>
+      <span class="act-badge earn${maxed?' maxed':''}">${maxed?`Dnes hotovo (${count}/${a.dailyLimit})`:`+${a.rate>=1?a.rate.toFixed(0):a.rate} kr/min`}</span>
+    </div>`;
+  }).join('');
+}
+
+function buildSpend(){
+  document.getElementById('spendGrid').innerHTML = spendItems.map((s,i)=>`
+    <div class="spend-card" onclick="spend('${s.id}')">
+      <div class="spend-icon">${escHtml(s.icon)}</div>
+      <div class="spend-info">
+        <div class="spend-name">${escHtml(s.name)}</div>
+        <div class="spend-meta">${escHtml(s.meta)}</div>
+      </div>
+      <div class="spend-cost">${s.cost} kr</div>
+    </div>`).join('');
+}
+
+function spend(id){
+  const s=spendItems.find(x=>x.id===id);
+  if(!s)return;
+  if(balance<s.cost){showToast(`Potřebuješ ${s.cost} kr, máš ${Math.floor(balance)} kr!`,true);return;}
+  balance=Math.round((balance-s.cost)*100)/100;
+  renderBalance();addLog(s.icon,s.name,s.cost,false);
+  showToast(`${s.icon} Užij si: ${s.name}!`);
+}
+
+function startTimer(id){
+  const a=earnItems.find(x=>x.id===id);
+  if(!a)return;
+  if(getDailyCount(id)>=a.dailyLimit){
+    showToast(`Dnešní limit pro "${a.name}" už jsi vyčerpal. Zkus to zítra!`,true);
+    return;
+  }
+  timerAct=a;timerActId=id;timerSec=0;
+  document.getElementById('timerIcon').textContent=timerAct.icon;
+  document.getElementById('timerName').textContent=timerAct.name;
+  document.getElementById('timerDisplay').textContent='00:00';
+  document.getElementById('timerConfirm').disabled=true;
+  document.getElementById('timerStatus').textContent=`Minimum: ${timerAct.minSec/60} min`;
+  document.getElementById('timerOverlay').classList.add('on');
+  timerIv=setInterval(()=>{
+    timerSec++;
+    const m=Math.floor(timerSec/60),s=timerSec%60;
+    document.getElementById('timerDisplay').textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    const earned=Math.round((timerSec/60)*timerAct.rate*10)/10;
+    if(timerSec>=timerAct.minSec){
+      document.getElementById('timerConfirm').disabled=false;
+      document.getElementById('timerStatus').textContent=`Vyděláš: +${earned.toFixed(1)} kreditů`;
+    } else {
+      const rem=Math.ceil((timerAct.minSec-timerSec)/60);
+      document.getElementById('timerStatus').textContent=`Ještě ${rem} min do minima`;
+    }
+  },1000);
+}
+
+function confirmTimer(){
+  clearInterval(timerIv);
+  const earned=Math.round((timerSec/60)*timerAct.rate*10)/10;
+  balance=Math.round((balance+earned)*100)/100;
+  incrementDaily(timerActId);
+  document.getElementById('timerOverlay').classList.remove('on');
+  renderBalance();addLog(timerAct.icon,timerAct.name,earned,true);
+  buildEarn();
+  showToast(`${timerAct.icon} +${earned.toFixed(1)} kreditů připsáno!`);
+  timerAct=null;timerActId=null;
+}
+
+function cancelTimer(){
+  clearInterval(timerIv);
+  document.getElementById('timerOverlay').classList.remove('on');
+  timerAct=null;
+}
+
+function resetGame(){
+  if(!confirm('Opravdu resetovat zůstatek a historii? Tato akce je nevratná.')) return;
+  balance=0;log=[];save();renderBalance();renderLog();
+  showToast('Hra resetována.');
+  closeSettings();
+}
+
+function resetSettings(){
+  if(!confirm('Opravdu resetovat jméno, téma a vlastní aktivity na výchozí?')) return;
+  playerName='';
+  earnItems=JSON.parse(JSON.stringify(DEFAULT_EARN));
+  spendItems=JSON.parse(JSON.stringify(DEFAULT_SPEND));
+  saveEarnItems();saveSpendItems();
+  save();renderName();
+  setTheme('theme-dark', document.querySelector('.theme-btn[data-theme="theme-dark"]'));
+  buildEarn();buildSpend();buildEditorLists();
+  showToast('Nastavení resetováno.');
+  closeSettings();
+}
+
+function openSettings(){
+  document.getElementById('settingsOverlay').classList.add('on');
+  buildEditorLists();
+}
+
+function closeSettings(){
+  document.getElementById('settingsOverlay').classList.remove('on');
+  editingEarnId=null;editingSpendId=null;
+}
+
+function buildEditorLists(){
+  document.getElementById('earnEditorList').innerHTML = earnItems.map(a=>{
+    if(editingEarnId===a.id){
+      return `
+      <div class="editor-row editing">
+        <div class="editor-form">
+          <div class="editor-form-line1">
+            <input class="editor-input icon-input" id="ee_icon_${a.id}" value="${escHtml(a.icon)}" maxlength="4">
+            <input class="editor-input" id="ee_name_${a.id}" value="${escHtml(a.name)}" placeholder="Název">
+          </div>
+          <input class="editor-input" id="ee_meta_${a.id}" value="${escHtml(a.meta)}" placeholder="Popisek (např. min. 10 min.)">
+          <div class="editor-form-row"><label>Sazba (kr/min)</label><input type="number" step="0.1" min="0" class="editor-input" id="ee_rate_${a.id}" value="${a.rate}"></div>
+          <div class="editor-form-row"><label>Min. čas (min)</label><input type="number" step="1" min="0" class="editor-input" id="ee_min_${a.id}" value="${a.minSec/60}"></div>
+          <div class="editor-form-row"><label>Denní limit</label><input type="number" step="1" min="1" class="editor-input" id="ee_limit_${a.id}" value="${a.dailyLimit}"></div>
+        </div>
+        <div class="editor-form-btns">
+          <button class="settings-btn" onclick="cancelEditEarn()">Zrušit</button>
+          <button class="settings-btn primary" onclick="saveEarnItem('${a.id}')">Uložit</button>
+        </div>
+      </div>`;
+    }
+    return `
+    <div class="editor-row">
+      <span class="editor-row-icon">${escHtml(a.icon)}</span>
+      <span class="editor-row-name">${escHtml(a.name)}</span>
+      <span class="editor-row-val">${a.rate} kr/min</span>
+      <button class="editor-icon-btn" onclick="editEarnItem('${a.id}')" title="Upravit">✏️</button>
+      <button class="editor-icon-btn" onclick="deleteEarnItem('${a.id}')" title="Smazat">🗑️</button>
+    </div>`;
+  }).join('') || '<div class="settings-row-desc">Zatím žádné aktivity.</div>';
+
+  document.getElementById('spendEditorList').innerHTML = spendItems.map(s=>{
+    if(editingSpendId===s.id){
+      return `
+      <div class="editor-row editing">
+        <div class="editor-form">
+          <div class="editor-form-line1">
+            <input class="editor-input icon-input" id="es_icon_${s.id}" value="${escHtml(s.icon)}" maxlength="4">
+            <input class="editor-input" id="es_name_${s.id}" value="${escHtml(s.name)}" placeholder="Název">
+          </div>
+          <input class="editor-input" id="es_meta_${s.id}" value="${escHtml(s.meta)}" placeholder="Popisek (např. 10 minut sledování)">
+          <div class="editor-form-row"><label>Cena (kr)</label><input type="number" step="1" min="0" class="editor-input" id="es_cost_${s.id}" value="${s.cost}"></div>
+        </div>
+        <div class="editor-form-btns">
+          <button class="settings-btn" onclick="cancelEditSpend()">Zrušit</button>
+          <button class="settings-btn primary" onclick="saveSpendItem('${s.id}')">Uložit</button>
+        </div>
+      </div>`;
+    }
+    return `
+    <div class="editor-row">
+      <span class="editor-row-icon">${escHtml(s.icon)}</span>
+      <span class="editor-row-name">${escHtml(s.name)}</span>
+      <span class="editor-row-val">${s.cost} kr</span>
+      <button class="editor-icon-btn" onclick="editSpendItem('${s.id}')" title="Upravit">✏️</button>
+      <button class="editor-icon-btn" onclick="deleteSpendItem('${s.id}')" title="Smazat">🗑️</button>
+    </div>`;
+  }).join('') || '<div class="settings-row-desc">Zatím žádné odměny.</div>';
+}
+
+function editEarnItem(id){ editingEarnId=id; buildEditorLists(); }
+function cancelEditEarn(){ editingEarnId=null; buildEditorLists(); }
+
+function saveEarnItem(id){
+  const item=earnItems.find(x=>x.id===id);
+  if(!item)return;
+  const icon=document.getElementById(`ee_icon_${id}`).value.trim()||'⭐';
+  const name=document.getElementById(`ee_name_${id}`).value.trim();
+  const meta=document.getElementById(`ee_meta_${id}`).value.trim();
+  const rate=parseFloat(document.getElementById(`ee_rate_${id}`).value);
+  const minMin=parseFloat(document.getElementById(`ee_min_${id}`).value);
+  const limit=parseInt(document.getElementById(`ee_limit_${id}`).value,10);
+  if(!name){showToast('Zadej název aktivity.',true);return;}
+  if(isNaN(rate)||rate<0){showToast('Sazba musí být kladné číslo.',true);return;}
+  if(isNaN(minMin)||minMin<0){showToast('Minimální čas musí být kladné číslo.',true);return;}
+  if(isNaN(limit)||limit<1){showToast('Denní limit musí být alespoň 1.',true);return;}
+  item.icon=icon;item.name=name;item.meta=meta||`min. ${minMin} min.`;
+  item.rate=rate;item.minSec=Math.round(minMin*60);item.dailyLimit=limit;
+  saveEarnItems();
+  editingEarnId=null;
+  buildEditorLists();buildEarn();
+  showToast('Aktivita uložena.');
+}
+
+function deleteEarnItem(id){
+  const item=earnItems.find(x=>x.id===id);
+  if(!item)return;
+  if(!confirm(`Opravdu smazat aktivitu "${item.name}"?`))return;
+  earnItems=earnItems.filter(x=>x.id!==id);
+  saveEarnItems();
+  buildEditorLists();buildEarn();
+  showToast('Aktivita smazána.');
+}
+
+function addEarnItem(){
+  const id=genId();
+  earnItems.push({id,icon:"⭐",name:"Nová aktivita",meta:"min. 5 min.",rate:1,minSec:300,dailyLimit:2});
+  saveEarnItems();
+  editingEarnId=id;
+  buildEditorLists();buildEarn();
+}
+
+function editSpendItem(id){ editingSpendId=id; buildEditorLists(); }
+function cancelEditSpend(){ editingSpendId=null; buildEditorLists(); }
+
+function saveSpendItem(id){
+  const item=spendItems.find(x=>x.id===id);
+  if(!item)return;
+  const icon=document.getElementById(`es_icon_${id}`).value.trim()||'🎁';
+  const name=document.getElementById(`es_name_${id}`).value.trim();
+  const meta=document.getElementById(`es_meta_${id}`).value.trim();
+  const cost=parseFloat(document.getElementById(`es_cost_${id}`).value);
+  if(!name){showToast('Zadej název odměny.',true);return;}
+  if(isNaN(cost)||cost<0){showToast('Cena musí být kladné číslo.',true);return;}
+  item.icon=icon;item.name=name;item.meta=meta;item.cost=cost;
+  saveSpendItems();
+  editingSpendId=null;
+  buildEditorLists();buildSpend();
+  showToast('Odměna uložena.');
+}
+
+function deleteSpendItem(id){
+  const item=spendItems.find(x=>x.id===id);
+  if(!item)return;
+  if(!confirm(`Opravdu smazat odměnu "${item.name}"?`))return;
+  spendItems=spendItems.filter(x=>x.id!==id);
+  saveSpendItems();
+  buildEditorLists();buildSpend();
+  showToast('Odměna smazána.');
+}
+
+function addSpendItem(){
+  const id=genId();
+  spendItems.push({id,icon:"🎁",name:"Nová odměna",meta:"",cost:50});
+  saveSpendItems();
+  editingSpendId=id;
+  buildEditorLists();buildSpend();
+}
+
+function exportBackup(){
+  const data = {
+    version:2,
+    exportedAt:new Date().toISOString(),
+    balance,
+    log,
+    playerName,
+    theme:currentTheme,
+    earnItems,
+    spendItems
+  };
+  const blob = new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const d = new Date();
+  const stamp = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `kredity-zaloha-${stamp}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('Záloha stažena.');
+}
+
+function importBackup(evt){
+  const file = evt.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    let data;
+    try{
+      data = JSON.parse(e.target.result);
+    }catch(err){
+      showToast('Soubor se nepodařilo přečíst — není to platná záloha.',true);
+      evt.target.value='';
+      return;
+    }
+    if(typeof data.balance!=='number' || !Array.isArray(data.log)){
+      showToast('Soubor neobsahuje platná data zálohy.',true);
+      evt.target.value='';
+      return;
+    }
+    if(!confirm('Opravdu přepsat současná data zálohou ze souboru? Tato akce je nevratná.')){
+      evt.target.value='';
+      return;
+    }
+    balance = data.balance;
+    log = data.log;
+    playerName = typeof data.playerName==='string' ? data.playerName : '';
+    if(Array.isArray(data.earnItems) && data.earnItems.length){ earnItems=data.earnItems; saveEarnItems(); }
+    if(Array.isArray(data.spendItems) && data.spendItems.length){ spendItems=data.spendItems; saveSpendItems(); }
+    save();
+    renderBalance();renderLog();renderName();
+    buildEarn();buildSpend();buildEditorLists();
+    if(data.theme){
+      const btn = document.querySelector(`.theme-btn[data-theme="${data.theme}"]`);
+      if(btn) setTheme(data.theme,btn);
+    }
+    evt.target.value='';
+    showToast('Záloha načtena.');
+    closeSettings();
+  };
+  reader.readAsText(file);
+}
+
+function setTheme(t,btn){
+  document.body.className=t;
+  currentTheme=t;
+  localStorage.setItem('kt_theme',t);
+  document.querySelectorAll('.theme-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+document.body.className=currentTheme;
+document.querySelectorAll('.theme-btn').forEach(b=>{
+  if(b.dataset.theme===currentTheme) b.classList.add('active');
+  else b.classList.remove('active');
+});
+buildEarn();buildSpend();renderName();renderBalance();renderLog();
+</script>
+</body>
+</html>
