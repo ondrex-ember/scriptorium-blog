@@ -108,18 +108,41 @@ body{background:#080810;display:flex;justify-content:center;padding:20px;min-hei
 .stk-tab.active-jana{border-color:#16a085;color:#16a085;background:#081a16;}
 .stk-tab.done{border-color:#27ae60;color:#27ae60;opacity:.6;}
 .stk-tab.pending{color:#445;}
+/* ── stats panel ── */
+.stats-panel{background:#0a0a15;border-bottom:1px solid #1e2040;padding:0;max-height:0;overflow:hidden;transition:max-height .3s ease,padding .3s;}
+.stats-panel.open{max-height:320px;padding:12px 16px;}
+.sp-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:8px;}
+.sp-item{background:#111128;border:1px solid #1e2040;padding:8px;border-radius:3px;text-align:center;}
+.sp-lbl{font-size:9px;color:#556;letter-spacing:.07em;text-transform:uppercase;margin-bottom:3px;}
+.sp-val{font-size:16px;font-weight:bold;color:#bcd;}
+.sp-hist{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px;}
+.sp-day{background:#111128;border:1px solid #1e2040;padding:4px 8px;border-radius:2px;font-size:10px;color:#778;}
+.sp-day.win{border-color:#27ae60;color:#27ae60;}
+.sp-day.ok{border-color:#2980b9;color:#2980b9;}
+.sp-day.meh{border-color:#e67e22;color:#e67e22;}
+.sp-day.fail{border-color:#c0392b;color:#c0392b;}
+.rel-bar{height:4px;background:#1a1a2e;border-radius:2px;overflow:hidden;margin-top:4px;}
+.rel-fill{height:100%;border-radius:2px;transition:width .4s;}
+.hud-btn{background:transparent;border:1px solid #2c3e50;color:#778;width:22px;height:22px;border-radius:50%;font-size:11px;cursor:pointer;transition:all .15s;flex-shrink:0;}
+.hud-btn:hover{border-color:#2980b9;color:#bcd;}
+.hud-day{font-size:10px;color:#445;letter-spacing:2px;padding:2px 6px;border:1px solid #1e2040;border-radius:2px;}
 </style>
 </head>
 <body>
 <div id="pp">
   <div class="pph">
-    <span class="pp-logo">PITCH PANIC <span style="font-size:10px;color:#445;letter-spacing:1px;">prototype v0.3, by Ondrex</span></span>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span class="pp-logo">PITCH PANIC <span style="font-size:10px;color:#445;letter-spacing:1px;">v0.3</span></span>
+      <span class="hud-day" id="pp-day">DEN 1</span>
+    </div>
     <div class="pp-hud-top">
       <span id="pp-clock" class="pp-clock">08:00</span>
       <span id="pp-cigs" class="pp-cigs"></span>
       <span id="pp-phase-lbl" class="pp-phase-lbl">IDEA DELIVERY</span>
+      <button class="hud-btn" onclick="toggleStats()" title="Player stats">👤</button>
     </div>
   </div>
+  <div class="stats-panel" id="stats-panel"></div>
   <div id="pp-content"></div>
 </div>
 <script>
@@ -245,6 +268,53 @@ ans:[{lbl:"Konkrétní retence benchmark + re-engagement strategie",score:28,rxn
 const SECS=["problem","solution","market","competition"];
 const SN={problem:"Problem & Pain",solution:"Naše řešení",market:"Velikost trhu",competition:"Konkurence"};
 
+// ── GLOBAL PROGRESSION (přežívá přes dny) ──────────────────────────────────
+const SAVE_KEY="pitch_panic_v03";
+let G={day:1,totalScore:0,borisRel:50,janaRel:50,totalCoffees:0,totalCigs:0,dayHistory:[],usedIdeas:[],pendingFx:null};
+
+function saveGame(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(G));}catch(e){}}
+function loadGame(){
+  try{
+    let raw=localStorage.getItem(SAVE_KEY);
+    if(!raw)return false;
+    let saved=JSON.parse(raw);
+    G=Object.assign(G,saved);
+    return true;
+  }catch(e){return false;}
+}
+function clearSave(){try{localStorage.removeItem(SAVE_KEY);}catch(e){}}
+
+function toggleStats(){
+  let p=document.getElementById("stats-panel");if(!p)return;
+  let open=p.classList.toggle("open");
+  p.innerHTML=open?renderStats():"";
+}
+function renderStats(){
+  function cls(sc){return sc>=80?"win":sc>=60?"ok":sc>=40?"meh":"fail";}
+  return`<div class="sp-grid">
+  <div class="sp-item"><div class="sp-lbl">Aktuální den</div><div class="sp-val" style="color:#f39c12">${G.day}/5</div></div>
+  <div class="sp-item"><div class="sp-lbl">Total skóre</div><div class="sp-val" style="color:#27ae60">${G.totalScore}</div></div>
+  <div class="sp-item"><div class="sp-lbl">☕ celkem</div><div class="sp-val" style="color:#e67e22">${G.totalCoffees}</div></div>
+  <div class="sp-item"><div class="sp-lbl">🚬 celkem</div><div class="sp-val" style="color:#778">${G.totalCigs}</div></div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:8px;">
+  <div class="sp-item">
+    <div class="sp-lbl">🧔 Boris — vztah</div>
+    <div class="sp-val" style="color:#c0392b">${G.borisRel}%</div>
+    <div class="rel-bar"><div class="rel-fill" style="width:${G.borisRel}%;background:#c0392b;"></div></div>
+  </div>
+  <div class="sp-item">
+    <div class="sp-lbl">👩 Jana — vztah</div>
+    <div class="sp-val" style="color:#16a085">${G.janaRel}%</div>
+    <div class="rel-bar"><div class="rel-fill" style="width:${G.janaRel}%;background:#16a085;"></div></div>
+  </div>
+</div>
+${G.dayHistory.length?`<div class="section-lbl">HISTORIE DNÍ</div><div class="sp-hist">${G.dayHistory.map(h=>`<div class="sp-day ${cls(h.score)}">Den ${h.day}: ${h.score}pts · ${h.idea}</div>`).join("")}</div>`:"<div style='font-size:11px;color:#445;'>Žádná historie — hraj první den.</div>"}
+<div style="margin-top:8px;display:flex;justify-content:flex-end;">
+  <button class="btn r" style="padding:3px 10px;font-size:10px;" onclick="fullReset()">🗑 Reset save</button>
+</div>`;
+}
+
 // ── STATE ───────────────────────────────────────────────────────────────────
 let S={
   phase:"idea",idea:null,
@@ -313,6 +383,7 @@ function tick(){
   S.stress=cl(S.stress+(late?0.34:aft?0.28:0.13),0,100);
   S.focus=cl(S.focus-(late?0.18:aft?0.14:0.07),0,100);
   trySpawnEvent();
+  if(S.stress>=98){clearInterval(S.timerRef);S.phase="gameover";render();return;}
   if(S.gMin>=480&&!S.event){startTransit();return;}
   updateHUD();if(!S.event)updateHomePartial();
 }
@@ -432,8 +503,77 @@ function chooseEvening(idx){
   let ch=EVENING_CHOICES[idx];
   S.evening=ch;
   addLog("🌙 Večer: "+ch.title,"info");
+  // update global progression
+  let sc=finalScore();
+  G.totalScore+=sc;
+  G.totalCoffees+=S.coffees;
+  G.totalCigs+=S.cigs;
+  G.dayHistory.push({day:G.day,score:sc,idea:S.idea.name,evening:ch.id});
+  G.usedIdeas.push(S.idea.name);
+  // relationship delta
+  G.borisRel=cl(G.borisRel+(sc>=70?10:sc>=50?4:sc<40?-10:-3),0,100);
+  G.janaRel=cl(G.janaRel+(sc>=70?8:sc>=50?3:sc<40?-8:-2),0,100);
+  // pending fx for next day start
+  G.pendingFx={focus:ch.fx.focus||0,stress:ch.fx.stress||0,docBonus:ch.docBonus||0};
+  saveGame();
   S.phase="result_final";render();
 }
+
+// ── NEXT DAY / FULL RESET / GAME OVER ───────────────────────────────────────
+function nextDay(){
+  clearInterval(S.timerRef);
+  if(G.day>=5){S.phase="gameover";render();return;}
+  G.day++;
+  let fx=G.pendingFx||{focus:0,stress:0,docBonus:0};
+  let sf=cl(80+(fx.focus||0),20,100);
+  let ss=cl(15+(fx.stress||0),0,80);
+  S={phase:"idea",idea:null,
+    doc:{problem:{p:0,q:0},solution:{p:0,q:fx.docBonus||0},market:{p:0,q:0},competition:{p:0,q:0}},
+    focus:sf,stress:ss,gMin:0,selSec:"problem",log:[],event:null,
+    pitch:{qi:0,score:0,log:[],handicap:0,allQs:[]},
+    coffees:0,cigs:0,eCnt:{},timerRef:null,wCd:0,lastEvMin:-999,evening:null};
+  if(fx.docBonus>0)addLog(`🌙 Přesčas: solution quality +${fx.docBonus} na start`,"ok");
+  let pd=document.getElementById("pp-day");if(pd)pd.textContent="DEN "+G.day;
+  let sp=document.getElementById("stats-panel");if(sp){sp.classList.remove("open");sp.innerHTML="";}
+  document.getElementById("pp-phase-lbl").textContent="IDEA DELIVERY";
+  let cg=document.getElementById("pp-cigs");if(cg)cg.textContent="";
+  pickIdea();render();
+}
+
+function fullReset(){
+  clearInterval(S.timerRef);clearSave();
+  G={day:1,totalScore:0,borisRel:50,janaRel:50,totalCoffees:0,totalCigs:0,dayHistory:[],usedIdeas:[],pendingFx:null};
+  S={phase:"idea",idea:null,doc:{problem:{p:0,q:0},solution:{p:0,q:0},market:{p:0,q:0},competition:{p:0,q:0}},focus:80,stress:15,gMin:0,selSec:"problem",log:[],event:null,pitch:{qi:0,score:0,log:[],handicap:0,allQs:[]},coffees:0,cigs:0,eCnt:{},timerRef:null,wCd:0,lastEvMin:-999,evening:null};
+  let pd=document.getElementById("pp-day");if(pd)pd.textContent="DEN 1";
+  let sp=document.getElementById("stats-panel");if(sp){sp.classList.remove("open");sp.innerHTML="";}
+  document.getElementById("pp-phase-lbl").textContent="IDEA DELIVERY";
+  let cg=document.getElementById("pp-cigs");if(cg)cg.textContent="";
+  pickIdea();render();
+}
+
+function renderGameOver(){
+  let isWin=G.day>=5;
+  let total=G.totalScore;
+  let avg=G.dayHistory.length?Math.round(total/G.dayHistory.length):0;
+  let bestDay=G.dayHistory.length?G.dayHistory.reduce((b,h)=>h.score>b.score?h:b,G.dayHistory[0]):null;
+  return`<div class="ani" style="max-width:460px;margin:0 auto;padding:10px 0;">
+<div style="text-align:center;font-size:44px;margin-bottom:8px;">${isWin?"🏆":"💀"}</div>
+<div style="text-align:center;font-size:20px;color:#ecf0f1;margin-bottom:4px;">${isWin?"TÝDEN PŘEŽIT":"BURNOUT"}</div>
+<div style="text-align:center;font-size:11px;color:#778;margin-bottom:16px;font-style:italic;">${isWin?"5 dní pitchů. Boris je tiše respektující. Jana si tě zapamatovala.":"Stres překročil kritickou mez. Tělo řeklo ne."}${isWin&&G.borisRel>=70?" Termsheet... možná.":""}</div>
+<div class="res-grid">
+  <div class="res-item"><div class="res-rlbl">Dny</div><div class="res-rval" style="color:#f39c12">${G.dayHistory.length}</div></div>
+  <div class="res-item"><div class="res-rlbl">Total skóre</div><div class="res-rval" style="color:#27ae60">${total}</div></div>
+  <div class="res-item"><div class="res-rlbl">Průměr/den</div><div class="res-rval" style="color:#2980b9">${avg}</div></div>
+  <div class="res-item"><div class="res-rlbl">☕+🚬</div><div class="res-rval" style="color:#e67e22">${G.totalCoffees}+${G.totalCigs}</div></div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:10px 0 12px;">
+  <div class="res-item"><div class="res-rlbl">🧔 Boris vztah</div><div class="res-rval" style="color:#c0392b">${G.borisRel}%</div><div class="rel-bar"><div class="rel-fill" style="width:${G.borisRel}%;background:#c0392b;"></div></div></div>
+  <div class="res-item"><div class="res-rlbl">👩 Jana vztah</div><div class="res-rval" style="color:#16a085">${G.janaRel}%</div><div class="rel-bar"><div class="rel-fill" style="width:${G.janaRel}%;background:#16a085;"></div></div></div>
+</div>
+${bestDay?`<div style="font-size:11px;color:#556;margin-bottom:10px;font-style:italic;">Nejlepší den: Den ${bestDay.day} — ${bestDay.idea} (${bestDay.score} pts)</div>`:""}
+${G.dayHistory.length?`<div class="section-lbl">PER-DAY BREAKDOWN</div><div style="display:flex;flex-direction:column;gap:4px;margin-bottom:12px;">${G.dayHistory.map(h=>`<div class="card" style="font-size:11px;padding:6px 10px;display:flex;justify-content:space-between;align-items:center;"><span style="color:#778">Den ${h.day} · ${h.idea}</span><span style="color:${h.score>=70?"#27ae60":h.score>=50?"#2980b9":h.score>=40?"#e67e22":"#c0392b"}">${h.score} pts</span></div>`).join("")}</div>`:""}
+<button class="btn g" style="width:100%;padding:11px;" onclick="fullReset()">↩ NOVÁ HRA</button>
+</div>`;}
 
 // ── SCORE & VERDICT ─────────────────────────────────────────────────────────
 function finalScore(){
@@ -481,12 +621,14 @@ function render(){
   let c=document.getElementById("pp-content");if(!c)return;
   document.getElementById("pp-clock").textContent=cs(S.gMin);
   let cg=document.getElementById("pp-cigs");if(cg)cg.textContent=S.cigs>0?"🚬"+S.cigs:"";
+  let pd=document.getElementById("pp-day");if(pd)pd.textContent="DEN "+G.day;
   if(S.phase==="idea")c.innerHTML=renderIdea();
   else if(S.phase==="home")c.innerHTML=renderHome();
   else if(S.phase==="transit")c.innerHTML=renderTransit();
   else if(S.phase==="pitch")c.innerHTML=renderPitch();
   else if(S.phase==="result")c.innerHTML=renderResult();
   else if(S.phase==="result_final")c.innerHTML=renderResultFinal();
+  else if(S.phase==="gameover")c.innerHTML=renderGameOver();
   let ov=document.querySelector(".ev-overlay");if(ov)ov.remove();
   if(S.event&&S.phase==="home"){
     let d=document.createElement("div");d.className="ev-overlay";d.innerHTML=renderEvent();
@@ -497,21 +639,31 @@ function render(){
 // ── RENDER FUNCTIONS ─────────────────────────────────────────────────────────
 function renderIdea(){
   let i=S.idea;
+  let fx=G.pendingFx;
+  let borisHint=G.borisRel>=70?"je dnes nakloněný":G.borisRel<=30?"je dnes nepřátelský":"je dnes standardně skeptický";
+  let janaHint=G.janaRel>=70?"má zájem":G.janaRel<=30?"je rozladěná":"je neutrální";
   return`<div class="ani" style="max-width:500px;margin:0 auto;">
 <div class="card" style="border-color:#2980b9;margin-bottom:10px;">
-  <div class="idea-badge">📱 NOVÝ NÁPAD — DEN 1</div>
+  <div class="idea-badge">📱 NOVÝ NÁPAD — DEN ${G.day} / 5</div>
   <div class="idea-name">${i.name}</div>
   <div class="idea-tag">"${i.tagline}"</div>
   <div class="tags">${i.tags.map(t=>`<span class="tag">${t}</span>`).join("")}</div>
   <div class="flavor">${i.flavor}</div>
   <div class="tags"><span class="tag" style="border-color:#e67e22;color:#e67e22;">${i.category}</span><span class="tag" style="border-color:#c0392b;color:#c0392b;">${i.difficulty}× obtížnost</span></div>
 </div>
+${G.day>1?`<div class="card" style="margin-bottom:10px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;">
+  <div style="text-align:center;"><div class="stat-lbl">START FOCUS</div><div style="font-size:14px;color:#2980b9;font-weight:bold;">${pct(S.focus)}%</div></div>
+  <div style="text-align:center;"><div class="stat-lbl">START STRESS</div><div style="font-size:14px;color:#c0392b;font-weight:bold;">${pct(S.stress)}%</div></div>
+  <div style="text-align:center;"><div class="stat-lbl">TOTAL SKÓRE</div><div style="font-size:14px;color:#27ae60;font-weight:bold;">${G.totalScore}</div></div>
+</div>
+<div class="card" style="margin-bottom:10px;font-size:11px;color:#556;line-height:1.7;">
+  🧔 Boris <span style="color:#c0392b">${borisHint}</span> (${G.borisRel}%) · 👩 Jana <span style="color:#16a085">${janaHint}</span> (${G.janaRel}%)
+</div>`:""}
 <div class="card" style="margin-bottom:10px;font-size:11px;color:#6a7a8a;line-height:1.7;">
-  Připrav pitch dokument, ve 16:00 ho odpitchuj <span style="color:#c0392b">Borisu Skeptikovi</span> a <span style="color:#16a085">Janě</span>.<br>
-  Sekce: <span style="color:#bcd">Problem · Řešení · Trh · Konkurence</span><br>
+  Připrav pitch, ve 16:00 ho odpitchuj <span style="color:#c0392b">Borisu</span> a <span style="color:#16a085">Janě</span>.<br>
   <span style="color:#e67e22">08:00→16:00</span> · Poledne = stres eskaluje · 14:00 = kritická zóna · 1s = 3 min
 </div>
-<button class="btn g" style="width:100%;padding:11px;" onclick="startDay()">▶  ZAČÍT DEN</button>
+<button class="btn g" style="width:100%;padding:11px;" onclick="startDay()">▶  ZAČÍT DEN ${G.day}</button>
 </div>`;}
 
 function renderHome(){
@@ -669,10 +821,13 @@ function renderResultFinal(){
   Stress: <span style="color:#c0392b">${Math.round(cl(15+ch.fx.stress,0,80))}%</span> starting
   ${ch.docBonus?`· Doc quality bonus: <span style="color:#27ae60">+${ch.docBonus}</span>`:""}
 </div>
-<button class="btn g" style="width:100%;padding:11px;margin-top:12px;" onclick="restartGame()">↩ HRÁT ZNOVU (nová idea)</button>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;">
+  ${G.day<5?`<button class="btn g" style="padding:11px;" onclick="nextDay()">▶ DEN ${G.day+1} →</button>`:`<button class="btn g" style="padding:11px;" onclick="nextDay()">🏆 VÝSLEDKY →</button>`}
+  <button class="btn r" style="padding:11px;" onclick="fullReset()">↩ NOVÁ HRA</button>
+</div>
 </div>`;}
 
-// ── RESTART ──────────────────────────────────────────────────────────────────
+// ── RESTART (legacy, zachováno pro jistotu) ──────────────────────────────────────────────────────────────────
 function restartGame(){
   clearInterval(S.timerRef);
   S={phase:"idea",idea:null,doc:{problem:{p:0,q:0},solution:{p:0,q:0},market:{p:0,q:0},competition:{p:0,q:0}},focus:80,stress:15,gMin:0,selSec:"problem",log:[],event:null,pitch:{qi:0,score:0,log:[],handicap:0,allQs:[]},coffees:0,cigs:0,eCnt:{},timerRef:null,wCd:0,lastEvMin:-999,evening:null};
@@ -681,7 +836,15 @@ function restartGame(){
   pickIdea();render();
 }
 
-function pickIdea(){S.idea=IDEAS[Math.floor(Math.random()*IDEAS.length)];}
+function pickIdea(){
+  let available=IDEAS.filter(i=>!G.usedIdeas.includes(i.name));
+  if(!available.length)available=IDEAS;
+  S.idea=available[Math.floor(Math.random()*available.length)];
+}
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+loadGame();
+let _pd=document.getElementById("pp-day");if(_pd)_pd.textContent="DEN "+G.day;
 pickIdea();render();
 </script>
 </body>
