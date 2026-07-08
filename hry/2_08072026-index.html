@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Parish & Steeple — MVP</title>
+<style>
+  :root{
+    --bg:#1b1a17; --panel:#26241f; --panel2:#2f2c25; --accent:#c9a227;
+    --text:#e9e3d3; --dim:#a89f8a; --good:#6b9e5a; --bad:#a24c4c;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:Georgia,'Times New Roman',serif;background:var(--bg);color:var(--text);}
+  #app{
+    display:grid;
+    grid-template-columns:1.3fr 1fr;
+    grid-template-rows:auto 1fr;
+    gap:8px;padding:8px;height:100vh;
+  }
+  #topbar{
+    grid-column:1/3;
+    display:flex;justify-content:space-between;align-items:center;
+    flex-wrap:wrap;gap:10px;
+    background:var(--panel);border:1px solid #444;border-radius:6px;padding:8px 12px;
+  }
+  #mainGrid{
+    grid-column:1/3;
+    display:grid;
+    grid-template-columns:1.3fr 1fr;
+    gap:8px;
+    overflow:hidden;
+  }
+  #leftCol, #rightCol{
+    display:flex;flex-direction:column;gap:8px;overflow:hidden;
+  }
+  .panel{
+    background:var(--panel);border:1px solid #444;border-radius:6px;
+    padding:10px;overflow:auto;
+  }
+  #roomsPanel{flex:1.4;}
+  #clergyPanel{flex:1;}
+  #logPanel{flex:1;}
+  #familiesPanel{flex:1;}
+
+  h2,h3{margin:4px 0 8px 0;color:var(--accent);border-bottom:1px solid #444;padding-bottom:4px;}
+  button{
+    background:var(--panel2);color:var(--text);border:1px solid #555;
+    border-radius:4px;padding:5px 9px;cursor:pointer;font-family:inherit;font-size:0.9em;
+  }
+  button:hover{background:#3a362c;}
+  button:disabled{opacity:0.4;cursor:not-allowed;}
+  select{background:var(--panel2);color:var(--text);border:1px solid #555;border-radius:4px;padding:3px 6px;}
+  .stat{display:inline-block;margin-right:14px;font-size:0.95em;}
+  .small{font-size:0.85em;color:var(--dim);}
+  .flex{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0;}
+  .section{border-bottom:1px dashed #444;padding-bottom:10px;margin-bottom:10px;}
+  .card{
+    background:var(--panel2);border:1px solid #444;border-radius:5px;
+    padding:8px;margin-bottom:8px;
+  }
+  .person{
+    display:flex;justify-content:space-between;align-items:center;
+    background:var(--panel2);border-radius:4px;padding:6px 8px;margin-bottom:6px;font-size:0.9em;
+  }
+  .logline{font-size:0.85em;border-bottom:1px solid #333;padding:3px 0;}
+  .logline.event{color:var(--good);}
+  .logline.warn{color:var(--bad);}
+  .color-tag{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:5px;vertical-align:middle;border:1px solid #000;}
+  .eventCard{
+    background:#3a3324;border:1px solid var(--accent);border-radius:6px;
+    padding:10px;margin-bottom:8px;
+  }
+  .eventCard h4{margin:0 0 6px 0;color:var(--accent);}
+  .warnBadge{color:var(--bad);font-weight:bold;}
+  .goodBadge{color:var(--good);font-weight:bold;}
+  ::-webkit-scrollbar{width:8px;}
+  ::-webkit-scrollbar-thumb{background:#555;border-radius:4px;}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div id="topbar">
+    <div>
+      <span class="stat">💰 <span id="statDenari">0</span></span>
+      <span class="stat">🕊 Fide: <span id="statFide">0</span></span>
+      <span class="stat">✨ Grace: <span id="statGrace">0</span></span>
+      <span class="stat">★ Rep: <span id="statRep">0</span></span>
+    </div>
+    <div id="clockDisplay" class="stat">07:00 1.1.1420 (Sunny)</div>
+    <div class="flex">
+      <button id="btnPlus1h">+1h</button>
+      <button id="btnPlus1d">+1 Day</button>
+      <button id="btnPlus1w">+1 Week</button>
+      <select id="modeSelect">
+        <option value="manual">Manual</option>
+        <option value="live">Live</option>
+      </select>
+      <select id="langSelect">
+        <option value="en">EN</option>
+        <option value="cz">CZ</option>
+      </select>
+      <button id="btnSave">Save</button>
+      <button id="btnLoad">Load</button>
+      <button id="btnReset">Reset</button>
+    </div>
+  </div>
+
+  <div id="mainGrid">
+    <div id="leftCol">
+      <div class="panel" id="roomsPanel">
+        <h2 data-i18n="parishGrounds">Parish Grounds</h2>
+        <div id="roomsBody"></div>
+      </div>
+      <div class="panel" id="clergyPanel">
+        <h2 data-i18n="clergyStaff">Clergy & Staff</h2>
+        <div id="clergyStaffBody"></div>
+      </div>
+    </div>
+
+    <div id="rightCol">
+      <div class="panel" id="eventsPanel" style="flex:1;">
+        <h2 data-i18n="lifeEvents">Life Events</h2>
+        <div id="eventsBody"></div>
+      </div>
+      <div class="panel" id="familiesPanel">
+        <h2 data-i18n="villageFamilies">Village Families</h2>
+        <div id="familiesBody"></div>
+      </div>
+      <div class="panel" id="logPanel">
+        <h2 data-i18n="chronicle">Chronicle</h2>
+        <div id="logBox"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+//////////////////////// I18N ////////////////////////
+let curLang = 'en';
+
+const I18N = {
+  en: {
+    parishGrounds:"Parish Grounds", clergyStaff:"Clergy & Staff",
+    lifeEvents:"Life Events", villageFamilies:"Village Families", chronicle:"Chronicle",
+    church:"Church", condition:"Condition", cleanliness:"Cleanliness",
+    repair:"Repair", clean:"Clean", unheated:"Unheated", bareFloor:"Bare floor",
+    currentSeason:"Current season", requiredColor:"required color",
+    celebrateMass:"Celebrate Sunday Mass",
+    sacristyInventory:"Sacristy Inventory",
+    wine:"Wine", hosts:"Hosts", candles:"Candles", incense:"Incense",
+    vestments:"Vestments", buy:"Buy",
+    hirePriest:"Hire Priest", hireSacristan:"Hire Sacristan",
+    hireBellringer:"Hire Bell-ringer", hireOrganist:"Hire Organist",
+    dismiss:"Dismiss", perWeek:"/wk",
+    members:"Members", satisf:"Satisf", piety:"Piety",
+    welcomeMsg:"Welcome to your parish. Ring the bells and begin.",
+    season_Advent:"Advent", season_Christmas:"Christmastide",
+    season_OrdinaryTime:"Ordinary Time", season_Lent:"Lent",
+    season_Easter:"Eastertide", season_Pentecost:"Pentecost",
+    season_OrdinaryTime2:"Ordinary Time",
+    noPriestWarn:"No priest available — Mass cannot be celebrated!",
+    massSuccess:(p)=>`Sunday Mass celebrated. Fide +${p.fide}, Grace +${p.grace}, Denari +${p.denari}.`,
+    lowSupplyWarn:"Warning: sacristy supplies running low!",
+    eventBaptism:"Baptism Request", eventWedding:"Wedding Request", eventFuneral:"Funeral Request",
+    officiate:"Officiate", decline:"Decline",
+    baptismDesc:(f)=>`The ${f} family requests a baptism for their newborn.`,
+    weddingDesc:(f)=>`The ${f} family requests a wedding ceremony.`,
+    funeralDesc:(f)=>`The ${f} family requests funeral rites for a deceased member.`,
+    baptismOfficiated:(f)=>`Baptism celebrated for the ${f} family. Fide and Piety rise.`,
+    weddingOfficiated:(f)=>`Wedding celebrated for the ${f} family. Reputation and Denari rise.`,
+    funeralOfficiated:(f)=>`Funeral rites given to the ${f} family. Grace rises, sorrow eased.`,
+    eventDeclined:(f)=>`You declined the request from the ${f} family. Satisfaction and Piety drop.`,
+  },
+  cz: {
+    parishGrounds:"Pozemky farnosti", clergyStaff:"Duchovenstvo a personál",
+    lifeEvents:"Životní události", villageFamilies:"Vesnické rodiny", chronicle:"Kronika",
+    church:"Kostel", condition:"Stav", cleanliness:"Čistota",
+    repair:"Oprava", clean:"Úklid", unheated:"Netopeno", bareFloor:"Holá podlaha",
+    currentSeason:"Aktuální období", requiredColor:"požadovaná barva",
+    celebrateMass:"Sloužit nedělní mši",
+    sacristyInventory:"Sakristie",
+    wine:"Víno", hosts:"Hostie", candles:"Svíčky", incense:"Kadidlo",
+    vestments:"Roucha", buy:"Koupit",
+    hirePriest:"Najmout kněze", hireSacristan:"Najmout kostelníka",
+    hireBellringer:"Najmout zvoníka", hireOrganist:"Najmout varhaníka",
+    dismiss:"Propustit", perWeek:"/týd",
+    members:"Členové", satisf:"Spok", piety:"Zbožnost",
+    welcomeMsg:"Vítej ve své farnosti. Rozezni zvony a začni.",
+    season_Advent:"Advent", season_Christmas:"Vánoční doba",
+    season_OrdinaryTime:"Liturgické mezidobí", season_Lent:"Postní doba",
+    season_Easter:"Velikonoční doba", season_Pentecost:"Letnice",
+    season_OrdinaryTime2:"Liturgické mezidobí",
+    noPriestWarn:"Žádný kněz k dispozici — mši nelze sloužit!",
+    massSuccess:(p)=>`Nedělní mše odsloužena. Víra +${p.fide}, Milost +${p.grace}, Denáry +${p.denari}.`,
+    lowSupplyWarn:"Varování: zásoby v sakristii docházejí!",
+    eventBaptism:"Žádost o křest", eventWedding:"Žádost o svatbu", eventFuneral:"Žádost o pohřeb",
+    officiate:"Vykonat obřad", decline:"Odmítnout",
+    baptismDesc:(f)=>`Rodina ${f} žádá o křest svého novorozence.`,
+    weddingDesc:(f)=>`Rodina ${f} žádá o svatební obřad.`,
+    funeralDesc:(f)=>`Rodina ${f} žádá o pohřební obřad za zesnulého člena.`,
+    baptismOfficiated:(f)=>`Křest pro rodinu ${f} vykonán. Víra a Zbožnost rostou.`,
+    weddingOfficiated:(f)=>`Svatba pro rodinu ${f} vykonána. Reputace a Denáry rostou.`,
+    funeralOfficiated:(f)=>`Pohřební obřad pro rodinu ${f} vykonán. Milost roste, zármutek zmírněn.`,
+    eventDeclined:(f)=>`Žádost rodiny ${f} byla odmítnuta. Spokojenost a Zbožnost klesají.`,
+  }
+};
+
+function t(key, params){
+  const dict = I18N[curLang];
+  let val = dict[key] ?? key;
+  if(typeof val === 'function') return val(params);
+  return val;
+}
+
+const COLOR_HEX = {white:'#f0f0f0', red:'#a13c3c', green:'#4f7c3c', purple:'#6b4c8a', rose:'#c98cae', black:'#333'};
+
+//////////////////////// SEASONS / CALENDAR ////////////////////////
+const LITURGICAL_SEASONS = [
+  {name:'Advent', color:'purple', startDay:1, endDay:24, month:12},
+  {name:'Christmas', color:'white', startDay:25, endDay:31, month:12},
+  {name:'OrdinaryTime', color:'green', startDay:1, endDay:28, month:2},
+  {name:'Lent', color:'purple', startDay:1, endDay:31, month:3},
+  {name:'Easter', color:'white', startDay:1, endDay:30, month:4},
+  {name:'Pentecost', color:'red', startDay:1, endDay:7, month:5},
+  {name:'OrdinaryTime2', color:'green', startDay:8, endDay:30, month:5},
+];
+function currentSeason(){
+  const m = state.calendar.month;
+  const d = state.calendar.dayOfMonth;
+  for(const s of LITURGICAL_SEASONS){
+    if(s.month===m && d>=s.startDay && d<=s.endDay) return s;
+  }
+  return LITURGICAL_SEASONS[2];
+}
+
+//////////////////////// STATE ////////////////////////
+const FIRST_NAMES = ["Tomáš","Marie","Jakub","Anna","Václav","Petr","Kateřina","Josef","Barbora","Jan","Ludmila","Vojtěch","Alžběta","Ondřej","Klára"];
+const SURNAMES_BY_CLASS = {
+  Noble: ["Novák","z Rožmberka","Kolowrat"],
+  Merchant: ["Svoboda","Krčmář","Zeman"],
+  Peasant: ["Dvořák","Král","Procházka","Sedlák","Novotný","Malý"]
+};
+
+function randInt(min,max){return Math.floor(Math.random()*(max-min+1))+min;}
+function pick(arr){return arr[Math.floor(Math.random()*arr.length)];}
+
+function makePerson(){
+  return {name: pick(FIRST_NAMES)};
+}
+
+function generateFamilies(n=5){
+  const classes = ["Noble","Merchant","Peasant","Peasant","Peasant"];
+  const families = [];
+  for(let i=0;i<n;i++){
+    const cls = classes[i % classes.length];
+    const surname = pick(SURNAMES_BY_CLASS[cls]);
+    const memberCount = cls==="Noble" ? randInt(3,5) : cls==="Merchant" ? randInt(2,4) : randInt(2,3);
+    const members = Array.from({length:memberCount}, makePerson);
+    families.push({
+      id:'fam_'+i+'_'+Date.now(),
+      surname, socialClass:cls,
+      denari: cls==="Noble"?randInt(250,400):cls==="Merchant"?randInt(120,220):randInt(40,80),
+      satisfaction: randInt(55,75),
+      piety: randInt(45,70),
+      members,
+      cooldown: randInt(3,10), // days until next possible life event
+    });
+  }
+  return families;
+}
+
+const state = {
+  denari: 148, fide: 20, grace: 5, reputation: 10,
+  calendar: {year:1420, month:1, dayOfMonth:1, dayOfWeek:1, hour:7},
+  weather: 'Sunny',
+  mode: 'manual',
+  church: {condition:80, cleanliness:69, heated:false, floorCovered:false},
+  sacristy: {wine:20, hosts:100, candles:10, incense:5, vestments:{white:1,red:0,green:0,purple:0,rose:0,black:0}},
+  staff: [
+    {id:'priest1', role:'Priest', name:'Fr. Bartoloměj', theology:3, charisma:2, fatigue:13, morale:80, wage:8},
+    {id:'sac1', role:'Sacristan', name:'Jan Kostelník', fatigue:8, morale:70, wage:3},
+  ],
+  families: generateFamilies(5),
+  pendingEvents: [], // life events awaiting player decision
+  logs: [],
+};
+
+//////////////////////// LOG ////////////////////////
+function log(msg, cls){
+  const dateStr = `${state.calendar.dayOfMonth}.${state.calendar.month}.${state.calendar.year}`;
+  state.logs.unshift({text:`${dateStr} — ${msg}`, cls: cls||''});
+  if(state.logs.length>200) state.logs.pop();
+}
+
+//////////////////////// TIME / CALENDAR HELPERS ////////////////////////
+const DAYS_IN_MONTH = [31,28,31,30,31,30,31,31,30,31,30,31];
+const WEATHER_OPTIONS = ['Sunny','Cloudy','Rainy','Stormy','Foggy','Snowy'];
+
+function advanceHour(hours=1){
+  for(let i=0;i<hours;i++){
+    state.calendar.hour++;
+    if(state.calendar.hour>=24){
+      state.calendar.hour=0;
+      advanceCalendarDay();
+    }
+  }
+  tickStaffFatigue(hours);
+  renderAll();
+}
+
+function advanceCalendarDay(){
+  state.calendar.dayOfMonth++;
+  state.calendar.dayOfWeek = (state.calendar.dayOfWeek % 7) + 1;
+  let dim = DAYS_IN_MONTH[state.calendar.month-1];
+  if(state.calendar.month===2 && isLeap(state.calendar.year)) dim=29;
+  if(state.calendar.dayOfMonth>dim){
+    state.calendar.dayOfMonth=1;
+    state.calendar.month++;
+    if(state.calendar.month>12){
+      state.calendar.month=1;
+      state.calendar.year++;
+    }
+  }
+  state.weather = pick(WEATHER_OPTIONS);
+  dailyUpkeep();
+  maybeGenerateLifeEvent();
+  // Sunday check
+  if(state.calendar.dayOfWeek===7){
+    log(state.staff.some(s=>s.role==='Priest') 
+      ? "It's Sunday — don't forget to celebrate Mass!" 
+      : t('noPriestWarn'), 'warnBadge');
+  }
+}
+
+function isLeap(y){ return (y%4===0 && y%100!==0) || y%400===0; }
+
+function advanceDay(){ advanceHour(24 - state.calendar.hour === 0 ? 24 : 24); }
+function advanceDayExact(){
+  const remaining = 24 - state.calendar.hour;
+  advanceHour(remaining>0?remaining:24);
+}
+function advanceWeek(){ for(let i=0;i<7;i++) advanceDayExact(); }
+
+//////////////////////// UPKEEP / ECONOMY ////////////////////////
+function dailyUpkeep(){
+  // wages
+  let totalWage = 0;
+  state.staff.forEach(s=>{ totalWage += s.wage/7; }); // wage is weekly, prorate daily
+  state.denari -= totalWage;
+
+  // church decay
+  state.church.condition = Math.max(0, state.church.condition - 0.3);
+  state.church.cleanliness = Math.max(0, state.church.cleanliness - (state.church.floorCovered?0.6:0.3));
+
+  // family drift toward baseline slowly
+  state.families.forEach(f=>{
+    f.satisfaction = clamp(f.satisfaction + randInt(-1,1), 0, 100);
+    f.piety = clamp(f.piety + randInt(-1,0), 0, 100);
+    f.cooldown = Math.max(0, f.cooldown-1);
+  });
+
+  if(state.sacristy.wine<10 || state.sacristy.hosts<20 || state.sacristy.candles<3){
+    log(t('lowSupplyWarn'), 'warnBadge');
+  }
+}
+
+function clamp(v,min,max){return Math.max(min,Math.min(max,v));}
+
+function tickStaffFatigue(hours){
+  state.staff.forEach(s=>{
+    s.fatigue = clamp(s.fatigue + hours*0.15, 0, 100);
+    if(s.fatigue>80) s.morale = clamp(s.morale-0.2,0,100);
+  });
+}
+
+//////////////////////// MASS ////////////////////////
+function celebrateSundayMass(){
+  const priest = state.staff.find(s=>s.role==='Priest');
+  if(!priest){ log(t('noPriestWarn'),'warnBadge'); return; }
+  if(state.sacristy.wine<1 || state.sacristy.hosts<10){
+    log(t('lowSupplyWarn'),'warnBadge'); return;
+  }
+  const season = currentSeason();
+  const hasVestment = state.sacristy.vestments[season.color] > 0;
+
+  state.sacristy.wine -= 1;
+  state.sacristy.hosts -= 10;
+  state.sacristy.candles = Math.max(0, state.sacristy.candles-2);
+
+  let fideGain = 2 + priest.theology*0.5 + priest.charisma*0.3;
+  let graceGain = 1 + priest.charisma*0.2;
+  let denariGain = randInt(5,15) + Math.round(state.church.cleanliness/20);
+
+  if(!hasVestment){ fideGain*=0.6; log('Missing proper vestment color — Mass impact reduced.','warnBadge'); }
+  if(state.church.cleanliness<40){ fideGain*=0.8; }
+  if(state.church.condition<40){ fideGain*=0.85; }
+
+  fideGain = Math.round(fideGain);
+  graceGain = Math.round(graceGain);
+
+  state.fide += fideGain;
+  state.grace += graceGain;
+  state.denari += denariGain;
+  priest.fatigue = clamp(priest.fatigue+15,0,100);
+
+  state.families.forEach(f=>{ f.piety = clamp(f.piety + randInt(1,3), 0, 100); });
+
+  log(t('massSuccess',{fide:fideGain, grace:graceGain, denari:denariGain}), 'goodBadge');
+  renderAll();
+}
+
+//////////////////////// LIFE EVENTS ////////////////////////
+function maybeGenerateLifeEvent(){
+  if(state.pendingEvents.length>=3) return;
+  state.families.forEach(fam=>{
+    if(fam.cooldown>0) return;
+    const roll = Math.random();
+    let type=null;
+    if(roll<0.015) type='baptism';
+    else if(roll<0.025) type='wedding';
+    else if(roll<0.032) type='funeral';
+    if(type){
+      spawnLifeEvent(type, fam);
+      fam.cooldown = randInt(20,45);
+    }
+  });
+}
+
+function spawnLifeEvent(type, fam){
+  const id = 'ev_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
+  const titleKey = type==='baptism'?'eventBaptism': type==='wedding'?'eventWedding':'eventFuneral';
+  const descKey = type==='baptism'?'baptismDesc': type==='wedding'?'weddingDesc':'funeralDesc';
+  state.pendingEvents.push({id, type, familyId:fam.id, familyName:fam.surname, titleKey, descKey});
+  log(`${t(titleKey)}: ${t(descKey, fam.surname)}`, '');
+}
+
+function resolveLifeEvent(eventId, officiate){
+  const idx = state.pendingEvents.findIndex(e=>e.id===eventId);
+  if(idx<0) return;
+  const ev = state.pendingEvents[idx];
+  const fam = state.families.find(f=>f.id===ev.familyId);
+  const priest = state.staff.find(s=>s.role==='Priest');
+
+  if(officiate && !priest){
+    log(t('noPriestWarn'),'warnBadge');
+    return;
+  }
+
+  if(officiate){
+    if(ev.type==='baptism'){
+      state.fide += 3; if(fam){ fam.piety = clamp(fam.piety+8,0,100); fam.satisfaction = clamp(fam.satisfaction+6,0,100);}
+      state.denari += randInt(2,6);
+      log(t('baptismOfficiated', ev.familyName), 'goodBadge');
+    } else if(ev.type==='wedding'){
+      state.reputation += 2; state.denari += randInt(10,25);
+      if(fam){ fam.satisfaction = clamp(fam.satisfaction+10,0,100); fam.piety=clamp(fam.piety+4,0,100); }
+      log(t('weddingOfficiated', ev.familyName), 'goodBadge');
+    } else if(ev.type==='funeral'){
+      state.grace += 3; state.denari += randInt(3,8);
+      if(fam){ fam.satisfaction = clamp(fam.satisfaction+8,0,100); }
+      log(t('funeralOfficiated', ev.familyName), 'goodBadge');
+    }
+    if(priest) priest.fatigue = clamp(priest.fatigue+8,0,100);
+  } else {
+    if(fam){ fam.satisfaction = clamp(fam.satisfaction-12,0,100); fam.piety = clamp(fam.piety-8,0,100); }
+    state.reputation = Math.max(0, state.reputation-1);
+    log(t('eventDeclined', ev.familyName), 'warnBadge');
+  }
+
+  state.pendingEvents.splice(idx,1);
+  renderAll();
+}
+
+//////////////////////// CHURCH ACTIONS ////////////////////////
+function repairChurch(){
+  const cost=20;
+  if(state.denari<cost) return;
+  state.denari-=cost;
+  state.church.condition = clamp(state.church.condition+15,0,100);
+  renderAll();
+}
+function cleanChurch(){
+  const cost=5;
+  if(state.denari<cost) return;
+  state.denari-=cost;
+  state.church.cleanliness = clamp(state.church.cleanliness+20,0,100);
+  renderAll();
+}
+function toggleHeated(){ state.church.heated=!state.church.heated; renderAll(); }
+function toggleFloor(){ state.church.floorCovered=!state.church.floorCovered; renderAll(); }
+
+function buySupply(key, amount, cost){
+  if(state.denari<cost) return;
+  state.denari-=cost;
+  state.sacristy[key]+=amount;
+  renderAll();
+}
+function buyVestment(color, cost){
+  if(state.denari<cost) return;
+  state.denari-=cost;
+  state.sacristy.vestments[color]+=1;
+  renderAll();
+}
+
+//////////////////////// STAFF MANAGEMENT ////////////////////////
+const HIRE_POOL = {
+  Priest: ()=>({role:'Priest', name:pick(['Fr. Bartoloměj','Fr. Vincenc','Fr. Metoděj']), theology:randInt(1,4), charisma:randInt(1,4), fatigue:0, morale:75, wage:randInt(6,10)}),
+  Sacristan: ()=>({role:'Sacristan', name:pick(['Jan Kostelník','Matěj Zvoník','Ota Sluha']), fatigue:0, morale:70, wage:randInt(2,4)}),
+  'Bell-ringer': ()=>({role:'Bell-ringer', name:pick(['Kryštof','Bedřich']), fatigue:0, morale:70, wage:randInt(2,3)}),
+  Organist: ()=>({role:'Organist', name:pick(['Šimon Varhaník','Blažej']), fatigue:0, morale:70, wage:randInt(3,5)}),
+};
+function hireStaff(role){
+  const p = HIRE_POOL[role]();
+  p.id = role.toLowerCase()+'_'+Date.now();
+  state.staff.push(p);
+  renderAll();
+}
+function dismissStaff(id){
+  state.staff = state.staff.filter(s=>s.id!==id);
+  renderAll();
+}
+//////////////////////// I18N HELPER ////////////////////////
+function t(key, arg){
+  const dict = I18N[curLang];
+  let val = dict[key];
+  if(!val) return key; // fallback
+  if(typeof val==='function') return val(arg);
+  return val;
+}
+
+//////////////////////// RENDER: CLOCK ////////////////////////
+function renderClock(){
+  const {year,month,dayOfMonth,dayOfWeek,hour} = state.calendar;
+  const hourStr = String(hour).padStart(2,'0')+':00';
+  const dateStr = `${dayOfMonth}.${month}.${year}`;
+  const weekDays = ['','Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const display = `${hourStr} ${dateStr} (${weekDays[dayOfWeek]}) — ${state.weather}`;
+  document.getElementById('clockDisplay').textContent = display;
+  
+  document.getElementById('statFide').textContent = state.fide;
+  document.getElementById('statGrace').textContent = state.grace;
+  document.getElementById('statRep').textContent = state.reputation;
+}
+
+//////////////////////// RENDER: ROOMS (CHURCH) ////////////////////////
+function renderRooms(){
+  const body = document.getElementById('roomsBody');
+  body.innerHTML = '';
+  
+  const {church} = state;
+  const season = currentSeason();
+  
+  const html = `
+    <div class="room-card">
+      <h3>${t('church')}</h3>
+      <div class="stat"><strong>${t('condition')}:</strong> ${church.condition.toFixed(0)}%</div>
+      <div class="stat"><strong>${t('cleanliness')}:</strong> ${church.cleanliness.toFixed(0)}%</div>
+      <div class="stat"><strong>${t('currentSeason')}:</strong> ${season.name} (${t('requiredColor')}: <span style="color:${season.colorHex};">●</span> ${season.color})</div>
+      <div class="stat">
+        <label><input type="checkbox" ${church.heated?'checked':''} onchange="toggleHeated()"> ${t('unheated')}</label>
+        <label><input type="checkbox" ${church.floorCovered?'checked':''} onchange="toggleFloor()"> ${t('bareFloor')}</label>
+      </div>
+      <div class="flex" style="gap:5px;margin-top:8px;">
+        <button onclick="repairChurch()">🔧 ${t('repair')}</button>
+        <button onclick="cleanChurch()">🧹 ${t('clean')}</button>
+        <button onclick="celebrateSundayMass()" style="font-weight:bold;">⛪ ${t('celebrateMass')}</button>
+      </div>
+    </div>
+
+    <div class="room-card">
+      <h3>${t('sacristyInventory')}</h3>
+      <div class="stat"><strong>${t('wine')}:</strong> ${state.sacristy.wine} <button onclick="buySupply('wine',5,10)">+5 (10ð)</button></div>
+      <div class="stat"><strong>${t('hosts')}:</strong> ${state.sacristy.hosts} <button onclick="buySupply('hosts',20,8)">+20 (8ð)</button></div>
+      <div class="stat"><strong>${t('candles')}:</strong> ${state.sacristy.candles} <button onclick="buySupply('candles',10,5)">+10 (5ð)</button></div>
+      <div class="stat"><strong>${t('incense')}:</strong> ${state.sacristy.incense} <button onclick="buySupply('incense',5,3)">+5 (3ð)</button></div>
+      <div class="stat"><strong>${t('vestments')}:</strong></div>
+      <div style="margin-left:10px;font-size:0.85em;">
+        ${['white','red','green','purple','rose','black'].map(c=>`
+          <div>${c} ×${state.sacristy.vestments[c]} <button onclick="buyVestment('${c}',1,15)">${t('buy')} (15ð)</button></div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+  body.innerHTML = html;
+}
+
+//////////////////////// RENDER: CLERGY ////////////////////////
+function renderClergy(){
+  const body = document.getElementById('clergyStaffBody');
+  body.innerHTML = '';
+
+  const roles = ['Priest','Sacristan','Bell-ringer','Organist'];
+  roles.forEach(role=>{
+    const staff = state.staff.filter(s=>s.role===role);
+    const html = `
+      <div class="room-card">
+        <h3 style="margin:4px 0;">${role}s</h3>
+        ${staff.length===0 ? `<em>${role} needed</em>` : ''}
+        ${staff.map(s=>`
+          <div class="staff-card">
+            <div class="stat"><strong>${s.name}</strong> (${s.id.slice(0,6)})</div>
+            ${s.theology!==undefined ? `<div class="stat">Theology: ${s.theology}, Charisma: ${s.charisma}</div>` : ''}
+            <div class="stat">Fatigue: ${s.fatigue.toFixed(0)}% | Morale: ${s.morale.toFixed(0)}%</div>
+            <div class="stat">Wage: ${s.wage}ð${t('perWeek')}</div>
+            <button onclick="dismissStaff('${s.id}')" style="color:#a24c4c;">❌ ${t('dismiss')}</button>
+          </div>
+        `).join('')}
+        <button onclick="hireStaff('${role}')" style="width:100%;margin-top:4px;">➕ ${t('hire'+role.replace('-',''))}</button>
+      </div>
+    `;
+    body.innerHTML += html;
+  });
+}
+
+//////////////////////// RENDER: LIFE EVENTS ////////////////////////
+function renderEvents(){
+  const body = document.getElementById('eventsBody');
+  body.innerHTML = '';
+
+  if(state.pendingEvents.length===0){
+    body.innerHTML = '<em>No pending events</em>';
+    return;
+  }
+
+  state.pendingEvents.forEach(ev=>{
+    const html = `
+      <div class="room-card" style="border-left:4px solid ${ev.type==='baptism'?'#6b9e5a':ev.type==='wedding'?'#c9a227':'#a24c4c'};">
+        <h4 style="margin:0 0 8px 0;">${t(ev.titleKey)}</h4>
+        <p style="margin:0 0 8px 0;font-size:0.9em;color:var(--dim);">${t(ev.descKey, ev.familyName)}</p>
+        <div class="flex" style="gap:5px;">
+          <button onclick="resolveLifeEvent('${ev.id}', true)" style="flex:1;background:var(--good);color:#000;">${t('officiate')}</button>
+          <button onclick="resolveLifeEvent('${ev.id}', false)" style="flex:1;background:var(--bad);color:#000;">${t('decline')}</button>
+        </div>
+      </div>
+    `;
+    body.innerHTML += html;
+  });
+}
+
+//////////////////////// RENDER: FAMILIES ////////////////////////
+function renderFamilies(){
+  const body = document.getElementById('familiesBody');
+  body.innerHTML = '';
+
+  state.families.forEach(fam=>{
+    const html = `
+      <div class="room-card" style="font-size:0.85em;">
+        <h4 style="margin:0 0 4px 0;">${fam.surname}</h4>
+        <div class="stat">${fam.socialClass} | ${fam.members.length} ${t('members')}</div>
+        <div class="stat">${t('satisf')}: ${fam.satisfaction.toFixed(0)}% | ${t('piety')}: ${fam.piety.toFixed(0)}%</div>
+        <div class="stat">Next event in ${fam.cooldown} days</div>
+      </div>
+    `;
+    body.innerHTML += html;
+  });
+}
+
+//////////////////////// RENDER: LOG ////////////////////////
+function renderLog(){
+  const box = document.getElementById('logBox');
+  box.innerHTML = state.logs.map((l,i)=>`
+    <div class="log-line ${l.cls}">${l.text}</div>
+  `).join('');
+  box.scrollTop = 0;
+}
+
+//////////////////////// RENDER: ALL ////////////////////////
+function renderAll(){
+  renderClock();
+  renderRooms();
+  renderClergy();
+  renderEvents();
+  renderFamilies();
+  renderLog();
+}
+
+//////////////////////// SEASON HELPER ////////////////////////
+function currentSeason(){
+  const m = state.calendar.month;
+  const seasons = [
+    {num:1, name:t('season_Advent'), color:'purple', colorHex:'#9966ff'},
+    {num:2, name:t('season_Christmas'), color:'white', colorHex:'#fff'},
+    {num:3, name:t('season_OrdinaryTime'), color:'green', colorHex:'#6b9e5a'},
+    {num:4, name:t('season_Lent'), color:'purple', colorHex:'#9966ff'},
+    {num:5, name:t('season_Easter'), color:'white', colorHex:'#fff'},
+    {num:6, name:t('season_Pentecost'), color:'red', colorHex:'#ff6b6b'},
+    {num:7, name:t('season_OrdinaryTime2'), color:'green', colorHex:'#6b9e5a'},
+    {num:8, name:t('season_OrdinaryTime2'), color:'green', colorHex:'#6b9e5a'},
+    {num:9, name:t('season_OrdinaryTime2'), color:'green', colorHex:'#6b9e5a'},
+    {num:10, name:t('season_OrdinaryTime2'), color:'green', colorHex:'#6b9e5a'},
+    {num:11, name:t('season_OrdinaryTime2'), color:'green', colorHex:'#6b9e5a'},
+    {num:12, name:t('season_Advent'), color:'purple', colorHex:'#9966ff'},
+  ];
+  return seasons[m-1];
+}
+
+//////////////////////// SAVE / LOAD ////////////////////////
+function saveToLS(){
+  const payload = {
+    state,
+    lang: curLang,
+    timestamp: new Date().toISOString(),
+  };
+  localStorage.setItem('parishData', JSON.stringify(payload));
+  alert('✓ Saved to localStorage');
+}
+
+function loadFromLS(){
+  const data = localStorage.getItem('parishData');
+  if(!data){
+    alert('No saved game found.');
+    return;
+  }
+  try{
+    const payload = JSON.parse(data);
+    Object.assign(state, payload.state);
+    curLang = payload.lang;
+    document.getElementById('langSelect').value = curLang;
+    renderAll();
+    alert('✓ Loaded from localStorage');
+  } catch(e){
+    alert('Error loading: '+e.message);
+  }
+}
+
+function resetGame(){
+  if(confirm('Reset to default state?')){
+    Object.assign(state, {
+      denari: 148, fide: 20, grace: 5, reputation: 10,
+      calendar: {year:1420, month:1, dayOfMonth:1, dayOfWeek:1, hour:7},
+      weather: 'Sunny',
+      mode: 'manual',
+      church: {condition:80, cleanliness:69, heated:false, floorCovered:false},
+      sacristy: {wine:20, hosts:100, candles:10, incense:5, vestments:{white:1,red:0,green:0,purple:0,rose:0,black:0}},
+      staff: [
+        {id:'priest1', role:'Priest', name:'Fr. Bartoloměj', theology:3, charisma:2, fatigue:13, morale:80, wage:8},
+        {id:'sac1', role:'Sacristan', name:'Jan Kostelník', fatigue:8, morale:70, wage:3},
+      ],
+      families: generateFamilies(5),
+      pendingEvents: [],
+      logs: [],
+    });
+    renderAll();
+    alert('✓ Reset complete');
+  }
+}
+
+//////////////////////// EVENT LISTENERS ////////////////////////
+document.addEventListener('DOMContentLoaded', ()=>{
+  // time controls
+  document.getElementById('btnPlus1h').addEventListener('click', ()=>advanceHour(1));
+  document.getElementById('btnPlus1d').addEventListener('click', advanceDayExact);
+  document.getElementById('btnPlus1w').addEventListener('click', advanceWeek);
+
+  // mode & lang
+  document.getElementById('modeSelect').addEventListener('change', (e)=>{
+    state.mode = e.target.value;
+    // TODO: live mode would implement auto-tick interval
+  });
+  document.getElementById('langSelect').addEventListener('change', (e)=>{
+    curLang = e.target.value;
+    renderAll();
+  });
+
+  // save/load/reset
+  document.getElementById('btnSave').addEventListener('click', saveToLS);
+  document.getElementById('btnLoad').addEventListener('click', loadFromLS);
+  document.getElementById('btnReset').addEventListener('click', resetGame);
+
+  // initial render
+  renderAll();
+  log(t('welcomeMsg'), 'goodBadge');
+});
+</script>
+
+</body>
+</html>
