@@ -171,6 +171,13 @@ const I18N = {
     weddingOfficiated:(f)=>`Wedding celebrated for the ${f} family. Reputation and Denari rise.`,
     funeralOfficiated:(f)=>`Funeral rites given to the ${f} family. Grace rises, sorrow eased.`,
     eventDeclined:(f)=>`You declined the request from the ${f} family. Satisfaction and Piety drop.`,
+    tier_chapel:"Chapel", tier_church:"Church", tier_temple:"Temple", tier_cathedral:"Cathedral",
+    operatingCost:"Upkeep", perDay:"day", nextTier:"Next tier", upgrade:"Upgrade",
+    maxTierReached:"Maximum tier reached", reqReputation:"Reputation",
+    notEnoughDenari:"Not enough denari.", upgradeNotMet:"Requirements not yet met.",
+    upgradeSuccess:(name)=>`The parish has been elevated to a ${name}!`,
+    roleLocked:(name)=>`Requires: ${name}`,
+    priestCapReached:"Maximum number of priests reached for this tier.",
   },
   cz: {
     parishGrounds:"Pozemky farnosti", clergyStaff:"Duchovenstvo a personál",
@@ -203,6 +210,13 @@ const I18N = {
     weddingOfficiated:(f)=>`Svatba pro rodinu ${f} vykonána. Reputace a Denáry rostou.`,
     funeralOfficiated:(f)=>`Pohřební obřad pro rodinu ${f} vykonán. Milost roste, zármutek zmírněn.`,
     eventDeclined:(f)=>`Žádost rodiny ${f} byla odmítnuta. Spokojenost a Zbožnost klesají.`,
+    tier_chapel:"Kaple", tier_church:"Kostel", tier_temple:"Chrám", tier_cathedral:"Katedrála",
+    operatingCost:"Provoz", perDay:"den", nextTier:"Další úroveň", upgrade:"Povýšit",
+    maxTierReached:"Nejvyšší úroveň dosažena", reqReputation:"Reputace",
+    notEnoughDenari:"Nedostatek denárů.", upgradeNotMet:"Podmínky zatím nejsou splněny.",
+    upgradeSuccess:(name)=>`Farnost byla povýšena na: ${name}!`,
+    roleLocked:(name)=>`Vyžaduje: ${name}`,
+    priestCapReached:"Pro tuto úroveň je dosažen maximální počet kněží.",
   }
 };
 
@@ -214,6 +228,43 @@ function t(key, params){
 }
 
 const COLOR_HEX = {white:'#f0f0f0', red:'#a13c3c', green:'#4f7c3c', purple:'#6b4c8a', rose:'#c98cae', black:'#333'};
+
+//////////////////////// CHURCH TIER PROGRESSION ////////////////////////
+// Kaple -> Kostel -> Chrám -> Katedrála: each tier costs more to run,
+// but pays off with bigger Mass gains, faster repair/clean regen, and
+// unlocks more staff roles.
+const CHURCH_TIERS = [
+  { nameKey:'tier_chapel', cost:0,   req:null,
+    massMultiplier:1.0, upkeep:0,  decayMult:1.0,  repairEff:1.0,
+    allowedRoles:['Priest','Sacristan'], maxPriests:1 },
+  { nameKey:'tier_church', cost:150, req:{condition:60, reputation:15},
+    massMultiplier:1.1, upkeep:3,  decayMult:1.1,  repairEff:1.1,
+    allowedRoles:['Priest','Sacristan','Bell-ringer','Organist'], maxPriests:1 },
+  { nameKey:'tier_temple', cost:400, req:{condition:70, reputation:35, fide:100},
+    massMultiplier:1.25, upkeep:7, decayMult:1.2,  repairEff:1.25,
+    allowedRoles:['Priest','Sacristan','Bell-ringer','Organist'], maxPriests:2 },
+  { nameKey:'tier_cathedral', cost:900, req:{condition:80, reputation:60, grace:50},
+    massMultiplier:1.5, upkeep:14, decayMult:1.35, repairEff:1.4,
+    allowedRoles:['Priest','Sacristan','Bell-ringer','Organist'], maxPriests:2 },
+];
+
+function meetsUpgradeRequirements(reqs){
+  if(!reqs) return true;
+  if(reqs.condition  && state.church.condition < reqs.condition)  return false;
+  if(reqs.reputation && state.reputation       < reqs.reputation) return false;
+  if(reqs.fide       && state.fide             < reqs.fide)       return false;
+  if(reqs.grace      && state.grace            < reqs.grace)      return false;
+  return true;
+}
+
+function formatUpgradeRequirements(reqs){
+  const parts = [];
+  if(reqs.condition)  parts.push(`${t('condition')} ≥${reqs.condition}% ${state.church.condition>=reqs.condition?'✓':'✗'}`);
+  if(reqs.reputation) parts.push(`${t('reqReputation')} ≥${reqs.reputation} ${state.reputation>=reqs.reputation?'✓':'✗'}`);
+  if(reqs.fide)       parts.push(`Fide ≥${reqs.fide} ${state.fide>=reqs.fide?'✓':'✗'}`);
+  if(reqs.grace)      parts.push(`Grace ≥${reqs.grace} ${state.grace>=reqs.grace?'✓':'✗'}`);
+  return parts.join(' · ');
+}
 
 //////////////////////// SEASONS / CALENDAR ////////////////////////
 const LITURGICAL_SEASONS = [
@@ -275,7 +326,7 @@ const state = {
   calendar: {year:1420, month:1, dayOfMonth:1, dayOfWeek:1, hour:7},
   weather: 'Sunny',
   mode: 'manual',
-  church: {condition:80, cleanliness:69, heated:false, floorCovered:false},
+  church: {condition:80, cleanliness:69, heated:false, floorCovered:false, tier:0},
   sacristy: {wine:20, hosts:100, candles:10, incense:5, vestments:{white:1,red:0,green:0,purple:0,rose:0,black:0}},
   staff: [
     {id:'priest1', role:'Priest', name:'Fr. Bartoloměj', theology:3, charisma:2, fatigue:13, morale:80, wage:8},
@@ -344,14 +395,19 @@ function advanceWeek(){ for(let i=0;i<7;i++) advanceDayExact(); }
 
 //////////////////////// UPKEEP / ECONOMY ////////////////////////
 function dailyUpkeep(){
+  const tierData = CHURCH_TIERS[state.church.tier];
+
   // wages
   let totalWage = 0;
   state.staff.forEach(s=>{ totalWage += s.wage/7; }); // wage is weekly, prorate daily
   state.denari -= totalWage;
 
-  // church decay
-  state.church.condition = Math.max(0, state.church.condition - 0.3);
-  state.church.cleanliness = Math.max(0, state.church.cleanliness - (state.church.floorCovered?0.6:0.3));
+  // building maintenance — bigger churches cost more to run
+  state.denari -= tierData.upkeep/7; // upkeep is a weekly-equivalent figure, prorate daily
+
+  // church decay — bigger buildings weather faster
+  state.church.condition = Math.max(0, state.church.condition - 0.3*tierData.decayMult);
+  state.church.cleanliness = Math.max(0, state.church.cleanliness - (state.church.floorCovered?0.6:0.3)*tierData.decayMult);
 
   // family drift toward baseline slowly
   state.families.forEach(f=>{
@@ -378,19 +434,26 @@ function tickStaffFatigue(hours){
 function celebrateSundayMass(){
   const priest = state.staff.find(s=>s.role==='Priest');
   if(!priest){ log(t('noPriestWarn'),'warnBadge'); return; }
-  if(state.sacristy.wine<1 || state.sacristy.hosts<10){
+
+  const tierData = CHURCH_TIERS[state.church.tier];
+  // bigger church, bigger congregation, bigger supply consumption
+  const wineCost = Math.ceil(1 + 0.5*state.church.tier);
+  const hostsCost = Math.ceil(10 + 5*state.church.tier);
+  const candlesCost = Math.ceil(2 + 1*state.church.tier);
+
+  if(state.sacristy.wine<wineCost || state.sacristy.hosts<hostsCost){
     log(t('lowSupplyWarn'),'warnBadge'); return;
   }
   const season = currentSeason();
   const hasVestment = state.sacristy.vestments[season.color] > 0;
 
-  state.sacristy.wine -= 1;
-  state.sacristy.hosts -= 10;
-  state.sacristy.candles = Math.max(0, state.sacristy.candles-2);
+  state.sacristy.wine -= wineCost;
+  state.sacristy.hosts -= hostsCost;
+  state.sacristy.candles = Math.max(0, state.sacristy.candles-candlesCost);
 
-  let fideGain = 2 + priest.theology*0.5 + priest.charisma*0.3;
-  let graceGain = 1 + priest.charisma*0.2;
-  let denariGain = randInt(5,15) + Math.round(state.church.cleanliness/20);
+  let fideGain = (2 + priest.theology*0.5 + priest.charisma*0.3) * tierData.massMultiplier;
+  let graceGain = (1 + priest.charisma*0.2) * tierData.massMultiplier;
+  let denariGain = (randInt(5,15) + Math.round(state.church.cleanliness/20)) * tierData.massMultiplier;
 
   if(!hasVestment){ fideGain*=0.6; log('Missing proper vestment color — Mass impact reduced.','warnBadge'); }
   if(state.church.cleanliness<40){ fideGain*=0.8; }
@@ -398,6 +461,7 @@ function celebrateSundayMass(){
 
   fideGain = Math.round(fideGain);
   graceGain = Math.round(graceGain);
+  denariGain = Math.round(denariGain);
 
   state.fide += fideGain;
   state.grace += graceGain;
@@ -477,14 +541,27 @@ function repairChurch(){
   const cost=20;
   if(state.denari<cost) return;
   state.denari-=cost;
-  state.church.condition = clamp(state.church.condition+15,0,100);
+  const repairEff = CHURCH_TIERS[state.church.tier].repairEff;
+  state.church.condition = clamp(state.church.condition+15*repairEff,0,100);
   renderAll();
 }
 function cleanChurch(){
   const cost=5;
   if(state.denari<cost) return;
   state.denari-=cost;
-  state.church.cleanliness = clamp(state.church.cleanliness+20,0,100);
+  const repairEff = CHURCH_TIERS[state.church.tier].repairEff;
+  state.church.cleanliness = clamp(state.church.cleanliness+20*repairEff,0,100);
+  renderAll();
+}
+function upgradeChurch(){
+  const tier = state.church.tier;
+  if(tier >= CHURCH_TIERS.length-1) return;
+  const next = CHURCH_TIERS[tier+1];
+  if(!meetsUpgradeRequirements(next.req)){ log(t('upgradeNotMet'),'warnBadge'); return; }
+  if(state.denari < next.cost){ log(t('notEnoughDenari'),'warnBadge'); return; }
+  state.denari -= next.cost;
+  state.church.tier += 1;
+  log(t('upgradeSuccess', t(next.nameKey)), 'goodBadge');
   renderAll();
 }
 function toggleHeated(){ state.church.heated=!state.church.heated; renderAll(); }
@@ -511,6 +588,12 @@ const HIRE_POOL = {
   Organist: ()=>({role:'Organist', name:pick(['Šimon Varhaník','Blažej']), fatigue:0, morale:70, wage:randInt(3,5)}),
 };
 function hireStaff(role){
+  const tierData = CHURCH_TIERS[state.church.tier];
+  if(!tierData.allowedRoles.includes(role)) return; // role locked at this tier — UI hides the button too
+  if(role==='Priest' && state.staff.filter(s=>s.role==='Priest').length >= tierData.maxPriests){
+    log(t('priestCapReached'),'warnBadge');
+    return;
+  }
   const p = HIRE_POOL[role]();
   p.id = role.toLowerCase()+'_'+Date.now();
   state.staff.push(p);
@@ -550,13 +633,24 @@ function renderRooms(){
   
   const {church} = state;
   const season = currentSeason();
-  
+  const tierData = CHURCH_TIERS[church.tier];
+  const nextTier = CHURCH_TIERS[church.tier+1];
+
+  const upgradeBlock = nextTier ? `
+    <div style="margin-top:8px;padding-top:8px;border-top:1px dashed #444;">
+      <div class="stat"><strong>${t('nextTier')}:</strong> ${t(nextTier.nameKey)} (${nextTier.cost}ð)</div>
+      <div class="small">${formatUpgradeRequirements(nextTier.req)}</div>
+      <button onclick="upgradeChurch()" style="margin-top:6px;" ${(meetsUpgradeRequirements(nextTier.req) && state.denari>=nextTier.cost)?'':'disabled'}>⬆️ ${t('upgrade')}</button>
+    </div>
+  ` : `<div class="small" style="margin-top:8px;">${t('maxTierReached')}</div>`;
+
   const html = `
     <div class="room-card">
-      <h3>${t('church')}</h3>
+      <h3>${t(tierData.nameKey)}</h3>
       <div class="stat"><strong>${t('condition')}:</strong> ${church.condition.toFixed(0)}%</div>
       <div class="stat"><strong>${t('cleanliness')}:</strong> ${church.cleanliness.toFixed(0)}%</div>
       <div class="stat"><strong>${t('currentSeason')}:</strong> ${season.name} (${t('requiredColor')}: <span style="color:${season.colorHex};">●</span> ${season.color})</div>
+      <div class="stat"><strong>${t('operatingCost')}:</strong> ${tierData.upkeep}ð/${t('perDay')}</div>
       <div class="stat">
         <label><input type="checkbox" ${church.heated?'checked':''} onchange="toggleHeated()"> ${t('unheated')}</label>
         <label><input type="checkbox" ${church.floorCovered?'checked':''} onchange="toggleFloor()"> ${t('bareFloor')}</label>
@@ -566,6 +660,7 @@ function renderRooms(){
         <button onclick="cleanChurch()">🧹 ${t('clean')}</button>
         <button onclick="celebrateSundayMass()" style="font-weight:bold;">⛪ ${t('celebrateMass')}</button>
       </div>
+      ${upgradeBlock}
     </div>
 
     <div class="room-card">
@@ -590,13 +685,16 @@ function renderClergy(){
   const body = document.getElementById('clergyStaffBody');
   body.innerHTML = '';
 
+  const tierData = CHURCH_TIERS[state.church.tier];
   const roles = ['Priest','Sacristan','Bell-ringer','Organist'];
   roles.forEach(role=>{
     const staff = state.staff.filter(s=>s.role===role);
+    const locked = !tierData.allowedRoles.includes(role);
+    const priestCapped = role==='Priest' && staff.length >= tierData.maxPriests;
     const html = `
       <div class="room-card">
         <h3 style="margin:4px 0;">${role}s</h3>
-        ${staff.length===0 ? `<em>${role} needed</em>` : ''}
+        ${staff.length===0 && !locked ? `<em>${role} needed</em>` : ''}
         ${staff.map(s=>`
           <div class="staff-card">
             <div class="stat"><strong>${s.name}</strong> (${s.id.slice(0,6)})</div>
@@ -606,7 +704,11 @@ function renderClergy(){
             <button onclick="dismissStaff('${s.id}')" style="color:#a24c4c;">❌ ${t('dismiss')}</button>
           </div>
         `).join('')}
-        <button onclick="hireStaff('${role}')" style="width:100%;margin-top:4px;">➕ ${t('hire'+role.replace('-',''))}</button>
+        ${locked
+          ? `<div class="small">🔒 ${t('roleLocked', t('tier_church'))}</div>`
+          : `<button onclick="hireStaff('${role}')" style="width:100%;margin-top:4px;" ${priestCapped?'disabled':''}>➕ ${t('hire'+role.replace('-',''))}</button>
+             ${priestCapped ? `<div class="small">${t('priestCapReached')}</div>` : ''}`
+        }
       </div>
     `;
     body.innerHTML += html;
@@ -715,6 +817,7 @@ function loadFromLS(){
   try{
     const payload = JSON.parse(data);
     Object.assign(state, payload.state);
+    if(typeof state.church.tier !== 'number') state.church.tier = 0; // old saves before tier system
     curLang = payload.lang;
     document.getElementById('langSelect').value = curLang;
     renderAll();
@@ -731,7 +834,7 @@ function resetGame(){
       calendar: {year:1420, month:1, dayOfMonth:1, dayOfWeek:1, hour:7},
       weather: 'Sunny',
       mode: 'manual',
-      church: {condition:80, cleanliness:69, heated:false, floorCovered:false},
+      church: {condition:80, cleanliness:69, heated:false, floorCovered:false, tier:0},
       sacristy: {wine:20, hosts:100, candles:10, incense:5, vestments:{white:1,red:0,green:0,purple:0,rose:0,black:0}},
       staff: [
         {id:'priest1', role:'Priest', name:'Fr. Bartoloměj', theology:3, charisma:2, fatigue:13, morale:80, wage:8},
