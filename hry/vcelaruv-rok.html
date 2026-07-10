@@ -1,0 +1,1485 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Včelařův Rok</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --honey: #D4851A;
+    --honey-light: #F2A83B;
+    --honey-pale: #FDF0DC;
+    --amber: #B5651D;
+    --wax: #F5E6C8;
+    --bark: #6B4423;
+    --bark-dark: #3D2410;
+    --forest: #3A5A40;
+    --forest-light: #588157;
+    --meadow: #A7C957;
+    --sky-spring: #B8D4E8;
+    --sky-summer: #7EC8E3;
+    --sky-autumn: #D4956A;
+    --sky-winter: #C8D8E8;
+    --text-dark: #2C1A0E;
+    --text-med: #5C3D1E;
+    --text-light: #9C7A5A;
+    --danger: #C0392B;
+    --warning: #E67E22;
+    --good: #27AE60;
+    --parchment: #F9F2E3;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Crimson Pro', Georgia, serif;
+    background: var(--parchment);
+    color: var(--text-dark);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ===== SEASONAL BACKGROUNDS ===== */
+  .season-bg {
+    position: fixed; inset: 0; z-index: -1;
+    transition: background 2s ease;
+  }
+  .season-bg.spring {
+    background: radial-gradient(ellipse at 20% 80%, rgba(167,201,87,0.15) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 20%, rgba(184,212,232,0.3) 0%, transparent 50%),
+                linear-gradient(160deg, #EFF6E8 0%, #FDF0DC 50%, #F5E6C8 100%);
+  }
+  .season-bg.summer {
+    background: radial-gradient(ellipse at 70% 30%, rgba(242,168,59,0.2) 0%, transparent 60%),
+                radial-gradient(ellipse at 20% 70%, rgba(126,200,227,0.15) 0%, transparent 50%),
+                linear-gradient(160deg, #FFF8E8 0%, #FDF0DC 40%, #FAEBD7 100%);
+  }
+  .season-bg.autumn {
+    background: radial-gradient(ellipse at 60% 40%, rgba(212,149,106,0.25) 0%, transparent 60%),
+                radial-gradient(ellipse at 30% 70%, rgba(181,101,29,0.15) 0%, transparent 50%),
+                linear-gradient(160deg, #FBF0E0 0%, #F5E0C0 50%, #EDD5A8 100%);
+  }
+  .season-bg.winter {
+    background: radial-gradient(ellipse at 50% 20%, rgba(200,216,232,0.4) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 80%, rgba(180,200,220,0.2) 0%, transparent 50%),
+                linear-gradient(160deg, #EEF3F8 0%, #E8EFF8 40%, #F0EDE8 100%);
+  }
+
+  /* ===== HEADER ===== */
+  .header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 32px;
+    background: rgba(61,36,16,0.92);
+    backdrop-filter: blur(8px);
+    border-bottom: 2px solid var(--honey);
+    position: sticky; top: 0; z-index: 100;
+  }
+  .header-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    color: var(--honey-light);
+    letter-spacing: 0.05em;
+  }
+  .header-title span { color: var(--wax); font-style: italic; font-size: 1rem; }
+  .year-badge {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .year-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem; font-weight: 700;
+    color: var(--honey-light);
+    line-height: 1;
+  }
+  .year-label {
+    font-size: 0.75rem; color: var(--text-light);
+    text-transform: uppercase; letter-spacing: 0.1em;
+  }
+  .phase-badge {
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .phase-survival { background: rgba(192,57,43,0.2); color: #FF8A7A; border: 1px solid rgba(192,57,43,0.4); }
+  .phase-optimize { background: rgba(212,133,26,0.2); color: var(--honey-light); border: 1px solid rgba(212,133,26,0.4); }
+  .phase-mastery  { background: rgba(88,129,87,0.2); color: var(--meadow); border: 1px solid rgba(88,129,87,0.4); }
+
+  /* ===== SEASON BANNER ===== */
+  .season-banner {
+    text-align: center;
+    padding: 24px 20px 16px;
+    position: relative;
+  }
+  .season-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 3rem; font-weight: 700;
+    color: var(--bark-dark);
+    opacity: 0.12;
+    position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+    white-space: nowrap; pointer-events: none;
+    letter-spacing: 0.08em;
+  }
+  .season-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8rem; font-style: italic;
+    color: var(--bark);
+    position: relative; z-index: 1;
+  }
+  .season-week {
+    font-size: 0.9rem; color: var(--text-light);
+    position: relative; z-index: 1;
+    margin-top: 4px;
+  }
+  .season-desc {
+    font-size: 1rem; color: var(--text-med);
+    font-style: italic;
+    position: relative; z-index: 1;
+    margin-top: 6px;
+    max-width: 500px; margin-left: auto; margin-right: auto;
+  }
+
+  /* ===== WEEK PROGRESS ===== */
+  .week-progress {
+    display: flex; gap: 4px;
+    justify-content: center;
+    padding: 0 32px 16px;
+    max-width: 600px; margin: 0 auto;
+  }
+  .week-dot {
+    flex: 1; height: 5px; border-radius: 3px;
+    background: rgba(107,68,35,0.15);
+    transition: background 0.4s;
+  }
+  .week-dot.done { background: var(--honey); }
+  .week-dot.current { background: var(--honey-light); box-shadow: 0 0 6px var(--honey-light); }
+
+  /* ===== MAIN LAYOUT ===== */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 20px;
+    padding: 0 24px 24px;
+    max-width: 1200px; margin: 0 auto;
+  }
+
+  /* ===== HIVE GRID ===== */
+  .hives-section { }
+  .section-label {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem; color: var(--text-light);
+    text-transform: uppercase; letter-spacing: 0.12em;
+    margin-bottom: 12px;
+    padding-left: 4px;
+  }
+  .hive-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 14px;
+  }
+
+  .hive-card {
+    background: rgba(255,255,255,0.55);
+    backdrop-filter: blur(6px);
+    border: 1.5px solid rgba(212,133,26,0.25);
+    border-radius: 12px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .hive-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: var(--honey);
+    transform: scaleX(0); transform-origin: left;
+    transition: transform 0.3s ease;
+  }
+  .hive-card:hover { transform: translateY(-2px); border-color: var(--honey); box-shadow: 0 6px 20px rgba(107,68,35,0.15); }
+  .hive-card:hover::before { transform: scaleX(1); }
+  .hive-card.selected { border-color: var(--honey-light); box-shadow: 0 0 0 2px rgba(242,168,59,0.3); }
+  .hive-card.dead { opacity: 0.5; border-color: rgba(192,57,43,0.3); cursor: not-allowed; }
+  .hive-card.dead::after { content: '✝'; position: absolute; top: 8px; right: 10px; color: var(--danger); font-size: 1rem; }
+
+  .hive-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .hive-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem; font-weight: 700;
+    color: var(--bark-dark);
+  }
+  .hive-emoji { font-size: 1.3rem; }
+
+  .hive-stat { margin-bottom: 7px; }
+  .hive-stat-label {
+    font-size: 0.72rem; color: var(--text-light);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    margin-bottom: 2px;
+  }
+  .hive-bar {
+    height: 6px; border-radius: 3px;
+    background: rgba(107,68,35,0.1);
+    overflow: hidden;
+  }
+  .hive-bar-fill {
+    height: 100%; border-radius: 3px;
+    transition: width 0.6s ease;
+  }
+  .bar-strength { background: linear-gradient(90deg, var(--forest-light), var(--meadow)); }
+  .bar-supplies { background: linear-gradient(90deg, var(--amber), var(--honey-light)); }
+  .bar-varroa   { background: linear-gradient(90deg, #FF8A7A, var(--danger)); }
+
+  .hive-warnings {
+    display: flex; gap: 4px; flex-wrap: wrap;
+    margin-top: 8px;
+  }
+  .warn-tag {
+    font-size: 0.68rem; padding: 2px 7px;
+    border-radius: 10px;
+    font-weight: 600; letter-spacing: 0.04em;
+  }
+  .warn-danger  { background: rgba(192,57,43,0.15); color: var(--danger); }
+  .warn-warning { background: rgba(230,126,34,0.15); color: var(--warning); }
+  .warn-good    { background: rgba(39,174,96,0.15); color: var(--good); }
+
+  /* ===== SIDEBAR ===== */
+  .sidebar { display: flex; flex-direction: column; gap: 16px; }
+
+  .panel {
+    background: rgba(255,255,255,0.5);
+    backdrop-filter: blur(6px);
+    border: 1.5px solid rgba(212,133,26,0.2);
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .panel-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem; font-weight: 700;
+    color: var(--bark);
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(107,68,35,0.1);
+  }
+
+  /* ===== TIME / RESOURCES ===== */
+  .time-blocks {
+    display: flex; gap: 6px; flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+  .time-block {
+    width: 26px; height: 26px; border-radius: 6px;
+    border: 1.5px solid var(--honey);
+    background: transparent;
+    cursor: pointer; transition: all 0.2s;
+    position: relative; overflow: hidden;
+  }
+  .time-block.used { background: var(--honey); }
+  .time-block::after {
+    content: '☀';
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.8rem;
+    opacity: 0; transition: opacity 0.2s;
+  }
+  .time-block.used::after { opacity: 1; }
+  .time-label { font-size: 0.8rem; color: var(--text-light); }
+
+  /* ===== WEATHER ===== */
+  .weather-display {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px;
+    background: rgba(107,68,35,0.05);
+    border-radius: 8px;
+    margin-bottom: 8px;
+  }
+  .weather-icon { font-size: 2rem; }
+  .weather-info { flex: 1; }
+  .weather-name { font-size: 0.95rem; font-weight: 600; color: var(--bark-dark); }
+  .weather-effect { font-size: 0.78rem; color: var(--text-med); font-style: italic; }
+
+  /* ===== EVENTS ===== */
+  .event-card {
+    background: rgba(212,133,26,0.08);
+    border: 1px solid rgba(212,133,26,0.3);
+    border-left: 3px solid var(--honey);
+    border-radius: 0 8px 8px 0;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+  }
+  .event-card.danger { border-left-color: var(--danger); background: rgba(192,57,43,0.06); }
+  .event-card.good   { border-left-color: var(--good); background: rgba(39,174,96,0.06); }
+  .event-title { font-size: 0.9rem; font-weight: 600; color: var(--bark-dark); }
+  .event-desc  { font-size: 0.8rem; color: var(--text-med); margin-top: 2px; font-style: italic; }
+
+  /* ===== ACTION BUTTONS ===== */
+  .action-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .action-btn {
+    padding: 10px 8px;
+    border-radius: 8px;
+    border: 1.5px solid rgba(107,68,35,0.2);
+    background: rgba(255,255,255,0.6);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+    font-family: 'Crimson Pro', serif;
+  }
+  .action-btn:hover:not(:disabled) {
+    background: rgba(212,133,26,0.12);
+    border-color: var(--honey);
+    transform: translateY(-1px);
+  }
+  .action-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .action-btn .btn-icon { font-size: 1.3rem; display: block; }
+  .action-btn .btn-name { font-size: 0.8rem; font-weight: 600; color: var(--bark-dark); display: block; margin-top: 2px; }
+  .action-btn .btn-cost { font-size: 0.7rem; color: var(--text-light); display: block; }
+
+  /* ===== ADVANCE WEEK ===== */
+  .advance-btn {
+    width: 100%;
+    padding: 14px;
+    border-radius: 10px;
+    border: none;
+    background: linear-gradient(135deg, var(--honey), var(--amber));
+    color: white;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.05rem;
+    cursor: pointer;
+    transition: all 0.25s;
+    box-shadow: 0 4px 12px rgba(181,101,29,0.3);
+    letter-spacing: 0.03em;
+  }
+  .advance-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(181,101,29,0.4); }
+  .advance-btn:active { transform: translateY(0); }
+
+  /* ===== MODAL ===== */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 200;
+    background: rgba(44,26,14,0.6);
+    backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .modal-overlay.visible { opacity: 1; pointer-events: all; }
+  .modal {
+    background: var(--parchment);
+    border: 2px solid var(--honey);
+    border-radius: 16px;
+    padding: 28px;
+    max-width: 520px; width: 100%;
+    max-height: 85vh; overflow-y: auto;
+    transform: translateY(20px);
+    transition: transform 0.3s;
+    position: relative;
+  }
+  .modal-overlay.visible .modal { transform: translateY(0); }
+  .modal-close {
+    position: absolute; top: 14px; right: 14px;
+    background: none; border: none;
+    font-size: 1.2rem; cursor: pointer;
+    color: var(--text-light); padding: 4px 8px;
+  }
+  .modal-close:hover { color: var(--bark-dark); }
+  .modal-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem; font-weight: 700;
+    color: var(--bark-dark);
+    margin-bottom: 16px;
+  }
+
+  /* ===== HIVE DETAIL IN MODAL ===== */
+  .hive-detail-stats {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 10px; margin-bottom: 16px;
+  }
+  .detail-stat {
+    background: rgba(107,68,35,0.06);
+    border-radius: 8px; padding: 10px 12px;
+  }
+  .detail-stat-label { font-size: 0.72rem; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.08em; }
+  .detail-stat-val { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--bark-dark); font-weight: 700; }
+  .detail-stat-sub { font-size: 0.75rem; color: var(--text-med); font-style: italic; }
+
+  .queen-profile {
+    background: rgba(212,133,26,0.08);
+    border: 1px solid rgba(212,133,26,0.25);
+    border-radius: 10px; padding: 12px 14px;
+    margin-bottom: 14px;
+  }
+  .queen-name { font-family: 'Playfair Display', serif; font-size: 1rem; font-weight: 700; color: var(--bark); margin-bottom: 8px; }
+  .queen-trait { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+  .queen-trait-label { font-size: 0.78rem; color: var(--text-med); }
+  .queen-stars { color: var(--honey); font-size: 0.85rem; letter-spacing: 1px; }
+
+  .action-choices { display: flex; flex-direction: column; gap: 8px; }
+  .choice-btn {
+    padding: 12px 16px;
+    border-radius: 8px;
+    border: 1.5px solid rgba(107,68,35,0.2);
+    background: rgba(255,255,255,0.5);
+    cursor: pointer;
+    text-align: left;
+    font-family: 'Crimson Pro', serif;
+    transition: all 0.2s;
+  }
+  .choice-btn:hover { background: rgba(212,133,26,0.1); border-color: var(--honey); }
+  .choice-name { font-size: 0.95rem; font-weight: 600; color: var(--bark-dark); }
+  .choice-desc { font-size: 0.82rem; color: var(--text-med); font-style: italic; margin-top: 2px; }
+  .choice-risk { font-size: 0.78rem; color: var(--warning); margin-top: 3px; }
+  .choice-risk.good { color: var(--good); }
+
+  /* ===== LOG ===== */
+  .log-entries { max-height: 160px; overflow-y: auto; }
+  .log-entry {
+    font-size: 0.8rem; color: var(--text-med);
+    padding: 3px 0;
+    border-bottom: 1px solid rgba(107,68,35,0.06);
+    font-style: italic;
+    line-height: 1.4;
+  }
+  .log-entry .log-time { color: var(--honey); font-style: normal; font-size: 0.72rem; }
+
+  /* ===== WINTER SUMMARY ===== */
+  .winter-summary {
+    text-align: center; padding: 16px 0;
+  }
+  .winter-survival-rate {
+    font-family: 'Playfair Display', serif;
+    font-size: 3rem; font-weight: 700;
+    color: var(--honey);
+  }
+  .winter-summary-label { font-size: 0.9rem; color: var(--text-light); margin-bottom: 12px; }
+  .winter-emotional {
+    font-size: 1.05rem; font-style: italic;
+    color: var(--bark);
+    max-width: 340px; margin: 0 auto 16px;
+    line-height: 1.6;
+  }
+
+  /* ===== PROGRESS BAR ===== */
+  .progress-section {
+    margin-bottom: 8px;
+  }
+  .progress-row {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 4px;
+  }
+  .progress-label { font-size: 0.78rem; color: var(--text-light); }
+  .progress-val { font-size: 0.78rem; color: var(--bark); font-weight: 600; }
+  .progress-bar-bg {
+    height: 8px; border-radius: 4px;
+    background: rgba(107,68,35,0.1);
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%; border-radius: 4px;
+    background: linear-gradient(90deg, var(--amber), var(--honey-light));
+    transition: width 0.8s ease;
+  }
+
+  /* ===== NOTIFICATION TOAST ===== */
+  .toast {
+    position: fixed; top: 80px; right: 20px; z-index: 300;
+    background: var(--bark-dark);
+    color: var(--wax);
+    padding: 12px 18px;
+    border-radius: 10px;
+    font-size: 0.88rem;
+    border-left: 3px solid var(--honey);
+    max-width: 280px;
+    transform: translateX(120%);
+    transition: transform 0.4s ease;
+    line-height: 1.4;
+  }
+  .toast.show { transform: translateX(0); }
+  .toast.danger { border-left-color: var(--danger); }
+  .toast.good   { border-left-color: var(--good); }
+
+  /* ===== TOTAL HONEY ===== */
+  .honey-total {
+    display: flex; align-items: baseline; gap: 6px;
+  }
+  .honey-number {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem; font-weight: 700; color: var(--honey);
+  }
+  .honey-unit { font-size: 0.85rem; color: var(--text-light); }
+
+  /* ===== VARROA HIDDEN REVEAL ===== */
+  .varroa-unknown { color: var(--text-light); font-style: italic; font-size: 0.8rem; }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(107,68,35,0.25); border-radius: 3px; }
+
+  /* ===== ANIMATIONS ===== */
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .hive-card { animation: fadeIn 0.4s ease both; }
+  .hive-card:nth-child(2) { animation-delay: 0.05s; }
+  .hive-card:nth-child(3) { animation-delay: 0.10s; }
+  .hive-card:nth-child(4) { animation-delay: 0.15s; }
+  .hive-card:nth-child(5) { animation-delay: 0.20s; }
+
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+  .pulsing { animation: pulse 2s ease-in-out infinite; }
+
+  .honey-harvest-fx {
+    position: fixed; pointer-events: none; z-index: 400;
+    font-size: 2rem;
+    animation: harvestFloat 1.5s ease forwards;
+  }
+  @keyframes harvestFloat {
+    from { opacity: 1; transform: translateY(0) scale(1); }
+    to   { opacity: 0; transform: translateY(-80px) scale(1.4); }
+  }
+
+  /* ===== GENETIC SCREEN ===== */
+  .genetics-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .genetics-card {
+    background: rgba(107,68,35,0.05);
+    border-radius: 8px; padding: 10px;
+    border: 1px solid rgba(107,68,35,0.1);
+  }
+  .genetics-name { font-size: 0.82rem; font-weight: 600; color: var(--bark-dark); margin-bottom: 5px; }
+  .genetics-bar { display: flex; gap: 3px; margin-bottom: 2px; }
+  .g-pip { width: 12px; height: 12px; border-radius: 3px; }
+  .g-pip.filled { background: var(--honey); }
+  .g-pip.empty  { background: rgba(107,68,35,0.15); }
+
+  /* ===== SEASONAL DECORATIONS ===== */
+  .season-deco {
+    text-align: center;
+    font-size: 1.8rem;
+    padding: 4px 0 12px;
+    opacity: 0.6;
+    letter-spacing: 8px;
+  }
+
+  .tip-box {
+    background: rgba(212,133,26,0.07);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 0.82rem;
+    color: var(--text-med);
+    font-style: italic;
+    border-left: 2px solid var(--honey);
+    margin-top: 8px;
+  }
+</style>
+</head>
+<body>
+
+<div class="season-bg spring" id="seasonBg"></div>
+
+<!-- HEADER -->
+<header class="header">
+  <div>
+    <div class="header-title">Včelařův Rok <span>— sezonní strategie</span></div>
+  </div>
+  <div class="year-badge">
+    <div>
+      <div class="year-label">Rok</div>
+      <div class="year-num" id="yearNum">1</div>
+    </div>
+    <div class="phase-badge phase-survival" id="phaseBadge">Přežití</div>
+  </div>
+</header>
+
+<!-- SEASON BANNER -->
+<div class="season-banner">
+  <div class="season-name" id="bigSeasonName">JARO</div>
+  <div class="season-deco" id="seasonDeco">🌸 🌼 🐝</div>
+  <div class="season-title" id="seasonTitle">Jaro — Probuzení</div>
+  <div class="season-week" id="weekLabel">Týden 1 ze 6</div>
+  <div class="season-desc" id="seasonDesc">Příroda se probouzí. Včely vylétají na první průzkumné lety.</div>
+</div>
+
+<!-- WEEK DOTS -->
+<div class="week-progress" id="weekDots"></div>
+
+<!-- MAIN GRID -->
+<div class="main-grid">
+  <!-- HIVES -->
+  <div class="hives-section">
+    <div class="section-label">Vaše včelstva</div>
+    <div class="hive-grid" id="hiveGrid"></div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+
+    <!-- RESOURCES -->
+    <div class="panel">
+      <div class="panel-title">🏺 Vaše zásoby</div>
+      <div style="margin-bottom:10px;">
+        <div class="section-label" style="font-size:0.7rem; margin-bottom:4px;">Celkem medu sklenice</div>
+        <div class="honey-total">
+          <div class="honey-number" id="totalHoney">0</div>
+          <div class="honey-unit">kg 🍯</div>
+        </div>
+      </div>
+      <div class="progress-section">
+        <div class="progress-row">
+          <div class="progress-label">💰 Peníze</div>
+          <div class="progress-val" id="moneyVal">500 Kč</div>
+        </div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="moneyBar" style="width:50%"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TIME -->
+    <div class="panel">
+      <div class="panel-title">⏱ Včelařův čas</div>
+      <div class="time-blocks" id="timeBlocks"></div>
+      <div class="time-label" id="timeLabel">Zbývá 4 ze 4 bloků týdně</div>
+      <div class="tip-box" id="seasonTip">Jaro je čas rychlých rozhodnutí. Každý blok se počítá.</div>
+    </div>
+
+    <!-- WEATHER -->
+    <div class="panel">
+      <div class="panel-title">🌤 Počasí</div>
+      <div class="weather-display" id="weatherDisplay">
+        <div class="weather-icon" id="weatherIcon">☀️</div>
+        <div class="weather-info">
+          <div class="weather-name" id="weatherName">Slunečno</div>
+          <div class="weather-effect" id="weatherEffect">Dobrý den pro prohlídku</div>
+        </div>
+      </div>
+      <div class="tip-box" id="weatherTip" style="margin-top:0;">Předpověď na příští týden: nejistá.</div>
+    </div>
+
+    <!-- EVENTS -->
+    <div class="panel">
+      <div class="panel-title">⚡ Události</div>
+      <div id="eventsContainer"><div style="font-size:0.82rem; color:var(--text-light); font-style:italic;">Zatím klid na frontě...</div></div>
+    </div>
+
+    <!-- ACTIONS -->
+    <div class="panel">
+      <div class="panel-title">🔧 Akce tohoto týdne</div>
+      <div class="action-grid" id="actionGrid"></div>
+    </div>
+
+    <!-- ADVANCE -->
+    <button class="advance-btn" id="advanceBtn" onclick="advanceWeek()">
+      Přejít na další týden →
+    </button>
+
+    <!-- LOG -->
+    <div class="panel">
+      <div class="panel-title">📜 Zápisník</div>
+      <div class="log-entries" id="logEntries"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- HIVE MODAL -->
+<div class="modal-overlay" id="hiveModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('hiveModal')">✕</button>
+    <div id="hiveModalContent"></div>
+  </div>
+</div>
+
+<!-- WINTER SUMMARY MODAL -->
+<div class="modal-overlay" id="winterModal">
+  <div class="modal">
+    <div id="winterModalContent"></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ===================================================
+// GAME STATE
+// ===================================================
+const G = {
+  year: 1,
+  season: 0, // 0=spring 1=summer 2=autumn 3=winter
+  week: 0,   // within season
+  timeBlocks: 4,
+  timeUsed: 0,
+  money: 500,
+  honey: 0,
+  hives: [],
+  log: [],
+  events: [],
+  weather: null,
+  phase: 0, // 0=survival 1=optimize 2=mastery
+};
+
+const SEASONS = [
+  { name: 'Jaro', nameEn: 'JARO', weeks: 6, deco: '🌸 🌼 🐝', title: 'Jaro — Probuzení', desc: 'Příroda se probouzí. Včely vylétají na první průzkumné lety.', bg: 'spring', tip: 'Jaro je čas rychlých rozhodnutí. Každý blok se počítá.', timeBlocks: 4 },
+  { name: 'Léto', nameEn: 'LÉTO', weeks: 6, deco: '🌻 ☀️ 🍯', title: 'Léto — Vrchol snůšky', desc: 'Med teče. Medobraní, logistika, vedro. Žádný čas pro odpočinek.', bg: 'summer', tip: 'Léto je logistická skládanka. Nedá se stihnout vše.', timeBlocks: 5 },
+  { name: 'Podzim', nameEn: 'PODZIM', weeks: 5, deco: '🍂 🍁 🐝', title: 'Podzim — Příprava na zimu', desc: 'Krmení, léčení, zazimování. Každý den se počítá.', bg: 'autumn', tip: 'Varroa je zákeřná. Léčte, dokud je čas.', timeBlocks: 3 },
+  { name: 'Zima', nameEn: 'ZIMA', weeks: 4, deco: '❄️ 🕯️ 📚', title: 'Zima — Čas pro včelaře', desc: 'Včely odpočívají. Vy studujete, opravujete, plánujete.', bg: 'winter', tip: 'Zima je talent tree fáze. Investujte do budoucna.', timeBlocks: 2 },
+];
+
+const WEATHER_TYPES = {
+  spring: [
+    { icon:'☀️', name:'Slunečno', effect:'Ideální pro prohlídku', nektarMod:1.2, inspectMod:1.0 },
+    { icon:'🌤', name:'Polojasno', effect:'Dobrý den pro práci', nektarMod:1.0, inspectMod:1.0 },
+    { icon:'🌧', name:'Déšť', effect:'Včely nelétají, nektar se vyplaví', nektarMod:0.5, inspectMod:0.7 },
+    { icon:'❄', name:'Pozdní mráz!', effect:'Nebezpečí pro jarní plod!', nektarMod:0.1, inspectMod:0.5, event:'frost' },
+    { icon:'🌸', name:'Třešně kvetou', effect:'Výjimečná snůška!', nektarMod:2.0, inspectMod:1.1 },
+  ],
+  summer: [
+    { icon:'☀️', name:'Horké léto', effect:'Silná snůška, ale teplo stresuje', nektarMod:1.3, inspectMod:0.9 },
+    { icon:'⛅', name:'Ideální počasí', effect:'Rekordní snůška', nektarMod:1.5, inspectMod:1.1 },
+    { icon:'🌩', name:'Bouřky', effect:'Riziko pro prohlídky', nektarMod:0.7, inspectMod:0.6 },
+    { icon:'🌵', name:'Sucho', effect:'Nektar schne na polích', nektarMod:0.4, inspectMod:1.0 },
+    { icon:'🌻', name:'Slunečnice kvetou', effect:'Zlatá snůška!', nektarMod:1.8, inspectMod:1.0 },
+  ],
+  autumn: [
+    { icon:'🍂', name:'Babí léto', effect:'Ještě trochu nektaru', nektarMod:0.6, inspectMod:1.0 },
+    { icon:'🌫', name:'Mlha', effect:'Klidno, ideální pro léčení', nektarMod:0.2, inspectMod:1.0 },
+    { icon:'🌧', name:'Déšť', effect:'Rychle krmte a zavírejte', nektarMod:0.1, inspectMod:0.7 },
+    { icon:'🥶', name:'Brzká zima', effect:'Pospěšte se!', nektarMod:0.0, inspectMod:0.5 },
+  ],
+  winter: [
+    { icon:'❄️', name:'Mráz', effect:'Včely tvoří zimní chomáč', nektarMod:0.0, inspectMod:0.0 },
+    { icon:'🌨', name:'Sněžení', effect:'Klid na stanovišti', nektarMod:0.0, inspectMod:0.0 },
+    { icon:'🌤', name:'Zimní den', effect:'Možná krátká kontrola zvenčí', nektarMod:0.0, inspectMod:0.3 },
+  ],
+};
+
+const QUEEN_NAMES = ['Královna Zlatá','Temná Karnika','Horanka','Krajinka','Sivka','Dunajka','Alpinka','Lesní Víla'];
+
+// ===================================================
+// HIVE INIT
+// ===================================================
+function createHive(id) {
+  const queenName = QUEEN_NAMES[Math.floor(Math.random() * QUEEN_NAMES.length)];
+  return {
+    id,
+    name: `Úl č.${id}`,
+    strength: Math.floor(Math.random()*4)+4, // 4-7
+    supplies: Math.floor(Math.random()*3)+5,  // 5-7
+    varroa: Math.floor(Math.random()*15)+5,   // 5-20
+    varroaRevealed: false,
+    honeyReady: 0,
+    queenName,
+    queenStrength: Math.floor(Math.random()*2)+3,
+    queenMildness: Math.floor(Math.random()*2)+2,
+    queenSwarm: Math.floor(Math.random()*2)+2,
+    queenVarroa: Math.floor(Math.random()*2)+2,
+    queenWinter: Math.floor(Math.random()*2)+3,
+    swarmMood: 0,
+    alive: true,
+    treated: false,
+    fed: false,
+    winterized: false,
+    inspectedThisSeason: false,
+  };
+}
+
+function initGame() {
+  G.hives = [];
+  for(let i = 1; i <= 4; i++) G.hives.push(createHive(i));
+  G.year = 1; G.season = 0; G.week = 0;
+  G.money = 500; G.honey = 0; G.log = []; G.events = [];
+  G.phase = 0;
+  rollWeather();
+  renderAll();
+  addLog('Začíná váš první rok jako včelař. Štěstí přeje připraveným.');
+}
+
+// ===================================================
+// WEATHER
+// ===================================================
+function rollWeather() {
+  const sname = ['spring','summer','autumn','winter'][G.season];
+  const types = WEATHER_TYPES[sname];
+  G.weather = types[Math.floor(Math.random()*types.length)];
+  if(G.weather.event === 'frost') {
+    addEvent('danger','Pozdní mráz!','Nebezpečí pro plod v úlu. Příliš velké úly riskují ztrátu jarního plodu.');
+  }
+}
+
+// ===================================================
+// EVENTS
+// ===================================================
+function generateSeasonEvents() {
+  G.events = [];
+  const s = G.season;
+  const rand = Math.random();
+  if(s === 0) { // spring
+    if(rand < 0.4) addEvent('warning','Rojivá nálada','Včely jsou neklidné. Sledujte matečníky pečlivě!');
+    else if(rand < 0.6) addEvent('good','Výjimečná řepka','Řepka v okolí kvete bohatě. Šance na skvělou jarní sklizeň.');
+    else addEvent('neutral','Klidné jaro','Nic neobvyklého. Dobrá šance pro systematickou práci.');
+  } else if(s === 1) { // summer
+    if(rand < 0.35) addEvent('danger','Varroáza eskaluje','Roztoči se množí rychleji než obvykle. Léčení není k odložení.');
+    else if(rand < 0.55) addEvent('good','Lipová snůška','Lípy v okolí kvetou naplno. Zlatá příležitost!');
+    else if(rand < 0.7) addEvent('warning','Sucho','Nektar vysychá. Letní med bude méně než obvykle.');
+    else addEvent('neutral','Stabilní léto','Průměrná snůška, žádná překvapení.');
+  } else if(s === 2) { // autumn
+    if(rand < 0.4) addEvent('warning','Pozdní Varroa','Roztoči mají ještě plod k dispozici. Okno pro léčení se zavírá!');
+    else if(rand < 0.6) addEvent('danger','Brzký mráz','Teploty rychle padají. Krmení musí být hotovo okamžitě.');
+    else addEvent('neutral','Klidný podzim','Čas na systematické zazimování.');
+  } else { // winter
+    if(rand < 0.3) addEvent('danger','Varování ze spolku','Sousední včelaři hlásí záhadné úhyny. Zkontrolujte zásoby!');
+    else if(rand < 0.5) addEvent('good','Zimní kurz','Místní spolek pořádá workshop na chov matek. Zúčastníte se?');
+    else addEvent('neutral','Tichá zima','Klid na stanovišti. Čas pro dílnu a studium.');
+  }
+}
+
+function addEvent(type, title, desc) {
+  G.events.push({type, title, desc});
+}
+
+// ===================================================
+// SEASON SIMULATION
+// ===================================================
+function applyWeekEffects() {
+  const s = G.season;
+  const w = G.weather;
+  G.hives.forEach(h => {
+    if(!h.alive) return;
+    // strength growth (spring/summer) or decline (winter)
+    if(s === 0) h.strength = Math.min(10, h.strength + (Math.random()*1.2 * w.nektarMod)|0);
+    if(s === 1) { h.honeyReady += Math.floor((h.strength * 0.8 + Math.random()) * w.nektarMod * h.queenStrength * 0.4); }
+    if(s === 2) h.strength = Math.max(0, h.strength - (Math.random()<0.3?1:0));
+    if(s === 3) {
+      h.strength = Math.max(0, h.strength - (Math.random()<0.4?1:0));
+      if(h.supplies < 3 && Math.random() < 0.3) { h.strength--; addLog(`${h.name}: Hladoví v zimě!`,'danger'); }
+    }
+    // varroa grows silently
+    h.varroa = Math.min(100, h.varroa + Math.floor(Math.random()*4 + 1));
+    if(h.varroa >= 70 && !h.varroaRevealed) { h.varroaRevealed = true; addLog(`${h.name}: Náhle oslabena — příčina nejasná!`,'warning'); }
+    // death check
+    if(h.strength <= 0) {
+      h.alive = false;
+      addLog(`${h.name}: Úhyn včelstva. Těžká ztráta.`,'danger');
+      showToast(`💀 ${h.name} uhynul!`, 'danger');
+    }
+  });
+}
+
+// ===================================================
+// ACTIONS
+// ===================================================
+const SEASONAL_ACTIONS = [
+  // SPRING (season 0)
+  [
+    { icon:'🔍', name:'Prohlídka úlu', cost:1, desc:'Otevřete úl a zkontrolujte situaci.', action:'inspect' },
+    { icon:'🏗', name:'Přidat medník', cost:1, desc:'Rozšíříte prostor pro snůšku.', action:'addSuper' },
+    { icon:'✂️', name:'Řez matečníků', cost:1, desc:'Snižte rojivou náladu. Riziko přehlédnutí.', action:'cutQueenCells' },
+    { icon:'🌿', name:'Oddělek', cost:2, desc:'Vytvořte nové včelstvo. Oslabíte hlavní úl.', action:'makeNuc' },
+  ],
+  // SUMMER (season 1)
+  [
+    { icon:'🍯', name:'Vytočit med', cost:2, desc:'Sklizeň medu je-li >80% zavíčkovaného.', action:'harvestHoney' },
+    { icon:'🧪', name:'Léčení Varroa', cost:1, desc:'Kyselina mravenčí. Účinnější bez plodu.', action:'treatVarroa' },
+    { icon:'🔍', name:'Prohlídka', cost:1, desc:'Zkontrolujte stav včelstva.', action:'inspect' },
+    { icon:'🌡', name:'Ventilace', cost:1, desc:'Zlepšete větrání v horkém počasí.', action:'ventilate' },
+  ],
+  // AUTUMN (season 2)
+  [
+    { icon:'🍬', name:'Krmení na zimu', cost:1, desc:'Doplňte zásoby cukrovým roztokem.', action:'feedWinter' },
+    { icon:'🧪', name:'Podzimní léčení', cost:1, desc:'Fumigace. Nejúčinnější bez plodu!', action:'treatVarroaAutumn' },
+    { icon:'🚪', name:'Zúžit česno', cost:1, desc:'Ochrana před myšmi a hmyzem.', action:'narrowEntrance' },
+    { icon:'🔍', name:'Kontrola zásob', cost:1, desc:'Ověřte zásoby medu a pylu.', action:'checkSupplies' },
+  ],
+  // WINTER (season 3)
+  [
+    { icon:'🔨', name:'Rámky do zásoby', cost:1, desc:'Vyrobte 10 nových rámků. Bonus na jaro.', action:'makeFrames' },
+    { icon:'📚', name:'Studium', cost:1, desc:'Kurz nebo kniha. Odemkne nové schopnosti.', action:'study' },
+    { icon:'🕯', name:'Tavení vosku', cost:1, desc:'Prodej vosku. Zisk 150 Kč.', action:'meltWax' },
+    { icon:'👥', name:'Spolek', cost:1, desc:'Zapojte se do místního spolku. Informace.', action:'joinClub' },
+  ],
+];
+
+function doAction(actionKey) {
+  if(!G.selectedHive && actionKey !== 'makeFrames' && actionKey !== 'study' && actionKey !== 'meltWax' && actionKey !== 'joinClub') {
+    showToast('Vyberte nejprve včelstvo kliknutím na úl.','warning');
+    return;
+  }
+  const cost = SEASONAL_ACTIONS[G.season].find(a=>a.action===actionKey)?.cost || 1;
+  if(G.timeUsed + cost > G.timeBlocks) {
+    showToast('Nemáte dost časových bloků!','warning');
+    return;
+  }
+  G.timeUsed += cost;
+  const h = G.hives.find(hv=>hv.id===G.selectedHive);
+
+  switch(actionKey) {
+    case 'inspect':
+      if(!h||!h.alive) { showToast('Vyberte živý úl.','warning'); G.timeUsed-=cost; return; }
+      h.inspectedThisSeason = true;
+      h.varroaRevealed = true;
+      h.swarmMood = Math.max(0, h.swarmMood - 5);
+      addLog(`${h.name}: Prohlídka dokončena. Matka přítomna, zásoby OK.`);
+      showHiveModal(h.id);
+      break;
+
+    case 'addSuper':
+      if(!h||!h.alive) { showToast('Vyberte živý úl.','warning'); G.timeUsed-=cost; return; }
+      if(G.season !== 0) { showToast('Medníky jen na jaře!','warning'); G.timeUsed-=cost; return; }
+      h.honeyReady += Math.floor(h.strength * 1.2);
+      addLog(`${h.name}: Medník přidán. Včely stavějí.`,'good');
+      showToast('🏗 Medník přidán! Včely mají prostor.','good');
+      break;
+
+    case 'harvestHoney':
+      if(!h||!h.alive) { showToast('Vyberte živý úl.','warning'); G.timeUsed-=cost; return; }
+      if(h.honeyReady < 5) { showToast('Med ještě není připraven k vytočení.','warning'); G.timeUsed-=cost; return; }
+      const harvested = h.honeyReady;
+      G.honey += harvested;
+      G.money += harvested * 120;
+      h.honeyReady = 0;
+      addLog(`${h.name}: Vytočeno ${harvested} kg medu! Příjem +${harvested*120} Kč.`,'good');
+      showToast(`🍯 ${harvested} kg medu vytočeno!`,'good');
+      harvestFx();
+      break;
+
+    case 'feedWinter':
+      if(!h||!h.alive) { showToast('Vyberte živý úl.','warning'); G.timeUsed-=cost; return; }
+      if(G.money < 120) { showToast('Nemáte dost peněz na krmení (120 Kč/úl).','warning'); G.timeUsed-=cost; return; }
+      G.money -= 120;
+      h.supplies = Math.min(10, h.supplies + 4);
+      h.fed = true;
+      addLog(`${h.name}: Nakrmeno na zimu. Zásoby navýšeny.`,'good');
+      showToast(`🍬 ${h.name} nakrmen!`,'good');
+      break;
+
+    case 'cutQueenCells':
+      if(!h||!h.alive) { showToast('Vyberte živý úl.','warning'); G.timeUsed-=cost; return; }
+      if(Math.random() < 0.25) {
+        addLog(`${h.name}: Jeden matečník přehlédnut. Roj může uletět.`,'warning');
+        showToast('⚠ Přehlédli jste jeden matečník!','warning');
+      } else {
+        h.swarmMood = 0;
+        addLog(`${h.name}: Matečníky vyříznuty. Rojivá nálada klesá.`,'good');
+        showToast('✂ Matečníky vyříznuty. Klid nastolen.','good');
+      }
+      break;
+
+    case 'makeNuc':
+      if(!h||!h.alive) { showToast('Vyberte živý úl.','warning'); G.timeUsed-=cost; return; }
+      if(h.strength < 6) { showToast('Včelstvo je příliš slabé pro oddělení.','warning'); G.timeUsed-=cost; return; }
+      if(G.hives.length >= 10) { showToast('Již máte maximální počet úlů!','warning'); G.timeUsed-=cost; return; }
+      h.strength -= 3;
+      const newId = G.hives.length + 1;
+      const nuc = createHive(newId);
+      nuc.strength = 3; nuc.supplies = 3;
+      G.hives.push(nuc);
+      addLog(`${h.name}: Oddělek vytvořen → Úl č.${newId} zakládáte.`,'good');
+      showToast(`🌿 Nové včelstvo č.${newId} vzniklo!`,'good');
+      break;
+
+    case 'treatVarroa':
+    case 'treatVarroaAutumn':
+      if(!h||!h.alive) { showToast('Vyberte živý úl.','warning'); G.timeUsed-=cost; return; }
+      if(G.money < 80) { showToast('Léčivo stojí 80 Kč.','warning'); G.timeUsed-=cost; return; }
+      G.money -= 80;
+      const reduction = actionKey==='treatVarroaAutumn' ? Math.floor(Math.random()*25)+25 : Math.floor(Math.random()*15)+15;
+      h.varroa = Math.max(0, h.varroa - reduction);
+      h.treated = true;
+      h.varroaRevealed = true;
+      addLog(`${h.name}: Varroáza léčena. Tlak klesl o ${reduction}.`,'good');
+      showToast(`🧪 Léčení úspěšné! (-${reduction} Varroa)`,'good');
+      break;
+
+    case 'narrowEntrance':
+      if(!h||!h.alive) { showToast('Vyberte živý úl.','warning'); G.timeUsed-=cost; return; }
+      h.winterized = true;
+      addLog(`${h.name}: Česno zúženo. Úl připraven na zimu.`,'good');
+      showToast('🚪 Česno zúženo!','good');
+      break;
+
+    case 'checkSupplies':
+      if(!h||!h.alive) { showToast('Vyberte živý úl.','warning'); G.timeUsed-=cost; return; }
+      h.varroaRevealed = true;
+      addLog(`${h.name}: Zásoby zkontrolovány. Síla: ${h.strength}, Zásoby: ${h.supplies}/10, Varroa: ${h.varroa}`);
+      showHiveModal(h.id);
+      break;
+
+    case 'ventilate':
+      if(!h||!h.alive) { showToast('Vyberte živý úl.','warning'); G.timeUsed-=cost; return; }
+      h.strength = Math.min(10, h.strength + 1);
+      addLog(`${h.name}: Ventilace zlepšena. Včely klidnější.`,'good');
+      break;
+
+    case 'makeFrames':
+      G.money -= 50; // cost of material
+      addLog('Dílna: Vyrobili jste 10 nových rámků. Jaro bude snazší.','good');
+      showToast('🔨 Rámky hotovy! Jaro bude hladší.','good');
+      G.hives.forEach(hv => { if(hv.alive) hv.swarmMood = Math.max(0, hv.swarmMood-3); });
+      break;
+
+    case 'study':
+      addLog('Studium: Přečetli jste kapitolu o chovu matek. Znalosti rostou.','good');
+      showToast('📚 Naučili jste se něco nového!','good');
+      break;
+
+    case 'meltWax':
+      G.money += 150;
+      addLog('Vosk nataven a prodán. Příjem +150 Kč.','good');
+      showToast('🕯 Vosk prodán za 150 Kč!','good');
+      break;
+
+    case 'joinClub':
+      addLog('Spolek: Slyšeli jste zprávy o rojích v okolí. Cenné informace.','good');
+      showToast('👥 Místní včelaři vás vítají!','good');
+      G.hives.forEach(hv=>{ if(hv.alive) hv.varroa=Math.max(0,hv.varroa-3); });
+      break;
+  }
+
+  renderAll();
+}
+
+// ===================================================
+// ADVANCE WEEK
+// ===================================================
+function advanceWeek() {
+  applyWeekEffects();
+  G.week++;
+  G.timeUsed = 0;
+  const s = SEASONS[G.season];
+
+  // swarm check (spring/summer)
+  if(G.season <= 1) {
+    G.hives.forEach(h => {
+      if(!h.alive) return;
+      h.swarmMood += Math.floor(Math.random()*8);
+      if(h.swarmMood > 60 && Math.random()<0.4) {
+        h.strength = Math.max(2, h.strength - 3);
+        h.swarmMood = 0;
+        addLog(`${h.name}: ROJ ULETĚL! Ztráta části včelstva.`,'danger');
+        showToast(`🐝 ${h.name}: Roj uletěl!`,'danger');
+      }
+    });
+  }
+
+  if(G.week >= s.weeks) {
+    // end of season
+    nextSeason();
+  } else {
+    rollWeather();
+    addLog(`Týden ${G.week+1} — ${s.name}.`);
+    renderAll();
+  }
+}
+
+function nextSeason() {
+  G.week = 0;
+  G.season++;
+  if(G.season > 3) {
+    // end of year → winter summary
+    showWinterSummary();
+    return;
+  }
+  generateSeasonEvents();
+  rollWeather();
+  G.timeBlocks = SEASONS[G.season].timeBlocks;
+  G.selectedHive = null;
+  addLog(`--- ${SEASONS[G.season].name.toUpperCase()} začíná ---`);
+  renderAll();
+}
+
+function startNewYear() {
+  G.year++;
+  G.season = 0; G.week = 0;
+  G.timeUsed = 0;
+  G.timeBlocks = SEASONS[0].timeBlocks;
+  // reset seasonal flags
+  G.hives.forEach(h => {
+    if(!h.alive) return;
+    h.treated = false; h.fed = false; h.winterized = false;
+    h.inspectedThisSeason = false; h.swarmMood = 0;
+    h.varroaRevealed = false;
+    // winter survival check
+    if(!h.fed && h.supplies < 4) {
+      if(Math.random() < 0.5) {
+        h.alive = false;
+        addLog(`${h.name}: Zahynul zimou — nedostatek zásob.`,'danger');
+      }
+    }
+    if(h.varroa >= 80) {
+      if(Math.random() < 0.6) {
+        h.alive = false;
+        addLog(`${h.name}: Zahynul — varroáza.`,'danger');
+      }
+    }
+    if(h.alive) {
+      h.varroa = Math.max(10, h.varroa - 5);
+      h.strength = Math.max(3, h.strength + 1); // spring recovery
+    }
+  });
+  // remove dead hives with delay and check phase
+  updatePhase();
+  generateSeasonEvents();
+  rollWeather();
+  closeModal('winterModal');
+  addLog(`=== ROK ${G.year} ZAČÍNÁ ===`);
+  renderAll();
+}
+
+function updatePhase() {
+  if(G.year >= 11) G.phase = 2;
+  else if(G.year >= 4) G.phase = 1;
+  else G.phase = 0;
+}
+
+// ===================================================
+// WINTER SUMMARY
+// ===================================================
+function showWinterSummary() {
+  const alive = G.hives.filter(h=>h.alive).length;
+  const total = G.hives.length;
+  const pct = Math.round((alive/total)*100);
+  const emotional = winterEmotional(G.year, pct);
+
+  let el = document.getElementById('winterModalContent');
+  el.innerHTML = `
+    <div class="winter-summary">
+      <div style="font-family:'Playfair Display',serif; font-size:1.5rem; color:var(--bark); margin-bottom:16px;">
+        Zima prošla — Rok ${G.year} uzavřen
+      </div>
+      <div class="winter-survival-rate">${pct}%</div>
+      <div class="winter-summary-label">přežití zimování (${alive} z ${total} včelstev)</div>
+      <div class="winter-emotional">"${emotional}"</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:20px; text-align:left;">
+        <div style="background:rgba(107,68,35,0.07); border-radius:8px; padding:10px;">
+          <div style="font-size:0.72rem; color:var(--text-light); text-transform:uppercase; letter-spacing:0.08em;">Med</div>
+          <div style="font-family:'Playfair Display',serif; font-size:1.4rem; color:var(--honey);">${G.honey} kg</div>
+        </div>
+        <div style="background:rgba(107,68,35,0.07); border-radius:8px; padding:10px;">
+          <div style="font-size:0.72rem; color:var(--text-light); text-transform:uppercase; letter-spacing:0.08em;">Peníze</div>
+          <div style="font-family:'Playfair Display',serif; font-size:1.4rem; color:var(--forest-light);">${G.money} Kč</div>
+        </div>
+        <div style="background:rgba(107,68,35,0.07); border-radius:8px; padding:10px;">
+          <div style="font-size:0.72rem; color:var(--text-light); text-transform:uppercase; letter-spacing:0.08em;">Příští rok</div>
+          <div style="font-family:'Playfair Display',serif; font-size:1.4rem; color:var(--bark);">Rok ${G.year+1}</div>
+        </div>
+      </div>
+      <button class="advance-btn" onclick="startNewYear()" style="margin-top:8px;">
+        Zahájit rok ${G.year+1} →
+      </button>
+    </div>
+  `;
+  showModal('winterModal');
+}
+
+function winterEmotional(yr, pct) {
+  if(yr===1 && pct>50) return 'První zima přežita. Váš úsměv říká víc než slova.';
+  if(yr===1 && pct<=50) return 'Tvrdá zkouška. Ale teď víte, co příště udělat jinak.';
+  if(yr<=3 && pct===100) return 'Stoprocentní zimování! Pomalu začínáte rozumět svým včelám.';
+  if(yr<=3) return 'Ztráty bolí. Ale každý mrtvý úl je nejcennější lekce.';
+  if(yr<=7 && pct>70) return 'Systém začíná fungovat. Vaše ruce vědí, co dělají.';
+  if(yr>10) return 'Dvacet let se nerodí přes noc. Ale vy jste na dobré cestě.';
+  return 'Rok uzavřen. Příroda vás opět poučila.';
+}
+
+// ===================================================
+// HIVE MODAL
+// ===================================================
+let G_selectedHiveId = null;
+G.selectedHive = null;
+
+function showHiveModal(id) {
+  const h = G.hives.find(hv=>hv.id===id);
+  if(!h || !h.alive) return;
+  G_selectedHiveId = id;
+
+  const varroaDisplay = h.varroaRevealed
+    ? `<div class="detail-stat-val" style="color:${h.varroa>70?'var(--danger)':h.varroa>40?'var(--warning)':'var(--good)'};">${h.varroa}<span style="font-size:0.8rem;">/100</span></div><div class="detail-stat-sub">${h.varroa>70?'🚨 Kritické':h.varroa>40?'⚠ Zvýšené':'✓ Pod kontrolou'}</div>`
+    : `<div class="varroa-unknown">Neznámé — prozkoumejte úl</div>`;
+
+  const swarmText = h.swarmMood > 50 ? '🚨 Vysoká' : h.swarmMood > 25 ? '⚠ Střední' : '✓ Klidná';
+
+  const stars = (n) => '★'.repeat(n) + '☆'.repeat(5-n);
+
+  let choices = '';
+  if(G.season === 0) choices = `
+    <div class="choice-btn" onclick="doAction('cutQueenCells');closeModal('hiveModal');">
+      <div class="choice-name">✂ Vyříznout matečníky</div>
+      <div class="choice-desc">Snižte rojivou náladu přímo u zdroje.</div>
+      <div class="choice-risk">⚠ Riziko: Jeden přehlédnut (25%)</div>
+    </div>
+    <div class="choice-btn" onclick="doAction('makeNuc');closeModal('hiveModal');">
+      <div class="choice-name">🌿 Vytvořit oddělek</div>
+      <div class="choice-desc">Využijte rojivou náladu pro expanzi.</div>
+      <div class="choice-risk">⚠ Oslabíte hlavní úl o 3 rámky</div>
+    </div>
+    <div class="choice-btn" onclick="doAction('addSuper');closeModal('hiveModal');">
+      <div class="choice-name">🏗 Přidat medník</div>
+      <div class="choice-desc">Rychlé a levné. Nemusí stačit.</div>
+      <div class="choice-risk good">✓ Nejlevnější možnost (1 blok)</div>
+    </div>`;
+  else if(G.season === 1) choices = `
+    <div class="choice-btn" onclick="doAction('harvestHoney');closeModal('hiveModal');">
+      <div class="choice-name">🍯 Vytočit med</div>
+      <div class="choice-desc">Sklizeň je-li med připraven (≥80% zavíčkovaný).</div>
+      <div class="choice-risk good">Připraveno: ${h.honeyReady} kg</div>
+    </div>
+    <div class="choice-btn" onclick="doAction('treatVarroa');closeModal('hiveModal');">
+      <div class="choice-name">🧪 Léčit Varroa</div>
+      <div class="choice-desc">Kyselina mravenčí. Stojí 80 Kč.</div>
+      <div class="choice-risk">Varroa tlak: ${h.varroaRevealed?h.varroa:'?'}/100</div>
+    </div>`;
+  else if(G.season === 2) choices = `
+    <div class="choice-btn" onclick="doAction('feedWinter');closeModal('hiveModal');">
+      <div class="choice-name">🍬 Nakrmit na zimu</div>
+      <div class="choice-desc">Cukerný roztok. 120 Kč/úl.</div>
+      <div class="choice-risk good">Zásoby nyní: ${h.supplies}/10</div>
+    </div>
+    <div class="choice-btn" onclick="doAction('treatVarroaAutumn');closeModal('hiveModal');">
+      <div class="choice-name">🧪 Podzimní léčení</div>
+      <div class="choice-desc">Fumigace — nejúčinnější fáze léčení!</div>
+      <div class="choice-risk">Stojí 80 Kč. Varroa: ${h.varroaRevealed?h.varroa:'?'}/100</div>
+    </div>
+    <div class="choice-btn" onclick="doAction('narrowEntrance');closeModal('hiveModal');">
+      <div class="choice-name">🚪 Zazimovat úl</div>
+      <div class="choice-desc">Zúžit česno, zkontrolovat větrání.</div>
+      <div class="choice-risk good">Status: ${h.winterized?'✓ Hotovo':'Dosud nezazimováno'}</div>
+    </div>`;
+
+  document.getElementById('hiveModalContent').innerHTML = `
+    <div class="modal-title">🐝 ${h.name}</div>
+    <div class="hive-detail-stats">
+      <div class="detail-stat">
+        <div class="detail-stat-label">Síla včelstva</div>
+        <div class="detail-stat-val">${h.strength}<span style="font-size:0.8rem;">/10</span></div>
+        <div class="detail-stat-sub">${h.strength>=7?'Silné':h.strength>=4?'Střední':'Slabé'}</div>
+      </div>
+      <div class="detail-stat">
+        <div class="detail-stat-label">Zásoby</div>
+        <div class="detail-stat-val">${h.supplies}<span style="font-size:0.8rem;">/10</span></div>
+        <div class="detail-stat-sub">${h.supplies>=7?'Hojné':h.supplies>=4?'Dostatečné':'Kriticky nízké!'}</div>
+      </div>
+      <div class="detail-stat">
+        <div class="detail-stat-label">Varroa tlak</div>
+        ${varroaDisplay}
+      </div>
+      <div class="detail-stat">
+        <div class="detail-stat-label">Rojivá nálada</div>
+        <div class="detail-stat-val" style="font-size:1rem;">${swarmText}</div>
+        <div class="detail-stat-sub">Nálada: ${h.swarmMood}/100</div>
+      </div>
+    </div>
+    <div class="queen-profile">
+      <div class="queen-name">👑 ${h.queenName}</div>
+      <div class="queen-trait"><span class="queen-trait-label">Produktivita medu</span><span class="queen-stars">${stars(h.queenStrength)}</span></div>
+      <div class="queen-trait"><span class="queen-trait-label">Mírnost</span><span class="queen-stars">${stars(h.queenMildness)}</span></div>
+      <div class="queen-trait"><span class="queen-trait-label">Odolnost Varroa</span><span class="queen-stars">${stars(h.queenVarroa)}</span></div>
+      <div class="queen-trait"><span class="queen-trait-label">Zimovatelnost</span><span class="queen-stars">${stars(h.queenWinter)}</span></div>
+    </div>
+    ${G.season < 3 ? `<div style="font-family:'Playfair Display',serif; font-size:0.9rem; color:var(--text-light); margin-bottom:8px;">Co uděláte?</div>
+    <div class="action-choices">${choices}</div>` : '<div style="font-size:0.85rem; color:var(--text-light); font-style:italic;">Zimní klid — včely nerušte.</div>'}
+  `;
+  showModal('hiveModal');
+}
+
+// ===================================================
+// RENDER
+// ===================================================
+function renderAll() {
+  const s = SEASONS[G.season];
+  // bg
+  document.getElementById('seasonBg').className = `season-bg ${s.bg}`;
+  // header
+  document.getElementById('yearNum').textContent = G.year;
+  const phases = ['phase-survival','phase-optimize','phase-mastery'];
+  const phaseNames = ['Přežití','Optimalizace','Mistrovství'];
+  const pb = document.getElementById('phaseBadge');
+  pb.className = `phase-badge ${phases[G.phase]}`;
+  pb.textContent = phaseNames[G.phase];
+  // season
+  document.getElementById('bigSeasonName').textContent = s.nameEn;
+  document.getElementById('seasonDeco').textContent = s.deco;
+  document.getElementById('seasonTitle').textContent = s.title;
+  document.getElementById('weekLabel').textContent = `Týden ${G.week+1} ze ${s.weeks}`;
+  document.getElementById('seasonDesc').textContent = s.desc;
+  // week dots
+  const dots = document.getElementById('weekDots');
+  dots.innerHTML = '';
+  for(let i=0;i<s.weeks;i++){
+    const d = document.createElement('div');
+    d.className = `week-dot ${i<G.week?'done':i===G.week?'current':''}`;
+    dots.appendChild(d);
+  }
+  // hives
+  renderHives();
+  // time blocks
+  G.timeBlocks = s.timeBlocks;
+  const tb = document.getElementById('timeBlocks');
+  tb.innerHTML = '';
+  for(let i=0;i<G.timeBlocks;i++){
+    const b = document.createElement('div');
+    b.className = `time-block ${i<G.timeUsed?'used':''}`;
+    tb.appendChild(b);
+  }
+  document.getElementById('timeLabel').textContent = `Zbývá ${G.timeBlocks-G.timeUsed} ze ${G.timeBlocks} bloků`;
+  // tip
+  document.getElementById('seasonTip').textContent = s.tip;
+  // weather
+  if(G.weather) {
+    document.getElementById('weatherIcon').textContent = G.weather.icon;
+    document.getElementById('weatherName').textContent = G.weather.name;
+    document.getElementById('weatherEffect').textContent = G.weather.effect;
+  }
+  // events
+  renderEvents();
+  // actions
+  renderActions();
+  // honey + money
+  document.getElementById('totalHoney').textContent = G.honey;
+  document.getElementById('moneyVal').textContent = G.money + ' Kč';
+  document.getElementById('moneyBar').style.width = Math.min(100,(G.money/2000)*100) + '%';
+  // log
+  renderLog();
+}
+
+function renderHives() {
+  const grid = document.getElementById('hiveGrid');
+  grid.innerHTML = '';
+  G.hives.forEach(h => {
+    const card = document.createElement('div');
+    card.className = `hive-card${!h.alive?' dead':''}${G.selectedHive===h.id?' selected':''}`;
+    if(h.alive) card.onclick = () => { G.selectedHive = h.id; showHiveModal(h.id); };
+
+    const warnings = [];
+    if(h.alive) {
+      if(h.varroa >= 70 && h.varroaRevealed) warnings.push(['danger','🚨 Varroa!']);
+      else if(h.varroa >= 40 && h.varroaRevealed) warnings.push(['warning','⚠ Varroa']);
+      if(h.supplies < 3) warnings.push(['danger','🚨 Hladoví']);
+      if(h.swarmMood > 50) warnings.push(['warning','🐝 Rojivá']);
+      if(h.strength <= 3) warnings.push(['warning','😰 Slabé']);
+      if(h.honeyReady >= 5) warnings.push(['good','🍯 Sklizeň!']);
+    }
+
+    card.innerHTML = `
+      <div class="hive-header">
+        <div class="hive-name">${h.name}</div>
+        <div class="hive-emoji">${h.alive?'🐝':'💀'}</div>
+      </div>
+      ${h.alive ? `
+      <div class="hive-stat">
+        <div class="hive-stat-label">Síla</div>
+        <div class="hive-bar"><div class="hive-bar-fill bar-strength" style="width:${h.strength*10}%"></div></div>
+      </div>
+      <div class="hive-stat">
+        <div class="hive-stat-label">Zásoby</div>
+        <div class="hive-bar"><div class="hive-bar-fill bar-supplies" style="width:${h.supplies*10}%"></div></div>
+      </div>
+      <div class="hive-stat">
+        <div class="hive-stat-label">Varroa tlak ${!h.varroaRevealed?'<span style="font-size:0.65rem; font-style:italic; color:var(--text-light);">(skrytý)</span>':''}</div>
+        <div class="hive-bar"><div class="hive-bar-fill bar-varroa" style="width:${h.varroaRevealed?h.varroa:0}%; ${!h.varroaRevealed?'background:repeating-linear-gradient(45deg,rgba(107,68,35,0.1),rgba(107,68,35,0.1) 3px,transparent 3px,transparent 6px)':''}"></div></div>
+      </div>
+      <div class="hive-stat">
+        <div class="hive-stat-label">Med připraven</div>
+        <div style="font-size:0.85rem; color:var(--honey); font-family:'Playfair Display',serif;">${h.honeyReady} kg</div>
+      </div>
+      <div class="hive-warnings">
+        ${warnings.map(([type,text])=>`<span class="warn-tag warn-${type}">${text}</span>`).join('')}
+      </div>
+      ` : `<div style="font-size:0.8rem; color:var(--text-light); font-style:italic; margin-top:8px;">Včelstvo uhynulo</div>`}
+    `;
+    card.style.animationDelay = (G.hives.indexOf(h)*0.05)+'s';
+    grid.appendChild(card);
+  });
+}
+
+function renderEvents() {
+  const c = document.getElementById('eventsContainer');
+  if(G.events.length === 0) {
+    c.innerHTML = '<div style="font-size:0.82rem; color:var(--text-light); font-style:italic;">Zatím klid na frontě...</div>';
+    return;
+  }
+  c.innerHTML = G.events.map(e=>`
+    <div class="event-card ${e.type==='danger'?'danger':e.type==='good'?'good':''}">
+      <div class="event-title">${e.title}</div>
+      <div class="event-desc">${e.desc}</div>
+    </div>
+  `).join('');
+}
+
+function renderActions() {
+  const grid = document.getElementById('actionGrid');
+  const actions = SEASONAL_ACTIONS[G.season];
+  grid.innerHTML = actions.map(a=>`
+    <button class="action-btn" onclick="doAction('${a.action}')" ${G.timeUsed+a.cost>G.timeBlocks?'disabled':''}>
+      <span class="btn-icon">${a.icon}</span>
+      <span class="btn-name">${a.name}</span>
+      <span class="btn-cost">${a.cost} blok${a.cost>1?'y':''}</span>
+    </button>
+  `).join('');
+}
+
+function renderLog() {
+  const el = document.getElementById('logEntries');
+  el.innerHTML = [...G.log].reverse().slice(0,20).map(l=>`
+    <div class="log-entry">
+      <span class="log-time">[R${G.year} ${SEASONS[G.season].name} T${G.week+1}]</span> ${l.text}
+    </div>
+  `).join('');
+}
+
+function addLog(text, type='') {
+  G.log.push({text, type, year:G.year, season:G.season, week:G.week});
+}
+
+// ===================================================
+// UTILS
+// ===================================================
+function showModal(id) {
+  document.getElementById(id).classList.add('visible');
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('visible');
+}
+
+let toastTimer;
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast show ${type}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 3000);
+}
+
+function harvestFx() {
+  const el = document.createElement('div');
+  el.className = 'honey-harvest-fx';
+  el.textContent = '🍯';
+  el.style.left = (Math.random()*60+20)+'%';
+  el.style.top = '50%';
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), 1600);
+}
+
+// Close modal on overlay click
+document.getElementById('hiveModal').addEventListener('click', function(e) {
+  if(e.target === this) closeModal('hiveModal');
+});
+
+// ===================================================
+// INIT
+// ===================================================
+initGame();
+generateSeasonEvents();
+addLog('Jarní probuzení — vaše první sezóna začíná.');
+renderAll();
+</script>
+</body>
+</html>
