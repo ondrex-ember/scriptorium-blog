@@ -1,66 +1,229 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
 
+  <!-- Main Pages -->
   <url>
     <loc>https://blog.myscriptorium.cz/</loc>
-    <lastmod>2026-05-07</lastmod>
+    <xhtml:link rel="alternate" hreflang="cs" href="https://blog.myscriptorium.cz/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://blog.myscriptorium.cz/en/" />
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://blog.myscriptorium.cz/en/</loc>
+    <xhtml:link rel="alternate" hreflang="cs" href="https://blog.myscriptorium.cz/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://blog.myscriptorium.cz/en/" />
+    <lastmod>2026-08-12</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
 
+  <!-- About Pages -->
   <url>
     <loc>https://blog.myscriptorium.cz/o-autorovi</loc>
-    <lastmod>2026-06-22</lastmod>
-    <changefreq>never</changefreq>
+    <xhtml:link rel="alternate" hreflang="cs" href="https://blog.myscriptorium.cz/o-autorovi" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://blog.myscriptorium.cz/en/about" />
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://blog.myscriptorium.cz/en/about</loc>
+    <xhtml:link rel="alternate" hreflang="cs" href="https://blog.myscriptorium.cz/o-autorovi" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://blog.myscriptorium.cz/en/about" />
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Tag Pages -->
+  <url>
+    <loc>https://blog.myscriptorium.cz/tag/historie</loc>
+    <xhtml:link rel="alternate" hreflang="cs" href="https://blog.myscriptorium.cz/tag/historie" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://blog.myscriptorium.cz/en/tag/history" />
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://blog.myscriptorium.cz/en/tag/history</loc>
+    <xhtml:link rel="alternate" hreflang="cs" href="https://blog.myscriptorium.cz/tag/historie" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://blog.myscriptorium.cz/en/tag/history" />
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://blog.myscriptorium.cz/tag/hry</loc>
+    <xhtml:link rel="alternate" hreflang="cs" href="https://blog.myscriptorium.cz/tag/hry" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://blog.myscriptorium.cz/en/tag/games" />
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://blog.myscriptorium.cz/en/tag/games</loc>
+    <xhtml:link rel="alternate" hreflang="cs" href="https://blog.myscriptorium.cz/tag/hry" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://blog.myscriptorium.cz/en/tag/games" />
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://blog.myscriptorium.cz/tag/aplikace</loc>
+    <xhtml:link rel="alternate" hreflang="cs" href="https://blog.myscriptorium.cz/tag/aplikace" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://blog.myscriptorium.cz/en/tag/applications" />
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://blog.myscriptorium.cz/en/tag/applications</loc>
+    <xhtml:link rel="alternate" hreflang="cs" href="https://blog.myscriptorium.cz/tag/aplikace" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://blog.myscriptorium.cz/en/tag/applications" />
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://blog.myscriptorium.cz/tag/skripty</loc>
+    <xhtml:link rel="alternate" hreflang="cs" href="https://blog.myscriptorium.cz/tag/skripty" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://blog.myscriptorium.cz/en/tag/scripts" />
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://blog.myscriptorium.cz/en/tag/scripts</loc>
+    <xhtml:link rel="alternate" hreflang="cs" href="https://blog.myscriptorium.cz/tag/skripty" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://blog.myscriptorium.cz/en/tag/scripts" />
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Articles -->
+  <url>
+    <loc>https://blog.myscriptorium.cz/clanky/ember-chime-app-android-released</loc>
+    <xhtml:link rel="alternate" hreflang="cs" href="https://blog.myscriptorium.cz/clanky/ember-chime-app-android-released" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://blog.myscriptorium.cz/en/articles/ember-chime-released" />
+    <lastmod>2026-06-29</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://blog.myscriptorium.cz/en/articles/ember-chime-released</loc>
+    <xhtml:link rel="alternate" hreflang="cs" href="https://blog.myscriptorium.cz/clanky/ember-chime-app-android-released" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://blog.myscriptorium.cz/en/articles/ember-chime-released" />
+    <lastmod>2026-06-29</lastmod>
+    <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
-    <loc>  https://blog.myscriptorium.cz/clanky/ember-chime-app-android-released</loc>
-    <lastmod>2026-06-29</lastmod>
-    <changefreq>never</changefreq>
+    <loc>https://blog.myscriptorium.cz/clanky/app-ember-chime-android</loc>
+    <xhtml:link rel="alternate" hreflang="cs" href="https://blog.myscriptorium.cz/clanky/app-ember-chime-android" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://blog.myscriptorium.cz/en/articles/ember-chime-guide" />
+    <lastmod>2026-06-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://blog.myscriptorium.cz/en/articles/ember-chime-guide</loc>
+    <xhtml:link rel="alternate" hreflang="cs" href="https://blog.myscriptorium.cz/clanky/app-ember-chime-android" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://blog.myscriptorium.cz/en/articles/ember-chime-guide" />
+    <lastmod>2026-06-20</lastmod>
+    <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
     <loc>https://blog.myscriptorium.cz/clanky/sklarska-hut-fajrum</loc>
+    <xhtml:link rel="alternate" hreflang="cs" href="https://blog.myscriptorium.cz/clanky/sklarska-hut-fajrum" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://blog.myscriptorium.cz/en/articles/glassworks-fajrum" />
     <lastmod>2026-05-07</lastmod>
-    <changefreq>never</changefreq>
+    <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
-  
   <url>
-    <loc>https://blog.myscriptorium.cz/clanky/app-ember-chime-android</loc>
-    <lastmod>2026-06-20</lastmod>
-    <changefreq>never</changefreq>
+    <loc>https://blog.myscriptorium.cz/en/articles/glassworks-fajrum</loc>
+    <xhtml:link rel="alternate" hreflang="cs" href="https://blog.myscriptorium.cz/clanky/sklarska-hut-fajrum" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://blog.myscriptorium.cz/en/articles/glassworks-fajrum" />
+    <lastmod>2026-05-07</lastmod>
+    <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
-  
+
   <url>
     <loc>https://blog.myscriptorium.cz/clanky/scriptorium-hra</loc>
+    <xhtml:link rel="alternate" hreflang="cs" href="https://blog.myscriptorium.cz/clanky/scriptorium-hra" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://blog.myscriptorium.cz/en/articles/scriptorium-game" />
     <lastmod>2026-04-26</lastmod>
-    <changefreq>never</changefreq>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://blog.myscriptorium.cz/en/articles/scriptorium-game</loc>
+    <xhtml:link rel="alternate" hreflang="cs" href="https://blog.myscriptorium.cz/clanky/scriptorium-hra" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://blog.myscriptorium.cz/en/articles/scriptorium-game" />
+    <lastmod>2026-04-26</lastmod>
+    <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
     <loc>https://blog.myscriptorium.cz/clanky/knihtisk-praha</loc>
+    <xhtml:link rel="alternate" hreflang="cs" href="https://blog.myscriptorium.cz/clanky/knihtisk-praha" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://blog.myscriptorium.cz/en/articles/printing-press-prague" />
     <lastmod>2026-04-19</lastmod>
-    <changefreq>never</changefreq>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://blog.myscriptorium.cz/en/articles/printing-press-prague</loc>
+    <xhtml:link rel="alternate" hreflang="cs" href="https://blog.myscriptorium.cz/clanky/knihtisk-praha" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://blog.myscriptorium.cz/en/articles/printing-press-prague" />
+    <lastmod>2026-04-19</lastmod>
+    <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
     <loc>https://blog.myscriptorium.cz/clanky/pisari-v-klasterech</loc>
+    <xhtml:link rel="alternate" hreflang="cs" href="https://blog.myscriptorium.cz/clanky/pisari-v-klasterech" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://blog.myscriptorium.cz/en/articles/scribes-in-monasteries" />
     <lastmod>2026-04-14</lastmod>
-    <changefreq>never</changefreq>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://blog.myscriptorium.cz/en/articles/scribes-in-monasteries</loc>
+    <xhtml:link rel="alternate" hreflang="cs" href="https://blog.myscriptorium.cz/clanky/pisari-v-klasterech" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://blog.myscriptorium.cz/en/articles/scribes-in-monasteries" />
+    <lastmod>2026-04-14</lastmod>
+    <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
     <loc>https://blog.myscriptorium.cz/clanky/gutenberg-fust-zrada</loc>
+    <xhtml:link rel="alternate" hreflang="cs" href="https://blog.myscriptorium.cz/clanky/gutenberg-fust-zrada" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://blog.myscriptorium.cz/en/articles/gutenberg-fust-betrayal" />
     <lastmod>2026-04-07</lastmod>
-    <changefreq>never</changefreq>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://blog.myscriptorium.cz/en/articles/gutenberg-fust-betrayal</loc>
+    <xhtml:link rel="alternate" hreflang="cs" href="https://blog.myscriptorium.cz/clanky/gutenberg-fust-zrada" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://blog.myscriptorium.cz/en/articles/gutenberg-fust-betrayal" />
+    <lastmod>2026-04-07</lastmod>
+    <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
