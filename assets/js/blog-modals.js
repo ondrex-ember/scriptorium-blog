@@ -146,10 +146,59 @@ const BlogLang = {
     const path   = window.location.pathname;
     const isInEn = path.startsWith('/en/') || path === '/en';
     if (isInEn) {
+      localStorage.setItem('blog_lang', 'cs');
       window.location.href = BlogLang._enToCs(path);
     } else {
+      localStorage.setItem('blog_lang', 'en');
       window.location.href = BlogLang._csToEn(path);
     }
+  },
+
+  /**
+   * Mapování CS → EN URL
+   */
+  _csToEn(path) {
+    const map = {
+      '/':                                         '/en/',
+      '/clanky/gutenberg-fust-zrada':              '/en/articles/gutenberg-fust-betrayal',
+      '/clanky/pisari-v-klasterech':               '/en/articles/scribes-in-monasteries',
+      '/clanky/knihtisk-praha':                    '/en/articles/printing-press-prague',
+      '/clanky/sklarska-hut-fajrum':               '/en/articles/glassworks-fajrum',
+      '/clanky/scriptorium-hra':                   '/en/articles/scriptorium-game',
+      '/clanky/app-ember-chime-android':           '/en/articles/ember-chime-guide',
+      '/clanky/ember-chime-app-android-released':  '/en/articles/ember-chime-released',
+      '/tag/historie':                             '/en/tag/history',
+      '/tag/hry':                                  '/en/tag/games',
+      '/tag/aplikace':                             '/en/tag/applications',
+      '/tag/skripty':                              '/en/tag/scripts',
+      '/o-autorovi':                               '/en/about',
+    };
+    const clean = path.replace(/\/$/, '') || '/';
+    return map[clean] || '/en/';
+  },
+
+  /**
+   * Mapování EN → CS URL
+   */
+  _enToCs(path) {
+    const map = {
+      '/en/':                                   '/',
+      '/en':                                    '/',
+      '/en/articles/gutenberg-fust-betrayal':   '/clanky/gutenberg-fust-zrada',
+      '/en/articles/scribes-in-monasteries':    '/clanky/pisari-v-klasterech',
+      '/en/articles/printing-press-prague':     '/clanky/knihtisk-praha',
+      '/en/articles/glassworks-fajrum':         '/clanky/sklarska-hut-fajrum',
+      '/en/articles/scriptorium-game':          '/clanky/scriptorium-hra',
+      '/en/articles/ember-chime-guide':         '/clanky/app-ember-chime-android',
+      '/en/articles/ember-chime-released':      '/clanky/ember-chime-app-android-released',
+      '/en/tag/history':                        '/tag/historie',
+      '/en/tag/games':                          '/tag/hry',
+      '/en/tag/applications':                   '/tag/aplikace',
+      '/en/tag/scripts':                        '/tag/skripty',
+      '/en/about':                              '/o-autorovi',
+    };
+    const clean = path.replace(/\/$/, '') || '/en';
+    return map[clean] || '/';
   }
 };
 
@@ -157,6 +206,10 @@ const BlogLang = {
    INIT — spustí se po načtení DOM
 ───────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
+  const path = window.location.pathname;
+  const isInEn = path.startsWith('/en/') || path === '/en';
+  localStorage.setItem('blog_lang', isInEn ? 'en' : 'cs');
+
   const consentGiven = localStorage.getItem('blog_consent');
   const langChosen   = localStorage.getItem('blog_lang');
 
