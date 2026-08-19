@@ -1,76 +1,394 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- Google Tag Manager -->
   <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-  'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-  })(window,document,'script','dataLayer','GTM-NZSGNPD8');</script>
-  <!-- End Google Tag Manager -->
-
-  <meta charset="UTF-8" />
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-NZSGNPD8');</script>
+<meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>Scriptorium: Czech game about ink, parchment, and survival in a monastery — Scriptorium Blog</title>
-  <meta name="description" content="Olomouc, 1465. You were given a cell, a goose quill, and a debt to the abbot. Guide to Scriptorium game." />
+  <title>Scriptorium: A Czech game about ink, parchment, and survival in a monastery — Scriptorium Blog</title>
+  <meta name="description" content="Olomouc, 1465. You have been given a cell, a quill, and a debt to the abbot. Scriptorium, alchemy, medieval economy and secrets — what the browser game Scriptorium offers and how to succeed." />
 
-  <meta property="og:title" content="Scriptorium: Czech game about ink, parchment, and survival in a monastery" />
-  <meta property="og:description" content="Olomouc, 1465. You were given a cell, a goose quill, and a debt to the abbot." />
+  <meta property="og:title" content="Scriptorium: A Czech game about ink, parchment, and survival in a monastery" />
+  <meta property="og:description" content="Olomouc, 1465. You have been given a cell, a quill, and a debt to the abbot. A guide to the game: from the first copied page to the alchemical secrets of the Athanor." />
   <meta property="og:type" content="article" />
   <meta property="og:url" content="https://blog.myscriptorium.cz/en/articles/scriptorium-game" />
+  <meta property="og:image" content="https://blog.myscriptorium.cz/assets/img/og-default.jpg" />
+  <meta property="og:image:alt" content="A monastic scriptorium by candlelight, glimpses of ink and parchment" />
+  <meta property="article:published_time" content="2026-05-07T10:00:00+02:00" />
+  <meta property="article:author" content="Ondrex" />
+  <meta property="article:tag" content="Games" />
+  <meta property="article:tag" content="History" />
+  <meta property="article:tag" content="Medieval" />
+  <meta property="article:tag" content="Olomouc" />
 
   <link rel="canonical" href="https://blog.myscriptorium.cz/en/articles/scriptorium-game" />
-  <link rel="alternate" hreflang="cs" href="https://blog.myscriptorium.cz/clanky/scriptorium-hra" />
-  <link rel="alternate" hreflang="en" href="https://blog.myscriptorium.cz/en/articles/scriptorium-game" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": "Scriptorium: A Czech game about ink, parchment, and survival in a monastery",
+    "description": "Olomouc, 1465. You have been given a cell, a quill, and a debt to the abbot. Scriptorium, alchemy, medieval economy and secrets — what the browser game Scriptorium offers and how to succeed.",
+    "datePublished": "2026-05-07T10:00:00+02:00",
+    "dateModified": "2026-05-07T10:00:00+02:00",
+    "author": {
+      "@type": "Person",
+      "name": "Ondrex",
+      "url": "https://ember-pa.cz"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "Scriptorium Blog",
+      "url": "https://blog.myscriptorium.cz"
+    },
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": "https://blog.myscriptorium.cz/en/articles/scriptorium-game"
+    },
+    "inLanguage": "en",
+    "keywords": "scriptorium, monastery, medieval, Olomouc, 1465, browser game, resource management, manuscripts, alchemy, parchment, ink, czech game, indie, historical game, myscriptorium"
+  }
+  </script>
 
   <link rel="stylesheet" href="/assets/css/style.css" />
   <link rel="icon" href="/assets/img/favicon.ico" />
 </head>
 <body>
-<!-- Google Tag Manager (noscript) -->
-<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-NZSGNPD8"
+  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-NZSGNPD8"
 height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-<!-- End Google Tag Manager (noscript) -->
-
 <div class="page-wrap">
   <div class="parchment">
 
     <header class="site-header">
-      <a href="/en/" class="site-logo"><span>S</span>criptorium</a>
-      <p class="site-tagline">Journal from the workshop of ink and code</p>
+      <a href="/en" class="site-logo"><span>S</span>criptorium</a>
+      <p class="site-tagline">Diary from the workshop of ink and code</p>
       <nav class="site-nav" aria-label="Main navigation">
-        <a href="/en/">All</a>
+        <a href="/en">All</a>
         <a href="/en/tag/history">History</a>
         <a href="/en/tag/games">Games</a>
-        <a href="/en/tag/applications">Apps</a>
+        <a href="/en/tag/apps">Apps</a>
         <a href="/en/tag/scripts">Scripts</a>
-        <a href="/en/about">About author</a>
-        <a href="https://myscriptorium.cz" target="_blank" rel="noopener">↗ Game</a>
-        <button type="button" onclick="BlogLang.toggle()" class="lang-toggle-btn" style="background: transparent; border: 1px solid rgba(120,80,40,0.3); border-radius: 4px; padding: 2px 8px; cursor: pointer; font-family: inherit; font-size: 0.85em; color: inherit; margin-left: 6px;">🇬🇧 EN / 🇨🇿 CS</button>
+        <a href="/en/about">About the Author</a>
+        <a href="https://myscriptorium.cz" target="_blank" rel="noopener">↗ Play</a>
       </nav>
     </header>
 
-    <a href="/en/" class="back-link">← All entries</a>
+    <a href="/en" class="back-link">← All posts</a>
 
     <header class="article-header">
-      <p class="article-card-meta">April 26, 2026 &nbsp;·&nbsp; Games</p>
-      <h1 class="article-h1">Scriptorium: Czech game about ink, parchment, and survival in a monastery</h1>
-      <p class="article-author"><a href="/en/about">Ondrex</a></p>
+      <p class="article-card-meta">
+        May 7, 2026 &nbsp;·&nbsp; Games &nbsp;·&nbsp; History
+      </p>
+      <h1 class="article-h1">
+        <span class="drop-cap-word">Scriptorium</span>:<br>
+        A Czech game about ink, parchment,<br>and survival in a monastery
+      </h1>
+      <p class="article-author">
+        <a href="/en/about">Ondrex</a>
+      </p>
       <p class="article-lead">
-        Olomouc, 1465. You were given a cell, a goose quill, and a debt to the abbot. Cellarium with groschen awaits behind the wall, the first transmutation attempt smolders in the athanor, and an old scribe claims you will run out of ink by morning.
+        Olomouc, 1465. You were given a cell, a goose quill, and a debt to the abbot.
+        Beyond the wall awaits the Cellarium with groschen, the first
+        transmutation attempt smolders in the athanor, and the old scribe claims
+        you will run out of ink by morning. A guide to a game
+        that didn't mess with history — because it doesn't have to.
       </p>
     </header>
 
     <p class="article-divider">✦ &nbsp; ✦ &nbsp; ✦</p>
 
     <article class="article-body">
+
       <p>
-        Scriptorium is a medieval idle strategy game set in Olomouc in 1465. Play as a monk scribe copying manuscripts, collecting oak galls for ink, trading in the cellarium, and mastering monastery alchemy.
+        In 1465, the Bishopric of Olomouc was one of the centers of learning
+        in Central Europe. Monastic scriptoria copied the Bible, pharmacopoeias,
+        legal texts, and divinatoria. Parchment was more expensive than the scribe's labor.
+        Oak gall ink was mixed every morning because it would harden by the afternoon.
+        And the books emerging from these cells traveled to episcopal libraries,
+        universities, and into the hands of the nobility, who paid more for them than for a horse.
       </p>
+
       <p>
-        Play free online at <a href="https://myscriptorium.cz" target="_blank" rel="noopener">myscriptorium.cz</a>.
+        From this world comes
+        <a href="https://myscriptorium.cz" target="_blank" rel="noopener">Scriptorium</a>
+        — a browser game that tries to capture this everyday reality
+        as faithfully as game mechanics allow.
+        No fantasy dwarves. No magic. Just parchment, ink,
+        the fire in the athanor, and the people holding the monastery together.
       </p>
+
+      <h2>Setting and Historical Context</h2>
+
+      <p>
+        The year 1465 is deliberately chosen as a turning point for the game.
+        This is exactly when the transition from monastic copying
+        to the first printing presses is taking place in Bohemia — the Gutenberg Bible
+        was published barely a decade ago, but the news won't reach Olomouc for another generation.
+        Scribes don't yet know their craft is threatened.
+        They keep copying, haggling over the price of parchment, and complaining about the cold
+        in their cells — just as they always have.
+      </p>
+
+      <p>
+        The game environment reflects the real architecture of a medieval monastery.
+        The Scriptorium is the workspace where manuscripts are created.
+        The Cellarium is the storeroom and economic heart of the community.
+        The Athanor — an alchemical furnace with constant heat — symbolizes
+        the secret knowledge hidden from the world by the monastery walls.
+        The Courtyard (Curia) with its puteus (well), gallinarium, and apiarium feeds the community.
+        Every building has its function and its story.
+      </p>
+
+      <h2>What you do in the game: The Production Chain</h2>
+
+      <p>
+        The game is built on a strictly historical production chain,
+        where each step depends on the previous one.
+        You start with bare parchment and a quill, and you end up —
+        if you succeed — with an illuminated psalter for the bishop's
+        court or the first print from a Gutenberg press.
+      </p>
+
+      <p>
+        It begins with materials: parchment from sheepskin
+        treated with lime, oak gall ink from oak galls,
+        red minium from lead oxides for rubrics.
+        You copy texts in the scriptorium using these materials.
+        The scriptorium needs light — candles or torches —
+        because you can't write in the dark.
+      </p>
+
+      <p>
+        Light is the heart of the entire production and at the same time
+        the most critical consumable resource. Without light, errors occur
+        in the text — the scribe misses a syllable,
+        swaps a letter, skips a line.
+        Medieval monks blamed this on the work of Titivillus,
+        the demon of typos, who carried a sack of collected errors
+        to the Last Judgment. In the game, this currently means you can't progress without it.
+        Actually, you can't even play without it, without the basic light and heat
+        you get by lighting the hearth.
+      </p>
+
+      <p>
+        After copying comes <strong>illumination</strong> — the phase
+        that turns plain text into a luxury good.
+        Without illumination, a manuscript is functional but cheap.
+        With illumination — gold, lapis lazuli blue initials,
+        miniatures on the margins — the price multiplies.
+        Lapis lazuli was imported from Afghanistan
+        and was more expensive than gold. The choice of pigments affects
+        the final price and the scriptorium's reputation on the market.
+      </p>
+
+      <p>
+        Finished manuscripts head to the Cellarium, where the steward
+        Benedict of Litomyšl or the Venetian merchant
+        Giacomo Foscari offer groschen.
+        The Cellarium acts as a medieval stock exchange:
+        The Tavern, the Shop, and the Market have different prices and demands.
+        Whoever sells only to the local innkeeper
+        leaves most of the profit on the table.
+      </p>
+
+      <h2>How to win: Three Axes of Balance</h2>
+
+      <p>
+        Scriptorium doesn't have a single winning goal.
+        It's a game about how far you decide to go —
+        and whether your supplies, health, and community will last.
+        Every campaign is a closed story with a score.
+        Next time you start over, but with a better understanding
+        of what you learned last time.
+      </p>
+
+      <p>
+        <strong>Vigor.</strong> The health and energy of a scribe
+        are not abstract statistics.
+        Hunger reduces attention, darkness causes mistakes,
+        the cold in the cells in January stops production entirely.
+        Whoever neglects the basic needs of the community
+        will find halfway through the year that their scriptorium has stopped —
+        not because of a lack of parchment,
+        but because the scribe simply cannot write.
+        Vigor doesn't plummet sharply — it erodes slowly
+        and quietly until one morning no one is able to work.
+      </p>
+
+      <p>
+        <strong>Economy.</strong>
+        Groschen are the base currency, but not the only one.
+        The scriptorium's reputation on the market decides
+        who offers a contract and for how much.
+        Cheaply rushed jobs today bring quick groschen,
+        but in a month Giacomo Foscari will come with a better offer —
+        and find that your scriptorium has no reputation.
+        Every product is a decision about what
+        you want to be.
+      </p>
+
+      <p>
+        <strong>Athanor.</strong>
+        The alchemical furnace is a risky investment.
+        Combining ingredients can bring rare transmutations —
+        or lost resources and a damaged furnace.
+        The three phases of the Magnum Opus (Nigredo, Albedo, Rubedo)
+        open the path to the most valuable items in the game,
+        but every experiment costs time and materials
+        that would otherwise go into manuscripts.
+        Whoever invests in the athanor too early will go broke.
+        Whoever ignores it for too long loses the endgame.
+      </p>
+
+      <h2>What to Watch Out For</h2>
+
+      <p>
+        Pitch darkness in the middle of the night is the loudest
+        warning the game sends — but it's not the first.
+        It is preceded by a quiet indicator of declining vigor,
+        which you might overlook because you are busy managing ink supplies.
+        The result: a damaged manuscript, a lost contract,
+        -5 reputation, and another day with an empty treasury.
+      </p>
+
+      <p>
+        The Market cannot be ignored. If you only sell
+        to the Tavern for a fixed price or wait too long
+        for a better offer, the Market will switch to another supplier.
+        Medieval economics are not patient.
+        Giacomo Foscari will sail back to Venice
+        and you will wait a whole season for the next buyer.
+      </p>
+
+      <p>
+        The Athanor is a chapter of its own.
+        Every combination of ingredients is an experiment
+        without a guaranteed outcome — the game uses a
+        discovery log system where you gradually find out
+        what reacts with what.
+        A successful transmutation brings a rare resource
+        or an item that cannot be bought otherwise.
+        Failure brings Nigredo — decay, loss of material,
+        sometimes even damage to the equipment.
+        The athanor is not for the impatient —
+        and historically, it wasn't either.
+      </p>
+
+      <p>
+        The decline of the community comes slowly. A scribe
+        who works too many cycles without enough food
+        makes more and more mistakes. An illuminator without light
+        wastes expensive pigments.
+        And a steward who sees no profit for three seasons
+        will stop investing in the scriptorium —
+        and with him goes access to the best raw materials.
+      </p>
+
+      <h2>The Library and the Hidden Layer</h2>
+
+      <p>
+        Every breakthrough in the game is recorded in the
+        <strong>📚 Library</strong> tab.
+        Pages are unlocked by playing, not by reading a tutorial:
+        the first ink made, the first contract sold,
+        the first successful transmutation in the athanor,
+        the first illuminated manuscript.
+      </p>
+
+      <p>
+        The game contains a layer of secrets — Secretorum —
+        hiding data and stories that the game doesn't shout out loud.
+        Some refer to real historical figures
+        and events: Gutenberg's trial with Fust in 1455,
+        the story of Nicolas Jenson who stole the secret of printing
+        and defected to Venice, or the Codex Gigas of Podlažice,
+        supposedly written in a single night with the devil's help.
+        Those who seek shall find. Those who don't want to seek
+        aren't forced to by the game.
+      </p>
+
+      <h2>Endgame: Two Branches, One Monastery</h2>
+
+      <p>
+        After mastering basic production, the game branches
+        into two major endgame paths, each with a different
+        playstyle, a different production goal, and a different
+        customer at the end of the journey.
+      </p>
+
+      <p>
+        The Brewery branch (Scrinium Abbatis) leads through
+        Prima Cervisia and Cervisia Nigra — monastic beer
+        that feeds the community and opens up new trade relations.
+        A historically accurate branch: medieval monasteries
+        brewed beer for workers, pilgrims, and for sale.
+        The Printing Press branch heads elsewhere — past the Psalter and the Herbarium
+        to the first print from a hand-assembled press.
+        This is the pinnacle of the entire game: passing Gutenberg's revolution
+        onward, from the hands of the scribe to the hands of the printer.
+      </p>
+
+      <p>
+        Parchment as a new material unlocks both branches:
+        sheepskin passes through a lime bath in the athanor
+        and only then does it become a material that is
+        of sufficient quality for an Incunabulum.
+        Without the athanor, there is no parchment. Without parchment, there is no endgame.
+      </p>
+
+      <p>
+        In the final phase comes a decision
+        that every player solves differently: will you stay in the monastery
+        and dedicate the scriptorium to learning?
+        Will you sell the recipes and head out into the world?
+        Or will you write everything down in the Library for the region —
+        and leave it here for the next generation?
+      </p>
+
+      <h2>Why the Game Was Created</h2>
+
+      <p>
+        Scriptorium was born out of curiosity.
+        Where else do manuscripts, alchemy, economics,
+        and survival meet in one place better than in a monastery
+        on the threshold of two epochs?
+        The historical sources are concrete and traceable:
+        Christopher de Hamel and his <em>A History of Illuminated
+        Manuscripts</em>, Theophilus's <em>De Diversis Artibus</em>,
+        records from the English abbeys in Abingdon and Cirencester,
+        Parisian records from the bookseller Montbaston.
+        Behind every mechanic in the game stands a real process.
+      </p>
+
+      <p>
+        The city where the game takes place is worth attention
+        even off-screen. <strong>Olomouc in 1465</strong>
+        is a bishop's city with a rich monastic tradition,
+        educational institutions, and trade routes
+        to Brno, Vienna, and Poland.
+        Parchment, ink, lapis lazuli — all these were real goods
+        in a real market. And the monks who copied in their cells
+        during the winter by candlelight would write on the margins of the pages:
+        <em>"It is cold here. It is cold here."</em>
+        The same feelings, a different screen.
+      </p>
+
+      <blockquote>
+        Nunc scripsi totum, pro Christo da mihi potum.
+        <cite>— medieval colophon inscription from the end of a manuscript, 9th century</cite>
+      </blockquote>
+
+      <p>
+        You can play it at
+        <a href="https://myscriptorium.cz" target="_blank" rel="noopener">myscriptorium.cz</a>.
+        No installation, no registration, right in the browser.
+        The first page is waiting.
+      </p>
+
     </article>
 
     <footer class="site-footer">
@@ -84,9 +402,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
   </div>
 </div>
-
 <script src="/assets/js/blog-cat.js"></script>
-<script src="/assets/js/blog-modals.js"></script>
-
 </body>
 </html>
