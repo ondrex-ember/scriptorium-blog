@@ -925,10 +925,10 @@ const ORDER_POOL = [
 // Triggered by gameYear milestones in startInterseason()
 const HIST_EVENTS = {
   reformation: {
-    triggerYear: 6,   // 1468 + 6 = 1474 — early reformist pressure (pre-Luther)
+    triggerYear: 6,   // gameYear 6 = 1468+(6-1) = 1473 — early reformist pressure (pre-Luther)
     id: "reformation",
-    year_en: "Anno Domini 1474",
-    year_cs: "Léta Páně 1474",
+    year_en: "Anno Domini 1473",
+    year_cs: "Léta Páně 1473",
     title_en: "The Storm of Reform",
     title_cs: "Bouře reformace",
     body_en: "Reformist ideas spread from Bohemia — the Hussite legacy lives on. The Bishop of Olomouc tightens control over what may be printed. Royal censors now patrol the book trade. Every religious work requires the Bishop's Imprimatur before it can leave the workshop.\n\nSome printers in Prague have already been raided. Others print forbidden texts at night, for double the price — and double the risk.",
@@ -957,10 +957,10 @@ const HIST_EVENTS = {
     ],
   },
   index: {
-    triggerYear: 10,  // 1468 + 10 = 1478 — tightening of censorship
+    triggerYear: 10,  // gameYear 10 = 1468+(10-1) = 1477 — tightening of censorship
     id: "index",
-    year_en: "Anno Domini 1478",
-    year_cs: "Léta Páně 1478",
+    year_en: "Anno Domini 1477",
+    year_cs: "Léta Páně 1477",
     title_en: "Index of Forbidden Books",
     title_cs: "Index zakázaných knih",
     body_en: "The Holy See issues a formal list of forbidden texts. The Inquisitor's representative arrives in Olomouc and inspects every printer's workshop. Works on the Index may not be printed, sold, or possessed.\n\nBut knowledge has a price — and some buyers pay it. Forbidden titles sell for three times the market rate, to those who ask quietly.",
@@ -2248,7 +2248,7 @@ function prepareVellum(){
   G.res.vellum-=1;
   if(!G.res.prepared_vellum) G.res.prepared_vellum=0;
   G.res.prepared_vellum+=1;
-  const bonus = hasVellumWorker?" ("+L==="en"?"Vellum Maker":"Pergameník"+")":"";
+  const bonus = hasVellumWorker?` (${L==="en"?"Vellum Maker":"Pergameník"})`:"";
   logPush(`__PROD__📜 ${L==="en"?"Vellum prepared — scraped & stretched":"Pergamen připraven — vyškrábán a natažen"}${bonus}`);
   render();
 }
@@ -2886,7 +2886,7 @@ function logPush(entry){
   const hh=String(now.getHours()).padStart(2,'0');
   const mm=String(now.getMinutes()).padStart(2,'0');
   const ts=`[ts:${dd}.${mo} ${hh}:${mm}]`;
-  logPush(entry.replace(/^(__(PROD|ECO|EVT|FLAVOR)__)/,`$1${ts} `));
+  G.log.push(entry.replace(/^(__(PROD|ECO|EVT|FLAVOR)__)/,`$1${ts} `));
 }
 
 function autoSave(){
@@ -3836,6 +3836,7 @@ function confirmRole(roleId, name, workshop, gender){
   G.roleLevel=["apprentice","journeyman","master","publisher"].indexOf(roleId)+1;
   G.playerName=name||( L==="en"?"The Printer":"Tiskař" );
   G.workshopName=workshop||( L==="en"?"The Press":"Tiskárna" );
+  G.foundingYear=G.year;
   G.gender=gender;
   G._roleModalDone=true;
   applyRoleBonus(roleId);
@@ -4473,7 +4474,7 @@ function render(){
     }
 
     // ── ONBOARDING GUIDE (first 3 rounds or incomplete basics) ──
-    const isEarlyGame = (p.gameYear<=1468 && p.round<=4) ||
+    const isEarlyGame = (p.year<=INIT_YEAR && p.round<=4) ||
       (p.letters<2 || (p.res.paper||0)<2 || (p.res.ink||0)<1 || p.activeOrders.length===0);
     if(isEarlyGame){
       // Build checklist dynamically
@@ -7324,16 +7325,9 @@ function renderCharacterSheet(content,L){
 
   // Name + info column
   const nameBlock=h("div",{style:{flex:1,minWidth:0}});
-  const printerName=p.printerName||(L==="en"?"Unknown Printer":"Neznámý tiskař");
-  const shopName=p.shopName||(L==="en"?"The Press":"Tiskárna");
-  const roleLabels={
-    gutenberg:L==="en"?"Mainz Tradition":"Mohučská tradice",
-    venetian:L==="en"?"Venetian Press":"Benátský tisk",
-    paris:L==="en"?"Paris Bookseller":"Pařížský knihkupec",
-    flemish:L==="en"?"Flemish Typecaster":"Vlámský písmolijec",
-    master:L==="en"?"Master Printer":"Mistr tiskař",
-  };
-  const roleLabel=roleLabels[p.role]||p.role||"—";
+  const printerName=p.printerName||p.playerName||(L==="en"?"Unknown Printer":"Neznámý tiskař");
+  const shopName=p.shopName||p.workshopName||(L==="en"?"The Press":"Tiskárna");
+  const roleLabel=ROLES[p.role]?(L==="en"?ROLES[p.role].en:ROLES[p.role].cs):(p.role||"—");
 
   if(p._csEditIdentity){
     const ni=h("input",{type:"text",value:p.printerName||"",
@@ -7410,8 +7404,8 @@ function renderCharacterSheet(content,L){
 
   const tlEvents=[];
   tlEvents.push({year:p.foundingYear||1468,icon:"🏗️",
-    text:L==="en"?`${p.shopName||"The Press"} — founded in Olomouc`
-                :`${p.shopName||"Tiskárna"} — založena v Olomouci`});
+    text:L==="en"?`${p.shopName||p.workshopName||"The Press"} — founded in Olomouc`
+                :`${p.shopName||p.workshopName||"Tiskárna"} — založena v Olomouci`});
   (p.storyLog||[]).forEach(s=>{
     const book=STORY_BOOKS?.[s.bookId];
     if(!book) return;
@@ -7555,7 +7549,7 @@ function renderVerdictScreen(app){
   const accepted=(p.storyLog||[]).filter(s=>s.decision==="accept").length;
   const declined=(p.storyLog||[]).filter(s=>s.decision==="decline").length;
   const censor=p.censorTokens||0;
-  const name=p.printerName||"The printer";
+  const name=p.printerName||p.playerName||"The printer";
 
   let verdict_en,verdict_cs,hist_en,hist_cs;
   if(hasMalleus&&hasLuther){
