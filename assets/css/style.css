@@ -623,6 +623,7 @@ body {
 .script-block-code {
   max-height: 580px;
   overflow: auto;
+  -webkit-overflow-scrolling: touch; /* iOS Safari */
   transition: max-height 0.32s ease;
   scrollbar-width: thin;
   scrollbar-color: var(--gold) #12100d;
@@ -630,6 +631,8 @@ body {
 
 .script-block-code.collapsed {
   max-height: 210px;
+  overflow: hidden !important;   /* mobile view
+
 }
 
 .script-block-code::-webkit-scrollbar       { width: 5px; height: 5px; }
