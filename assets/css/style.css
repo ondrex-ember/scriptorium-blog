@@ -631,7 +631,7 @@ body {
 
 .script-block-code.collapsed {
   max-height: 210px;
-  overflow: hidden !important;   /* mobile view
+  overflow: hidden !important;   /* mobile view */
 
 }
 
