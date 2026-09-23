@@ -15,7 +15,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   <!-- ═══════════════════════════════════════════════
        SEO
        ═══════════════════════════════════════════════ -->
-  <title>Budget Pacer: hodinové hlídání čerpání rozpočtu v Google Ads — Scriptorium Blog</title>
+  <title>Budget Pacer: hodinové hlídání čerpání rozpočtu v Google Ads - Scriptorium Blog</title>
   <meta name="description" content="Google Ads skript, který hodinu po hodině hlídá čerpání rozpočtu kampaní, upozorní e-mailem na blížící se strop a spočítá doporučený rozpočet." />
 
   <!-- Open Graph -->
@@ -24,7 +24,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   <meta property="og:type"        content="article" />
   <meta property="og:url"         content="https://blog.myscriptorium.cz/clanky/budget-pacer-google-ads-skript" />
   <meta property="og:image"       content="https://blog.myscriptorium.cz/assets/img/og-default.jpg" />
-  <meta property="og:image:alt"   content="Budget Pacer — Google Ads skript pro sledování čerpání rozpočtu" />
+  <meta property="og:image:alt"   content="Budget Pacer - Google Ads skript pro sledování čerpání rozpočtu" />
   <meta property="article:published_time" content="2026-09-23T09:00:00+02:00" />
   <meta property="article:author" content="Ondrex" />
   <meta property="article:tag"    content="Skripty" />
@@ -65,12 +65,12 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   <link rel="stylesheet" href="/assets/css/style.css" />
   <link rel="icon"       href="/assets/img/favicon.ico" />
 
-  <!-- Fira Code — monospace font for code blocks (only on script pages) -->
+  <!-- Fira Code - monospace font for code blocks (only on script pages) -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
 
-  <!-- Prism.js dark theme (Tomorrow) — for syntax highlighting -->
+  <!-- Prism.js dark theme (Tomorrow) - for syntax highlighting -->
   <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css"
         crossorigin="anonymous" />
@@ -116,7 +116,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <p class="article-lead">
         Google Ads skript, který místo ručního obnovování reportu každou hodinu sám spočítá,
         které kampaně narážejí na denní rozpočet, kolik toho tratí a jaký rozpočet by jim
-        reálně pomohl — a než to zjistíte ráno v účtu, pošle vám to na e-mail.
+        reálně pomohl - a než to zjistíte ráno v účtu, pošle vám to na e-mail.
       </p>
     </header>
 
@@ -126,12 +126,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <article class="article-body">
 
       <p>
-        Předchozí verze tohoto reportu — interní šablona „Budget Pacer V.2" z listopadu 2020 —
+        Předchozí verze tohoto reportu - interní šablona „Budget Pacer V.2" z listopadu 2020 -
         táhla data přes interní <code>ScriptyApp</code>/AWQL vrstvu a reporty typu
         <code>CAMPAIGN_PERFORMANCE_REPORT</code>. Fungovalo to léta, dokud Google postupně
         neutlumil legacy AWQL reporty, na kterých to celé stálo, a šablona přestala spolehlivě
         táhnout data. Dnešní jediná podporovaná cesta je GAQL přes <code>AdsApp.search()</code>,
-        takže šlo o přepis od základu, ne o záplatu — a tenhle skript už na starém shimu vůbec
+        takže šlo o přepis od základu, ne o záplatu - a tenhle skript už na starém shimu vůbec
         nestojí.
       </p>
 
@@ -144,32 +144,32 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       </p>
 
       <ul>
-        <li><strong>Today / Yesterday</strong> — hodinová křivka čerpání rozpočtu (jen náklady,
+        <li><strong>Today / Yesterday</strong> - hodinová křivka čerpání rozpočtu (jen náklady,
           proti aktuálnímu dennímu rozpočtu kampaně) s barevným přechodem podle toho, jak rychle
           se rozpočet plní.</li>
-        <li><strong>Previous 7 Days / Previous 14 Days</strong> — denní přehled s Impression
+        <li><strong>Previous 7 Days / Previous 14 Days</strong> - denní přehled s Impression
           Share, Lost IS (rozpočet) a vybranými KPI, sloupce řazené od nejnovějšího dne, se
           dvouřádkovou hlavičkou (den v týdnu + skutečné datum).</li>
-        <li><strong>Summary</strong> — dvě sekce, „Capped by Budget" (kampaně, které v posledním
+        <li><strong>Summary</strong> - dvě sekce, „Capped by Budget" (kampaně, které v posledním
           okně reálně narazily na strop) a „Underspending" (kampaně, které svůj rozpočet
           nevyčerpávají), plus sloupec Recommended Budget a mini export tabulka připravená
           k přímému vložení do Google Ads Editoru, seřazená podle doporučeného navýšení.</li>
-        <li><strong>E-mailové upozornění</strong> — když čerpání rozpočtu překročí nastavený
+        <li><strong>E-mailové upozornění</strong> - když čerpání rozpočtu překročí nastavený
           práh a je ještě dost hodin do konce dne na to s tím něco udělat, skript pošle
           HTML e-mail se seznamem dotčených kampaní.</li>
       </ul>
 
       <p>
-        Tabulka se nespravuje ručně — skript si při prvním spuštění sám založí kompletní
+        Tabulka se nespravuje ručně - skript si při prvním spuštění sám založí kompletní
         spreadsheet se všemi listy, popiskami i výchozím nastavením, takže není co predpřipravovat.
       </p>
 
       <h2>Jak skript používat</h2>
 
       <p>
-        Tohle je varianta pro jeden účet — vytváří se přímo uvnitř účtu Google Ads, který
+        Tohle je varianta pro jeden účet - vytváří se přímo uvnitř účtu Google Ads, který
         reportuje, ne na úrovni MCC. (Pro reportování napříč více účty z jednoho místa existuje
-        samostatná MCC varianta téhož skriptu — jde o dva odlišné soubory, ne o jeden přepínatelný
+        samostatná MCC varianta téhož skriptu - jde o dva odlišné soubory, ne o jeden přepínatelný
         přepínačem.)
       </p>
 
@@ -177,13 +177,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <li><strong>Vložte skript do účtu.</strong> Nástroje a nastavení → Hromadné akce →
           Skripty → „+". Vložte celý kód níže, potvrďte oprávnění (Authorize) a uložte.</li>
         <li><strong>Rozhodněte o spreadsheetu.</strong> Konstantu <code>SPREADSHEET_URL</code>
-          na začátku souboru buď necháte prázdnou — skript si při prvním běhu sám vytvoří nový
-          spreadsheet a zapamatuje si jeho adresu — nebo do ní vložíte URL existujícího souboru,
+          na začátku souboru buď necháte prázdnou - skript si při prvním běhu sám vytvoří nový
+          spreadsheet a zapamatuje si jeho adresu - nebo do ní vložíte URL existujícího souboru,
           pokud chcete report udržet na jednom známém místě.</li>
         <li><strong>Spusťte jednou ručně.</strong> Preview, a poté <code>main()</code>. Při
           prázdné <code>SPREADSHEET_URL</code> tenhle první běh založí spreadsheet, kompletně
           popíše list „Configure Report" funkčními výchozími hodnotami a rovnou udělá první tah
-          dat — adresu nového souboru najdete v logu běhu.</li>
+          dat - adresu nového souboru najdete v logu běhu.</li>
         <li><strong>Nastavte frekvenci na Hodinově.</strong> V seznamu skriptů u ikony tužky.
           Je to jediné plánování, které Ads Scripts nabízí, a <code>main()</code> si sám hlídá,
           co má na kterém běhu skutečně proběhnout (víc v sekci „Jak skript funguje uvnitř").</li>
@@ -199,7 +199,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
            data-src   = cesta k .js souboru v repozitáři
            data-lang  = jazyk pro Prism (javascript / css / html / python)
 
-           Soubor se načítá přes fetch — uložte skript do:
+           Soubor se načítá přes fetch - uložte skript do:
              /assets/scripts/budget-pacer.js
            ═══════════════════════════════════════════════════════════ -->
       <div class="script-block"
@@ -214,7 +214,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           </div>
         </div>
 
-        <!-- Code area — content is injected by blog-script.js from data-src -->
+        <!-- Code area - content is injected by blog-script.js from data-src -->
         <div class="script-block-code collapsed">
           <pre><code class="language-javascript"></code></pre>
         </div>
@@ -231,14 +231,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       </p>
 
       <ul>
-        <li><code>SPREADSHEET_URL</code> — nepovinné. Prázdné necháte, pokud chcete, ať si
+        <li><code>SPREADSHEET_URL</code> - nepovinné. Prázdné necháte, pokud chcete, ať si
           skript vytvoří spreadsheet sám; vyplníte, jen pokud chcete report navázat na už
           existující soubor.</li>
       </ul>
 
       <p>
-        Všechno ostatní — které reporty běží, jaké KPI se zobrazují, filtr minimálního rozpočtu,
-        okno pro KPI, e-mailová upozornění a jejich příjemci — se nastavuje v listu
+        Všechno ostatní - které reporty běží, jaké KPI se zobrazují, filtr minimálního rozpočtu,
+        okno pro KPI, e-mailová upozornění a jejich příjemci - se nastavuje v listu
         „Configure Report" přímo ve vygenerovaném spreadsheetu, ne v kódu. Skript si tenhle list
         sám kompletně popíše (nadpisy, zaškrtávátka, rozbalovací seznamy) hned při prvním
         spuštění, takže je hned jasné, co která buňka znamená.
@@ -253,7 +253,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
       <ul>
         <li><strong>Žádný <code>ScriptApp</code>, žádný <code>Session</code>.</strong> Ads
-          Scripts nemají vlastní trigger API ani aktivní spreadsheet — jediné plánování je
+          Scripts nemají vlastní trigger API ani aktivní spreadsheet - jediné plánování je
           frekvence v UI a časovou zónu skript čte přes
           <code>AdsApp.currentAccount().getTimeZone()</code>. Přístup ke spreadsheetu jde vždy
           přes <code>SpreadsheetApp.openByUrl()</code>, nikdy přes
@@ -261,34 +261,34 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <li><strong>Hodinová frekvence, ale denní reporty jen jednou denně.</strong>
           <code>main()</code> je jediná naplánovaná funkce a sama si přes
           <code>PropertiesService</code> hlídá, jestli dnešní den už Previous 7/14 Days
-          obnovil. Brána je „první běh daného kalendářního dne", ne pevná hodina — díky tomu
+          obnovil. Brána je „první běh daného kalendářního dne", ne pevná hodina - díky tomu
           i ruční testovací spuštění hned po nasazení doplní všechny listy, místo aby čekalo
           na konkrétní čas.</li>
         <li><strong>Rozpočet se dotahuje samostatně.</strong> <code>campaign_budget.amount_micros</code>
           nejde v jednom GAQL dotazu ani reportu v Report Editoru kombinovat s
           <code>search_impression_share</code> / <code>search_budget_lost_impression_share</code>
-          — Google Ads to rovnou odmítne. Rozpočet se tak tahá samostatným, nesegmentovaným
+          - Google Ads to rovnou odmítne. Rozpočet se tak tahá samostatným, nesegmentovaným
           dotazem a k výkonnostním řádkům se připojuje až ve skriptu podle Campaign ID.</li>
         <li><strong>Impression Share jen na úrovni dne.</strong> Hodinově segmentované IS metriky
           jsou v Ads API dlouhodobě nespolehlivé (často vrací nuly), takže hodinová křivka počítá
           jen s náklady a IS/Lost IS se řeší výhradně na denní/okenní úrovni.</li>
         <li><strong>Recommended Budget je heuristika, ne pole z API.</strong>
           <code>HasRecommendedBudget</code>/<code>RecommendedBudgetAmount</code> v GAQL neexistují,
-          takže se počítá jako <code>aktuální rozpočet × (1 + Budget Lost IS)</code> — tedy „jaký
+          takže se počítá jako <code>aktuální rozpočet × (1 + Budget Lost IS)</code> - tedy „jaký
           rozpočet by stačil zachytit i ty imprese, co kampaň včera ztratila kvůli stropu".</li>
         <li><strong>Žádné fabulování u neznámých hodnot.</strong> Když kampaň v daném okně
           neutratila nic, Search IS / Budget Lost IS ani z nich odvozený Recommended Budget
-          nejsou 0 % ani 0 Kč — jsou neznámé, a tak se v reportu zobrazí doslova <code>"--"</code>.
+          nejsou 0 % ani 0 Kč - jsou neznámé, a tak se v reportu zobrazí doslova <code>"--"</code>.
           Ostatní KPI (Conversions, CPA, ROAS, Ctr, Conv.Rate, Lost Conversions, Lost Revenue) se
           bez dat chovají standardně a defaultují na 0.</li>
         <li><strong>Skryté listy jsou surový dump, ne pavučina vzorců.</strong> Přepočty dělá
           skript, do viditelných listů zapisuje rovnou hodnoty. Skryté <code>*BudgetData</code>
           a <code>*KPIData</code> listy slouží jen jako plochý zdroj dat pro spárování podle
-          Campaign ID — žádné <code>IFERROR(INDEX(MATCH(...)))</code> řetězce, které se dřív
+          Campaign ID - žádné <code>IFERROR(INDEX(MATCH(...)))</code> řetězce, které se dřív
           uměly rozbít při jakékoli změně pořadí řádků.</li>
       </ul>
 
-      <!-- Interní odkaz — doporučeno pro SEO -->
+      <!-- Interní odkaz - doporučeno pro SEO -->
       <p>
         Máte-li zájem o další skripty a automatizace, prohlédněte si
         <a href="/tag/skripty">všechny zápisky ze sekce Skripty</a>.
@@ -312,7 +312,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 </div>
 
 <!-- ═════════════════════════════════════════════════
-     Prism.js + script widget — POUZE na stránkách se skripty
+     Prism.js + script widget - POUZE na stránkách se skripty
      ═════════════════════════════════════════════════ -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"
         crossorigin="anonymous"></script>
