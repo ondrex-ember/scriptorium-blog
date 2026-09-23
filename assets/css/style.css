@@ -536,3 +536,142 @@ body {
     padding: 2.5rem 4rem 3rem;
   }
 }
+/* ═══════════════════════════════════════════════════════════
+   SCRIPT BLOCK — code viewer for "Skripty" articles
+   Append this block to the end of assets/css/style.css
+   ═══════════════════════════════════════════════════════════ */
+
+.script-block {
+  margin: 2.5rem 0;
+  border: 1px solid var(--gold);
+  border-radius: 1px;
+  background: #12100d;
+  overflow: hidden;
+}
+
+/* ─── header row: label + buttons ─── */
+.script-block-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1rem;
+  background: #0d0b08;
+  border-bottom: 1px solid rgba(200, 168, 80, 0.3);
+}
+
+.script-block-name {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-family: 'IM Fell English', serif;
+  font-size: 0.88rem;
+  color: var(--gold);
+  letter-spacing: 0.02em;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.script-block-name::before {
+  content: '</>';
+  font-family: 'Fira Code', 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--red-rubricate, #8b1a1a);
+  flex-shrink: 0;
+  letter-spacing: 0;
+}
+
+.script-block-actions {
+  display: flex;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+/* ─── buttons ─── */
+.script-btn {
+  background: transparent;
+  border: 1px solid var(--gold);
+  color: var(--gold);
+  padding: 0.22rem 0.72rem;
+  font-family: 'IM Fell English', serif;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  cursor: pointer;
+  white-space: nowrap;
+  border-radius: 1px;
+  transition: background 0.17s, color 0.17s;
+}
+
+.script-btn:hover {
+  background: var(--gold);
+  color: #0d0b08;
+}
+
+.script-btn.copied {
+  border-color: #6aaa6a;
+  color: #6aaa6a;
+}
+
+.script-btn.copied:hover {
+  background: #6aaa6a;
+  color: #0d0b08;
+}
+
+/* ─── scrollable code area ─── */
+.script-block-code {
+  max-height: 580px;
+  overflow: auto;
+  transition: max-height 0.32s ease;
+  scrollbar-width: thin;
+  scrollbar-color: var(--gold) #12100d;
+}
+
+.script-block-code.collapsed {
+  max-height: 210px;
+}
+
+.script-block-code::-webkit-scrollbar       { width: 5px; height: 5px; }
+.script-block-code::-webkit-scrollbar-track { background: #0d0b08; }
+.script-block-code::-webkit-scrollbar-thumb { background: var(--gold); }
+
+/* ─── override Prism theme background / spacing ─── */
+.script-block pre[class*="language-"],
+.script-block-code pre {
+  margin: 0 !important;
+  padding: 1.1rem 1.3rem !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  font-size: 0.815rem !important;
+  line-height: 1.65 !important;
+  tab-size: 2;
+  white-space: pre;
+}
+
+.script-block code[class*="language-"],
+.script-block-code code {
+  font-family: 'Fira Code', 'JetBrains Mono', 'Fira Mono', 'Consolas', monospace;
+  font-size: inherit;
+  background: transparent !important;
+}
+
+/* ─── meta bar: line count + language ─── */
+.script-block-meta {
+  padding: 0.35rem 1rem;
+  font-family: 'IM Fell English', serif;
+  font-size: 0.75rem;
+  font-style: italic;
+  color: rgba(200, 168, 80, 0.45);
+  border-top: 1px solid rgba(200, 168, 80, 0.15);
+  line-height: 1.4;
+}
+
+/* ─── mobile ─── */
+@media (max-width: 540px) {
+  .script-block-header { flex-wrap: wrap; }
+  .script-block-name   { font-size: 0.82rem; }
+  .script-btn          { font-size: 0.74rem; padding: 0.2rem 0.55rem; }
+}
