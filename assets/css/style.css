@@ -675,3 +675,13 @@ body {
   .script-block-name   { font-size: 0.82rem; }
   .script-btn          { font-size: 0.74rem; padding: 0.2rem 0.55rem; }
 }
+
+.script-block-meta::first-letter {
+  font-size: inherit !important;
+  float: none !important;
+  font-weight: inherit !important;
+  color: inherit !important;
+  line-height: inherit !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
