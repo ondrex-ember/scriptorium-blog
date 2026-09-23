@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-NZSGNPD8');</script>
+<!-- End Google Tag Manager -->
+
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- ═══════════════════════════════════════════════
+       SEO
+       ═══════════════════════════════════════════════ -->
+  <title>Budget Pacer: hourly budget-pacing tracking for Google Ads - Scriptorium Blog</title>
+  <meta name="description" content="A Google Ads script that checks campaign budget pacing every hour, e-mails you before a campaign hits its daily cap, and calculates a recommended budget." />
+
+  <!-- Open Graph -->
+  <meta property="og:title"       content="Budget Pacer: hourly budget-pacing tracking for Google Ads" />
+  <meta property="og:description" content="A Google Ads Script that tracks daily budget spend every hour, flags campaigns running into their cap, and calculates a recommended budget increase." />
+  <meta property="og:type"        content="article" />
+  <meta property="og:url"         content="https://blog.myscriptorium.cz/en/articles/budget-pacer-google-ads-script" />
+  <meta property="og:image"       content="https://blog.myscriptorium.cz/assets/img/og-default.jpg" />
+  <meta property="og:image:alt"   content="Budget Pacer - a Google Ads script for budget-pacing tracking" />
+  <meta property="article:published_time" content="2026-09-23T09:00:00+02:00" />
+  <meta property="article:author" content="Ondrex" />
+  <meta property="article:tag"    content="Scripts" />
+
+  <!-- Canonical -->
+  <link rel="canonical" href="https://blog.myscriptorium.cz/en/articles/budget-pacer-google-ads-script" />
+
+  <!-- Schema.org BlogPosting -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": "Budget Pacer: hourly budget-pacing tracking for Google Ads",
+    "description": "A Google Ads script that checks campaign budget pacing every hour, e-mails you before a campaign hits its daily cap, and calculates a recommended budget.",
+    "datePublished": "2026-09-23T09:00:00+02:00",
+    "dateModified":  "2026-09-23T09:00:00+02:00",
+    "author": {
+      "@type": "Person",
+      "name": "Ondrex",
+      "url": "https://ember-pa.cz"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "Scriptorium Blog",
+      "url": "https://blog.myscriptorium.cz"
+    },
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": "https://blog.myscriptorium.cz/en/articles/budget-pacer-google-ads-script"
+    },
+    "inLanguage": "en",
+    "keywords": "Google Ads script, budget pacer, budget pacing, Google Ads Scripts, GAQL, PPC automation, recommended campaign budget"
+  }
+  </script>
+  <!-- ═══════════════════════════════════════════════ -->
+
+  <!-- Main blog CSS -->
+  <link rel="stylesheet" href="/assets/css/style.css" />
+  <link rel="icon"       href="/assets/img/favicon.ico" />
+
+  <!-- Fira Code - monospace font for code blocks (only on script pages) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+
+  <!-- Prism.js dark theme (Tomorrow) - for syntax highlighting -->
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css"
+        crossorigin="anonymous" />
+</head>
+<body>
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-NZSGNPD8"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+
+<div class="page-wrap">
+  <div class="parchment">
+
+    <!-- HEADER -->
+    <header class="site-header">
+      <a href="/" class="site-logo"><span>S</span>criptorium</a>
+      <p class="site-tagline">A diary from the workshop of ink and code</p>
+      <nav class="site-nav" aria-label="Main navigation">
+        <a href="/">All</a>
+        <a href="/tag/historie">History</a>
+        <a href="/tag/hry">Games</a>
+        <a href="/tag/skripty">Scripts</a>
+        <a href="/o-autorovi">About the author</a>
+        <a href="https://myscriptorium.cz" target="_blank" rel="noopener">↗ Play</a>
+      </nav>
+    </header>
+
+    <!-- BACK -->
+    <a href="/" class="back-link">← All entries</a>
+
+    <!-- ARTICLE HEADER -->
+    <header class="article-header">
+      <p class="article-card-meta">
+        September 23, 2026 &nbsp;·&nbsp; Scripts
+      </p>
+      <h1 class="article-h1">
+        Budget Pacer:<br>
+        hourly budget-pacing tracking for Google Ads
+      </h1>
+      <p class="article-author">
+        <a href="/o-autorovi">Ondrex</a>
+      </p>
+      <p class="article-lead">
+        A Google Ads script that, instead of you manually refreshing a report, works out every
+        hour which campaigns are running into their daily budget, how much they're losing to it,
+        and what budget would actually fix it - and gets it to your inbox before you'd otherwise
+        notice it in the account the next morning.
+      </p>
+    </header>
+
+    <p class="article-divider">✦ &nbsp; ✦ &nbsp; ✦</p>
+
+    <!-- ARTICLE BODY -->
+    <article class="article-body">
+
+      <p>
+        The previous version of this report - an internal "Budget Pacer V.2" template from
+        November 2020 - pulled data through an internal <code>ScriptyApp</code>/AWQL layer and
+        reports like <code>CAMPAIGN_PERFORMANCE_REPORT</code>. It worked fine for years, until
+        Google gradually phased out the legacy AWQL reports the whole thing was built on, and the
+        template stopped reliably pulling data. The only supported path today is GAQL via
+        <code>AdsApp.search()</code>, so this called for a rewrite from the ground up rather than
+        a patch - and this script has no dependency on the old shim at all.
+      </p>
+
+      <h2>What the script does</h2>
+
+      <p>
+        Budget Pacer tracks daily budget spend at the campaign level and, hour by hour, builds a
+        picture of who's "on pace" and who's hitting their cap before the day is over.
+        Specifically, it writes to its own Google Sheets file:
+      </p>
+
+      <ul>
+        <li><strong>Today / Yesterday</strong> - an hourly budget-depletion curve (cost only,
+          against the campaign's current daily budget) with a color gradient showing how fast the
+          budget is filling up.</li>
+        <li><strong>Previous 7 Days / Previous 14 Days</strong> - a daily breakdown with
+          Impression Share, Lost IS (budget), and selected KPIs, columns ordered newest-first,
+          with a two-row header (day of week + the actual date).</li>
+        <li><strong>Summary</strong> - two sections, "Capped by Budget" (campaigns that actually
+          hit their cap in the latest window) and "Underspending" (campaigns not using up their
+          budget), plus a Recommended Budget column and a mini export table ready to paste
+          straight into Google Ads Editor, sorted by recommended increase.</li>
+        <li><strong>Email alert</strong> - when budget pacing crosses a configured threshold and
+          there are still enough hours left in the day to act on it, the script sends an HTML
+          email listing the affected campaigns.</li>
+      </ul>
+
+      <p>
+        You don't maintain the spreadsheet by hand - on its first run the script builds its own
+        complete spreadsheet with every tab, label, and default setting already in place, so
+        there's nothing to prepare up front.
+      </p>
+
+      <h2>How to use the script</h2>
+
+      <p>
+        This is the single-account variant - it's created directly inside the Google Ads account
+        it reports on, not at MCC level. (For reporting across multiple accounts from one place
+        there's a separate MCC variant of the same script - two distinct files, not one toggled
+        by a setting.)
+      </p>
+
+      <ol>
+        <li><strong>Add the script to the account.</strong> Tools & Settings → Bulk Actions →
+          Scripts → "+". Paste in the full code below, confirm the permissions (Authorize), and
+          save.</li>
+        <li><strong>Decide on the spreadsheet.</strong> Leave the <code>SPREADSHEET_URL</code>
+          constant at the top of the file blank and the script will create a new spreadsheet on
+          its first run and remember its address, or paste in an existing file's URL if you want
+          to keep the report in one known place.</li>
+        <li><strong>Run it once manually.</strong> Preview, then <code>main()</code>. With a
+          blank <code>SPREADSHEET_URL</code>, this first run creates the spreadsheet, fully
+          labels the "Configure Report" tab with working defaults, and does the first data pull
+          in the same run - the new file's address shows up in the run log.</li>
+        <li><strong>Set the frequency to Hourly.</strong> In the scripts list, via the pencil
+          icon. That's the only scheduling Ads Scripts offers, and <code>main()</code> itself
+          decides what actually needs to happen on each run (more on that in "How the script
+          works internally").</li>
+        <li><strong>Fine-tune it in "Configure Report".</strong> Check which reports should run
+          (Hourly / Previous 7 Days / Previous 14 Days), which KPI columns to show, the minimum
+          daily budget for a campaign to be included, the window used for KPI calculations
+          (1/7/14/30 days), and optionally turn on email alerts with a spend threshold and the
+          latest hour it still makes sense to alert.</li>
+      </ol>
+
+      <!-- ═══════════════════════════════════════════════════════════
+           SCRIPT BLOCK
+           data-src   = path to the .js file in the repository
+           data-lang  = language for Prism (javascript / css / html / python)
+
+           The file is loaded via fetch - save the script to:
+             /assets/scripts/budget-pacer.js
+           ═══════════════════════════════════════════════════════════ -->
+      <div class="script-block"
+           data-src="/assets/scripts/budget-pacer.js"
+           data-lang="javascript">
+
+        <div class="script-block-header">
+          <span class="script-block-name">GOOGLE ADS BUDGET PACER</span>
+          <div class="script-block-actions">
+            <button class="script-btn" data-action="copy">Copy</button>
+            <button class="script-btn" data-action="toggle">Expand</button>
+          </div>
+        </div>
+
+        <!-- Code area - content is injected by blog-script.js from data-src -->
+        <div class="script-block-code collapsed">
+          <pre><code class="language-javascript"></code></pre>
+        </div>
+
+        <p class="script-block-meta">loading…</p>
+      </div>
+      <!-- /script-block -->
+
+      <h2>What needs adjusting</h2>
+
+      <p>
+        Unlike a typical script, there's almost nothing to change directly in the code. The one
+        constant at the top of the file worth touching is:
+      </p>
+
+      <ul>
+        <li><code>SPREADSHEET_URL</code> - optional. Leave it blank to have the script create
+          its own spreadsheet, or fill it in only if you want the report tied to a file that
+          already exists.</li>
+      </ul>
+
+      <p>
+        Everything else - which reports run, which KPIs show, the minimum-budget filter, the KPI
+        window, email alerts and their recipients - is set in the "Configure Report" tab inside
+        the generated spreadsheet itself, not in the code. The script fully labels that tab
+        (headings, checkboxes, dropdowns) on its very first run, so it's immediately clear what
+        each cell means.
+      </p>
+
+      <h2>How the script works internally</h2>
+
+      <p>
+        A few decisions that aren't obvious at a glance but are worth knowing before you touch the
+        code:
+      </p>
+
+      <ul>
+        <li><strong>No <code>ScriptApp</code>, no <code>Session</code>.</strong> Ads Scripts have
+          neither a trigger API nor an active spreadsheet - the only scheduling is the UI
+          frequency setting, and the script reads the time zone via
+          <code>AdsApp.currentAccount().getTimeZone()</code>. Spreadsheet access always goes
+          through <code>SpreadsheetApp.openByUrl()</code>, never
+          <code>getActiveSpreadsheet()</code>, which would simply throw here.</li>
+        <li><strong>Hourly frequency, but daily reports only once a day.</strong>
+          <code>main()</code> is the one scheduled function, and it tracks via
+          <code>PropertiesService</code> whether today's Previous 7/14 Days refresh has already
+          happened. The gate is "the first run of the calendar day," not a fixed hour - so even a
+          manual test run right after deployment still fills in every tab, instead of waiting for
+          a specific time.</li>
+        <li><strong>Budget is fetched separately.</strong> <code>campaign_budget.amount_micros</code>
+          can't be combined in a single GAQL query or Report Editor report with
+          <code>search_impression_share</code> / <code>search_budget_lost_impression_share</code> -
+          Google Ads rejects that combination outright. So budget is pulled via its own
+          unsegmented query and joined onto the performance rows in script, by campaign ID.</li>
+        <li><strong>Impression Share only at the day level.</strong> Hour-segmented IS metrics are
+          notoriously unreliable in the Ads API (often coming back as zero), so the hourly curve
+          works with cost alone, and IS/Lost IS are only ever resolved at the day/window level.</li>
+        <li><strong>Recommended Budget is a heuristic, not an API field.</strong>
+          <code>HasRecommendedBudget</code>/<code>RecommendedBudgetAmount</code> don't exist in
+          GAQL, so it's computed as <code>current budget × (1 + Budget Lost IS)</code> - roughly,
+          "what budget would have captured the impressions this campaign lost to its cap
+          yesterday."</li>
+        <li><strong>No invented values for the unknown.</strong> When a campaign spent nothing in
+          the given window, Search IS / Budget Lost IS - and the Recommended Budget derived from
+          it - aren't shown as 0% or $0; they're unknown, so the report shows the literal text
+          <code>"--"</code>. Every other KPI (Conversions, CPA, ROAS, Ctr, Conv.Rate, Lost
+          Conversions, Lost Revenue) still defaults to 0 when there's no data, same as before.</li>
+        <li><strong>Hidden sheets are a raw dump, not a web of formulas.</strong> The script does
+          the calculations; the visible sheets get plain written values. The hidden
+          <code>*BudgetData</code> and <code>*KPIData</code> sheets exist purely as a flat data
+          source for matching by campaign ID - no
+          <code>IFERROR(INDEX(MATCH(...)))</code> chains that used to break the moment row order
+          shifted.</li>
+      </ul>
+
+      <!-- Internal link - recommended for SEO -->
+      <p>
+        If you're interested in more scripts and automations, browse
+        <a href="/tag/skripty">every entry in the Scripts section</a>.
+        And if you enjoy a medieval atmosphere, try
+        <a href="https://myscriptorium.cz" target="_blank" rel="noopener">our game, Scriptorium</a>.
+      </p>
+
+    </article>
+
+    <!-- FOOTER -->
+    <footer class="site-footer">
+      <p class="site-footer-ornament">☩</p>
+      <p>
+        A blog by <a href="https://ember-pa.cz" target="_blank" rel="noopener">Ondrex</a>
+        &nbsp;·&nbsp;
+        <a href="https://myscriptorium.cz" target="_blank" rel="noopener">Play Scriptorium</a>
+      </p>
+    </footer>
+
+  </div>
+</div>
+
+<!-- ═════════════════════════════════════════════════
+     Prism.js + script widget - script pages ONLY
+     ═════════════════════════════════════════════════ -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"
+        crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"
+        crossorigin="anonymous"></script>
+<script src="/assets/js/blog-script.js"></script>
+
+</body>
+</html>
