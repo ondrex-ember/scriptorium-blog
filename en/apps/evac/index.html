@@ -2,6 +2,12 @@
 <html lang="cs" data-theme="light">
 <head>
 <meta charset="UTF-8">
+<!-- Vercel serves this blog with trailingSlash:false, so the page URL never
+     ends in "/". Without this <base>, every relative CSS/JS/manifest link
+     below would resolve one directory too high (…/apps/ instead of
+     …/apps/evac/). Pin the base explicitly so it doesn't matter how the
+     host rewrites the visible URL. Update this if the app ever moves. -->
+<base href="https://blog.myscriptorium.cz/en/apps/evac/">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title data-i18n="app.title">Evakuační zavazadlo</title>
 <link rel="manifest" href="manifest.json">
