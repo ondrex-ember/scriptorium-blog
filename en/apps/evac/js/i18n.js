@@ -58,6 +58,7 @@ const PLURAL_RULES = {
 const UI_STRINGS = {
   cs: {
     "app.title": "Evakuační zavazadlo",
+    "header.title": "Evakuační zavazadlo",
 
     "common.back": "‹ Zpět",
     "common.backToOverview": "‹ Zpět na přehled",
@@ -247,6 +248,7 @@ const UI_STRINGS = {
 
   en: {
     "app.title": "Evacuation Kit",
+    "header.title": "Evac Bag",
 
     "common.back": "‹ Back",
     "common.backToOverview": "‹ Back to overview",
