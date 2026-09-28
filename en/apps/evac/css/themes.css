@@ -1,0 +1,474 @@
+/**
+ * themes.css
+ * CSS proměnné pro všechna témata appky. Přepínání přes [data-theme] na <html>,
+ * výběr uložen v localStorage a v profilu (viz app.js applyTheme/THEME_LIST).
+ *
+ * Princip: barva nese náladu tématu, ale kritické stavy (expirováno/chybí)
+ * musí zůstat čitelné a rozpoznatelné v každém tématu - viz komentáře
+ * u jednotlivých bloků, kde je to méně samozřejmé (contrast, terminal, fallout).
+ *
+ * --font-body / --font-display: výchozí je systémový font (--font-body) a
+ * --font-display dědí (inherit) - jen témata s výraznou typografickou
+ * identitou je přepisují (viz style.css: body, h1-h3, .btn, .chip,
+ * .bottom-nav button, .theme-swatch span).
+ */
+
+:root {
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: inherit;
+  --border-width: 1px;
+}
+
+/* ---------------- LIGHT (default) ---------------- */
+:root,
+[data-theme="light"] {
+  --bg: #f4f6f5;
+  --surface: #ffffff;
+  --surface-alt: #eef1f0;
+  --border: #dde3e1;
+  --text: #1c2422;
+  --text-muted: #5b6866;
+  --accent: #2f6f5e;
+  --accent-contrast: #ffffff;
+  --accent-soft: #e2f0ec;
+
+  --status-ok: #2f8f5b;
+  --status-ok-bg: #e5f5ec;
+  --status-missing: #b9812c;
+  --status-missing-bg: #fbf0dd;
+  --status-expiring: #c07a1f;
+  --status-expiring-bg: #fbeedb;
+  --status-expired: #c23b3b;
+  --status-expired-bg: #fbe4e4;
+  --status-check: #3a6ea5;
+  --status-check-bg: #e4edf7;
+
+  --shadow: 0 1px 3px rgba(20, 30, 28, 0.08), 0 1px 2px rgba(20, 30, 28, 0.06);
+}
+
+/* ---------------- DARK ---------------- */
+[data-theme="dark"] {
+  --bg: #14181a;
+  --surface: #1d2225;
+  --surface-alt: #262c2f;
+  --border: #333b3e;
+  --text: #eef1f0;
+  --text-muted: #a2adab;
+  --accent: #57b696;
+  --accent-contrast: #0e1513;
+  --accent-soft: #203a34;
+
+  --status-ok: #57b696;
+  --status-ok-bg: #1c332a;
+  --status-missing: #e0ac5a;
+  --status-missing-bg: #362b18;
+  --status-expiring: #e2a44f;
+  --status-expiring-bg: #392c16;
+  --status-expired: #e2685f;
+  --status-expired-bg: #3a1f1e;
+  --status-check: #6ea3d8;
+  --status-check-bg: #1c2b3b;
+
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* ---------------- COLORFUL (formerly "color" - kept as alias for old saves) ---------------- */
+[data-theme="color"],
+[data-theme="colorful"] {
+  --bg: #f2f1e8;
+  --surface: #fdfcf6;
+  --surface-alt: #ece8d8;
+  --border: #d8d2b8;
+  --text: #2b2a1f;
+  --text-muted: #6b6852;
+  --accent: #6b7a3a;
+  --accent-contrast: #fdfcf6;
+  --accent-soft: #e6ead3;
+
+  --status-ok: #5c7a3a;
+  --status-ok-bg: #e6ead3;
+  --status-missing: #b9812c;
+  --status-missing-bg: #f2e6cc;
+  --status-expiring: #c1701f;
+  --status-expiring-bg: #f3e2c9;
+  --status-expired: #b1462f;
+  --status-expired-bg: #f2ddd5;
+  --status-check: #45708a;
+  --status-check-bg: #dfe8ec;
+
+  --shadow: 0 1px 3px rgba(43, 42, 31, 0.12), 0 1px 2px rgba(43, 42, 31, 0.08);
+}
+
+/* ---------------- CONTRAST - accessibility-first, max legibility ---------------- */
+[data-theme="contrast"] {
+  --bg: #000000;
+  --surface: #000000;
+  --surface-alt: #1a1a1a;
+  --border: #ffffff;
+  --text: #ffffff;
+  --text-muted: #dedede;
+  --accent: #ffdd00;
+  --accent-contrast: #000000;
+  --accent-soft: #332f00;
+
+  --status-ok: #00ff66;
+  --status-ok-bg: #002611;
+  --status-missing: #ffdd00;
+  --status-missing-bg: #332f00;
+  --status-expiring: #ff9900;
+  --status-expiring-bg: #331e00;
+  --status-expired: #ff3355;
+  --status-expired-bg: #330008;
+  --status-check: #33ccff;
+  --status-check-bg: #002733;
+
+  --shadow: none;
+  --border-width: 2px;
+}
+
+/* ---------------- SCIFI - deep space, neon cyan ---------------- */
+[data-theme="scifi"] {
+  --bg: #05070d;
+  --surface: #0d1220;
+  --surface-alt: #141b30;
+  --border: #263461;
+  --text: #dbe6ff;
+  --text-muted: #7f8fbd;
+  --accent: #37e6d1;
+  --accent-contrast: #04211d;
+  --accent-soft: #123430;
+
+  --status-ok: #37e6d1;
+  --status-ok-bg: #0e2a26;
+  --status-missing: #f2c14e;
+  --status-missing-bg: #322708;
+  --status-expiring: #ff9f4a;
+  --status-expiring-bg: #331f08;
+  --status-expired: #ff4d6d;
+  --status-expired-bg: #330b14;
+  --status-check: #7aa2ff;
+  --status-check-bg: #131f3d;
+
+  --shadow: 0 0 14px rgba(55, 230, 209, 0.15), 0 1px 2px rgba(0, 0, 0, 0.6);
+  --font-display: "Orbitron", var(--font-body);
+}
+
+/* ---------------- FANTASY - indigo & gold ---------------- */
+[data-theme="fantasy"] {
+  --bg: #1c1330;
+  --surface: #2a1f45;
+  --surface-alt: #34294f;
+  --border: #4a3a6b;
+  --text: #f1e6ff;
+  --text-muted: #b9a8d9;
+  --accent: #d4af37;
+  --accent-contrast: #2a1f10;
+  --accent-soft: #3d3320;
+
+  --status-ok: #8fd19e;
+  --status-ok-bg: #1f3327;
+  --status-missing: #e8c15c;
+  --status-missing-bg: #392c14;
+  --status-expiring: #e8a15c;
+  --status-expiring-bg: #3a2814;
+  --status-expired: #e2646f;
+  --status-expired-bg: #3a1a1e;
+  --status-check: #8fb6e8;
+  --status-check-bg: #1c2c3e;
+
+  --shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+  --font-display: "Cinzel", var(--font-body);
+}
+
+/* ---------------- AESTHETIC - soft pastel pink/lavender ---------------- */
+[data-theme="aesthetic"] {
+  --bg: #fdf3f8;
+  --surface: #ffffff;
+  --surface-alt: #fbe8f2;
+  --border: #f3d3e6;
+  --text: #4a2e40;
+  --text-muted: #9c7a91;
+  --accent: #e88ab0;
+  --accent-contrast: #3a1626;
+  --accent-soft: #fbe1ec;
+
+  --status-ok: #4f9e7c;
+  --status-ok-bg: #e6f5ee;
+  --status-missing: #c98a2f;
+  --status-missing-bg: #faf0dd;
+  --status-expiring: #d17a3c;
+  --status-expiring-bg: #fbeee0;
+  --status-expired: #cf5170;
+  --status-expired-bg: #fbe0e8;
+  --status-check: #6f80c8;
+  --status-check-bg: #e8ecfa;
+
+  --shadow: 0 2px 12px rgba(232, 138, 176, 0.18);
+  --font-display: "Quicksand", var(--font-body);
+}
+
+/* ---------------- DDR - industrial red/mustard/concrete ---------------- */
+[data-theme="ddr"] {
+  --bg: #2b2a26;
+  --surface: #383630;
+  --surface-alt: #423f38;
+  --border: #55524a;
+  --text: #f0ece0;
+  --text-muted: #a8a296;
+  --accent: #c23b2e;
+  --accent-contrast: #fdf6e8;
+  --accent-soft: #4a2420;
+
+  --status-ok: #9aa85c;
+  --status-ok-bg: #333322;
+  --status-missing: #d9a63f;
+  --status-missing-bg: #3a2f18;
+  --status-expiring: #cf8a34;
+  --status-expiring-bg: #3a2a14;
+  --status-expired: #c23b2e;
+  --status-expired-bg: #3a1f1a;
+  --status-check: #6f92a3;
+  --status-check-bg: #253138;
+
+  --shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  --font-display: "Oswald", var(--font-body);
+}
+
+/* ---------------- SCRIPTORIUM - illuminated manuscript ---------------- */
+[data-theme="scriptorium"] {
+  --bg: #efe4c8;
+  --surface: #f8f0d9;
+  --surface-alt: #e9dcb8;
+  --border: #cbb98c;
+  --text: #3a2a1a;
+  --text-muted: #7a6647;
+  --accent: #7a1f2b;
+  --accent-contrast: #f8f0d9;
+  --accent-soft: #e8d3ba;
+
+  --status-ok: #4f6b3a;
+  --status-ok-bg: #e2e8cf;
+  --status-missing: #9a6a1f;
+  --status-missing-bg: #ecdcb8;
+  --status-expiring: #a05a1f;
+  --status-expiring-bg: #ecd7b8;
+  --status-expired: #7a1f2b;
+  --status-expired-bg: #e8cfce;
+  --status-check: #2f4f6b;
+  --status-check-bg: #d9e2e8;
+
+  --shadow: 0 2px 8px rgba(58, 42, 26, 0.2);
+  --font-display: "EB Garamond", var(--font-body);
+}
+
+/* ---------------- DIRTY - grunge khaki/rust utility ---------------- */
+[data-theme="dirty"] {
+  --bg: #2e2a22;
+  --surface: #3a352b;
+  --surface-alt: #443f33;
+  --border: #5a5343;
+  --text: #e8e0cc;
+  --text-muted: #a89c82;
+  --accent: #b9702f;
+  --accent-contrast: #241209;
+  --accent-soft: #402c18;
+
+  --status-ok: #8a9a52;
+  --status-ok-bg: #33351f;
+  --status-missing: #c2963c;
+  --status-missing-bg: #3a2f18;
+  --status-expiring: #b97a2f;
+  --status-expiring-bg: #3a2814;
+  --status-expired: #b1503a;
+  --status-expired-bg: #3a2018;
+  --status-check: #5f7c82;
+  --status-check-bg: #232e30;
+
+  --shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+/* ---------------- SECRET - classified document, typewriter red stamp ---------------- */
+[data-theme="secret"] {
+  --bg: #0d0d0d;
+  --surface: #161616;
+  --surface-alt: #202020;
+  --border: #3a3a3a;
+  --text: #d8d8d8;
+  --text-muted: #8f8f8f;
+  --accent: #c2352c;
+  --accent-contrast: #f5f5f5;
+  --accent-soft: #341210;
+
+  --status-ok: #6b9e6b;
+  --status-ok-bg: #16241a;
+  --status-missing: #c9a83f;
+  --status-missing-bg: #302a14;
+  --status-expiring: #c7823a;
+  --status-expiring-bg: #302014;
+  --status-expired: #c2352c;
+  --status-expired-bg: #301210;
+  --status-check: #5a89ac;
+  --status-check-bg: #16242e;
+
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+  --font-display: "Special Elite", var(--font-body);
+}
+
+/* ---------------- HANDWRITTEN - notebook paper, ballpoint ink ---------------- */
+[data-theme="handwritten"] {
+  --bg: #faf6ec;
+  --surface: #fffdf6;
+  --surface-alt: #f0ead6;
+  --border: #d9cfae;
+  --text: #2e2a20;
+  --text-muted: #7a7260;
+  --accent: #2f5fa8;
+  --accent-contrast: #ffffff;
+  --accent-soft: #dfe8f5;
+
+  --status-ok: #3f7a4a;
+  --status-ok-bg: #e6f0e2;
+  --status-missing: #b3862f;
+  --status-missing-bg: #f5ecd9;
+  --status-expiring: #b8702f;
+  --status-expiring-bg: #f5e6d9;
+  --status-expired: #b3413a;
+  --status-expired-bg: #f5e0de;
+  --status-check: #2f5fa8;
+  --status-check-bg: #dfe8f5;
+
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+  --font-display: "Patrick Hand", var(--font-body);
+}
+
+/* ---------------- TERMINAL - green phosphor CRT ---------------- */
+[data-theme="terminal"] {
+  --bg: #020a02;
+  --surface: #041006;
+  --surface-alt: #0a220f;
+  --border: #17552a;
+  --text: #33ff66;
+  --text-muted: #1f9c44;
+  --accent: #33ff66;
+  --accent-contrast: #021404;
+  --accent-soft: #0c2a14;
+
+  --status-ok: #33ff66;
+  --status-ok-bg: #0c2a14;
+  --status-missing: #ccff33;
+  --status-missing-bg: #2a2a0c;
+  --status-expiring: #ffcc33;
+  --status-expiring-bg: #2a2210;
+  --status-expired: #ff3333;
+  --status-expired-bg: #2a0c0c;
+  --status-check: #33ffcc;
+  --status-check-bg: #0c2a24;
+
+  --shadow: 0 0 10px rgba(51, 255, 102, 0.25);
+  --font-body: "Share Tech Mono", monospace;
+  --font-display: "Share Tech Mono", monospace;
+}
+
+/* ---------------- FALLOUT - amber wasteland terminal ---------------- */
+[data-theme="fallout"] {
+  --bg: #120d05;
+  --surface: #1c140a;
+  --surface-alt: #26190c;
+  --border: #4a3312;
+  --text: #ffb347;
+  --text-muted: #a67a2e;
+  --accent: #ffb347;
+  --accent-contrast: #1a1206;
+  --accent-soft: #2e2008;
+
+  --status-ok: #9acb5c;
+  --status-ok-bg: #24280f;
+  --status-missing: #ffcf5c;
+  --status-missing-bg: #332708;
+  --status-expiring: #ff9f3c;
+  --status-expiring-bg: #331f08;
+  --status-expired: #ff5c3c;
+  --status-expired-bg: #331208;
+  --status-check: #ffcf5c;
+  --status-check-bg: #332708;
+
+  --shadow: 0 0 10px rgba(255, 179, 71, 0.2);
+  --font-body: "VT323", monospace;
+  --font-display: "VT323", monospace;
+}
+
+/* ---------------- INTO THE WILD - forest & earth ---------------- */
+[data-theme="intothewild"] {
+  --bg: #f4f1e8;
+  --surface: #fbf9f2;
+  --surface-alt: #e9e4d2;
+  --border: #cfc6a8;
+  --text: #2b3324;
+  --text-muted: #6b7460;
+  --accent: #3f6b3a;
+  --accent-contrast: #f4f1e8;
+  --accent-soft: #e0e8d8;
+
+  --status-ok: #3f6b3a;
+  --status-ok-bg: #e0e8d8;
+  --status-missing: #ab7a2f;
+  --status-missing-bg: #f2e6cc;
+  --status-expiring: #b3661f;
+  --status-expiring-bg: #f2ddc4;
+  --status-expired: #a1432f;
+  --status-expired-bg: #f2d8cf;
+  --status-check: #3a6b7a;
+  --status-check-bg: #dce8ea;
+
+  --shadow: 0 2px 8px rgba(43, 51, 36, 0.15);
+  --font-display: "Lora", var(--font-body);
+}
+
+/* ---------------- Cross-theme flourishes ---------------- */
+
+/* CRT scanline overlay for the two monochrome-terminal themes. Pure CSS,
+   no image asset, disabled automatically if the person prefers reduced
+   motion/transparency isn't relevant here since it's static, not animated. */
+[data-theme="terminal"] #app::after,
+[data-theme="fallout"] #app::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 999;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.15) 0px,
+    rgba(0, 0, 0, 0.15) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  mix-blend-mode: multiply;
+  opacity: 0.5;
+}
+
+/* Contrast theme: thicker borders everywhere for maximum legibility. */
+[data-theme="contrast"] .card,
+[data-theme="contrast"] .item-row,
+[data-theme="contrast"] .category-row,
+[data-theme="contrast"] .btn,
+[data-theme="contrast"] .field input,
+[data-theme="contrast"] .field select,
+[data-theme="contrast"] .field textarea,
+[data-theme="contrast"] .chip,
+[data-theme="contrast"] .theme-swatch {
+  border-width: var(--border-width, 2px);
+}
+[data-theme="contrast"] .btn-primary {
+  border: 2px solid var(--accent-contrast);
+}
+
+/* Ddr / dirty: bold, uppercase headers reinforce the utility/industrial feel
+   without needing an extra webfont for both. */
+[data-theme="ddr"] h1,
+[data-theme="ddr"] h2,
+[data-theme="dirty"] h1,
+[data-theme="dirty"] h2 {
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
