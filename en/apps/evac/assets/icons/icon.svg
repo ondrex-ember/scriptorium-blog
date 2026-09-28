@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#2f6f5e"/>
+  <!-- simple backpack silhouette, centered with safe-zone padding for maskable icons -->
+  <g fill="#ffffff">
+    <rect x="196" y="120" width="120" height="46" rx="20"/>
+    <path d="M156 190 h200 a36 36 0 0 1 36 36 v170 a48 48 0 0 1 -48 48 h-176 a48 48 0 0 1 -48 -48 v-170 a36 36 0 0 1 36 -36 z"/>
+    <rect x="156" y="190" width="200" height="60" rx="14" fill="#2f6f5e"/>
+    <rect x="176" y="270" width="160" height="130" rx="16" fill="#2f6f5e"/>
+    <circle cx="256" cy="335" r="10" fill="#ffffff"/>
+  </g>
+</svg>
