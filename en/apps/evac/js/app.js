@@ -1073,11 +1073,13 @@
     } else {
       result = Feed.getCachedOnly();
     }
-    if (result.fromCache) {
+    if (result.fromCache && result.items.length) {
       const note = result.fetched_at
         ? I18n.t("feed.offlineNoteWithTime", { note: I18n.t("feed.offlineNote"), time: new Date(result.fetched_at).toLocaleString(I18n.getLocale()) })
         : I18n.t("feed.offlineNote");
       statusEl.innerHTML = `<div class="feed-offline-note">${note}</div>`;
+    } else if (result.error || navigator.onLine === false) {
+      statusEl.innerHTML = `<div class="feed-offline-note">${I18n.t("feed.unavailable")}</div>`;
     } else {
       statusEl.innerHTML = "";
     }
