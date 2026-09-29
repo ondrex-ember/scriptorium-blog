@@ -15,11 +15,12 @@
  * na file:// vůbec neregistrují.
  */
 
-const CACHE_NAME = "evac-cache-rcv074";
+const CACHE_NAME = "evac-cache-rcv075";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./manifest.json",
+  "./manifest.json?v=075",
   "./css/style.css",
   "./css/themes.css",
   "./js/i18n.js",
@@ -32,8 +33,12 @@ const APP_SHELL = [
   "./js/notifications-runtime.js",
   "./js/app.js",
   "./assets/icons/icon-192.png",
+  "./assets/icons/icon-192.png?v=075",
   "./assets/icons/icon-512.png",
+  "./assets/icons/icon-512.png?v=075",
   "./assets/icons/icon-512-maskable.png",
+  "./assets/icons/icon-512-maskable.png?v=075",
+  "./assets/icons/apple-touch-icon.png?v=075",
   "./assets/icons/omnia-hand-mark.png"
 ];
 
