@@ -58,6 +58,15 @@ function getDashboardSummary(items, profile, today) {
   return counts;
 }
 
+/** Ten-point readiness bands beginning at 5%, with separate empty/complete states. */
+function getReadinessMilestone(percent, total) {
+  if (!total) return "empty";
+  const value = Math.max(0, Math.min(100, Number(percent) || 0));
+  if (value < 5) return "begin";
+  if (value === 100) return "complete";
+  return String(Math.min(9, Math.floor((value - 5) / 10)));
+}
+
 const ANNUAL_REVIEW_INTERVAL_DAYS = 365;
 
 function isAnnualReviewDue(profile, today) {
@@ -76,6 +85,7 @@ if (typeof module !== "undefined" && module.exports) {
   module.exports = {
     STATUS_PRIORITY, getStatusLabel,
     annotateItemsWithStatus, getItemsNeedingAttention, getTimeSensitiveItems, getDashboardSummary,
+    getReadinessMilestone,
     ANNUAL_REVIEW_INTERVAL_DAYS, isAnnualReviewDue, daysUntilAnnualReview
   };
 }
