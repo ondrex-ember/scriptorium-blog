@@ -15,7 +15,7 @@
  * na file:// vůbec neregistrují.
  */
 
-const CACHE_NAME = "evac-cache-v1";
+const CACHE_NAME = "evac-cache-v2";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -32,7 +32,8 @@ const APP_SHELL = [
   "./js/notifications-runtime.js",
   "./js/app.js",
   "./assets/icons/icon-192.png",
-  "./assets/icons/icon-512.png"
+  "./assets/icons/icon-512.png",
+  "./assets/icons/icon-512-maskable.png"
 ];
 
 self.addEventListener("install", (event) => {
