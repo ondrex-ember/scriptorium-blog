@@ -32,6 +32,17 @@ function getItemsNeedingAttention(items, profile, today) {
     .sort((a, b) => STATUS_PRIORITY[a.status] - STATUS_PRIORITY[b.status]);
 }
 
+/** Time-sensitive alerts must still fire when an item is also short on quantity. */
+function getTimeSensitiveItems(items, profile, today) {
+  today = today || todayISO();
+  return annotateItemsWithStatus(items, profile, today).filter((item) => {
+    if ([ITEM_STATUS.EXPIRED, ITEM_STATUS.EXPIRING_SOON, ITEM_STATUS.NEEDS_CHECK].includes(item.status)) return true;
+    if (!item.expiration_tracked || !item.expiration_date) return false;
+    const notifyDays = item.notification_days_before ?? profile.global_notification_days_before ?? 14;
+    return daysBetween(today, item.expiration_date) <= notifyDays;
+  });
+}
+
 /** Dashboard summary: counts + percentages per status. */
 function getDashboardSummary(items, profile, today) {
   const annotated = annotateItemsWithStatus(items, profile, today);
@@ -64,7 +75,7 @@ function daysUntilAnnualReview(profile, today) {
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
     STATUS_PRIORITY, getStatusLabel,
-    annotateItemsWithStatus, getItemsNeedingAttention, getDashboardSummary,
+    annotateItemsWithStatus, getItemsNeedingAttention, getTimeSensitiveItems, getDashboardSummary,
     ANNUAL_REVIEW_INTERVAL_DAYS, isAnnualReviewDue, daysUntilAnnualReview
   };
 }

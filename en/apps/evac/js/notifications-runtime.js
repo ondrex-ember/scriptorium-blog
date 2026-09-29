@@ -8,6 +8,7 @@
 
 const NotificationsRuntime = (function () {
   let swRegistration = null;
+  let foregroundCheckPromise = null;
 
   function getPermissionStatus() {
     if (typeof Notification === "undefined") return "unsupported";
@@ -17,7 +18,12 @@ const NotificationsRuntime = (function () {
   async function registerServiceWorker() {
     if (!("serviceWorker" in navigator)) return null;
     try {
-      swRegistration = await navigator.serviceWorker.register("service-worker.js");
+      // Production redirects the trailing-slash URL to the no-slash path;
+      // local HTTP previews keep their own directory scope.
+      const production = location.hostname === "blog.myscriptorium.cz";
+      swRegistration = await navigator.serviceWorker.register("service-worker.js", {
+        scope: production ? "/en/apps/evac" : new URL("./", document.baseURI).pathname
+      });
       return swRegistration;
     } catch (e) {
       return null; // e.g. running from file:// - service workers require http(s)
@@ -60,21 +66,25 @@ const NotificationsRuntime = (function () {
    * day (shared dedup key with the service worker's background check) and
    * only about time-sensitive states, not the standing "missing" gap.
    */
-  async function runForegroundCheck(items, profile) {
-    if (getPermissionStatus() !== "granted") return;
-    const attention = getItemsNeedingAttention(items, profile).filter((i) => i.status !== "missing");
-    if (!attention.length) return;
+  function runForegroundCheck(items, profile) {
+    if (foregroundCheckPromise) return foregroundCheckPromise;
+    foregroundCheckPromise = (async () => {
+      if (getPermissionStatus() !== "granted") return;
+      const attention = getTimeSensitiveItems(items, profile);
+      if (!attention.length) return;
 
-    const today = todayISO();
-    const lastNotifiedDate = await Storage.getMeta("last_notification_date");
-    if (lastNotifiedDate === today) return;
+      const today = todayISO();
+      const lastNotifiedDate = await Storage.getMeta("last_notification_date");
+      if (lastNotifiedDate === today) return;
 
-    await showNotification(I18n.t("app.title"), {
-      body: I18n.t("notif.summaryBody", { count: attention.length }),
-      icon: "assets/icons/icon-192.png",
-      tag: "evac-attention"
-    });
-    await Storage.setMeta("last_notification_date", today);
+      await showNotification(I18n.t("app.title"), {
+        body: I18n.t("notif.summaryBody", { count: attention.length }),
+        icon: "assets/icons/icon-192.png",
+        tag: "evac-attention"
+      });
+      await Storage.setMeta("last_notification_date", today);
+    })();
+    return foregroundCheckPromise.finally(() => { foregroundCheckPromise = null; });
   }
 
   /** Ask an already-registered SW to run its own background check right away (fallback for browsers without periodicSync). */
