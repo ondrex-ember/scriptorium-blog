@@ -149,6 +149,7 @@ const UI_STRINGS = {
     "feed.loading": "Načítám novinky…",
     "feed.offlineNote": "Offline / nedostupný zdroj - zobrazena poslední uložená verze",
     "feed.offlineNoteWithTime": "{note} ({time})",
+    "feed.unavailable": "BBC World News teď nelze načíst. Zkuste to prosím později.",
 
     "settings.title": "Nastavení",
     "settings.appearance": "Vzhled",
@@ -364,6 +365,7 @@ const UI_STRINGS = {
     "feed.loading": "Loading news…",
     "feed.offlineNote": "Offline / source unavailable - showing the last saved version",
     "feed.offlineNoteWithTime": "{note} ({time})",
+    "feed.unavailable": "BBC World News is unavailable right now. Please try again later.",
 
     "settings.title": "Settings",
     "settings.appearance": "Appearance",
