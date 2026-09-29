@@ -15,7 +15,7 @@
  * na file:// vůbec neregistrují.
  */
 
-const CACHE_NAME = "evac-cache-v2";
+const CACHE_NAME = "evac-cache-rcv073";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -33,7 +33,8 @@ const APP_SHELL = [
   "./js/app.js",
   "./assets/icons/icon-192.png",
   "./assets/icons/icon-512.png",
-  "./assets/icons/icon-512-maskable.png"
+  "./assets/icons/icon-512-maskable.png",
+  "./assets/icons/omnia-hand-mark.png"
 ];
 
 self.addEventListener("install", (event) => {
@@ -88,11 +89,10 @@ async function runBackgroundCheck() {
     I18n.setLocale(profile.locale || "cs");
 
     const items = await Storage.getAll("items");
-    const attention = getItemsNeedingAttention(items, profile)
-      .filter((i) => i.status !== "missing"); // "missing" is a standing gap, not a time-sensitive alert
+    const attention = getTimeSensitiveItems(items, profile);
     if (!attention.length) return;
 
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayISO();
     const lastNotifiedDate = await Storage.getMeta("last_notification_date");
     if (lastNotifiedDate === today) return; // at most one notification per day
 
