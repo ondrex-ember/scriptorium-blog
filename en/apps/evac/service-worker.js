@@ -15,7 +15,7 @@
  * na file:// vůbec neregistrují.
  */
 
-const CACHE_NAME = "evac-cache-rcv076";
+const CACHE_NAME = "evac-cache-rcv077";
 const APP_SHELL = [
   "./",
   "./index.html",
