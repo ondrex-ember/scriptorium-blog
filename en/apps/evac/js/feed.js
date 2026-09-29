@@ -1,15 +1,15 @@
 /**
  * feed.js
- * Feed novinek - MVP/testovací verze (viz MRD bod 8).
- * Uživatel zatím nedodal finální seznam endpointů, proto:
- *  - zdroje jsou v jednom poli FEED_SOURCES, snadno vyměnitelné
- *  - použit rss2json.com free tier (převádí RSS -> JSON, řeší CORS v prohlížeči/artefaktu)
- *  - ČHMÚ výstrahy jsou zapnuté jako reálný zdroj, druhý je obecný placeholder
+ * Feed novinek - dočasně jeden pevný zdroj (BBC World News) pro všechny
+ * uživatele, dokud nebude hotový vlastní feed engine (custom zdroje na
+ * uživatele). Do té doby:
+ *  - jediný zdroj je v FEED_SOURCES, snadno vyměnitelný/rozšiřitelný
+ *  - použit rss2json.com free tier (převádí RSS -> JSON, řeší CORS)
  *  - výsledek se cachuje do localStorage pro offline zobrazení
  *
- * POZOR: v sandboxu artefaktu nemusí být odchozí fetch na cizí domény vždy
- * povolen - modul proto vždy padá zpět na poslední cache a UI to jasně říká,
- * místo aby tvářilo prázdný/rozbitý stav.
+ * POZOR: rss2json.com bezplatný tier bez klíče má sdílený rate limit -
+ * modul proto vždy padá zpět na poslední cache a UI to jasně říká, místo
+ * aby tvářilo prázdný/rozbitý stav. Při vlastním feed enginu odpadne.
  */
 
 const FEED_CACHE_KEY = "evac_feed_cache_v1";
@@ -17,15 +17,9 @@ const FEED_RSS2JSON_ENDPOINT = "https://api.rss2json.com/v1/api.json?rss_url=";
 
 const FEED_SOURCES = [
   {
-    id: "chmi",
-    name: "ČHMÚ - výstrahy",
-    // Výstražná meteorologická RSS/XML ČHMÚ. Ověřit/nahradit finálním zdrojem dle potřeby.
-    url: "https://www.chmi.cz/files/portal/docs/meteo/om/vystrahy/XML_CZ.xml"
-  },
-  {
-    id: "placeholder",
-    name: "Testovací zdroj (nahradit)",
-    url: "https://rss2json.com/api.json?rss_url=https://feeds.bbci.co.uk/news/world/rss.xml"
+    id: "bbc-world",
+    name: "BBC World News",
+    url: "https://feeds.bbci.co.uk/news/world/rss.xml"
   }
 ];
 
