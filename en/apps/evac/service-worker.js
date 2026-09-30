@@ -15,11 +15,12 @@
  * na file:// vůbec neregistrují.
  */
 
-const CACHE_NAME = "evac-cache-rcv077";
+const CACHE_NAME = "evac-cache-rcv0771";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./manifest-v076.json",
+  "./manifest.json",
+  "./manifest.json?v=0771",
   "./css/style.css",
   "./css/themes.css",
   "./js/i18n.js",
@@ -29,8 +30,10 @@ const APP_SHELL = [
   "./js/templates.js",
   "./js/notifications.js",
   "./js/feed.js",
+  "./js/feed.js?v=0771",
   "./js/notifications-runtime.js",
   "./js/app.js",
+  "./js/app.js?v=0771",
   "./assets/icons/hand-192-v076.png",
   "./assets/icons/hand-512-v076.png",
   "./assets/icons/hand-maskable-512-v076.png",
@@ -41,7 +44,7 @@ const APP_SHELL = [
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(APP_SHELL))
+      .then((cache) => cache.addAll(APP_SHELL.map((url) => new Request(url, { cache: "reload" }))))
       .then(() => self.skipWaiting())
   );
 });
@@ -49,7 +52,7 @@ self.addEventListener("install", (event) => {
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k))))
+      .then((keys) => Promise.all(keys.filter((k) => k.startsWith("evac-cache-") && k !== CACHE_NAME).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
