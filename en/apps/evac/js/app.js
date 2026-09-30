@@ -1108,7 +1108,7 @@
         anchor.target = "_blank";
         anchor.rel = "noopener noreferrer";
         anchor.appendChild(title);
-        div.appendChild(source, anchor);
+        div.append(source, anchor);
       } else {
         div.append(source, title);
       }
