@@ -2,17 +2,18 @@
 <html lang="cs" data-theme="light">
 <head>
 <meta charset="UTF-8">
-<!-- On the production host, the visible URL may omit its trailing slash.
-     Local files and localhost previews must resolve assets beside this HTML. -->
+<!-- A static base lets the parser and preload scanner resolve production
+     assets correctly even before JavaScript executes. -->
+<base id="app-base" href="/en/apps/evac/">
 <script>
-if (location.hostname === "blog.myscriptorium.cz" &&
-    location.pathname.replace(/\/$/, "") === "/en/apps/evac") {
-  document.write('<base href="https://blog.myscriptorium.cz/en/apps/evac/">');
+// Local previews and downloaded files keep their own directory.
+if (location.hostname !== "blog.myscriptorium.cz") {
+  document.getElementById("app-base").href = new URL("./", location.href).href;
 }
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title data-i18n="app.title">Evakuační zavazadlo</title>
-<link rel="manifest" href="manifest-v076.json">
+<link rel="manifest" href="manifest.json?v=0771">
 <meta name="theme-color" content="#2f6f5e">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -51,7 +52,7 @@ if (location.hostname === "blog.myscriptorium.cz" &&
       <span class="app-header-name">Ember Omnia</span>
       <span class="app-header-sub" data-i18n="header.title">Evakuační zavazadlo</span>
     </div>
-    <span class="app-header-version">RCv0.77</span>
+    <span class="app-header-version">RCv0.771</span>
   </header>
 
   <!-- ONBOARDING -->
@@ -405,7 +406,7 @@ if (location.hostname === "blog.myscriptorium.cz" &&
 <script src="js/templates.js"></script>
 <script src="js/notifications.js"></script>
 <script src="js/notifications-runtime.js"></script>
-<script src="js/feed.js"></script>
-<script src="js/app.js"></script>
+<script src="js/feed.js?v=0771"></script>
+<script src="js/app.js?v=0771"></script>
 </body>
 </html>
