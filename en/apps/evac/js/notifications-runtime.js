@@ -21,8 +21,9 @@ const NotificationsRuntime = (function () {
       // Production redirects the trailing-slash URL to the no-slash path;
       // local HTTP previews keep their own directory scope.
       const production = location.hostname === "blog.myscriptorium.cz";
-      swRegistration = await navigator.serviceWorker.register("service-worker.js", {
-        scope: production ? "/en/apps/evac" : new URL("./", document.baseURI).pathname
+      swRegistration = await navigator.serviceWorker.register(new URL("service-worker.js", document.baseURI).href, {
+        scope: production ? "/en/apps/evac" : new URL("./", document.baseURI).pathname,
+        updateViaCache: "none"
       });
       return swRegistration;
     } catch (e) {
@@ -79,7 +80,7 @@ const NotificationsRuntime = (function () {
 
       await showNotification(I18n.t("app.title"), {
         body: I18n.t("notif.summaryBody", { count: attention.length }),
-        icon: "assets/icons/icon-192.png",
+        icon: new URL("assets/icons/hand-192-v076.png", document.baseURI).href,
         tag: "evac-attention"
       });
       await Storage.setMeta("last_notification_date", today);
