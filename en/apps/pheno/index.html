@@ -2,10 +2,12 @@
 <html lang="cs" data-theme="tmave">
 <head>
 <meta charset="utf-8">
+<base id="app-base" href="/en/apps/pheno/">
+<script>if (location.hostname !== 'blog.myscriptorium.cz') document.getElementById('app-base').href = new URL('./', location.href).href;</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Ember Pheno</title>
 <link rel="icon" href="assets/icons/icon-192.png">
-<link rel="manifest" href="manifest.webmanifest">
+<link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#1c1330">
 <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">

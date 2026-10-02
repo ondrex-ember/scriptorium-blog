@@ -1535,7 +1535,7 @@
   }
 
   // js/version.js
-  var VERSION = "RCv0.18";
+  var VERSION = "RCv0.19";
 
   // js/backup.js
   var SCHEMA_VERSION = 1;
@@ -1774,7 +1774,8 @@
     });
     const secure = location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1";
     if ("serviceWorker" in navigator && secure) {
-      navigator.serviceWorker.register("./sw.js").catch((e) => console.warn("SW registration failed", e));
+      const prod = location.hostname === "blog.myscriptorium.cz";
+      navigator.serviceWorker.register(new URL("sw.js", document.baseURI).href, { scope: prod ? "/en/apps/pheno" : new URL("./", document.baseURI).pathname, updateViaCache: "none" }).catch((e) => console.warn("SW registration failed", e));
     }
   }
   var onInstallChange = (f) => {

@@ -1,10 +1,9 @@
 // App-shell cache. User data lives in IndexedDB and is never cached here.
 // CACHE must match VERSION in js/version.js (tools/lint.js checks it), so a new release replaces the old shell.
-const CACHE = 'pheno-shell-RCv0.18';
+const CACHE = 'pheno-shell-RCv0.19';
 const SHELL = [
-  './',
   './index.html',
-  './manifest.webmanifest',
+  './manifest.json',
   './css/ember-components.css',
   './css/ember-tokens.css',
   './css/pheno.css',
@@ -53,8 +52,20 @@ const SHELL = [
   './assets/icons/icon-maskable-512.png'
 ];
 
+// Hosts with cleanUrls redirect index.html -> directory; a redirected response must not be served to a navigation,
+// so every shell file is stored as a clean copy.
+async function precache() {
+  const cache = await caches.open(CACHE);
+  await Promise.all(SHELL.map(async (u) => {
+    const res = await fetch(new Request(u, { cache: 'reload' }));
+    if (!res.ok) throw new Error('precache failed: ' + u);
+    const clean = res.redirected ? new Response(await res.blob(), { status: 200, headers: res.headers }) : res;
+    await cache.put(u, clean);
+  }));
+}
+
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  event.waitUntil(precache().then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (event) => {
@@ -68,8 +79,9 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) return;
+  const key = req.mode === 'navigate' ? './index.html' : req;
   event.respondWith(
-    caches.match(req, { ignoreSearch: true }).then((hit) => hit
+    caches.match(key, { ignoreSearch: true }).then((hit) => hit
       || fetch(req).catch(() => (req.mode === 'navigate' ? caches.match('./index.html') : Response.error())))
   );
 });
