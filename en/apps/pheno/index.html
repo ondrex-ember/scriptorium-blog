@@ -1,1 +1,39 @@
-
+<!doctype html>
+<html lang="cs" data-theme="tmave">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ember Pheno</title>
+<link rel="icon" href="assets/icons/icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1c1330">
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Pheno">
+<script>try { document.documentElement.dataset.theme = localStorage.getItem('pheno.theme') === 'svetle' ? 'svetle' : 'tmave'; } catch (e) {}</script>
+<link rel="stylesheet" href="css/ember-tokens.css">
+<link rel="stylesheet" href="css/ember-components.css">
+<link rel="stylesheet" href="css/pheno.css">
+</head>
+<body>
+<div id="app">
+  <header id="app-header" class="app-header">
+    <img class="app-brand-mark" src="assets/icons/pheno-mark.png" alt="" width="42" height="42">
+    <div class="app-header-brand"><span class="app-header-name" id="app-name">Ember Pheno</span><span class="app-header-sub" id="app-sub">Deník pěstitele</span></div>
+    <span class="app-header-version" id="version"></span>
+  </header>
+  <main id="view" class="screen active"></main>
+  <nav class="bottom-nav" id="bottom-nav"></nav>
+</div>
+<script src="js/vendor/jszip.min.js"></script>
+<script>
+// Browsers block ES modules on file://, so a double-clicked index.html loads the prebuilt classic bundle instead.
+(function () {
+  var s = document.createElement('script');
+  if (location.protocol === 'file:') { s.src = 'dist/pheno.local.js'; } else { s.type = 'module'; s.src = 'js/main.js'; }
+  document.body.appendChild(s);
+})();
+</script>
+</body>
+</html>
