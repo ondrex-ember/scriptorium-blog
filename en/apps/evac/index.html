@@ -1,1 +1,375 @@
+<!DOCTYPE html>
+<html lang="cs" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<!-- Vercel serves this blog with trailingSlash:false, so the page URL never
+     ends in "/". Without this <base>, every relative CSS/JS/manifest link
+     below would resolve one directory too high (…/apps/ instead of
+     …/apps/evac/). Pin the base explicitly so it doesn't matter how the
+     host rewrites the visible URL. Update this if the app ever moves. -->
+<base href="https://blog.myscriptorium.cz/en/apps/evac/">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title data-i18n="app.title">Evakuační zavazadlo</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2f6f5e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Evakuace">
+<link rel="icon" href="assets/icons/icon-192.png">
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Cinzel:wght@500;700&family=Quicksand:wght@500;700&family=Oswald:wght@500;700&family=EB+Garamond:wght@500;700&family=Special+Elite&family=Patrick+Hand&family=Share+Tech+Mono&family=VT323&family=Lora:wght@500;700&display=swap">
+<link rel="stylesheet" href="css/themes.css">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="theme-emblem" class="theme-emblem" aria-hidden="true"></div>
+<div id="app">
 
+  <!-- APP HEADER (persistent brand bar, shown above every screen) -->
+  <header id="app-header" class="app-header">
+    <div class="app-header-brand">
+      <span class="app-header-name">Ember Omnia</span>
+      <span class="app-header-sub" data-i18n="header.title">Evakuační zavazadlo</span>
+    </div>
+    <span class="app-header-version">RCv0.64</span>
+  </header>
+
+  <!-- ONBOARDING -->
+  <section id="screen-onboarding" class="screen">
+
+    <div id="ob-step-0" class="ob-step">
+      <div class="hero">
+        <div class="icon">🎒</div>
+        <h1 data-i18n="onboarding.welcome.title">Evakuační zavazadlo</h1>
+        <p data-i18n="onboarding.welcome.body">Sestavte si a udržujte domácí zásoby pro krizové situace - vodu, jídlo, léky i doklady. Appka funguje offline a hlídá expirace za vás.</p>
+      </div>
+      <button class="btn btn-primary" data-action="ob-next" data-i18n="onboarding.welcome.cta">Začít nastavení</button>
+    </div>
+
+    <div id="ob-step-1" class="ob-step" style="display:none">
+      <button class="back-link" data-action="ob-prev" data-i18n="common.back">‹ Zpět</button>
+      <h2 data-i18n="onboarding.household.title">Vaše domácnost</h2>
+      <p data-i18n="onboarding.household.body">Podle toho appka přepočítá potřebné množství zásob.</p>
+
+      <div class="card">
+        <div class="counter-row">
+          <span class="counter-label" data-i18n="onboarding.household.adults">Dospělí</span>
+          <div class="counter">
+            <button data-action="dec" data-field="adults">−</button>
+            <input type="number" id="in-adults" value="1" min="0" readonly>
+            <button data-action="inc" data-field="adults">+</button>
+          </div>
+        </div>
+        <div class="counter-row">
+          <span class="counter-label" data-i18n="onboarding.household.children">Děti</span>
+          <div class="counter">
+            <button data-action="dec" data-field="children">−</button>
+            <input type="number" id="in-children" value="0" min="0" readonly>
+            <button data-action="inc" data-field="children">+</button>
+          </div>
+        </div>
+        <div class="counter-row">
+          <span class="counter-label" data-i18n="onboarding.household.seniors">Senioři</span>
+          <div class="counter">
+            <button data-action="dec" data-field="seniors">−</button>
+            <input type="number" id="in-seniors" value="0" min="0" readonly>
+            <button data-action="inc" data-field="seniors">+</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="counter-row">
+          <span class="counter-label" data-i18n="onboarding.household.pets">Domácí mazlíčci</span>
+          <div class="counter">
+            <button data-action="dec" data-field="pets">−</button>
+            <input type="number" id="in-pets" value="0" min="0" readonly>
+            <button data-action="inc" data-field="pets">+</button>
+          </div>
+        </div>
+        <div class="field" id="pet-type-field" style="display:none; margin-top:10px;">
+          <label data-i18n="onboarding.household.petType">Druh zvířete</label>
+          <select id="in-pet-type">
+            <option value="dog" data-i18n="petType.dog">Pes</option>
+            <option value="cat" data-i18n="petType.cat">Kočka</option>
+            <option value="other" data-i18n="petType.other">Jiné</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="field">
+          <label data-i18n="onboarding.household.duration">Doba udržitelnosti zásob</label>
+          <div class="chip-group" id="duration-chips">
+            <span class="chip" data-days="2" data-i18n="duration.48h">48 h</span>
+            <span class="chip" data-days="3" data-i18n="duration.72h">72 h</span>
+            <span class="chip" data-days="5" data-i18n="duration.5d">5 dní</span>
+            <span class="chip" data-days="7" data-i18n="duration.7d">7 dní</span>
+            <span class="chip selected" data-days="10" data-i18n="duration.10d">10 dní</span>
+            <span class="chip" data-days="custom" data-i18n="duration.custom">Vlastní</span>
+          </div>
+        </div>
+        <div class="field" id="custom-days-field" style="display:none;">
+          <label data-i18n="onboarding.household.customDaysLabel">Počet dní</label>
+          <input type="number" id="in-custom-days" min="1" value="14">
+        </div>
+      </div>
+
+      <button class="btn btn-primary" data-action="ob-next" data-i18n="common.continue">Pokračovat</button>
+    </div>
+
+    <div id="ob-step-2" class="ob-step" style="display:none">
+      <button class="back-link" data-action="ob-prev" data-i18n="common.back">‹ Zpět</button>
+      <h2 data-i18n="onboarding.templates.title">Šablony kategorií</h2>
+      <p data-i18n="onboarding.templates.body">Vyberte, které kategorie chcete rovnou naimportovat. Kdykoliv později přidáte vlastní.</p>
+      <div class="card" id="template-category-list"></div>
+      <button class="btn btn-primary" data-action="ob-next" data-i18n="common.continue">Pokračovat</button>
+    </div>
+
+    <div id="ob-step-3" class="ob-step" style="display:none">
+      <button class="back-link" data-action="ob-prev" data-i18n="common.back">‹ Zpět</button>
+      <h2 data-i18n="onboarding.summary.title">Souhrn</h2>
+      <div class="card" id="ob-summary"></div>
+      <p style="font-size:13px;" data-i18n="onboarding.summary.note">Množství jde po importu kdykoliv ručně upravit u jednotlivých položek.</p>
+      <button class="btn btn-primary" data-action="ob-finish" data-i18n="onboarding.summary.cta">Naimportovat a otevřít Dashboard</button>
+    </div>
+
+  </section>
+
+  <!-- DASHBOARD -->
+  <section id="screen-dashboard" class="screen">
+    <div class="top-bar">
+      <h1 data-i18n="dashboard.title">Přehled</h1>
+      <button class="btn-ghost" data-action="open-settings">⚙️</button>
+    </div>
+    <div id="dash-annual-banner"></div>
+    <div class="summary-grid" id="dash-summary"></div>
+    <div class="progress-bar"><div id="dash-progress-fill" style="width:0%"></div></div>
+
+    <div id="dash-attention-wrap">
+      <h3 data-i18n="dashboard.attentionTitle">Vyžaduje pozornost</h3>
+      <div class="chip-group" id="dash-category-filter" style="margin-bottom:10px;"></div>
+      <div class="card" id="dash-attention-list"></div>
+    </div>
+
+    <h3 style="margin-top:18px;" data-i18n="dashboard.categoriesTitle">Kategorie</h3>
+    <div class="card" id="dash-category-list"></div>
+
+    <button class="btn btn-secondary btn-block" style="margin-top:12px;" data-action="add-category" data-i18n="dashboard.addCategory">+ Přidat vlastní kategorii</button>
+    <button class="btn btn-primary btn-block" style="margin-top:10px;" data-action="open-checklist" data-i18n="dashboard.openChecklist">Checklist mód pro evakuaci</button>
+  </section>
+
+  <!-- CATEGORY DETAIL -->
+  <section id="screen-category" class="screen">
+    <button class="back-link" data-action="back-to-dashboard" data-i18n="common.backToOverview">‹ Zpět na přehled</button>
+    <div class="top-bar" style="padding-left:0;padding-right:0;">
+      <h1 id="cat-title" data-i18n="category.defaultTitle">Kategorie</h1>
+      <div class="cat-actions">
+        <button class="btn-ghost" data-action="rename-category" data-i18n-title="category.renameAction" title="Přejmenovat kategorii">✎</button>
+        <button class="btn-ghost" data-action="delete-category" data-i18n-title="category.deleteAction" title="Smazat kategorii">🗑</button>
+      </div>
+    </div>
+    <div class="card" id="cat-item-list"></div>
+    <button class="btn btn-secondary btn-block" style="margin-top:10px;" data-action="add-item" data-i18n="category.addItem">+ Přidat položku</button>
+  </section>
+
+  <!-- CHECKLIST MODE -->
+  <section id="screen-checklist" class="screen">
+    <div class="checklist-header">
+      <button class="back-link" data-action="back-to-dashboard" style="padding:0;" data-i18n="common.back">‹ Zpět</button>
+      <span id="checklist-progress" style="font-weight:700;"></span>
+    </div>
+    <h1 data-i18n="checklist.title">Checklist mód</h1>
+    <p data-i18n="checklist.body">Zaškrtněte, co je sbaleno. Bez editace - rychlá orientace ve stresu.</p>
+    <button class="btn btn-secondary btn-block" id="checklist-reset-btn" style="display:none; margin-bottom:12px;" data-action="reset-checklist" data-i18n="checklist.reset">Odškrtnout vše</button>
+    <div id="checklist-groups"></div>
+  </section>
+
+  <!-- FEED -->
+  <section id="screen-feed" class="screen">
+    <div class="top-bar" style="padding-left:0;padding-right:0;">
+      <h1 data-i18n="feed.title">Novinky</h1>
+      <button class="btn-ghost" data-action="refresh-feed">↻</button>
+    </div>
+    <div id="feed-status"></div>
+    <div class="card" id="feed-list"></div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="screen-settings" class="screen">
+    <button class="back-link" data-action="back-to-dashboard" data-i18n="common.back">‹ Zpět</button>
+    <h1 data-i18n="settings.title">Nastavení</h1>
+
+    <h3 data-i18n="settings.install" id="install-section-heading">Instalace do telefonu</h3>
+    <div class="card" id="install-section">
+      <div class="banner" id="install-installed-banner" style="display:none;">✓ <span data-i18n="install.installed">Appka je nainstalovaná v telefonu.</span></div>
+      <p id="install-status" style="margin-top:0; font-size:13px;"></p>
+      <button class="btn btn-primary btn-block" id="install-btn" data-action="install-app" style="display:none;" data-i18n="install.button">Instalovat appku</button>
+      <div id="install-ios-steps" class="feed-offline-note" style="display:none; line-height:1.5;">
+        <p style="margin:0 0 6px;" data-i18n="install.iosIntro">Na iPhonu/iPadu se appka instaluje ručně přes Safari:</p>
+        <p style="margin:2px 0;" data-i18n="install.iosStep1">1. Klepněte na 📤 Sdílet dole v Safari</p>
+        <p style="margin:2px 0;" data-i18n="install.iosStep2">2. Vyberte „Přidat na plochu“</p>
+        <p style="margin:2px 0 8px;" data-i18n="install.iosStep3">3. Potvrďte „Přidat“</p>
+        <p style="font-size:12px; opacity:.8; margin:0;" data-i18n="install.iosNote">Funguje jen v Safari (ne v Chrome na iOS) - jinak se volba „Přidat na plochu“ nenabídne.</p>
+      </div>
+    </div>
+
+    <h3 data-i18n="settings.language">Jazyk</h3>
+    <div class="card">
+      <div class="field" style="margin-bottom:0;">
+        <select id="set-language"></select>
+      </div>
+    </div>
+
+    <h3 data-i18n="settings.appearance">Vzhled</h3>
+    <div class="theme-swatches card" id="theme-swatches"></div>
+
+    <h3 data-i18n="settings.household">Domácnost</h3>
+    <div class="card">
+      <div class="settings-row"><span data-i18n="onboarding.household.adults">Dospělí</span><span id="set-adults"></span></div>
+      <div class="settings-row"><span data-i18n="onboarding.household.children">Děti</span><span id="set-children"></span></div>
+      <div class="settings-row"><span data-i18n="onboarding.household.seniors">Senioři</span><span id="set-seniors"></span></div>
+      <div class="settings-row"><span data-i18n="onboarding.household.pets">Mazlíčci</span><span id="set-pets"></span></div>
+      <div class="settings-row"><span data-i18n="onboarding.household.duration">Doba udržitelnosti</span><span id="set-days"></span></div>
+    </div>
+    <p style="font-size:12px;" data-i18n="settings.householdNote">Změna profilu v MVP zatím nepřepočítává zpětně existující položky - upravte množství ručně u položek, kterých se změna týká.</p>
+
+    <h3 data-i18n="settings.notifications">Notifikace</h3>
+    <div class="card">
+      <div class="field">
+        <label data-i18n="settings.notifyDaysLabel">Výchozí předstih upozornění na expiraci (dní)</label>
+        <input type="number" id="set-notify-days" min="1">
+      </div>
+      <p id="notif-status" style="font-size:13px; margin:0 0 10px;"></p>
+      <button class="btn btn-secondary btn-block" id="notif-enable-btn" data-action="enable-notifications" data-i18n="notif.enable">Povolit upozornění</button>
+      <p style="font-size:12px; margin-top:10px;" data-i18n="notif.backgroundNote">Appka umí upozornit na expiraci/kontrolu jednou denně i bez otevření, ale jen v Chrome/Edge nainstalovaných na plochu (Android/desktop) - záleží na prohlížeči, jak často to skutečně spustí. V Safari na iOS to bez vlastního serveru nejde; tam appka upozorní vždy aspoň při otevření.</p>
+    </div>
+
+    <h3 data-i18n="settings.coefficients">Koeficienty přepočtu (spotřeba na den)</h3>
+    <div class="card">
+      <div class="field">
+        <label data-i18n="settings.coefChildLabel">Dítě (podíl spotřeby dospělého)</label>
+        <input type="number" id="set-coef-children" step="0.05" min="0" max="1">
+      </div>
+      <div class="field">
+        <label data-i18n="settings.coefSeniorLabel">Senior (podíl spotřeby dospělého)</label>
+        <input type="number" id="set-coef-seniors" step="0.05" min="0" max="1">
+      </div>
+      <button class="btn btn-secondary btn-block" data-action="save-settings" data-i18n="settings.saveSettings">Uložit nastavení</button>
+    </div>
+
+    <h3 data-i18n="settings.annualReview">Roční revize</h3>
+    <div class="card">
+      <p id="set-annual-info" style="margin-top:0;"></p>
+      <button class="btn btn-secondary btn-block" data-action="mark-annual-review" data-i18n="settings.markAnnualDone">Označit revizi jako hotovou dnes</button>
+    </div>
+
+    <h3 data-i18n="settings.data">Data</h3>
+    <div class="card">
+      <button class="btn btn-secondary btn-block" data-action="export-data" data-i18n="settings.exportData">Exportovat zálohu (JSON)</button>
+      <button class="btn btn-secondary btn-block" style="margin-top:8px;" data-action="trigger-import" data-i18n="settings.importData">Nahrát zálohu (JSON)</button>
+      <input type="file" id="import-file-input" accept="application/json" style="display:none;">
+      <button class="btn btn-danger btn-block" style="margin-top:8px;" data-action="reset-app" data-i18n="settings.resetApp">Smazat vše a spustit znovu</button>
+    </div>
+  </section>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav" id="bottom-nav" style="display:none;">
+    <button data-nav="dashboard" class="active"><span class="nav-icon">🏠</span><span data-i18n="nav.dashboard">Přehled</span></button>
+    <button data-nav="checklist"><span class="nav-icon">✅</span><span data-i18n="nav.checklist">Checklist</span></button>
+    <button data-nav="feed"><span class="nav-icon">📰</span><span data-i18n="nav.feed">Novinky</span></button>
+    <button data-nav="settings"><span class="nav-icon">⚙️</span><span data-i18n="nav.settings">Nastavení</span></button>
+  </nav>
+
+  <!-- ITEM MODAL -->
+  <div class="modal-overlay" id="item-modal-overlay">
+    <div class="modal-sheet">
+      <div class="modal-title">
+        <h2 id="item-modal-title">Položka</h2>
+        <button data-action="close-item-modal">✕</button>
+      </div>
+      <img class="photo-preview" id="item-photo-preview">
+      <div class="field">
+        <label data-i18n="item.modal.name">Název</label>
+        <input type="text" id="item-name">
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label data-i18n="item.modal.type">Typ</label>
+          <select id="item-type">
+            <option value="spotrebni" data-i18n="itemType.spotrebni">Spotřební</option>
+            <option value="trvala" data-i18n="itemType.trvala">Trvalá</option>
+            <option value="dokument" data-i18n="itemType.dokument">Dokument</option>
+            <option value="ukon" data-i18n="itemType.ukon">Úkon</option>
+          </select>
+        </div>
+        <div class="field">
+          <label data-i18n="item.modal.unit">Jednotka</label>
+          <input type="text" id="item-unit" data-i18n-placeholder="item.modal.unitPlaceholder" placeholder="ks, l, balení...">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label data-i18n="item.modal.required">Požadované množství</label>
+          <input type="number" id="item-required" step="0.1" min="0">
+        </div>
+        <div class="field">
+          <label data-i18n="item.modal.current">Aktuální množství</label>
+          <input type="number" id="item-current" step="0.1" min="0">
+        </div>
+      </div>
+      <div class="field" id="item-expiration-field">
+        <label data-i18n="item.modal.expiration">Datum expirace (nepovinné)</label>
+        <input type="date" id="item-expiration">
+      </div>
+      <div class="field" id="item-notify-field">
+        <label data-i18n="item.modal.notifyDays">Upozornit kolik dní předem (nepovinné, jinak globální nastavení)</label>
+        <input type="number" id="item-notify-days" min="0">
+      </div>
+      <div class="field" id="item-interval-field" style="display:none;">
+        <label data-i18n="item.modal.intervalDays">Interval kontroly (dní)</label>
+        <input type="number" id="item-interval-days" min="1">
+      </div>
+      <div class="field">
+        <label data-i18n="item.modal.note">Poznámka</label>
+        <textarea id="item-note" data-i18n-placeholder="item.modal.notePlaceholder" placeholder="dávkování, alergie, poznámky..."></textarea>
+      </div>
+      <div class="field">
+        <label data-i18n="item.modal.photo">Fotka</label>
+        <input type="file" id="item-photo-input" accept="image/*">
+      </div>
+      <button class="btn btn-primary btn-block" data-action="save-item" data-i18n="item.modal.save">Uložit</button>
+      <button class="btn btn-danger btn-block" style="margin-top:8px;" id="item-delete-btn" data-action="delete-item" data-i18n="item.modal.delete">Smazat položku</button>
+    </div>
+  </div>
+
+  <!-- CATEGORY MODAL -->
+  <div class="modal-overlay" id="category-modal-overlay">
+    <div class="modal-sheet">
+      <div class="modal-title">
+        <h2 id="category-modal-title" data-i18n="category.modal.title">Nová kategorie</h2>
+        <button data-action="close-category-modal">✕</button>
+      </div>
+      <div class="field">
+        <label data-i18n="category.modal.nameLabel">Název kategorie</label>
+        <input type="text" id="new-category-name">
+      </div>
+      <button class="btn btn-primary btn-block" data-action="save-category" data-i18n="common.create">Vytvořit</button>
+    </div>
+  </div>
+
+</div>
+
+<script src="js/i18n.js"></script>
+<script src="js/theme-icons.js"></script>
+<script src="js/data-model.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/templates.js"></script>
+<script src="js/notifications.js"></script>
+<script src="js/notifications-runtime.js"></script>
+<script src="js/feed.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
