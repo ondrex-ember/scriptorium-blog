@@ -1,6 +1,7 @@
 {
   "name": "Ember Pheno",
   "short_name": "Pheno",
+  "id": "/en/apps/pheno",
   "description": "Deník pěstitele s učícím se kalendářem zálivky",
   "lang": "cs",
   "start_url": "https://blog.myscriptorium.cz/en/apps/pheno",
@@ -26,6 +27,22 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "assets/screenshots/wide-1.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Přehled dnešní péče"
+    },
+    {
+      "src": "assets/screenshots/narrow-1.png",
+      "sizes": "540x960",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Přehled dnešní péče"
     }
   ]
 }
