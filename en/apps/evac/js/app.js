@@ -142,6 +142,7 @@
     $$("[data-i18n]").forEach((el) => { el.textContent = I18n.t(el.dataset.i18n); });
     $$("[data-i18n-placeholder]").forEach((el) => { el.placeholder = I18n.t(el.dataset.i18nPlaceholder); });
     $$("[data-i18n-title]").forEach((el) => { el.title = I18n.t(el.dataset.i18nTitle); });
+    $$("[data-i18n-aria-label]").forEach((el) => { el.setAttribute("aria-label", I18n.t(el.dataset.i18nAriaLabel)); });
     populateLanguageSelect();
   }
 
@@ -339,6 +340,17 @@
    * ============================================================ */
   function bindStaticEvents() {
     document.body.addEventListener("click", onGlobalClick);
+    let lastResume = 0;
+    const refreshOnResume = () => {
+      if (!state.profile || Date.now() - lastResume < 1000) return;
+      lastResume = Date.now();
+      if (["dashboard", "category", "checklist"].includes(state.activeScreen)) rerenderActiveScreen();
+      if (typeof NotificationsRuntime !== "undefined" && !isNativeShell()) {
+        NotificationsRuntime.runForegroundCheck(state.items, state.profile);
+      }
+    };
+    window.addEventListener("focus", refreshOnResume);
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshOnResume(); });
 
     $$("#duration-chips .chip").forEach((chip) => {
       chip.addEventListener("click", () => {
@@ -526,15 +538,46 @@
   /* ============================================================
    * DASHBOARD
    * ============================================================ */
+  const CATEGORY_ICON_PATHS = {
+    documents: '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>',
+    water: '<path d="M12 2C9 7 5 11 5 15a7 7 0 0 0 14 0c0-4-4-8-7-13Z"/><path d="M8 16a4 4 0 0 0 4 4"/>',
+    food: '<path d="M4 3v7a3 3 0 0 0 6 0V3M7 3v18M17 21V3c-3 2-4 5-4 10h4"/>',
+    medical: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M9 5V3h6v2M12 9v8M8 13h8"/>',
+    equipment: '<path d="m14 3 7 7-4 4-7-7 4-4ZM10 10l4 4-8 8-4-4 8-8ZM7 15l2 2"/>',
+    hygiene: '<path d="M4 11h16v4a7 7 0 0 1-7 7h-2a7 7 0 0 1-7-7v-4ZM9 11V6a3 3 0 0 1 6 0v5M3 11h18"/>',
+    clothing: '<path d="m8 3-5 4 3 4 2-2v12h8V9l2 2 3-4-5-4c-1 3-7 3-8 0Z"/>',
+    misc: '<rect x="3" y="7" width="18" height="14" rx="2"/><path d="M8 7V4h8v3M3 13h18M11 12h2v3h-2z"/>',
+    pets: '<path d="M12 14c-3 0-6 2-6 5 0 2 2 3 4 2a6 6 0 0 1 4 0c2 1 4 0 4-2 0-3-3-5-6-5Z"/><circle cx="5" cy="10" r="1.5"/><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="19" cy="10" r="1.5"/>'
+  };
+  function categoryIcon(key) {
+    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${CATEGORY_ICON_PATHS[key] || '<rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 7v10M7 12h10"/>'}</svg>`;
+  }
   function renderDashboard() {
     const summary = getDashboardSummary(state.items, state.profile);
+    const pct = summary.total ? Math.max(0, Math.min(100, Number(summary.ok_pct) || 0)) : 0;
+    const total = summary.ok + summary.missing + summary.expiring_soon + summary.expired + summary.needs_check;
+    const level = total === 0 ? "empty" : pct >= 80 ? "ready" : pct >= 40 ? "building" : "starting";
+    const readiness = $("#dash-readiness");
+    readiness.dataset.level = level;
+    $("#dash-readiness-ring").style.setProperty("--readiness", pct + "%");
+    $("#dash-readiness-number").textContent = pct + "%";
+    $("#dash-readiness-title").textContent = I18n.t("dashboard.milestone." + getReadinessMilestone(pct, total));
+    $("#dash-readiness-detail").textContent = I18n.t("dashboard.readyCount", { ready: summary.ok, total });
+    const share = (count) => total ? Math.round(count / total * 100) : 0;
+    const summaryTile = (type, icon, count, label) => `
+      <div class="summary-tile ${type}">
+        <div class="summary-tile-top"><svg class="ui-icon summary-symbol" aria-hidden="true"><use href="#ui-status-${icon}"/></svg><span class="summary-share">${share(count)}%</span></div>
+        <div class="num">${count}</div><div class="lbl">${label}</div>
+      </div>`;
     $("#dash-summary").innerHTML = `
-      <div class="summary-tile ok"><div class="num">${summary.ok}</div><div class="lbl">${I18n.t("status.ok")}</div></div>
-      <div class="summary-tile missing"><div class="num">${summary.missing}</div><div class="lbl">${I18n.t("status.missing")}</div></div>
-      <div class="summary-tile expiring"><div class="num">${summary.expiring_soon}</div><div class="lbl">${I18n.t("status.expiring_soon")}</div></div>
-      <div class="summary-tile expired"><div class="num">${summary.expired + summary.needs_check}</div><div class="lbl">${I18n.t("dashboard.summary.criticalCheck")}</div></div>
+      ${summaryTile("ok", "ok", summary.ok, I18n.t("status.ok"))}
+      ${summaryTile("missing", "missing", summary.missing, I18n.t("status.missing"))}
+      ${summaryTile("expiring", "expiring", summary.expiring_soon, I18n.t("status.expiring_soon"))}
+      ${summaryTile(summary.expired ? "expired" : "review", summary.expired ? "critical" : "review", summary.expired + summary.needs_check, I18n.t("dashboard.summary.criticalCheck"))}
     `;
-    $("#dash-progress-fill").style.width = summary.ok_pct + "%";
+    $("#dash-progress-fill").style.width = pct + "%";
+    $("#dash-progress").setAttribute("aria-valuenow", String(pct));
+    $("#dash-progress").setAttribute("aria-label", I18n.t("dashboard.readiness"));
 
     const annualBanner = $("#dash-annual-banner");
     annualBanner.innerHTML = isAnnualReviewDue(state.profile)
@@ -544,6 +587,18 @@
     renderDashboardCategoryFilter();
 
     const attentionAll = getItemsNeedingAttention(state.items, state.profile);
+    const nextPanel = $("#dash-next-action");
+    const nextItem = attentionAll[0];
+    nextPanel.hidden = !nextItem;
+    nextPanel.dataset.alert = nextItem && nextItem.status === ITEM_STATUS.EXPIRED ? "expired" : "none";
+    if (nextItem) {
+      $("#dash-next-name").textContent = getItemDisplayName(nextItem);
+      $("#dash-next-detail").textContent = I18n.t("status." + nextItem.status) + " · " + itemSubtext(nextItem);
+      $("#dash-next-button").setAttribute("aria-label", I18n.t("dashboard.openItem") + ": " + getItemDisplayName(nextItem));
+      $("#dash-next-button").onclick = () => openItemModal(nextItem.id, nextItem.category_id);
+    } else {
+      $("#dash-next-button").onclick = null;
+    }
     const attention = state.dashboardCategoryFilter
       ? attentionAll.filter((i) => i.category_id === state.dashboardCategoryFilter)
       : attentionAll;
@@ -573,12 +628,29 @@
         row.className = "category-row";
         const metaText = I18n.t("common.itemsCount", { count: catItems.length })
           + (attentionCount ? I18n.t("dashboard.attentionSuffix", { count: attentionCount }) : "");
-        row.innerHTML = `
-          <div>
-            <div class="cat-name">${getCategoryDisplayName(cat)}</div>
-            <div class="cat-meta">${metaText}</div>
-          </div>
-          <span class="cat-chevron">›</span>`;
+        const icon = document.createElement("span");
+        icon.className = "cat-icon";
+        icon.innerHTML = categoryIcon(cat.i18n_key || cat.id);
+        const content = document.createElement("div");
+        content.className = "cat-content";
+        const name = document.createElement("div");
+        name.className = "cat-name";
+        name.textContent = getCategoryDisplayName(cat);
+        const meta = document.createElement("div");
+        meta.className = "cat-meta";
+        meta.textContent = metaText;
+        const meter = document.createElement("span");
+        meter.className = "cat-meter";
+        meter.style.setProperty("--cat-progress", (catItems.length ? Math.round(100 * (catItems.length - attentionCount) / catItems.length) : 0) + "%");
+        meter.setAttribute("aria-hidden", "true");
+        content.append(name, meta, meter);
+        const chevron = document.createElement("span");
+        chevron.className = "cat-chevron";
+        chevron.textContent = "›";
+        row.append(icon, content, chevron);
+        row.setAttribute("role", "button");
+        row.setAttribute("tabindex", "0");
+        row.addEventListener("keydown", (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); openCategoryScreen(cat.id); } });
         row.addEventListener("click", () => openCategoryScreen(cat.id));
         catList.appendChild(row);
       });
@@ -605,18 +677,40 @@
     });
   }
 
-  function renderItemRow(item) {
+  function renderItemRow(item, animateUrgent = false) {
     const row = document.createElement("div");
     row.className = "item-row";
-    row.innerHTML = `
-      <span class="badge-dot ${item.status}"></span>
-      <div class="item-info">
-        <div class="item-name">${getItemDisplayName(item)}</div>
-        <div class="item-sub">${itemSubtext(item)}</div>
-      </div>
-      ${renderQuickActions(item)}
-      <span class="item-status-label status-text ${item.status}">${I18n.t("status." + item.status)}</span>
-    `;
+    if (item.status === ITEM_STATUS.EXPIRED) row.classList.add("is-expired");
+    else if (item.status === ITEM_STATUS.EXPIRING_SOON) row.classList.add("is-expiring");
+    if (animateUrgent && item.status === ITEM_STATUS.EXPIRED) row.classList.add("is-focus-urgent");
+    const dot = document.createElement("span");
+    dot.className = "badge-dot " + item.status;
+    dot.setAttribute("aria-hidden", "true");
+    const info = document.createElement("div");
+    info.className = "item-info";
+    const name = document.createElement("div");
+    name.className = "item-name";
+    name.textContent = getItemDisplayName(item);
+    const detail = document.createElement("div");
+    detail.className = "item-detail";
+    const sub = document.createElement("span");
+    sub.className = "item-sub";
+    sub.textContent = itemSubtext(item);
+    const status = document.createElement("span");
+    status.className = "item-status-label status-text " + item.status;
+    status.textContent = I18n.t("status." + item.status);
+    detail.append(sub, status);
+    info.append(name, detail);
+    const actions = document.createElement("div");
+    actions.className = "item-actions";
+    actions.innerHTML = renderQuickActions(item);
+    actions.querySelectorAll("button").forEach((button) => {
+      button.dataset.itemId = item.id;
+      button.setAttribute("aria-label", I18n.t(button.dataset.action === "qty-dec" ? "item.decrease" : button.dataset.action === "qty-inc" ? "item.increase" : "item.quickCheck") + ": " + getItemDisplayName(item));
+    });
+    row.append(dot, info, actions);
+    row.tabIndex = 0;
+    row.addEventListener("keydown", (e) => { if (e.target === row && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); openItemModal(item.id, item.category_id); } });
     row.addEventListener("click", (e) => {
       if (e.target.closest("[data-action]")) return; // quick-action buttons handle themselves
       openItemModal(item.id, item.category_id);
@@ -626,13 +720,12 @@
 
   function renderQuickActions(item) {
     if (item.type === ITEM_TYPES.UKON) {
-      return `<button class="btn-quick" data-action="quick-check" data-item-id="${item.id}" title="${I18n.t("item.quickCheck")}">✓</button>`;
+      return `<button class="btn-quick" data-action="quick-check" title="${I18n.t("item.quickCheck")}">✓</button>`;
     }
-    const step = QUANTITY_STEP_BY_UNIT[item.unit] || 1;
     return `
       <div class="qty-stepper">
-        <button class="qty-btn" data-action="qty-dec" data-item-id="${item.id}" data-step="${step}">−</button>
-        <button class="qty-btn" data-action="qty-inc" data-item-id="${item.id}" data-step="${step}">+</button>
+        <button class="qty-btn" data-action="qty-dec">−</button>
+        <button class="qty-btn" data-action="qty-inc">+</button>
       </div>`;
   }
 
@@ -676,18 +769,31 @@
     if (!cat) return navigateTo("dashboard");
     $("#cat-title").textContent = getCategoryDisplayName(cat);
     const items = annotateItemsWithStatus(state.items.filter((i) => i.category_id === cat.id), state.profile);
+    const ready = items.filter((i) => i.status === ITEM_STATUS.OK).length;
+    const pct = items.length ? Math.round(ready / items.length * 100) : 0;
+    $("#cat-overview").dataset.alert = items.some((i) => i.status === ITEM_STATUS.EXPIRED) ? "expired" : "none";
+    $("#cat-overview-icon").innerHTML = categoryIcon(cat.i18n_key || cat.id);
+    $("#cat-overview-count").textContent = I18n.t("category.readyItems", { ready, total: items.length });
+    $("#cat-overview-percent").textContent = pct + " %";
+    $("#cat-overview-fill").style.width = pct + "%";
     const list = $("#cat-item-list");
     list.innerHTML = "";
     if (!items.length) {
       list.innerHTML = `<div class="empty-state">${I18n.t("category.noItems")}</div>`;
     }
-    items.forEach((item) => list.appendChild(renderItemRow(item)));
+    let urgentAnimated = false;
+    items.forEach((item) => {
+      const animate = !urgentAnimated && item.status === ITEM_STATUS.EXPIRED;
+      if (animate) urgentAnimated = true;
+      list.appendChild(renderItemRow(item, animate));
+    });
   }
 
   /* ============================================================
    * ITEM MODAL
    * ============================================================ */
   function openItemModal(itemId, categoryId) {
+    closeCategoryModal();
     const isNew = !itemId;
     const item = isNew ? null : state.items.find((i) => i.id === itemId);
 
@@ -821,6 +927,7 @@
   let editingCategoryId = null;
 
   function openCategoryModal(categoryId) {
+    closeItemModal();
     editingCategoryId = categoryId || null;
     const cat = editingCategoryId ? state.categories.find((c) => c.id === editingCategoryId) : null;
     $("#category-modal-title").textContent = I18n.t(cat ? "category.modal.titleEdit" : "category.modal.title");
@@ -877,6 +984,14 @@
       .filter((i) => i.type !== ITEM_TYPES.UKON);
     const packedCount = annotated.filter((i) => i.packed).length;
     $("#checklist-progress").textContent = I18n.t("checklist.progress", { packed: packedCount, total: annotated.length });
+    const packedPct = annotated.length ? Math.round(packedCount / annotated.length * 100) : 0;
+    $("#packing-percent").textContent = packedPct + " %";
+    $("#packing-fill").style.width = packedPct + "%";
+    $("#packing-panel").setAttribute("aria-valuenow", String(packedPct));
+    $("#packing-panel").setAttribute("aria-label", I18n.t("checklist.packingProgress"));
+    $("#packing-remaining").textContent = annotated.length
+      ? I18n.t(packedCount === annotated.length ? "checklist.complete" : "checklist.remaining", { count: annotated.length - packedCount })
+      : I18n.t("checklist.empty");
     $("#checklist-reset-btn").style.display = packedCount ? "block" : "none";
 
     const byCat = {};
@@ -894,7 +1009,15 @@
         if (!items.length) return;
         const title = document.createElement("h3");
         title.className = "checklist-group-title";
-        title.textContent = getCategoryDisplayName(cat);
+        const icon = document.createElement("span");
+        icon.className = "checklist-group-icon";
+        icon.innerHTML = categoryIcon(cat.i18n_key || cat.id);
+        const titleName = document.createElement("span");
+        titleName.textContent = getCategoryDisplayName(cat);
+        const count = document.createElement("span");
+        count.className = "checklist-group-count";
+        count.textContent = items.filter((i) => i.packed).length + " / " + items.length;
+        title.append(icon, titleName, count);
         wrap.appendChild(title);
         const card = document.createElement("div");
         card.className = "card";
@@ -906,13 +1029,19 @@
   function renderChecklistRow(item) {
     const row = document.createElement("label");
     row.className = "checklist-item" + (item.packed ? " packed" : "");
-    row.innerHTML = `
-      <input type="checkbox" ${item.packed ? "checked" : ""}>
-      <div>
-        <div class="ci-name">${getItemDisplayName(item)}</div>
-        <div class="ci-meta status-text ${item.status}">${I18n.t("status." + item.status)} · ${fmtQty(item.current_quantity)}/${fmtQty(item.required_quantity)} ${getUnitLabel(item.unit)}</div>
-      </div>
-    `;
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = !!item.packed;
+    const copy = document.createElement("div");
+    copy.className = "ci-copy";
+    const name = document.createElement("div");
+    name.className = "ci-name";
+    name.textContent = getItemDisplayName(item);
+    const meta = document.createElement("div");
+    meta.className = "ci-meta status-text " + item.status;
+    meta.textContent = I18n.t("status." + item.status) + " · " + fmtQty(item.current_quantity) + "/" + fmtQty(item.required_quantity) + " " + getUnitLabel(item.unit);
+    copy.append(name, meta);
+    row.append(checkbox, copy);
     row.querySelector("input").addEventListener("change", async (e) => {
       item.packed = e.target.checked;
       await Storage.put("items", item);
@@ -944,11 +1073,13 @@
     } else {
       result = Feed.getCachedOnly();
     }
-    if (result.fromCache) {
+    if (result.fromCache && result.items.length) {
       const note = result.fetched_at
         ? I18n.t("feed.offlineNoteWithTime", { note: I18n.t("feed.offlineNote"), time: new Date(result.fetched_at).toLocaleString(I18n.getLocale()) })
         : I18n.t("feed.offlineNote");
       statusEl.innerHTML = `<div class="feed-offline-note">${note}</div>`;
+    } else if (result.error || navigator.onLine === false) {
+      statusEl.innerHTML = `<div class="feed-offline-note">${I18n.t("feed.unavailable")}</div>`;
     } else {
       statusEl.innerHTML = "";
     }
@@ -960,13 +1091,32 @@
     result.items.forEach((it) => {
       const div = document.createElement("div");
       div.className = "feed-item";
-      div.innerHTML = `
-        <div class="fi-source">${it.source}</div>
-        <a href="${it.link}" target="_blank" rel="noopener">
-          <div class="fi-title">${it.title}</div>
-        </a>
-        <div class="fi-date">${it.pubDate ? new Date(it.pubDate).toLocaleString(I18n.getLocale()) : ""}</div>
-      `;
+      const source = document.createElement("div");
+      source.className = "fi-source";
+      source.textContent = it.source || "";
+      const title = document.createElement("div");
+      title.className = "fi-title";
+      title.textContent = it.title || "";
+      let link = null;
+      try {
+        const url = new URL(it.link);
+        if (url.protocol === "https:" || url.protocol === "http:") link = url.href;
+      } catch (e) { /* malformed feed link: show title without a link */ }
+      if (link) {
+        const anchor = document.createElement("a");
+        anchor.href = link;
+        anchor.target = "_blank";
+        anchor.rel = "noopener noreferrer";
+        anchor.appendChild(title);
+        div.append(source, anchor);
+      } else {
+        div.append(source, title);
+      }
+      const date = document.createElement("div");
+      date.className = "fi-date";
+      const parsedDate = it.pubDate ? new Date(it.pubDate) : null;
+      date.textContent = parsedDate && !Number.isNaN(parsedDate.getTime()) ? parsedDate.toLocaleString(I18n.getLocale()) : "";
+      div.appendChild(date);
       listEl.appendChild(div);
     });
   }

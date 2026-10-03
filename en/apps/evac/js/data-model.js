@@ -35,7 +35,9 @@ function uid(prefix) {
 }
 
 function todayISO() {
-  return new Date().toISOString().slice(0, 10);
+  const now = new Date();
+  return [now.getFullYear(), String(now.getMonth() + 1).padStart(2, "0"),
+    String(now.getDate()).padStart(2, "0")].join("-");
 }
 
 function daysBetween(fromISO, toISO) {

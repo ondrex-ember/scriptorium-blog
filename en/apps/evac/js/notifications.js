@@ -32,6 +32,17 @@ function getItemsNeedingAttention(items, profile, today) {
     .sort((a, b) => STATUS_PRIORITY[a.status] - STATUS_PRIORITY[b.status]);
 }
 
+/** Time-sensitive alerts must still fire when an item is also short on quantity. */
+function getTimeSensitiveItems(items, profile, today) {
+  today = today || todayISO();
+  return annotateItemsWithStatus(items, profile, today).filter((item) => {
+    if ([ITEM_STATUS.EXPIRED, ITEM_STATUS.EXPIRING_SOON, ITEM_STATUS.NEEDS_CHECK].includes(item.status)) return true;
+    if (!item.expiration_tracked || !item.expiration_date) return false;
+    const notifyDays = item.notification_days_before ?? profile.global_notification_days_before ?? 14;
+    return daysBetween(today, item.expiration_date) <= notifyDays;
+  });
+}
+
 /** Dashboard summary: counts + percentages per status. */
 function getDashboardSummary(items, profile, today) {
   const annotated = annotateItemsWithStatus(items, profile, today);
@@ -45,6 +56,15 @@ function getDashboardSummary(items, profile, today) {
   }
   counts.ok_pct = counts.total ? Math.round((counts.ok / counts.total) * 100) : 100;
   return counts;
+}
+
+/** Ten-point readiness bands beginning at 5%, with separate empty/complete states. */
+function getReadinessMilestone(percent, total) {
+  if (!total) return "empty";
+  const value = Math.max(0, Math.min(100, Number(percent) || 0));
+  if (value < 5) return "begin";
+  if (value === 100) return "complete";
+  return String(Math.min(9, Math.floor((value - 5) / 10)));
 }
 
 const ANNUAL_REVIEW_INTERVAL_DAYS = 365;
@@ -64,7 +84,8 @@ function daysUntilAnnualReview(profile, today) {
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
     STATUS_PRIORITY, getStatusLabel,
-    annotateItemsWithStatus, getItemsNeedingAttention, getDashboardSummary,
+    annotateItemsWithStatus, getItemsNeedingAttention, getTimeSensitiveItems, getDashboardSummary,
+    getReadinessMilestone,
     ANNUAL_REVIEW_INTERVAL_DAYS, isAnnualReviewDue, daysUntilAnnualReview
   };
 }

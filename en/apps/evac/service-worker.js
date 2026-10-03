@@ -15,11 +15,12 @@
  * na file:// vůbec neregistrují.
  */
 
-const CACHE_NAME = "evac-cache-v2";
+const CACHE_NAME = "evac-cache-rcv0771";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./manifest.json",
+  "./manifest.json?v=0771",
   "./css/style.css",
   "./css/themes.css",
   "./js/i18n.js",
@@ -29,17 +30,21 @@ const APP_SHELL = [
   "./js/templates.js",
   "./js/notifications.js",
   "./js/feed.js",
+  "./js/feed.js?v=0771",
   "./js/notifications-runtime.js",
   "./js/app.js",
-  "./assets/icons/icon-192.png",
-  "./assets/icons/icon-512.png",
-  "./assets/icons/icon-512-maskable.png"
+  "./js/app.js?v=0771",
+  "./assets/icons/hand-192-v076.png",
+  "./assets/icons/hand-512-v076.png",
+  "./assets/icons/hand-maskable-512-v076.png",
+  "./assets/icons/hand-apple-touch-v076.png",
+  "./assets/icons/omnia-hand-mark.png"
 ];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(APP_SHELL))
+      .then((cache) => cache.addAll(APP_SHELL.map((url) => new Request(url, { cache: "reload" }))))
       .then(() => self.skipWaiting())
   );
 });
@@ -47,32 +52,39 @@ self.addEventListener("install", (event) => {
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k))))
+      .then((keys) => Promise.all(keys.filter((k) => k.startsWith("evac-cache-") && k !== CACHE_NAME).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
 
-// Cache-first for same-origin GET requests, network fallback (and cache the
-// fresh response for next time). Anything cross-origin (feed API) always
-// goes to the network untouched - the app already has its own cache/fallback
-// logic for that in feed.js.
+// Navigations use the network when available, so a newly deployed HTML page
+// can announce a fresh manifest and icon. Cached assets remain available offline.
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
 
-  event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(event.request).then((response) => {
-        if (response && response.ok) {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
-        }
-        return response;
-      }).catch(() => cached);
-    })
-  );
+  if (event.request.mode === "navigate") {
+    event.respondWith(fetch(event.request).then((response) => {
+      if (response && response.ok) {
+        const copy = response.clone();
+        event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy)));
+      }
+      return response;
+    }).catch(() => caches.match(event.request).then((cached) => cached || caches.match("./index.html"))));
+    return;
+  }
+
+  event.respondWith(caches.match(event.request).then((cached) => {
+    if (cached) return cached;
+    return fetch(event.request).then((response) => {
+      if (response && response.ok) {
+        const copy = response.clone();
+        event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy)));
+      }
+      return response;
+    });
+  }));
 });
 
 /* ---------------- Best-effort background check ---------------- */
@@ -88,18 +100,17 @@ async function runBackgroundCheck() {
     I18n.setLocale(profile.locale || "cs");
 
     const items = await Storage.getAll("items");
-    const attention = getItemsNeedingAttention(items, profile)
-      .filter((i) => i.status !== "missing"); // "missing" is a standing gap, not a time-sensitive alert
+    const attention = getTimeSensitiveItems(items, profile);
     if (!attention.length) return;
 
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayISO();
     const lastNotifiedDate = await Storage.getMeta("last_notification_date");
     if (lastNotifiedDate === today) return; // at most one notification per day
 
     await self.registration.showNotification(I18n.t("app.title"), {
       body: I18n.t("notif.summaryBody", { count: attention.length }),
-      icon: "assets/icons/icon-192.png",
-      badge: "assets/icons/icon-192.png",
+      icon: "assets/icons/hand-192-v076.png",
+      badge: "assets/icons/hand-192-v076.png",
       tag: "evac-attention"
     });
     await Storage.setMeta("last_notification_date", today);

@@ -136,20 +136,55 @@ const Storage = (function () {
 
     async importAll(data) {
       if (!data || data.export_format !== "evac-zavazadlo-backup"
-        || !Array.isArray(data.profiles) || !Array.isArray(data.categories) || !Array.isArray(data.items)) {
+        || data.export_version !== 1 || !Array.isArray(data.meta)
+        || !Array.isArray(data.profiles) || !Array.isArray(data.categories)
+        || !Array.isArray(data.items) || !Array.isArray(data.photos)) {
         throw new Error("invalid_backup");
       }
-      await Promise.all(["meta", "profiles", "categories", "items", "photos"].map((s) => this.clear(s)));
-      if (data.meta && data.meta.length) await this.bulkPut("meta", data.meta);
-      if (data.profiles.length) await this.bulkPut("profiles", data.profiles);
-      if (data.categories.length) await this.bulkPut("categories", data.categories);
-      if (data.items.length) await this.bulkPut("items", data.items);
-      if (data.photos && data.photos.length) {
-        const restored = await Promise.all(data.photos.map(async (p) => ({
-          id: p.id, created_at: p.created_at, blob: await dataUrlToBlob(p.dataUrl)
-        })));
-        await this.bulkPut("photos", restored);
+      const activeId = data.meta.find((m) => m && m.key === "active_profile_id")?.value;
+      const activeProfile = data.profiles.find((p) => p && p.id === activeId);
+      const unique = (rows, key) => new Set(rows.map((row) => row[key])).size === rows.length;
+      const categoryIds = new Set(data.categories.map((c) => c && c.id));
+      if (!activeId || !activeProfile || !activeProfile.coefficients
+        || typeof activeProfile.created_at !== "string"
+        || !Number.isFinite(activeProfile.days)
+        || !["adults", "children", "seniors", "pets"].every((key) => Number.isFinite(activeProfile[key]))
+        || !["children", "seniors"].every((key) => Number.isFinite(activeProfile.coefficients[key]))
+        || !data.meta.some((m) => m && m.key === "onboarding_complete" && m.value === true)
+        || data.meta.some((m) => !m || typeof m.key !== "string")
+        || data.profiles.some((p) => !p || !p.id)
+        || data.categories.some((c) => !c || !c.id || typeof c.name !== "string")
+        || data.items.some((i) => !i || !i.id || !categoryIds.has(i.category_id)
+          || typeof i.name !== "string" || !Number.isFinite(i.required_quantity)
+          || !Number.isFinite(i.current_quantity))
+        || data.photos.some((p) => !p || !p.id || typeof p.dataUrl !== "string"
+          || !/^data:image\/[a-z0-9.+-]+;base64,/i.test(p.dataUrl))
+        || ![[data.meta, "key"], [data.profiles, "id"], [data.categories, "id"],
+          [data.items, "id"], [data.photos, "id"]].every(([rows, key]) => unique(rows, key))) {
+        throw new Error("invalid_backup");
       }
+      // Prepare photo blobs before touching the existing database.
+      const restoredPhotos = await Promise.all(data.photos.map(async (p) => ({
+        id: p.id, created_at: p.created_at, blob: await dataUrlToBlob(p.dataUrl)
+      })));
+      const db = await open();
+      const storeNames = ["meta", "profiles", "categories", "items", "photos"];
+      // One transaction: any failed put aborts the entire restore, including clears.
+      await new Promise((resolve, reject) => {
+        const transaction = db.transaction(storeNames, "readwrite");
+        transaction.oncomplete = resolve;
+        transaction.onabort = () => reject(transaction.error || new Error("import_aborted"));
+        try {
+          for (const name of storeNames) transaction.objectStore(name).clear();
+          for (const [name, rows] of [["meta", data.meta], ["profiles", data.profiles],
+            ["categories", data.categories], ["items", data.items], ["photos", restoredPhotos]]) {
+            for (const row of rows) transaction.objectStore(name).put(row);
+          }
+        } catch (error) {
+          transaction.abort();
+          reject(error);
+        }
+      });
     }
   };
 })();

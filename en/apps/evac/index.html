@@ -2,38 +2,65 @@
 <html lang="cs" data-theme="light">
 <head>
 <meta charset="UTF-8">
-<!-- Vercel serves this blog with trailingSlash:false, so the page URL never
-     ends in "/". Without this <base>, every relative CSS/JS/manifest link
-     below would resolve one directory too high (…/apps/ instead of
-     …/apps/evac/). Pin the base explicitly so it doesn't matter how the
-     host rewrites the visible URL. Update this if the app ever moves. -->
-<base href="https://blog.myscriptorium.cz/en/apps/evac/">
+<!-- A static base lets the parser and preload scanner resolve production
+     assets correctly even before JavaScript executes. -->
+<base id="app-base" href="/en/apps/evac/">
+<script>
+// Local previews and downloaded files keep their own directory.
+if (location.hostname !== "blog.myscriptorium.cz") {
+  document.getElementById("app-base").href = new URL("./", location.href).href;
+}
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title data-i18n="app.title">Evakuační zavazadlo</title>
-<link rel="manifest" href="manifest.json">
+<link rel="manifest" href="manifest.json?v=0771">
 <meta name="theme-color" content="#2f6f5e">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Evakuace">
-<link rel="icon" href="assets/icons/icon-192.png">
-<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+<link rel="icon" href="assets/icons/hand-192-v076.png">
+<link rel="apple-touch-icon" href="assets/icons/hand-apple-touch-v076.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Cinzel:wght@500;700&family=Quicksand:wght@500;700&family=Oswald:wght@500;700&family=EB+Garamond:wght@500;700&family=Special+Elite&family=Patrick+Hand&family=Share+Tech+Mono&family=VT323&family=Lora:wght@500;700&display=swap">
 <link rel="stylesheet" href="css/themes.css">
 <link rel="stylesheet" href="css/style.css">
+
+  <meta property="og:image" content="https://blog.myscriptorium.cz/assets/img/og-default.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Emergency evacuation bag checklist" />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://blog.myscriptorium.cz/assets/img/og-default.jpg" />
 </head>
 <body>
+<svg class="ui-icon-sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+  <symbol id="ui-kit" viewBox="0 0 24 24"><path d="M8 7V5a4 4 0 0 1 8 0v2M5 8.5A2.5 2.5 0 0 1 7.5 6h9A2.5 2.5 0 0 1 19 8.5V20a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V8.5Z"/><path d="M5 13h14M9 17h6M12 14v6M8 6V4M16 6V4"/></symbol>
+  <symbol id="ui-overview" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><path d="m14 17 2 2 5-6"/></symbol>
+  <symbol id="ui-checklist" viewBox="0 0 24 24"><path d="M9 4h6M9 3h6v3H9zM7 5H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M7 11h2m3 0h5M7 16l2 2 3-4m2 3h3"/></symbol>
+  <symbol id="ui-news" viewBox="0 0 24 24"><path d="M4 3h14v15a3 3 0 0 0 3 3H6a3 3 0 0 1-3-3V5a2 2 0 0 1 2-2M18 7h3v11a3 3 0 0 1-3 3"/><path d="M7 7h7v4H7zM7 15h7M7 18h7"/></symbol>
+  <symbol id="ui-settings" viewBox="0 0 24 24"><path d="m10 2-.5 2.2-2 1.1-2.1-.8L3.5 7.7l1.6 1.6v2.4l-1.6 1.6 1.9 3.2 2.1-.8 2 1.1L10 19h4l.5-2.2 2-1.1 2.1.8 1.9-3.2-1.6-1.6V9.3l1.6-1.6-1.9-3.2-2.1.8-2-1.1L14 2h-4Z" transform="translate(0 1.5)"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="ui-household" viewBox="0 0 24 24"><circle cx="9" cy="7" r="3"/><path d="M3 20v-3a6 6 0 0 1 12 0v3H3ZM17 7a3 3 0 0 1 0 6M17 15a5 5 0 0 1 4 5h-4"/></symbol>
+  <symbol id="ui-templates" viewBox="0 0 24 24"><rect x="3" y="4" width="8" height="7" rx="1.5"/><rect x="13" y="4" width="8" height="7" rx="1.5"/><rect x="3" y="13" width="8" height="7" rx="1.5"/><path d="M15 16.5h5M17.5 14v5"/></symbol>
+  <symbol id="ui-summary" viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.5 8.5 8 11 4.5-2.5 8-6 8-11V5l-8-3Z"/><path d="m8 12 3 3 5-6"/></symbol>
+  <symbol id="ui-status-ok" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m7.5 12 3 3 6-6"/></symbol>
+  <symbol id="ui-status-missing" viewBox="0 0 24 24"><path d="M4 7h16v13H4zM8 7V4h8v3M8 13h8"/><path d="M12 10v6"/></symbol>
+  <symbol id="ui-status-expiring" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2M12 3v2"/></symbol>
+  <symbol id="ui-status-critical" viewBox="0 0 24 24"><path d="M10.2 4.5 2.5 18a2 2 0 0 0 1.7 3h15.6a2 2 0 0 0 1.7-3L13.8 4.5a2 2 0 0 0-3.6 0Z"/><path d="M12 9v5m0 3h.01"/></symbol>
+  <symbol id="ui-status-review" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5M8 10.5l1.8 1.8 3.5-3.5"/></symbol>
+</svg>
 <div id="theme-emblem" class="theme-emblem" aria-hidden="true"></div>
 <div id="app">
 
   <!-- APP HEADER (persistent brand bar, shown above every screen) -->
   <header id="app-header" class="app-header">
+    <img class="app-brand-mark" src="assets/icons/omnia-hand-mark.png" width="42" height="42" alt="">
     <div class="app-header-brand">
       <span class="app-header-name">Ember Omnia</span>
       <span class="app-header-sub" data-i18n="header.title">Evakuační zavazadlo</span>
     </div>
-    <span class="app-header-version">RCv0.64</span>
+    <span class="app-header-version">RCv0.771</span>
   </header>
 
   <!-- ONBOARDING -->
@@ -41,7 +68,7 @@
 
     <div id="ob-step-0" class="ob-step">
       <div class="hero">
-        <div class="icon">🎒</div>
+        <div class="icon"><img src="assets/icons/omnia-hand-mark.png" alt=""></div>
         <h1 data-i18n="onboarding.welcome.title">Evakuační zavazadlo</h1>
         <p data-i18n="onboarding.welcome.body">Sestavte si a udržujte domácí zásoby pro krizové situace - vodu, jídlo, léky i doklady. Appka funguje offline a hlídá expirace za vás.</p>
       </div>
@@ -50,7 +77,7 @@
 
     <div id="ob-step-1" class="ob-step" style="display:none">
       <button class="back-link" data-action="ob-prev" data-i18n="common.back">‹ Zpět</button>
-      <h2 data-i18n="onboarding.household.title">Vaše domácnost</h2>
+      <h2 class="ob-heading"><svg class="ui-icon" aria-hidden="true"><use href="#ui-household"/></svg><span data-i18n="onboarding.household.title">Vaše domácnost</span></h2>
       <p data-i18n="onboarding.household.body">Podle toho appka přepočítá potřebné množství zásob.</p>
 
       <div class="card">
@@ -122,7 +149,7 @@
 
     <div id="ob-step-2" class="ob-step" style="display:none">
       <button class="back-link" data-action="ob-prev" data-i18n="common.back">‹ Zpět</button>
-      <h2 data-i18n="onboarding.templates.title">Šablony kategorií</h2>
+      <h2 class="ob-heading"><svg class="ui-icon" aria-hidden="true"><use href="#ui-templates"/></svg><span data-i18n="onboarding.templates.title">Šablony kategorií</span></h2>
       <p data-i18n="onboarding.templates.body">Vyberte, které kategorie chcete rovnou naimportovat. Kdykoliv později přidáte vlastní.</p>
       <div class="card" id="template-category-list"></div>
       <button class="btn btn-primary" data-action="ob-next" data-i18n="common.continue">Pokračovat</button>
@@ -130,7 +157,7 @@
 
     <div id="ob-step-3" class="ob-step" style="display:none">
       <button class="back-link" data-action="ob-prev" data-i18n="common.back">‹ Zpět</button>
-      <h2 data-i18n="onboarding.summary.title">Souhrn</h2>
+      <h2 class="ob-heading"><svg class="ui-icon" aria-hidden="true"><use href="#ui-summary"/></svg><span data-i18n="onboarding.summary.title">Souhrn</span></h2>
       <div class="card" id="ob-summary"></div>
       <p style="font-size:13px;" data-i18n="onboarding.summary.note">Množství jde po importu kdykoliv ručně upravit u jednotlivých položek.</p>
       <button class="btn btn-primary" data-action="ob-finish" data-i18n="onboarding.summary.cta">Naimportovat a otevřít Dashboard</button>
@@ -142,11 +169,20 @@
   <section id="screen-dashboard" class="screen">
     <div class="top-bar">
       <h1 data-i18n="dashboard.title">Přehled</h1>
-      <button class="btn-ghost" data-action="open-settings">⚙️</button>
+      <button class="btn-ghost" data-action="open-settings" data-i18n-title="nav.settings" data-i18n-aria-label="nav.settings" title="Nastavení" aria-label="Nastavení"><svg class="ui-icon" aria-hidden="true"><use href="#ui-settings"/></svg></button>
     </div>
     <div id="dash-annual-banner"></div>
+    <div class="readiness-panel" id="dash-readiness">
+      <div class="readiness-mark" aria-hidden="true"><span class="readiness-ring" id="dash-readiness-ring"><span id="dash-readiness-number">0%</span></span></div>
+      <div class="readiness-copy"><span class="readiness-eyebrow" data-i18n="dashboard.readiness">Připravenost zavazadla</span><strong id="dash-readiness-title"></strong><span id="dash-readiness-detail"></span></div>
+    </div>
     <div class="summary-grid" id="dash-summary"></div>
-    <div class="progress-bar"><div id="dash-progress-fill" style="width:0%"></div></div>
+    <div class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="dash-progress"><div id="dash-progress-fill" style="width:0%"></div></div>
+    <div class="next-action" id="dash-next-action" hidden>
+      <span class="next-action-icon" aria-hidden="true">!</span>
+      <div class="next-action-copy"><span data-i18n="dashboard.nextAction">Nejbližší krok</span><strong id="dash-next-name"></strong><small id="dash-next-detail"></small></div>
+      <button type="button" id="dash-next-button" data-i18n-title="dashboard.openItem" title="Otevřít položku" aria-label="Otevřít položku">›</button>
+    </div>
 
     <div id="dash-attention-wrap">
       <h3 data-i18n="dashboard.attentionTitle">Vyžaduje pozornost</h3>
@@ -171,6 +207,11 @@
         <button class="btn-ghost" data-action="delete-category" data-i18n-title="category.deleteAction" title="Smazat kategorii">🗑</button>
       </div>
     </div>
+    <div class="category-overview" id="cat-overview">
+      <span class="category-overview-icon" id="cat-overview-icon" aria-hidden="true"></span>
+      <div class="category-overview-copy"><span data-i18n="category.readiness">Stav kategorie</span><strong id="cat-overview-count"></strong><div class="category-overview-track"><span id="cat-overview-fill"></span></div></div>
+      <strong class="category-overview-percent" id="cat-overview-percent">0 %</strong>
+    </div>
     <div class="card" id="cat-item-list"></div>
     <button class="btn btn-secondary btn-block" style="margin-top:10px;" data-action="add-item" data-i18n="category.addItem">+ Přidat položku</button>
   </section>
@@ -183,6 +224,11 @@
     </div>
     <h1 data-i18n="checklist.title">Checklist mód</h1>
     <p data-i18n="checklist.body">Zaškrtněte, co je sbaleno. Bez editace - rychlá orientace ve stresu.</p>
+    <div class="packing-panel" id="packing-panel" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+      <div><span data-i18n="checklist.packingProgress">Průběh balení</span><strong id="packing-percent">0 %</strong></div>
+      <div class="packing-track"><span id="packing-fill"></span></div>
+      <small id="packing-remaining"></small>
+    </div>
     <button class="btn btn-secondary btn-block" id="checklist-reset-btn" style="display:none; margin-bottom:12px;" data-action="reset-checklist" data-i18n="checklist.reset">Odškrtnout vše</button>
     <div id="checklist-groups"></div>
   </section>
@@ -277,11 +323,12 @@
 
   <!-- BOTTOM NAV -->
   <nav class="bottom-nav" id="bottom-nav" style="display:none;">
-    <button data-nav="dashboard" class="active"><span class="nav-icon">🏠</span><span data-i18n="nav.dashboard">Přehled</span></button>
-    <button data-nav="checklist"><span class="nav-icon">✅</span><span data-i18n="nav.checklist">Checklist</span></button>
-    <button data-nav="feed"><span class="nav-icon">📰</span><span data-i18n="nav.feed">Novinky</span></button>
-    <button data-nav="settings"><span class="nav-icon">⚙️</span><span data-i18n="nav.settings">Nastavení</span></button>
+    <button data-nav="dashboard" class="active"><svg class="ui-icon nav-icon" aria-hidden="true"><use href="#ui-overview"/></svg><span data-i18n="nav.dashboard">Přehled</span></button>
+    <button data-nav="checklist"><svg class="ui-icon nav-icon" aria-hidden="true"><use href="#ui-checklist"/></svg><span data-i18n="nav.checklist">Checklist</span></button>
+    <button data-nav="feed"><svg class="ui-icon nav-icon" aria-hidden="true"><use href="#ui-news"/></svg><span data-i18n="nav.feed">Novinky</span></button>
+    <button data-nav="settings"><svg class="ui-icon nav-icon" aria-hidden="true"><use href="#ui-settings"/></svg><span data-i18n="nav.settings">Nastavení</span></button>
   </nav>
+</div>
 
   <!-- ITEM MODAL -->
   <div class="modal-overlay" id="item-modal-overlay">
@@ -360,8 +407,6 @@
     </div>
   </div>
 
-</div>
-
 <script src="js/i18n.js"></script>
 <script src="js/theme-icons.js"></script>
 <script src="js/data-model.js"></script>
@@ -369,7 +414,7 @@
 <script src="js/templates.js"></script>
 <script src="js/notifications.js"></script>
 <script src="js/notifications-runtime.js"></script>
-<script src="js/feed.js"></script>
-<script src="js/app.js"></script>
+<script src="js/feed.js?v=0771"></script>
+<script src="js/app.js?v=0771"></script>
 </body>
 </html>
