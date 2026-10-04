@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
+<!-- Consent Mode v2 (advanced): default state, must load before GTM -->
+<script>
+window.dataLayer=window.dataLayer||[];
+function gtag(){dataLayer.push(arguments);}
+gtag('consent','default',{ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',analytics_storage:'denied',functionality_storage:'denied',wait_for_update:500});
+gtag('set','ads_data_redaction',true);
+try{if(localStorage.getItem('blog_consent')==='granted'){gtag('consent','update',{analytics_storage:'granted',functionality_storage:'granted'});}}catch(e){}
+</script>
   <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
   new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
   j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
@@ -84,9 +92,10 @@
   }
   </script>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" />
+  <link rel="preload" as="font" type="font/woff2" href="/assets/fonts/crimson-pro-latin-400-normal.woff2" crossorigin />
+  <link rel="preload" as="font" type="font/woff2" href="/assets/fonts/crimson-pro-latin-ext-400-normal.woff2" crossorigin />
+  <link rel="preload" as="font" type="font/woff2" href="/assets/fonts/im-fell-english-400-normal.woff2" crossorigin />
+  <link rel="stylesheet" href="/assets/css/fonts.css" />
   <link rel="stylesheet" href="/assets/css/style.v2.css" />
   <link rel="icon" href="/assets/img/favicon.ico" />
   
@@ -180,6 +189,21 @@
 height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <div class="page-wrap">
   <div class="parchment">
+
+    <header class="site-header">
+      <a href="/" class="site-logo"><span>S</span>criptorium</a>
+      <p class="site-tagline">Deník z dílny inkoustu a kódu</p>
+      <nav class="site-nav" aria-label="Hlavní navigace">
+        <a href="/">Vše</a>
+        <a href="/tag/historie">Historie</a>
+        <a href="/tag/hry">Hry</a>
+        <a href="/tag/aplikace">Aplikace</a>
+        <a href="/tag/skripty">Skripty</a>
+        <a href="/o-autorovi">O autorovi</a>
+        <a href="https://myscriptorium.cz" target="_blank" rel="noopener">↗ Hra</a>
+        <button type="button" onclick="BlogLang.toggle()" class="lang-toggle-btn" style="background: transparent; border: 1px solid rgba(120,80,40,0.3); border-radius: 4px; padding: 2px 8px; cursor: pointer; font-family: inherit; font-size: 0.85em; color: inherit; margin-left: 6px;">🇨🇿 CS / 🇬🇧 EN</button>
+      </nav>
+    </header>
 
     <nav class="back-link" aria-label="Drobečková navigace"><a href="/" style="color:inherit;text-decoration:none">← Všechny zápisky</a><span aria-hidden="true">›</span><a href="/tag/aplikace" style="color:inherit;text-decoration:none">Aplikace</a></nav>
 
@@ -318,7 +342,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
     <footer class="site-footer">
       <p class="site-footer-ornament">☩</p>
-      <p>Deník z dílny inkoustu a kódu</p>
+      <p>Deník z dílny inkoustu a kódu
+        &nbsp;·&nbsp;
+        <a href="#" data-consent-open>🍪 Cookies</a>
+      </p>
     </footer>
 
   </div>
@@ -370,5 +397,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   });
 </script>
 
+<script src="/assets/js/blog-consent.v1.js" defer></script>
+<script src="/assets/js/blog-modals.v2.js" defer></script>
 </body>
 </html>

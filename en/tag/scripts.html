@@ -1,7 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- Google Tag Manager -->
+  <!-- Consent Mode v2 (advanced): default state, must load before GTM -->
+<script>
+window.dataLayer=window.dataLayer||[];
+function gtag(){dataLayer.push(arguments);}
+gtag('consent','default',{ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',analytics_storage:'denied',functionality_storage:'denied',wait_for_update:500});
+gtag('set','ads_data_redaction',true);
+try{if(localStorage.getItem('blog_consent')==='granted'){gtag('consent','update',{analytics_storage:'granted',functionality_storage:'granted'});}}catch(e){}
+</script>
+<!-- Google Tag Manager -->
   <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
   new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
   j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
@@ -43,9 +51,9 @@
   }
   </script>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" />
+  <link rel="preload" as="font" type="font/woff2" href="/assets/fonts/crimson-pro-latin-400-normal.woff2" crossorigin />
+  <link rel="preload" as="font" type="font/woff2" href="/assets/fonts/im-fell-english-400-normal.woff2" crossorigin />
+  <link rel="stylesheet" href="/assets/css/fonts.css" />
   <link rel="stylesheet" href="/assets/css/style.v2.css" />
   <link rel="icon" href="/assets/img/favicon.ico" />
 
@@ -94,14 +102,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         Blog by <a href="https://ember-pa.cz" target="_blank" rel="noopener">Ondrex</a>
         &nbsp;·&nbsp;
         <a href="https://myscriptorium.cz" target="_blank" rel="noopener">Play Scriptorium</a>
+        &nbsp;·&nbsp;
+        <a href="#" data-consent-open>🍪 Cookies</a>
       </p>
     </footer>
 
   </div>
 </div>
 
-<script src="/assets/js/blog-cat.js"></script>
-<script src="/assets/js/blog-modals.js"></script>
+<script src="/assets/js/blog-cat.js" defer></script>
 
+<script src="/assets/js/blog-consent.v1.js" defer></script>
+<script src="/assets/js/blog-modals.v2.js" defer></script>
 </body>
 </html>
