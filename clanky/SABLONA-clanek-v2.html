@@ -1,6 +1,21 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
+<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-NZSGNPD8');</script>
+<!-- End Google Tag Manager -->
+
+  <!-- ═══════════════════════════════════════════════
+       ŠABLONA - neindexuje se (X-Robots-Tag v vercel.json pro /clanky/SABLONA-*).
+       Při použití: ulož pod novým názvem BEZ prefixu "SABLONA-" a smaž tento komentář.
+       Neukládej do šablony meta robots noindex - zkopíroval by se do nových článků.
+  - Tato šablona má 3 varianty headlineru (a/b/c). Po výběru varianty SMAŽ zbylé dva
+    bloky (.hl-a/.hl-b/.hl-c) i s jejich <h1>, jinak bude v HTML víc H1 (SEO: jen jeden H1).
+       ═══════════════════════════════════════════════ -->
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
@@ -27,6 +42,10 @@
 
   <!-- Canonical -->
   <link rel="canonical" href="https://blog.myscriptorium.cz/clanky/SLUG-CLANKU" />
+  <!-- hreflang: uprav EN slug; nemá-li článek EN verzi, smaž řádky "en" a ponech cs + x-default -->
+  <link rel="alternate" hreflang="cs" href="https://blog.myscriptorium.cz/clanky/SLUG-CLANKU" />
+  <link rel="alternate" hreflang="en" href="https://blog.myscriptorium.cz/en/articles/SLUG-EN" />
+  <link rel="alternate" hreflang="x-default" href="https://blog.myscriptorium.cz/clanky/SLUG-CLANKU" />
 
   <!-- Schema.org -->
   <script type="application/ld+json">
@@ -47,7 +66,37 @@
   </script>
   <!-- ═══════════════════════════════════════════════ -->
 
-  <link rel="stylesheet" href="/assets/css/style.css" />
+  <!-- Drobečková navigace (BreadcrumbList) - uprav KATEGORII a NÁZEV, shodně s viditelným breadcrumbem níže -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Všechny zápisky",
+        "item": "https://blog.myscriptorium.cz/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "KATEGORIE",
+        "item": "https://blog.myscriptorium.cz/tag/SLUG-KATEGORIE"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "NÁZEV ČLÁNKU"
+      }
+    ]
+  }
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" />
+  <link rel="stylesheet" href="/assets/css/style.v2.css" />
   <link rel="icon" href="/assets/img/favicon.ico" />
 
   <!--
@@ -252,6 +301,11 @@
   ╚══════════════════════════════════════════════════════════╝
 -->
 <body data-headliner="b">
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-NZSGNPD8"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+
 
 <div class="page-wrap">
   <div class="parchment">
@@ -272,7 +326,7 @@
     </header>
 
     <!-- ZPĚT -->
-    <a href="/" class="back-link">← Všechny zápisky</a>
+    <nav class="back-link" aria-label="Drobečková navigace"><a href="/" style="color:inherit;text-decoration:none">← Všechny zápisky</a><span aria-hidden="true">›</span><a href="/tag/SLUG-KATEGORIE" style="color:inherit;text-decoration:none">KATEGORIE</a></nav>
 
     <!-- ══════════════════════════════════════════════════════════
          HEADLINER — všechny 3 varianty; zobrazí se jen ta
@@ -286,7 +340,7 @@
         alt = popis pro Google a screen readery
       -->
       <img
-        src="/assets/img/HEADLINER-OBRAZEK.jpg"
+        src="/assets/img/HEADLINER-OBRAZEK.webp"
         alt="POPIS HEADLINER OBRÁZKU"
         width="1200" height="525"
         loading="eager"
@@ -325,7 +379,7 @@
         Obrázek headlineru (doporučeno: min. 1200 × 525 px, poměr 16:7)
       -->
       <img
-        src="/assets/img/HEADLINER-OBRAZEK.jpg"
+        src="/assets/img/HEADLINER-OBRAZEK.webp"
         alt="POPIS HEADLINER OBRÁZKU"
         width="1200" height="525"
         loading="eager"
@@ -340,7 +394,7 @@
         Šířší záběr — plné krvácení přes parchment card
       -->
       <img
-        src="/assets/img/HEADLINER-OBRAZEK.jpg"
+        src="/assets/img/HEADLINER-OBRAZEK.webp"
         alt="POPIS HEADLINER OBRÁZKU"
         width="1400" height="533"
         loading="eager"
@@ -384,7 +438,7 @@
         <div class="img-gallery-item" role="listitem">
           <div class="img-gallery-item-wrap" tabindex="0" aria-label="NÁZEV OBRÁZKU 1">
             <img
-              src="/assets/img/GALLERY-1.jpg"
+              src="/assets/img/GALLERY-1.webp"
               alt="POPIS OBRÁZKU 1"
               width="600" height="1067"
               loading="lazy"
@@ -399,7 +453,7 @@
         <div class="img-gallery-item" role="listitem">
           <div class="img-gallery-item-wrap" tabindex="0" aria-label="NÁZEV OBRÁZKU 2">
             <img
-              src="/assets/img/GALLERY-2.jpg"
+              src="/assets/img/GALLERY-2.webp"
               alt="POPIS OBRÁZKU 2"
               width="600" height="1067"
               loading="lazy"
@@ -414,7 +468,7 @@
         <div class="img-gallery-item" role="listitem">
           <div class="img-gallery-item-wrap" tabindex="0" aria-label="NÁZEV OBRÁZKU 3">
             <img
-              src="/assets/img/GALLERY-3.jpg"
+              src="/assets/img/GALLERY-3.webp"
               alt="POPIS OBRÁZKU 3"
               width="600" height="1067"
               loading="lazy"
@@ -452,7 +506,7 @@
       <!--
       <figure class="img-fullwidth-wrap">
         <img
-          src="/assets/img/FULLWIDTH-OBRAZEK.jpg"
+          src="/assets/img/FULLWIDTH-OBRAZEK.webp"
           alt="POPIS CELOŠIROKÉHO OBRÁZKU"
           width="1400" height="533"
           loading="lazy"

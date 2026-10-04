@@ -1,6 +1,19 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
+<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-NZSGNPD8');</script>
+<!-- End Google Tag Manager -->
+
+  <!-- ═══════════════════════════════════════════════
+       ŠABLONA - neindexuje se (X-Robots-Tag v vercel.json pro /clanky/SABLONA-*).
+       Při použití: ulož pod novým názvem BEZ prefixu "SABLONA-" a smaž tento komentář.
+       Neukládej do šablony meta robots noindex - zkopíroval by se do nových článků.
+       ═══════════════════════════════════════════════ -->
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
@@ -17,12 +30,18 @@
   <meta property="og:url" content="https://blog.myscriptorium.cz/clanky/SLUG-CLANKU" />
   <meta property="og:image" content="https://blog.myscriptorium.cz/assets/img/OBRAZEK-CLANKU.jpg" />
   <meta property="og:image:alt" content="POPIS OBRÁZKU PRO SDÍLENÍ" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://blog.myscriptorium.cz/assets/img/og-default.jpg" />
   <meta property="article:published_time" content="2025-04-12T10:00:00+02:00" />
   <meta property="article:author" content="Ondrex" />
   <meta property="article:tag" content="KATEGORIE" />
 
   <!-- Canonical -->
   <link rel="canonical" href="https://blog.myscriptorium.cz/clanky/SLUG-CLANKU" />
+  <!-- hreflang: uprav EN slug; nemá-li článek EN verzi, smaž řádky "en" a ponech cs + x-default -->
+  <link rel="alternate" hreflang="cs" href="https://blog.myscriptorium.cz/clanky/SLUG-CLANKU" />
+  <link rel="alternate" hreflang="en" href="https://blog.myscriptorium.cz/en/articles/SLUG-EN" />
+  <link rel="alternate" hreflang="x-default" href="https://blog.myscriptorium.cz/clanky/SLUG-CLANKU" />
 
   <!-- Schema.org BlogPosting - pro Google rich results -->
   <script type="application/ld+json">
@@ -54,10 +73,45 @@
   </script>
   <!-- ═══════════════════════════════════════════════ -->
 
-  <link rel="stylesheet" href="/assets/css/style.css" />
+  <!-- Drobečková navigace (BreadcrumbList) - uprav KATEGORII a NÁZEV, shodně s viditelným breadcrumbem níže -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Všechny zápisky",
+        "item": "https://blog.myscriptorium.cz/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "KATEGORIE",
+        "item": "https://blog.myscriptorium.cz/tag/SLUG-KATEGORIE"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "NÁZEV ČLÁNKU"
+      }
+    ]
+  }
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" />
+  <link rel="stylesheet" href="/assets/css/style.v2.css" />
   <link rel="icon" href="/assets/img/favicon.ico" />
 </head>
 <body>
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-NZSGNPD8"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+
 
 <div class="page-wrap">
   <div class="parchment">
@@ -78,7 +132,7 @@
     </header>
 
     <!-- ZPĚT -->
-    <a href="/" class="back-link">← Všechny zápisky</a>
+    <nav class="back-link" aria-label="Drobečková navigace"><a href="/" style="color:inherit;text-decoration:none">← Všechny zápisky</a><span aria-hidden="true">›</span><a href="/tag/SLUG-KATEGORIE" style="color:inherit;text-decoration:none">KATEGORIE</a></nav>
 
     <!-- HLAVIČKA ČLÁNKU -->
     <header class="article-header">
@@ -114,7 +168,7 @@
       -->
       <!--
       <img
-        src="/assets/img/gutenberg-dilna.jpg"
+        src="/assets/img/gutenberg-dilna.webp"
         alt="Ilustrace Gutenbergovy tiskařské dílny v Mohuči, 15. století"
         width="700"
         height="400"
@@ -187,22 +241,8 @@
   </div>
 </div>
 
-  <footer class="site-footer">
-      <p class="site-footer-ornament">☩</p>
-      <p>
-        Blog od <a href="https://ember-pa.cz" target="_blank" rel="noopener">Ondrexe</a>
-        &nbsp;·&nbsp;
-        <a href="https://myscriptorium.cz" target="_blank" rel="noopener">Hrát Scriptorium</a>
-      </p>
-    </footer>
-
-  </div>
-</div>
 
 <script src="/assets/js/blog-cat.js"></script>
-
-</body>
-</html>
 
 </body>
 </html>
