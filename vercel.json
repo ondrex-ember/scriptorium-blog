@@ -19,6 +19,12 @@
       ]
     },
     {
+      "source": "/hry/(.*)",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow" }
+      ]
+    },
+    {
       "source": "/assets/css/(.*)\\.css",
       "headers": [
         { "key": "Content-Type", "value": "text/css; charset=utf-8" },
