@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- ═══════════════════════════════════════════════
+       SEO
+       ═══════════════════════════════════════════════ -->
+  <title>Ember Omnia – an app for your evacuation bag - Scriptorium Blog</title>
+  <meta name="description" content="Ember Omnia keeps your evacuation bag as a living inventory - it tracks expiry dates, quantities and regular checks. An offline-first PWA and a native Android app, both free." />
+
+  <!-- Open Graph -->
+  <meta property="og:title"       content="Ember Omnia – an app for your evacuation bag" />
+  <meta property="og:description" content="Ember Omnia keeps your evacuation bag as a living inventory - it tracks expiry dates, quantities and regular checks. An offline-first PWA and a native Android app, both free." />
+  <meta property="og:type"        content="article" />
+  <meta property="og:url"         content="https://blog.myscriptorium.cz/en/articles/ember-omnia-evacuation-bag" />
+  <meta property="og:image"       content="https://blog.myscriptorium.cz/assets/img/ember-omnia-headliner.jpg" />
+  <meta property="og:image:width"  content="1400" />
+  <meta property="og:image:height" content="533" />
+  <meta property="og:image:alt"   content="Ember Omnia – user interface of the evacuation bag app" />
+  <meta property="article:published_time" content="2026-09-28T10:00:00+02:00" />
+  <meta property="article:author" content="Ondrex" />
+  <meta property="article:tag"    content="Applications" />
+  <meta name="twitter:card"       content="summary_large_image" />
+  <meta name="twitter:image"      content="https://blog.myscriptorium.cz/assets/img/ember-omnia-headliner.jpg" />
+
+  <!-- Canonical + language versions -->
+  <link rel="canonical" href="https://blog.myscriptorium.cz/en/articles/ember-omnia-evacuation-bag" />
+  <link rel="alternate" hreflang="cs" href="https://blog.myscriptorium.cz/clanky/ember-omnia-evakuacni-zavazadlo" />
+  <link rel="alternate" hreflang="en" href="https://blog.myscriptorium.cz/en/articles/ember-omnia-evacuation-bag" />
+
+  <!-- Schema.org -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": "Ember Omnia – an app for your evacuation bag",
+    "description": "Ember Omnia keeps your evacuation bag as a living inventory - it tracks expiry dates, quantities and regular checks. An offline-first PWA and a native Android app, both free.",
+    "image": "https://blog.myscriptorium.cz/assets/img/ember-omnia-headliner.jpg",
+    "datePublished": "2026-09-28T10:00:00+02:00",
+    "dateModified": "2026-10-06T10:00:00+02:00",
+    "author": { "@type": "Person", "name": "Ondrex", "url": "https://ember-pa.cz" },
+    "publisher": { "@type": "Organization", "name": "Scriptorium Blog", "url": "https://blog.myscriptorium.cz" },
+    "mainEntityOfPage": { "@type": "WebPage", "@id": "https://blog.myscriptorium.cz/en/articles/ember-omnia-evacuation-bag" },
+    "inLanguage": "en",
+    "keywords": "evacuation bag, go bag, emergency preparedness, Ember Omnia, PWA, offline app, Android"
+  }
+  </script>
+  <!-- ═══════════════════════════════════════════════ -->
+
+  <link rel="stylesheet" href="/assets/css/style.css" />
+  <link rel="icon" href="/assets/img/favicon.ico" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css" />
+
+  <!--
+  ═══════════════════════════════════════════════════════════════════
+  NOVÉ KOMPONENTY - po finalizaci přesuň tuto <style> sekci do
+  assets/css/style.css (na konec souboru, za .script-block blok)
+  ═══════════════════════════════════════════════════════════════════
+  -->
+  <style>
+
+    /* ── PŘEPÍNAČ HEADLINERU ───────────────────────────────────────
+       Na <body> nastav: data-headliner="a" | "b" | "c"
+         a = titulek přes obrázek (overlay)
+         b = header → obrázek pod ním
+         c = obrázek jako první (visual-first)    ← použito zde
+    ─────────────────────────────────────────────────────────────── */
+    .hl           { display: none; }
+    [data-headliner="a"] .hl-a,
+    [data-headliner="b"] .hl-b,
+    [data-headliner="c"] .hl-c { display: block; }
+
+    .hl-img {
+      width: 100%;
+      display: block;
+      margin: 0;
+      border-radius: 0;
+      box-shadow: none;
+      object-fit: cover;
+    }
+
+    /* ── VARIANTA A: titulek přes obrázek ── */
+    .hl-a { position: relative; overflow: hidden; }
+    .hl-a .hl-img { aspect-ratio: 16/7; }
+    .hl-a-overlay {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      background: linear-gradient(
+        to top,
+        rgba(10, 5, 2, 0.94) 0%,
+        rgba(10, 5, 2, 0.60) 50%,
+        transparent 100%
+      );
+      padding: 5rem 2.5rem 2rem;
+      text-align: center;
+    }
+    .hl-a .article-card-meta { color: rgba(212, 170, 68, 0.80); }
+    .hl-a .article-h1        { color: #f2e8d4; margin-bottom: 0.6rem; }
+    .hl-a .article-author    { color: rgba(232, 217, 184, 0.65); }
+    .hl-a .article-author a  { color: rgba(232, 217, 184, 0.65); }
+    .hl-a .article-lead      { color: rgba(232, 217, 184, 0.75); }
+
+    /* ── VARIANTA B: header, pak obrázek ── */
+    .hl-b .hl-img { aspect-ratio: 16/7; }
+
+    /* ── VARIANTA C: obrázek první ── */
+    .hl-c .hl-img { aspect-ratio: 21/8; }
+
+    /* ─────────────────────────────────────────────────────────────
+       GALERIE - 3 obrázky vedle sebe
+    ───────────────────────────────────────────────────────────── */
+    .img-gallery {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin: 2rem 0;
+    }
+    .img-gallery-item { display: flex; flex-direction: column; gap: 0.4rem; }
+    .img-gallery-item-wrap {
+      overflow: hidden; border-radius: 3px;
+      box-shadow: 0 2px 10px rgba(26, 18, 8, 0.2);
+      position: relative; cursor: pointer;
+    }
+    .img-gallery-item-wrap img {
+      width: 100%; height: auto; display: block; margin: 0;
+      border-radius: 0; box-shadow: none;
+      transition: transform 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    .img-gallery-item-wrap:hover img,
+    .img-gallery-item-wrap.tapped img { transform: scale(1.07); }
+    .img-gallery-overlay {
+      position: absolute; inset: 0;
+      background: rgba(15, 8, 3, 0.74);
+      display: flex; align-items: center; justify-content: center; padding: 0.6rem;
+      opacity: 0; transition: opacity 0.2s ease;
+    }
+    .img-gallery-item-wrap:hover .img-gallery-overlay,
+    .img-gallery-item-wrap.tapped .img-gallery-overlay { opacity: 1; }
+    .img-gallery-overlay span {
+      font-family: 'IM Fell English', serif; font-size: 0.78rem;
+      color: var(--parchment); text-align: center; line-height: 1.35;
+    }
+    .img-gallery-caption {
+      font-family: 'IM Fell English', serif; font-size: 0.72rem;
+      font-style: italic; color: var(--ink-faded); text-align: center; line-height: 1.3;
+    }
+
+    /* ─────────────────────────────────────────────────────────────
+       OBRÁZEK NA CELOU ŠÍŘKU
+    ───────────────────────────────────────────────────────────── */
+    .img-fullwidth-wrap {
+      margin-inline: -2.5rem; position: relative; overflow: hidden;
+    }
+    .img-fullwidth-wrap img {
+      width: 100%; height: auto; display: block; margin: 0; border-radius: 0;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+      transition: transform 0.42s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      cursor: zoom-in;
+    }
+    .img-fullwidth-wrap:hover img { transform: scale(1.025); }
+    .img-fullwidth-caption {
+      text-align: center; font-size: 0.8rem; font-style: italic;
+      color: var(--ink-faded); margin: 0.5rem 2.5rem 1.5rem;
+    }
+
+    @media (min-width: 900px) {
+      .img-fullwidth-wrap     { margin-inline: -8rem; }
+      .img-fullwidth-caption  { margin-inline: 8rem; }
+    }
+    @media (max-width: 600px) {
+      .img-gallery            { gap: 0.5rem; }
+      .img-gallery-caption    { font-size: 0.62rem; }
+      .img-gallery-overlay span { font-size: 0.66rem; }
+      .img-fullwidth-wrap     { margin-inline: -1.5rem; }
+      .img-fullwidth-caption  { margin-inline: 1.5rem; }
+    }
+
+    /* Vzorec - KaTeX container */
+    .formula-block {
+      text-align: center;
+      margin: 2rem auto;
+      padding: 1.4rem 2rem;
+      background: rgba(184, 146, 42, 0.05);
+      border: 1px solid rgba(184, 146, 42, 0.28);
+      border-radius: 2px;
+      overflow-x: auto;
+    }
+    .formula-block .katex { font-size: 1.22em; }
+
+    /* ─────────────────────────────────────────────────────────────
+       PLOVOUCÍ QR OBRÁZEK VLEVO - odstavec ho obtéká
+       Velikost měň JEN zde (width). Pod ~110 px se QR hůř skenuje.
+       Musí přebít `.article-body img { width:100%; display:block }`
+       ze style.css - proto selektor .article-body img.float-qr.
+    ───────────────────────────────────────────────────────────── */
+    .article-body img.float-qr {
+      float: left;
+      width: 120px;
+      max-width: none;
+      height: auto;
+      margin: 0.35rem 1.4rem 0.6rem 0;
+      border-radius: 2px;
+      box-shadow: 0 2px 10px rgba(26, 18, 8, 0.2);
+    }
+    @media (max-width: 600px) {
+      .article-body img.float-qr { width: 100px; margin-right: 1rem; }
+    }
+
+  </style>
+</head>
+
+<!--
+  ╔══════════════════════════════════════════════════════════╗
+  ║  HEADLINER VARIANT - change the value before publishing: ║
+  ║    "a"  title over the image (overlay)                  ║
+  ║    "b"  header → image below it                         ║
+  ║    "c"  image first (visual-first)          ← active    ║
+  ╚══════════════════════════════════════════════════════════╝
+-->
+<body data-headliner="c">
+
+<div class="page-wrap">
+  <div class="parchment">
+
+    <!-- SITE HEADER -->
+    <header class="site-header">
+      <a href="/en/" class="site-logo"><span>S</span>criptorium</a>
+      <p class="site-tagline">Journal from the workshop of ink and code</p>
+      <nav class="site-nav" aria-label="Main navigation">
+        <a href="/en/">All</a>
+        <a href="/en/tag/history">History</a>
+        <a href="/en/tag/games">Games</a>
+        <a href="/en/tag/applications">Apps</a>
+        <a href="/en/tag/scripts">Scripts</a>
+        <a href="/en/about">About author</a>
+        <a href="https://myscriptorium.cz" target="_blank" rel="noopener">↗ Game</a>
+        <!-- Language switch: align the markup with the switcher used on your other article pages -->
+        <a href="/en/articles/ember-omnia-evacuation-bag" hreflang="en" lang="en" aria-current="true">🇬🇧 EN</a>
+        <a href="/clanky/ember-omnia-evakuacni-zavazadlo" hreflang="cs" lang="cs">🇨🇿 CS</a>
+      </nav>
+    </header>
+
+    <!-- BACK -->
+    <nav class="back-link" aria-label="Breadcrumb"><a href="/en/" style="color:inherit;text-decoration:none">← All entries</a><span aria-hidden="true">›</span><a href="/en/tag/applications" style="color:inherit;text-decoration:none">Applications</a></nav>
+
+    <!-- ══════════════════════════════════════════════════════════
+         HEADLINER - all 3 variants; only the one matching
+         data-headliner on <body> is shown
+         ══════════════════════════════════════════════════════ -->
+
+    <!-- ─── VARIANT A: title over the image ─── -->
+    <div class="hl hl-a">
+      <img
+        src="/assets/img/ember-omnia-headliner.jpg"
+        alt="Ember Omnia – user interface of the evacuation bag app"
+        width="1200" height="525"
+        loading="eager"
+        class="hl-img"
+      />
+      <div class="hl-a-overlay">
+        <p class="article-card-meta">September 28, 2026 &nbsp;·&nbsp; Applications</p>
+        <h1 class="article-h1">
+          <span class="drop-cap-word">Ember</span> Omnia –<br>
+          an app for your evacuation bag
+        </h1>
+        <p class="article-author"><a href="/en/about">Ondrex</a></p>
+        <p class="article-lead">
+          A living inventory that tracks expiry dates, quantities and regular checks.
+          An offline-first PWA and a native Android version, both released publicly in their first version and both free. Download the Ember Omnia Android app <a href="https://play.google.com/store/apps/details?id=cz.ember.evakuace" target="_blank" rel="noopener">for free on Google Play.</a>
+        </p>
+      </div>
+    </div><!-- /hl-a -->
+
+    <!-- ─── VARIANT B: header → image below it ─── -->
+    <div class="hl hl-b">
+      <header class="article-header">
+        <p class="article-card-meta">September 28, 2026 &nbsp;·&nbsp; Applications</p>
+        <h1 class="article-h1">
+          <span class="drop-cap-word">Ember</span> Omnia –<br>
+          an app for your evacuation bag
+        </h1>
+        <p class="article-author"><a href="/en/about">Ondrex</a></p>
+        <p class="article-lead">
+          A living inventory that tracks expiry dates, quantities and regular checks.
+          A free offline-first PWA and a native Android version in Open Testing.
+        </p>
+      </header>
+      <p class="article-divider">✦ &nbsp; ✦ &nbsp; ✦</p>
+      <img
+        src="/assets/img/ember-omnia-headliner.jpg"
+        alt="Ember Omnia – user interface of the evacuation bag app"
+        width="1200" height="525"
+        loading="eager"
+        class="hl-img"
+      />
+    </div><!-- /hl-b -->
+
+    <!-- ─── VARIANT C: image first ─── -->
+    <div class="hl hl-c">
+      <!--
+        Recommended size: min. 1400 × 533 px, ratio 21:8
+      -->
+      <img
+        src="/assets/img/ember-omnia-headliner.jpg"
+        alt="Ember Omnia – user interface of the evacuation bag app"
+        width="1400" height="533"
+        loading="eager"
+        class="hl-img"
+      />
+      <header class="article-header">
+        <p class="article-card-meta">October 6, 2026 &nbsp;·&nbsp; Applications</p>
+        <h1 class="article-h1">
+          <span class="drop-cap-word">Ember</span> Omnia –<br>
+          an app for your evacuation bag
+        </h1>
+        <p class="article-author"><a href="/en/about">Ondrex</a></p>
+        <p class="article-lead">
+          A living inventory that tracks expiry dates, quantities and regular checks.
+          An offline-first PWA and a native Android version, both released publicly in their first version and both free. Download the Ember Omnia Android app <a href="https://play.google.com/store/apps/details?id=cz.ember.evakuace" target="_blank" rel="noopener">for free on Google Play.</a>
+        </p>
+      </header>
+      <p class="article-divider">✦ &nbsp; ✦ &nbsp; ✦</p>
+    </div><!-- /hl-c -->
+
+    <!-- ══════════════════════════════════════════════════════════
+         ARTICLE BODY
+         ══════════════════════════════════════════════════════ -->
+    <article class="article-body">
+
+      <p>
+        <a href="https://play.google.com/store/apps/details?id=cz.ember.evakuace&hl=en" target="_blank" rel="noopener"><img class="float-qr" src="/assets/img/ember-omnia-qr-logo-en.png" alt="QR code: Ember Omnia on Google Play" width="120" height="120"></a>
+        The evacuation bag is a traditional part of household crisis preparedness -
+        a suitcase or backpack with water, food, documents and a first-aid kit that a
+        family keeps within reach in case they have to leave their home within minutes.
+        The problem isn't what belongs in it: lists circulate from the Czech fire service
+        (HZS ČR) and from civic initiatives. The problem is keeping it up to date. Water
+        and long-life food expire, medication changes with prescriptions, the battery in
+        a smoke detector needs checking from time to time, and your documents are best
+        backed up as photos after every renewal. As a paper or Excel checklist, this
+        stays current for only a few weeks after you put it together.
+      </p>
+
+      <p>
+        The Ember Omnia app (working project name: Evakuační zavazadlo, i.e. “Evacuation
+        Bag”) solves this as a living inventory - it keeps track of what the household
+        should have, how much it actually has, when items start to expire and what needs
+        regular checking. It is aimed at individuals and families (adults, children,
+        seniors, pets) and built offline-first: the app has to work without a connection,
+        because relying on the internet makes no sense in a crisis. The app is currently
+        available as a web app (PWA) at
+        <a href="https://blog.myscriptorium.cz/en/apps/evac/" target="_blank" rel="noopener">blog.myscriptorium.cz/en/apps/evac/</a>
+        - anyone can try it for free, currently in test operation. A native Android
+        version is being developed alongside it, which the end of this article covers.
+      </p>
+
+      <h2>From idea to specification</h2>
+
+      <p>
+        Development began with a classic product-requirements process - the author and
+        Claude first pinned down the scope of phase 1 in an MRD document: a single device
+        with no cloud sync, one profile per user, offline-first operation except for the
+        news tab. The onboarding flow got a fixed shape: a welcome screen, household setup
+        (number of adults, children, seniors, pets by type, sustainability period from
+        48 hours to 10 days or a custom value), a choice of category templates to import,
+        automatic quantity calculation based on the profile, and finally the dashboard.
+      </p>
+
+      <p>
+        The data model was designed to scale to multiple profiles later, even though
+        phase 1 counted on only one. Explicitly ruled out of scope from the start:
+        multi-profile, cloud sync between devices, OCR reading of expiry dates from a
+        photo of a document, a location-based news feed and profile sharing between
+        users - all deferred to phase 2.
+      </p>
+
+      <p>
+        Three open questions remained at the start: which platform to choose (native or
+        cross-platform), where to get a source of crisis news, and what visual style the
+        app would get. The agreed direction was “calm, trustworthy” - with a choice of
+        light/dark/color themes and no blanket “panic red”, reserved only for truly
+        critical states.
+      </p>
+
+      <h2>Data model and templates</h2>
+
+      <p>
+        The core of the app is a seed file with ready-made templates - a JSON structure
+        versioned via <code>template_version</code>, divided into eight categories:
+        Documents and finance, Water, Long-life food, First aid, Equipment and tools,
+        Hygiene, Clothing and Other, plus a conditional Pets category that is imported
+        only when the profile contains at least one animal.
+      </p>
+
+      <p>
+        Every item has a type - <em>consumable</em>, <em>durable</em>, <em>document</em>
+        or <em>task</em> - and the app treats it differently according to type.
+        Consumable items (water, food, medication) have a defined consumption per person
+        per day; from it the app calculates the required quantity during onboarding
+        using the formula:
+      </p>
+
+      <div class="formula-block">
+        <span id="katex-evac-formula"></span>
+      </div>
+
+      <p>
+        Durable and document items (a fire blanket, a multi-tool, a copy of a birth
+        certificate) don't scale with the number of days - only with the number of people
+        or animals, or they have a fixed quantity. Items of the <em>task</em> type
+        (checking the fuel tank in the car, replacing the battery in the smoke detector,
+        updating photos of documents) have no expiry, but a check interval in days, from
+        which the app derives a reminder counted from the date of the last check.
+      </p>
+
+      <p>
+        The app derives an item's resulting status on its own: <strong>OK</strong>,
+        <strong>missing</strong>, <strong>expiring soon</strong>,
+        <strong>expired</strong> or <strong>to check</strong>. After import, the user can
+        manually override any calculated value, turn off scaling and enter a fixed
+        quantity, or create their own category and item from scratch.
+      </p>
+
+      <h2>What the app can do today</h2>
+
+      <p>
+        The first launch walks the user through a four-step wizard. First the app learns
+        the household's makeup - the number of adults, children, seniors and pets (with a
+        choice of species: dog, cat, other) using simple +/− counters. Next comes the
+        supply sustainability period (48 h, 72 h, 5, 7 or 10 days, or a custom number of
+        days). The third step offers a choice of template categories to import, and the
+        last step is a summary; once you confirm it, the quantities are calculated from
+        the profile and the app opens the Dashboard. After import, any calculated
+        quantity can be adjusted manually at any time on the individual item.
+      </p>
+
+      <p>
+        The main screen, Overview, shows the bag's readiness as a percentage, a Needs
+        attention section with items that are missing, expiring soon or need checking,
+        and an overview of categories with each one's own readiness percentage. The user
+        can add a custom category at any time; inside a category, items can be added,
+        edited and deleted. For each item the app records its type, unit, required and
+        current quantity, an optional expiry date, its own notification lead time, the
+        check interval for tasks, a note and a photo.
+      </p>
+
+      <p>
+        From Overview the app switches to Checklist mode - a simplified view for a real
+        evacuation. It holds only packed/not packed checkboxes with a percentage packing
+        progress and an Uncheck all button, with no option to edit: quick orientation
+        under stress.
+      </p>
+
+      <p>
+        A separate News tab shows a feed of crisis and general news with manual refresh.
+        In the current test version, the source for all users is uniformly BBC World
+        News; the app plans a custom feed engine with user-configurable sources in the
+        future.
+      </p>
+
+      <h2>Settings, personalization and backups</h2>
+
+      <p>
+        Settings let you tune the app to your liking. Besides the language switch and the
+        choice of visual themes - the app carries on from fifteen colour variants with
+        their own fonts and a CRT scanline effect for the retro themes, which first
+        appeared in the original web version - you can also edit the household profile
+        (adults, children, seniors, pets, sustainability period). The test version has
+        one limitation: changing the profile does not yet retroactively recalculate
+        quantities of existing items, so those have to be adjusted by hand.
+      </p>
+
+      <p>
+        Notifications are set globally (the default number of days' notice before expiry)
+        and individually on a given item. They work differently across platforms, though:
+        the app can notify you once a day about an expiry or a check even when it isn't
+        open, but only when it is installed through Chrome or Edge on Android or on the
+        desktop - and even there it depends on how often the browser actually runs the
+        background task. On iOS Safari this isn't possible without a server of its own;
+        the app only notifies you when it is opened.
+      </p>
+
+      <p>
+        The app also lets you adjust the consumption coefficients for a child and a
+        senior (as a share of an adult's consumption), mark the annual bag review as done
+        with one click, and work with the data outside the app - export a backup to a
+        JSON file, re-import it, or wipe all data and start from scratch.
+      </p>
+
+      <h2>Installation and test operation</h2>
+
+      <p>
+        The app runs as a Progressive Web App on the author's blog, at
+        <a href="https://blog.myscriptorium.cz/en/apps/evac/" target="_blank" rel="noopener">blog.myscriptorium.cz/en/apps/evac/</a>
+        - a static site built from a GitHub repository and deployed through Vercel.
+        The current test version is labelled RCv0.771 and the app is open to anyone who
+        wants to try it for free, with no registration.
+      </p>
+
+      <p>
+        On Android and desktop, the PWA offers installation to the home screen via a
+        button in Settings; if it's already installed, Settings confirms it with a tick.
+        On iPhone and iPad the app cannot offer installation itself - it works only
+        through Safari (not Chrome on iOS) and takes three manual steps: tap Share, choose
+        Add to Home Screen, and confirm. The installed app runs entirely offline, except
+        for fetching news.
+      </p>
+
+      <h2>Android version</h2>
+
+      <p>
+        Alongside the web app, a native Android version is being developed in parallel -
+        <a href="https://play.google.com/store/apps/details?id=cz.ember.evakuace" target="_blank" rel="noopener">Ember Omnia for Android</a>
+        (Kotlin, Jetpack Compose, Room, WorkManager; package <code>cz.ember.evakuace</code>),
+        now already publicly released on
+        <a href="https://play.google.com/store/apps/details?id=cz.ember.evakuace" target="_blank" rel="noopener">Google Play, free for everyone</a>.
+        The installed app goes further than the PWA: it adds the World Health module - a
+        composite global-risk score ported from the author's website
+        <a href="https://newsandradio.cz" target="_blank" rel="noopener">newsandradio.cz</a>,
+        and offers other features too - it protects sensitive data with a PIN lock and
+        backs it up as a ZIP archive. The app is in development, and besides fixing bugs
+        we will keep developing further features.
+      </p>
+
+      <p>
+        The native app is meant to be the reference, main version - the web app on the
+        blog is updated manually and as needed, not automatically, so it may lag slightly
+        behind Android.
+      </p>
+
+      <!-- INTERNAL LINK -->
+      <p>
+        You can try the app right away at
+        <a href="https://blog.myscriptorium.cz/en/apps/evac/" target="_blank" rel="noopener">blog.myscriptorium.cz/en/apps/evac/</a>.
+        And if you enjoy a medieval atmosphere, try the
+        <a href="https://myscriptorium.cz" target="_blank" rel="noopener">Scriptorium game</a>.
+      </p>
+
+    </article>
+
+    <!-- FOOTER -->
+    <footer class="site-footer">
+      <p class="site-footer-ornament">☩</p>
+      <p>
+        A blog by <a href="https://ember-pa.cz" target="_blank" rel="noopener">Ondrex</a>
+        &nbsp;·&nbsp;
+        <a href="https://myscriptorium.cz" target="_blank" rel="noopener">Play Scriptorium</a>
+      </p>
+    </footer>
+
+  </div>
+</div>
+
+<script src="/assets/js/blog-cat.js"></script>
+
+<script>
+  // Gallery: tap on mobile toggles the overlay
+  document.querySelectorAll('.img-gallery-item-wrap').forEach(function(el) {
+    el.addEventListener('click', function() {
+      var was = el.classList.contains('tapped');
+      document.querySelectorAll('.img-gallery-item-wrap').forEach(function(x) {
+        x.classList.remove('tapped');
+      });
+      if (!was) el.classList.add('tapped');
+    });
+    el.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); el.click(); }
+    });
+  });
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script>
+  katex.render(
+    "Q_{\\text{required}} = \\text{consumption}_{\\text{person,day}}" +
+    " \\times \\text{days} \\times" +
+    " \\bigl(\\text{adults} + \\text{children}\\cdot k_c + \\text{seniors}\\cdot k_s\\bigr)",
+    document.getElementById('katex-evac-formula'),
+    { throwOnError: false, displayMode: true }
+  );
+</script>
+
+</body>
+</html>
