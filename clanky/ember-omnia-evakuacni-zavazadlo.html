@@ -1,6 +1,22 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
+  <!-- Consent Mode v2 (advanced): default state, must load before GTM -->
+<script>
+window.dataLayer=window.dataLayer||[];
+function gtag(){dataLayer.push(arguments);}
+gtag('consent','default',{ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',analytics_storage:'denied',functionality_storage:'denied',wait_for_update:500});
+gtag('set','ads_data_redaction',true);
+try{if(localStorage.getItem('blog_consent')==='granted'){gtag('consent','update',{analytics_storage:'granted',functionality_storage:'granted'});}}catch(e){}
+</script>
+<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-NZSGNPD8');</script>
+<!-- End Google Tag Manager -->
+
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
@@ -15,11 +31,15 @@
   <meta property="og:description" content="Ember Omnia eviduje evakuační zavazadlo jako živý inventář - hlídá expiraci, množství i pravidelné kontroly. Offline-first PWA a nativní Android verze zdarma." />
   <meta property="og:type"        content="article" />
   <meta property="og:url"         content="https://blog.myscriptorium.cz/clanky/ember-omnia-evakuacni-zavazadlo" />
+  <meta property="og:site_name"   content="Scriptorium Blog" />
+  <meta property="og:locale"      content="cs_CZ" />
+  <meta property="og:locale:alternate" content="en_US" />
   <meta property="og:image"       content="https://blog.myscriptorium.cz/assets/img/ember-omnia-headliner.jpg" />
-  <meta property="og:image:width"  content="1400" />
-  <meta property="og:image:height" content="533" />
+  <meta property="og:image:width"  content="1024" />
+  <meta property="og:image:height" content="500" />
   <meta property="og:image:alt"   content="Ember Omnia – uživatelské rozhraní evakuační aplikace" />
   <meta property="article:published_time" content="2026-09-28T10:00:00+02:00" />
+  <meta property="article:modified_time" content="2026-10-06T10:00:00+02:00" />
   <meta property="article:author" content="Ondrex" />
   <meta property="article:tag"    content="Aplikace" />
   <meta name="twitter:card"       content="summary_large_image" />
@@ -39,7 +59,7 @@
     "description": "Ember Omnia eviduje evakuační zavazadlo jako živý inventář - hlídá expiraci, množství i pravidelné kontroly. Offline-first PWA a nativní Android verze zdarma.",
     "image": "https://blog.myscriptorium.cz/assets/img/ember-omnia-headliner.jpg",
     "datePublished": "2026-09-28T10:00:00+02:00",
-    "dateModified": "2026-09-28T10:00:00+02:00",
+    "dateModified": "2026-10-06T10:00:00+02:00",
     "author": { "@type": "Person", "name": "Ondrex", "url": "https://ember-pa.cz" },
     "publisher": { "@type": "Organization", "name": "Scriptorium Blog", "url": "https://blog.myscriptorium.cz" },
     "mainEntityOfPage": { "@type": "WebPage", "@id": "https://blog.myscriptorium.cz/clanky/ember-omnia-evakuacni-zavazadlo" },
@@ -61,15 +81,8 @@
   -->
   <style>
 
-    /* ── PŘEPÍNAČ HEADLINERU ───────────────────────────────────────
-       Na <body> nastav: data-headliner="a" | "b" | "c"
-         a = titulek přes obrázek (overlay)
-         b = header → obrázek pod ním
-         c = obrázek jako první (visual-first)    ← použito zde
-    ─────────────────────────────────────────────────────────────── */
+    /* ── HEADLINER (obrázek první) ─────────────────────────────── */
     .hl           { display: none; }
-    [data-headliner="a"] .hl-a,
-    [data-headliner="b"] .hl-b,
     [data-headliner="c"] .hl-c { display: block; }
 
     .hl-img {
@@ -81,31 +94,6 @@
       object-fit: cover;
     }
 
-    /* ── VARIANTA A: titulek přes obrázek ── */
-    .hl-a { position: relative; overflow: hidden; }
-    .hl-a .hl-img { aspect-ratio: 16/7; }
-    .hl-a-overlay {
-      position: absolute;
-      bottom: 0; left: 0; right: 0;
-      background: linear-gradient(
-        to top,
-        rgba(10, 5, 2, 0.94) 0%,
-        rgba(10, 5, 2, 0.60) 50%,
-        transparent 100%
-      );
-      padding: 5rem 2.5rem 2rem;
-      text-align: center;
-    }
-    .hl-a .article-card-meta { color: rgba(212, 170, 68, 0.80); }
-    .hl-a .article-h1        { color: #f2e8d4; margin-bottom: 0.6rem; }
-    .hl-a .article-author    { color: rgba(232, 217, 184, 0.65); }
-    .hl-a .article-author a  { color: rgba(232, 217, 184, 0.65); }
-    .hl-a .article-lead      { color: rgba(232, 217, 184, 0.75); }
-
-    /* ── VARIANTA B: header, pak obrázek ── */
-    .hl-b .hl-img { aspect-ratio: 16/7; }
-
-    /* ── VARIANTA C: obrázek první ── */
     .hl-c .hl-img { aspect-ratio: 21/8; }
 
     /* ─────────────────────────────────────────────────────────────
@@ -208,25 +196,21 @@
       .article-body img.float-qr { width: 100px; margin-right: 1rem; }
     }
 
-    /* MOBIL: banner (varianty b, c) se nezkracuje na pruh 21:8 s ořezem,
+    /* MOBIL: banner se nezkracuje na pruh 21:8 s ořezem,
        ale zobrazí se celý v původním poměru stran. */
     @media (max-width: 600px) {
-      .hl-b .hl-img,
       .hl-c .hl-img { aspect-ratio: auto; height: auto; object-fit: contain; }
     }
 
   </style>
 </head>
 
-<!--
-  ╔══════════════════════════════════════════════════════════╗
-  ║  HEADLINER VARIANTA - změň hodnotu před publikací:      ║
-  ║    "a"  titulek přes obrázek (overlay)                  ║
-  ║    "b"  header → obrázek pod ním                        ║
-  ║    "c"  obrázek jako první (visual-first)   ← aktivní   ║
-  ╚══════════════════════════════════════════════════════════╝
--->
 <body data-headliner="c">
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-NZSGNPD8"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+
 
 <div class="page-wrap">
   <div class="parchment">
@@ -243,6 +227,7 @@
         <a href="/tag/skripty">Skripty</a>
         <a href="/o-autorovi">O autorovi</a>
         <a href="https://myscriptorium.cz" target="_blank" rel="noopener">↗ Hra</a>
+        <button type="button" onclick="BlogLang.toggle()" class="lang-toggle-btn" style="background: transparent; border: 1px solid rgba(120,80,40,0.3); border-radius: 4px; padding: 2px 8px; cursor: pointer; font-family: inherit; font-size: 0.85em; color: inherit; margin-left: 6px;">🇨🇿 CS / 🇬🇧 EN</button>
       </nav>
     </header>
 
@@ -250,56 +235,8 @@
     <nav class="back-link" aria-label="Drobečková navigace"><a href="/" style="color:inherit;text-decoration:none">← Všechny zápisky</a><span aria-hidden="true">›</span><a href="/tag/aplikace" style="color:inherit;text-decoration:none">Aplikace</a></nav>
 
     <!-- ══════════════════════════════════════════════════════════
-         HEADLINER - všechny 3 varianty; zobrazí se jen ta
-         která odpovídá data-headliner na <body>
+         HEADLINER
          ══════════════════════════════════════════════════════ -->
-
-    <!-- ─── VARIANTA A: titulek přes obrázek ─── -->
-    <div class="hl hl-a">
-      <img
-        src="/assets/img/ember-omnia-headliner.jpg"
-        alt="Ember Omnia – uživatelské rozhraní evakuační aplikace"
-        width="1200" height="525"
-        loading="eager"
-        class="hl-img"
-      />
-      <div class="hl-a-overlay">
-        <p class="article-card-meta">28. září 2026 &nbsp;·&nbsp; Aplikace</p>
-        <h1 class="article-h1">
-          <span class="drop-cap-word">Ember</span> Omnia –<br>
-          appka pro evakuační zavazadlo
-        </h1>
-        <p class="article-author"><a href="/o-autorovi">Ondrex</a></p>
-        <p class="article-lead">
-          Živý inventář, který hlídá expiraci, množství i pravidelné kontroly.
-          Offline-first PWA a nativní Android verze vydána veřejně v první verzi, obě zdarma. Aplikaci Ember Omnia pro Android <a href="https://play.google.com/store/apps/details?id=cz.ember.evakuace" target="_blank" rel="noopener">stahujte zdarma na Google Play.</a>
-        </p>
-      </div>
-    </div><!-- /hl-a -->
-
-    <!-- ─── VARIANTA B: header → obrázek pod ním ─── -->
-    <div class="hl hl-b">
-      <header class="article-header">
-        <p class="article-card-meta">28. září 2026 &nbsp;·&nbsp; Aplikace</p>
-        <h1 class="article-h1">
-          <span class="drop-cap-word">Ember</span> Omnia –<br>
-          appka pro evakuační zavazadlo
-        </h1>
-        <p class="article-author"><a href="/o-autorovi">Ondrex</a></p>
-        <p class="article-lead">
-          Živý inventář, který hlídá expiraci, množství i pravidelné kontroly.
-          Offline-first PWA zdarma a nativní Android verze v Open Testing.
-        </p>
-      </header>
-      <p class="article-divider">✦ &nbsp; ✦ &nbsp; ✦</p>
-      <img
-        src="/assets/img/ember-omnia-headliner.jpg"
-        alt="Ember Omnia – uživatelské rozhraní evakuační aplikace"
-        width="1200" height="525"
-        loading="eager"
-        class="hl-img"
-      />
-    </div><!-- /hl-b -->
 
     <!-- ─── VARIANTA C: obrázek jako první ─── -->
     <div class="hl hl-c">
@@ -309,7 +246,7 @@
       <img
         src="/assets/img/ember-omnia-headliner.jpg"
         alt="Ember Omnia – uživatelské rozhraní evakuační aplikace"
-        width="1400" height="533"
+        width="1024" height="500"
         loading="eager"
         class="hl-img"
       />
@@ -517,7 +454,7 @@
         přidává modul World Health - kompozitní skóre globálního rizika portované
         z autorova webu <a href="https://newsandradio.cz" target="_blank" rel="noopener">newsandradio.cz</a>, 
         nabízí i jiné funkce - chrání citlivá data PIN zámkem a zálohuje je jako ZIP archiv. 
-        Aplikace je ve výovoji a kromě opravování chyb budeme rozvíjet i další funkce.
+        Aplikace je ve vývoji a kromě opravování chyb budeme rozvíjet i další funkce.
       </p>
 
       <p>
@@ -578,5 +515,7 @@
   );
 </script>
 
+<script src="/assets/js/blog-consent.v1.js" defer></script>
+<script src="/assets/js/blog-modals.v3.js" defer></script>
 </body>
 </html>
