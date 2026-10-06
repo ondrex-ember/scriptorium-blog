@@ -49,6 +49,7 @@
 
   <link rel="stylesheet" href="/assets/css/style.css" />
   <link rel="icon" href="/assets/img/favicon.ico" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css" />
 
   <!--
   ═══════════════════════════════════════════════════════════════════
@@ -174,16 +175,17 @@
       .img-fullwidth-caption  { margin-inline: 1.5rem; }
     }
 
-    /* Vzorec */
+    /* Vzorec — KaTeX container */
     .formula-block {
-      font-family: 'Crimson Pro', Georgia, serif;
-      font-size: 1rem;
-      border-left: 3px solid var(--gold);
-      margin: 1.5rem 0;
-      padding: 0.7rem 1.2rem;
-      color: var(--ink-faded);
-      line-height: 1.8;
+      text-align: center;
+      margin: 2rem auto;
+      padding: 1.4rem 2rem;
+      background: rgba(184, 146, 42, 0.05);
+      border: 1px solid rgba(184, 146, 42, 0.28);
+      border-radius: 2px;
+      overflow-x: auto;
     }
+    .formula-block .katex { font-size: 1.22em; }
 
   </style>
 </head>
@@ -371,10 +373,9 @@
         onboardingu spočítá požadované množství podle vzorce:
       </p>
 
-      <p class="formula-block">
-        Q<sub>požadované</sub> = spotřeba<sub>osoba,den</sub> × dny
-        × (dospělí + děti · k<sub>d</sub> + senioři · k<sub>s</sub>)
-      </p>
+      <div class="formula-block">
+        <span id="katex-evac-formula"></span>
+      </div>
 
       <p>
         Trvalé a dokumentové položky (hasicí deka, multifunkční nůž, kopie rodného
@@ -535,6 +536,17 @@
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); el.click(); }
     });
   });
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script>
+  katex.render(
+    "Q_{\\text{požadované}} = \\text{spotřeba}_{\\text{osoba,den}}" +
+    " \\times \\text{dny} \\times" +
+    " \\bigl(\\text{dospělí} + \\text{děti}\\cdot k_d + \\text{senioři}\\cdot k_s\\bigr)",
+    document.getElementById('katex-evac-formula'),
+    { throwOnError: false, displayMode: true }
+  );
 </script>
 
 </body>
