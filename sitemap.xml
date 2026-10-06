@@ -7,7 +7,7 @@
     <loc>https://blog.myscriptorium.cz/</loc>
     <xhtml:link rel="alternate" hreflang="cs" href="https://blog.myscriptorium.cz/" />
     <xhtml:link rel="alternate" hreflang="en" href="https://blog.myscriptorium.cz/en/" />
-    <lastmod>2026-08-12</lastmod>
+    <lastmod>2026-10-06</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
@@ -15,7 +15,7 @@
     <loc>https://blog.myscriptorium.cz/en/</loc>
     <xhtml:link rel="alternate" hreflang="cs" href="https://blog.myscriptorium.cz/" />
     <xhtml:link rel="alternate" hreflang="en" href="https://blog.myscriptorium.cz/en/" />
-    <lastmod>2026-08-12</lastmod>
+    <lastmod>2026-10-06</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
@@ -77,7 +77,7 @@
     <loc>https://blog.myscriptorium.cz/tag/aplikace</loc>
     <xhtml:link rel="alternate" hreflang="cs" href="https://blog.myscriptorium.cz/tag/aplikace" />
     <xhtml:link rel="alternate" hreflang="en" href="https://blog.myscriptorium.cz/en/tag/applications" />
-    <lastmod>2026-08-12</lastmod>
+    <lastmod>2026-10-06</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -85,7 +85,7 @@
     <loc>https://blog.myscriptorium.cz/en/tag/applications</loc>
     <xhtml:link rel="alternate" hreflang="cs" href="https://blog.myscriptorium.cz/tag/aplikace" />
     <xhtml:link rel="alternate" hreflang="en" href="https://blog.myscriptorium.cz/en/tag/applications" />
-    <lastmod>2026-08-12</lastmod>
+    <lastmod>2026-10-06</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -109,6 +109,23 @@
 
   <!-- Articles -->
   <url>
+    <loc>https://blog.myscriptorium.cz/clanky/ember-omnia-evakuacni-zavazadlo</loc>
+    <xhtml:link rel="alternate" hreflang="cs" href="https://blog.myscriptorium.cz/clanky/ember-omnia-evakuacni-zavazadlo" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://blog.myscriptorium.cz/en/articles/ember-omnia-evacuation-bag" />
+    <lastmod>2026-10-06</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://blog.myscriptorium.cz/en/articles/ember-omnia-evacuation-bag</loc>
+    <xhtml:link rel="alternate" hreflang="cs" href="https://blog.myscriptorium.cz/clanky/ember-omnia-evakuacni-zavazadlo" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://blog.myscriptorium.cz/en/articles/ember-omnia-evacuation-bag" />
+    <lastmod>2026-10-06</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
     <loc>https://blog.myscriptorium.cz/clanky/budget-pacer-script-google-ads</loc>
     <xhtml:link rel="alternate" hreflang="cs" href="https://blog.myscriptorium.cz/clanky/budget-pacer-script-google-ads" />
     <xhtml:link rel="alternate" hreflang="en" href="https://blog.myscriptorium.cz/en/articles/budget-pacer-google-ads" />
@@ -124,7 +141,7 @@
     <changefreq>monthly</changefreq>
     <priority>0.81</priority>
   </url>
-        
+
   <url>
     <loc>https://blog.myscriptorium.cz/clanky/ember-chime-app-android-released</loc>
     <xhtml:link rel="alternate" hreflang="cs" href="https://blog.myscriptorium.cz/clanky/ember-chime-app-android-released" />
