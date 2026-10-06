@@ -6,23 +6,29 @@ import { daysBetween, mean, normalizeKey } from './utils.js';
 
 const overallOf = (e) => e.payload?.scores?.overall;
 const validOverall = (e) => Number.isFinite(overallOf(e));
+/** Evaluations from before RCv0.191 have no kind and count as final; tastings (in-life) never enter the scores. */
+export const isFinalEval = (e) => (e.payload?.kind ?? 'final') === 'final';
+const evalKey = (e) => `${e.payload.season ?? ''}|${e.payload.batchId ?? ''}|${e.payload.part ?? ''}`;
 
 /** Yield field used for comparison: the first harvest field of the category (its unit). */
 export const yieldKey = (category) => CATEGORIES[category]?.harvestFields[0]?.key ?? null;
 
-/** Current evaluations: latest live one; perennial harvestable plants keep the latest per season. */
+/** Current final evaluations: the latest per (season, batch, part), so re-rating a batch replaces its earlier rating. */
 export function currentEvaluations(plant, events) {
-  const evs = liveEvents(events).filter((e) => e.type === 'evaluation' && validOverall(e));
-  if (plant.lifecycle !== 'perennial') return evs.length ? [evs.at(-1)] : [];
-  const bySeason = new Map();
-  for (const e of evs) bySeason.set(e.payload.season ?? null, e);
-  return [...bySeason.values()].sort((a, b) => (a.occurredAt < b.occurredAt ? -1 : 1));
+  const evs = liveEvents(events).filter((e) => e.type === 'evaluation' && validOverall(e) && isFinalEval(e));
+  const byKey = new Map();
+  for (const e of evs) byKey.set(evalKey(e), e);
+  return [...byKey.values()].sort((a, b) => (a.occurredAt < b.occurredAt ? -1 : 1));
 }
 
-/** Latest live evaluation (the one the form is prefilled from). */
-export function latestEvaluation(events, season) {
-  const evs = liveEvents(events).filter((e) => e.type === 'evaluation' && validOverall(e)
-    && (season === undefined || (e.payload.season ?? null) === season));
+/** In-life tastings (průběžné ochutnávky), oldest first. */
+export const tastings = (events) => liveEvents(events).filter((e) => e.type === 'evaluation' && validOverall(e) && !isFinalEval(e));
+
+/** Latest live final evaluation (the one the form is prefilled from); optionally for one season or batch. */
+export function latestEvaluation(events, season, batchId) {
+  const evs = liveEvents(events).filter((e) => e.type === 'evaluation' && validOverall(e) && isFinalEval(e)
+    && (season === undefined || (e.payload.season ?? null) === season)
+    && (batchId === undefined || (e.payload.batchId ?? null) === batchId));
   return evs.at(-1) ?? null;
 }
 
@@ -34,6 +40,7 @@ export function evaluationHistory(events) {
     const prev = harvests.filter((h) => h.occurredAt <= e.occurredAt).at(-1);
     return {
       event: e, at: e.occurredAt, overall: overallOf(e), note: e.payload.note || '', season: e.payload.season ?? null,
+      kind: e.payload.kind ?? 'final', part: e.payload.part ?? null, batchId: e.payload.batchId ?? null,
       daysAfterHarvest: prev ? daysBetween(prev.occurredAt, e.occurredAt) : (e.payload.daysSinceLastHarvest ?? null)
     };
   });

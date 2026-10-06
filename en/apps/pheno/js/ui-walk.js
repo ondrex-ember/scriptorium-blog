@@ -1,10 +1,10 @@
 // Obchůzka: one plant per screen, three big moisture buttons, swipe to the next plant (spec 11).
-import { getPlantTasks, dryingInfo, isDormant, isTerminal } from './calendar.js';
+import { getPlantTasks, dryingInfo, isCaredFor, isDormant } from './calendar.js';
 import { ctx, engineOpts, loadAll, now } from './ctx.js';
 import { clear, h, icon, put } from './dom.js';
 import { appendEvents, voidEvent } from './events.js';
 import { fmtDate, num } from './format.js';
-import { MOISTURE_ANSWERS } from './config-categories.js';
+import { DRYNESS_MAX, MOISTURE_ANSWERS } from './config-categories.js';
 import { photoUrl } from './photos.js';
 import { guard, navigate } from './router.js';
 import { toast } from './sheet.js';
@@ -12,20 +12,33 @@ import { S } from './strings.cs.js';
 import { latestPhotoId } from './timeline.js';
 import { CAT_ICON } from './ui-dashboard.js';
 import { daysBetween } from './utils.js';
+import { batchEstimate } from './ui-forms.js';
 
 const cmp = (a, b) => (a || '').localeCompare(b || '', 'cs');
 
-/** Walk order is fixed when the walk starts: by place, then name. Ended, dormant and archived plants are left out. */
+/** Walk order is fixed when the walk starts: by place, then name. Ended, harvested ("Sklizeno"), dormant and archived plants get no moisture question. */
 export function walkPlants(plants) {
   return plants
-    .filter((p) => !p.archivedAt && !isTerminal(p.cache.stage) && !isDormant(p.cache.stage))
+    .filter((p) => !p.archivedAt && isCaredFor(p.cache.stage) && !isDormant(p.cache.stage))
     .sort((a, b) => cmp(a.location, b.location) || cmp(a.name, b.name));
+}
+
+const WALK_PHASES = ['drying', 'curing', 'fermenting', 'pickling', 'storing'];
+
+/** Batches that are being processed or stored, of any plant (also archived ones): they are checked on the walk too. */
+export function walkBatches(plants) {
+  return plants
+    .flatMap((p) => (p.cache?.batches || []).filter((b) => !b.legacy && WALK_PHASES.includes(b.phase)).map((b) => ({ plant: p, batch: b })))
+    .sort((a, c) => cmp(a.plant.name, c.plant.name) || (a.batch.harvestedAt < c.batch.harvestedAt ? -1 : 1));
 }
 
 export async function renderWalk(root) {
   const alive = guard();
   const { plants, byPlant } = await loadAll();
-  const list = walkPlants(plants);
+  const list = [
+    ...walkPlants(plants).map((p) => ({ key: p.id, p })),
+    ...walkBatches(plants).map(({ plant, batch }) => ({ key: batch.id, p: plant, b: batch }))
+  ];
   if (!alive()) return undefined;
   if (!list.length) {
     put(clear(root), h('div', { class: 'top-bar' }, h('h1', {}, S.walk.title)), h('div', { class: 'empty-state', id: 'walk-empty' }, S.walk.empty));
@@ -34,12 +47,14 @@ export async function renderWalk(root) {
   const opts = engineOpts();
   const nowIso = now();
   const state = { i: 0, written: 0, answers: new Map() };   // plantId -> { answer, eventId }
-  const due = new Set(list.filter((p) => getPlantTasks(p, nowIso, opts).some((t) => t.type === 'moisture' && t.dueAt <= nowIso)).map((p) => p.id));
+  const due = new Set(list.filter((it) => !it.b).map((it) => it.p).filter((p) => getPlantTasks(p, nowIso, opts).some((t) => t.type === 'moisture' && t.dueAt <= nowIso)).map((p) => p.id));
 
   async function show() {
     if (!alive()) return;
     if (state.i >= list.length) return summary();
-    const p = list[state.i];
+    const it = list[state.i];
+    if (it.b) return showBatch(it);
+    const p = it.p;
     const done = state.answers.get(p.id);
     const url = await photoUrl(ctx.db, latestPhotoId(byPlant.get(p.id) || []));
     const info = dryingInfo(p);
@@ -80,6 +95,56 @@ export async function renderWalk(root) {
   }
 
   function go(dir) { state.i = Math.max(0, state.i + dir); show(); }
+
+  function shell(it, body, done) {
+    const card = h('div', { class: 'walk-card', id: 'walk-card' },
+      h('div', { class: 'walk-photo' }, icon(CAT_ICON[it.p.category] || 'pot', 'plant-photo-icon')),
+      h('div', { class: 'walk-body' }, body),
+      h('div', { class: 'walk-nav' },
+        h('button', { type: 'button', class: 'btn btn-secondary', id: 'walk-prev', disabled: state.i === 0, onclick: () => go(-1) }, S.walk.prev),
+        h('button', { type: 'button', class: 'btn btn-secondary', id: 'walk-next', onclick: () => go(1) }, done ? S.walk.next : S.walk.skip)),
+      h('p', { class: 'muted walk-hint' }, S.walk.swipe));
+    put(clear(root), h('div', { class: 'top-bar' }, h('h1', {}, S.walk.title),
+      h('button', { type: 'button', class: 'btn btn-ghost', id: 'walk-exit', 'aria-label': S.ui.back, onclick: () => navigate('/') }, icon('close'))), card);
+  }
+
+  /** Card of a batch in processing: dryness while drying, otherwise a plain "all fine" button; mold is a checkbox. */
+  function showBatch(it) {
+    const { p, b, key } = it;
+    const done = state.answers.get(key);
+    const nowIso2 = now();
+    const mold = h('input', { type: 'checkbox', id: 'walk-mold' });
+    const t = b.phase === 'drying' ? Math.floor(daysBetween(b.phaseSince, nowIso2)) : null;
+    const btns = b.phase === 'drying'
+      ? Array.from({ length: DRYNESS_MAX + 1 }, (_, i) => h('button', {
+        type: 'button', class: `btn btn-secondary walk-dry${done?.dryness === i ? ' selected' : ''}`, dataset: { dryness: i }, disabled: !!done,
+        onclick: () => writeBatch(it, { dryness: i, mold: mold.checked })
+      }, `${i} · ${S.dryness[i]}`))
+      : [h('button', { type: 'button', class: 'btn btn-primary walk-ok', id: 'walk-batch-ok', disabled: !!done,
+        onclick: () => writeBatch(it, { mold: mold.checked }) }, S.ui.batchFine)];
+    shell(it, [
+      h('div', { class: 'walk-progress' }, S.walk.progress(state.i + 1, list.length), h('span', { class: 'tag' }, S.ui.batchesTitle)),
+      h('h2', { class: 'walk-name' }, `${p.name} – ${S.batchPhase[b.phase]}`),
+      h('div', { class: 'plant-sub' }, [fmtDate(b.harvestedAt), t != null ? S.ui.dayOf(t + 1, Math.round(batchEstimate(b, p))) : null].filter(Boolean).join(' · ')),
+      done ? h('div', { class: 'banner walk-answered', id: 'walk-answered' }, S.walk.answered) : null,
+      h('div', { class: 'stack walk-dry-row' }, btns),
+      done ? null : h('label', { class: 'check-row' }, mold, h('span', {}, S.ui.moldFound))], !!done);
+  }
+
+  async function writeBatch(it, payload) {
+    const { p, b, key } = it;
+    try {
+      const { events } = await appendEvents(ctx.db, p.id, [{ type: 'batch_check', payload: { batchId: b.id, ...payload } }]);
+      state.answers.set(key, { ...payload, eventId: events[0].id });
+      state.written += 1;
+      toast(`${p.name}: ${payload.dryness != null ? S.dryness[payload.dryness] : S.ui.batchFine}${payload.mold ? ' · plíseň' : ''}`, {
+        action: S.ui.undo,
+        onAction: async () => { await voidEvent(ctx.db, p.id, events[0].id); state.answers.delete(key); state.written -= 1; show(); }
+      });
+      state.i += 1;
+      show();
+    } catch (e) { toast(e.message || S.err.invalid); }
+  }
 
   async function write(p, answer, watered) {
     try {

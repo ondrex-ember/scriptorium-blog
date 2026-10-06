@@ -41,7 +41,7 @@ test('applyAcquisition: url profile only when none stored, utm stored once', asy
 
 test('profiles: defaults per spec 6.2, examples rotate for mixed', () => {
   assert.deepEqual(PROFILES.garden.preselect, { environment: 'outdoor', lifecycle: 'cycle' });
-  assert.deepEqual(PROFILES.houseplants.preselect, { environment: 'indoor', lifecycle: 'perennial', harvestable: false });
+  assert.deepEqual(PROFILES.houseplants.preselect, { category: 'houseplant', environment: 'indoor', lifecycle: 'perennial', harvestable: false });
   assert.equal(PROFILES.controlled.preselect.environment, 'controlled');
   assert.deepEqual(PROFILES.mixed.preselect, {});
   assert.deepEqual(example('garden', 0), ['Rajče #1', 'San Marzano']);

@@ -1,5 +1,6 @@
 // Plant form: create, clone (?clone=id), edit.
-import { CATEGORIES, ENVIRONMENTS, SOURCES, getStages } from './config-categories.js';
+import { CATEGORIES, SOURCES, getStages } from './config-categories.js';
+import { SUBSTRATES } from './config-rules.js';
 import { SEASONAL_ENVIRONMENTS } from './config-engine.js';
 import { ctx, hemisphereKnown, loadAll, now, setHemisphere } from './ctx.js';
 import { chipGroup, clear, field, h, icon, put } from './dom.js';
@@ -42,9 +43,10 @@ export async function renderPlantForm(root, id, query = {}) {
   const init = editing
     ? { name: editing.name, variety: editing.variety, category: editing.category, lifecycle: editing.lifecycle,
       environment: editing.cache.environment, harvestable: editing.harvestable, location: editing.location,
-      source: editing.source, baseOverride: editing.baseOverride }
+      source: editing.source, baseOverride: editing.baseOverride,
+      potVolumeL: editing.potVolumeL, substrate: editing.substrate, plannedHarvestAt: editing.plannedHarvestAt }
     : source ? clonePlantInput(source, plants.map((p) => p.name))
-      : { category: null, environment: pre.environment ?? null, lifecycle: pre.lifecycle, harvestable: pre.harvestable, source: 'seed' };
+      : { category: pre.category ?? null, environment: pre.environment ?? null, lifecycle: pre.lifecycle, harvestable: pre.harvestable, source: 'seed' };
   const [exName, exVariety] = example(ctx.profile, plants.length);
 
   const st = { category: init.category, lifecycle: init.lifecycle, environment: init.environment, source: init.source || 'seed' };
@@ -64,6 +66,14 @@ export async function renderPlantForm(root, id, query = {}) {
   const note = h('textarea', { id: 'f-note', rows: 2 });
   const base = h('input', { type: 'number', id: 'f-base', step: 'any', min: '0.5', inputmode: 'decimal',
     value: init.baseOverride ?? '', placeholder: 'ponech prázdné = automaticky' });
+
+  const potVol = h('input', { type: 'number', id: 'f-pot', step: 'any', min: '0.1', inputmode: 'decimal', value: init.potVolumeL ?? '', placeholder: 'nepovinné' });
+  let substrate = init.substrate ?? '';
+  const subChips = chipGroup([['', S.ui.unspecified], ...SUBSTRATES.map((x) => [x, S.substrate[x]])], substrate, (v) => { substrate = v; });
+  subChips.el.id = 'f-substrate';
+  const planned = h('input', { type: 'date', id: 'f-planned', value: init.plannedHarvestAt ? dateOnly(init.plannedHarvestAt) : '' });
+  const potValue = () => (potVol.value === '' ? null : Number(potVol.value));
+  const plannedIso = () => (planned.value ? new Date(`${planned.value}T12:00:00`).toISOString() : null);
 
   function fillStages() {
     if (!st.category) { stage.replaceChildren(); return; }
@@ -85,7 +95,8 @@ export async function renderPlantForm(root, id, query = {}) {
     try {
       if (editing) {
         await updatePlantMeta(ctx.db, id, { name: name.value, variety: variety.value, location: location.value,
-          source: st.source, baseOverride: base.value === '' ? null : Number(base.value) });
+          source: st.source, baseOverride: base.value === '' ? null : Number(base.value),
+          potVolumeL: potValue(), substrate: substrate || null, plannedHarvestAt: plannedIso() });
         if (st.environment && st.environment !== editing.cache.environment) {
           if (SEASONAL_ENVIRONMENTS.includes(st.environment)) await askHemisphere();
           await appendEvents(ctx.db, id, [{ type: 'environment_change', payload: { environment: st.environment } }]);
@@ -102,7 +113,8 @@ export async function renderPlantForm(root, id, query = {}) {
         environment: st.environment, harvestable: harv.checked, stage: stage.value, location: location.value,
         source: st.source, startDate: toIso(start.value),
         baseOverride: base.value === '' ? null : Number(base.value),
-        learnedBase: init.learnedBase || null
+        learnedBase: init.learnedBase || null,
+        potVolumeL: potValue() ?? undefined, substrate: substrate || undefined, plannedHarvestAt: plannedIso() ?? undefined
       });
       const extra = [];
       if (photo.files[0]) {
@@ -147,6 +159,9 @@ export async function renderPlantForm(root, id, query = {}) {
       field(S.ui.location, location),
       field(S.ui.sourceLabel, src.el),
       editing ? null : field(S.ui.startDate, start),
+      field(S.ui.potVolume2, potVol),
+      field(S.ui.substrateLabel, subChips.el),
+      field(S.ui.plannedHarvest, planned),
       field(S.ui.baseOverride, base),
       editing ? null : field(S.ui.photo, photo),
       editing ? null : field(S.ui.note, note),

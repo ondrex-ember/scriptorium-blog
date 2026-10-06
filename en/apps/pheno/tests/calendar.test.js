@@ -135,7 +135,7 @@ test('stage change without a learned value scales d by the factor ratio, confide
   near(p.cache.confidence.vegetative, conf / 2, 0.01);
   // an already-learned stage is not overwritten
   p = ev(st, 'stage_change', { from: 'vegetative', to: 'seedling' }, addDays(T0, 11));
-  assert.equal(p.cache.dryingDays.seedling, d);
+  assert.equal(p.cache.soilDryDays.seedling, d);
 });
 
 test('learnedBase (clone) seeds d; baseOverride replaces the category base', () => {
@@ -209,7 +209,7 @@ test('snooze hides a task until the date; cleared entries come back', () => {
 test('fertilizing and pest check intervals come from category config', () => {
   const st = mk({ category: 'vegetable', environment: 'indoor' });
   const t = getPlantTasks(st.p, day(30));
-  assert.equal(t.find((x) => x.type === 'fertilizing').dueAt, addDays(T0, 10));
+  assert.equal(t.find((x) => x.type === 'fertilizing').dueAt, addDays(T0, 14));   // first feed after 14 days (rule fertilizing.firstFeedDays)
   assert.equal(t.find((x) => x.type === 'pestCheck').dueAt, addDays(T0, 5));
   const p = ev(st, 'fertilizing', {}, day(12));
   assert.equal(getPlantTasks(p, day(30)).find((x) => x.type === 'fertilizing').dueAt, addDays(day(12), 10));
@@ -227,13 +227,13 @@ test('computeTasks: urgency buckets, 3-day look-ahead, sorting', () => {
   assert.deepEqual(up.map((t) => [t.urgency, t.daysUntil]), [['upcoming', 3]]);
 });
 
-test('evaluation reminders: 14/44/74 days after last harvest until evaluated; single review at 90 days', () => {
+test('evaluation reminders: 30/90/365 days after "ready" until evaluated; single review at 90 days', () => {
   const st = mk({ environment: 'indoor' });
   ev(st, 'harvest', { freshWeight: 30 }, day(20));
   const e = (pl, now) => getPlantTasks(pl, now).filter((t) => t.type.startsWith('evaluation'));
-  assert.equal(e(st.p, day(21))[0].dueAt, day(34));
-  assert.equal(e(st.p, day(65))[0].dueAt, day(64));
-  assert.equal(e(st.p, day(120))[0].dueAt, day(94));
+  assert.equal(e(st.p, day(21))[0].dueAt, day(50));       // legacy harvest without method counts as ready on the harvest day
+  assert.equal(e(st.p, day(120))[0].dueAt, day(110));
+  assert.equal(e(st.p, day(500))[0].dueAt, day(385));
   const p = ev(st, 'evaluation', { scores: { overall: 4 } }, day(70));
   assert.equal(e(p, day(100)).length, 0);
   assert.equal(e(p, day(161))[0].type, 'evaluationReview');

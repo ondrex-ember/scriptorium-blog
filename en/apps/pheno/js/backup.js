@@ -1,15 +1,18 @@
 // ZIP export/import (spec 7.3). Imported content is untrusted: everything is validated and copied through whitelists.
 import { CATEGORIES, ENVIRONMENTS, SOURCES } from './config-categories.js';
+import { cleanRules } from './config-rules.js';
+import { cleanCriteria } from './criteria.js';
 import { EVENT_TYPES, rebuildAll } from './events.js';
-import { emptyCache } from './model.js';
+import { emptyCache, optionalPot } from './model.js';
 import { PROFILE_KEYS, PROFILE_SOURCES, UTM_KEYS } from './profile.js';
 import { getAllEvents, getPhoto, listPhotoKeys, listPlants, metaGet, metaSet, putPhoto, withTx } from './storage.js';
 import { normalizeKey, nowIso } from './utils.js';
 import { VERSION } from './version.js';
 
-export const SCHEMA_VERSION = 1;
+/** 2 = RCv0.191: batch_step / batch_check / care events and meta.rules. Version-1 archives still import. */
+export const SCHEMA_VERSION = 2;
 /** Meta keys that travel with a backup; device-specific ones (persistGranted, backup bookkeeping) do not. */
-export const PORTABLE_META = ['hemisphere', 'profile', 'profileSource', 'acquisition'];
+export const PORTABLE_META = ['hemisphere', 'profile', 'profileSource', 'acquisition', 'rules', 'criteria'];
 const MAX_TEXT = 20000;
 
 const jszip = (JSZip) => JSZip || globalThis.JSZip || (() => { throw new Error('JSZip není načtený'); })();
@@ -62,7 +65,7 @@ function cleanPlant(p) {
     baseOverride: Number.isFinite(p.baseOverride) && p.baseOverride > 0 ? p.baseOverride : null,
     learnedBase: learned && Object.keys(learned).length ? learned : null,
     startDate: p.startDate, createdAt: isDate(p.createdAt) ? p.createdAt : p.startDate,
-    ...(p.reminders === false ? { reminders: false } : {}),
+    ...(p.reminders === false ? { reminders: false } : {}), ...optionalPot(p),
     archivedAt: null, cache: emptyCache()
   };
 }
@@ -71,6 +74,7 @@ function cleanEvent(e) {
   if (!isObj(e) || !isId(e.id) || !isId(e.plantId) || !EVENT_TYPES.includes(e.type)) return null;
   if (!isDate(e.occurredAt) || !isDate(e.recordedAt) || !isObj(e.payload)) return null;
   if (JSON.stringify(e.payload).length > MAX_TEXT) return null;
+  if (['batch_step', 'batch_check'].includes(e.type) && !isId(e.payload.batchId)) return null;
   return { id: e.id, plantId: e.plantId, type: e.type, occurredAt: e.occurredAt, recordedAt: e.recordedAt, payload: e.payload };
 }
 
@@ -96,6 +100,8 @@ export async function readBackup(input, { JSZip } = {}) {
   if (meta.hemisphere && !['north', 'south'].includes(meta.hemisphere)) delete meta.hemisphere;
   if (meta.profile && !PROFILE_KEYS.includes(meta.profile)) { delete meta.profile; delete meta.profileSource; }
   if (meta.profileSource && !PROFILE_SOURCES.includes(meta.profileSource)) delete meta.profileSource;
+  if ('rules' in meta) { meta.rules = cleanRules(meta.rules); if (!Object.keys(meta.rules).length) delete meta.rules; }
+  if ('criteria' in meta) { meta.criteria = cleanCriteria(meta.criteria); if (!Object.keys(meta.criteria).length) delete meta.criteria; }
   if ('acquisition' in meta) meta.acquisition = cleanAcquisition(meta.acquisition);
   if (meta.acquisition == null) delete meta.acquisition;
   return { zip, manifest, plants, events, photoList, meta, skipped, archivePlantIds: ids };

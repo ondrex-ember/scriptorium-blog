@@ -1,18 +1,23 @@
 // Append-only event store: validation, derived fields, atomic writes.
-import { CATEGORIES, ENVIRONMENTS, MOISTURE_ANSWERS, PROBLEM_TYPES, PROCESSING_METHODS, RATING_MAX, SOURCES, getStages } from './config-categories.js';
+import { BATCH_ENDED, BATCH_PHASES, CARE_KINDS, CATEGORIES, DRYNESS_MAX, ENVIRONMENTS, EVAL_KINDS, MOISTURE_ANSWERS, PROBLEM_TYPES, PROCESSING_METHODS, RATING_MAX, SOURCES, getStages } from './config-categories.js';
+import { cleanRules, resolveRules } from './config-rules.js';
+import { activeCriteria, cleanCriteria } from './criteria.js';
 import './calendar.js';
-import { buildPlant, liveEvents, projectPlant } from './model.js';
+import { buildPlant, liveEvents, optionalPot, projectPlant } from './model.js';
 import { deletePlantData, idbReq, withTx } from './storage.js';
 import { S } from './strings.cs.js';
 import { PhenoError, compareEvents, daysBetween, isNum, normalizeKey, nowIso, uid } from './utils.js';
 
+/** Bump when projection logic changes: the app rebuilds every cache once on the next start. */
+export const ENGINE_REV = 3;
+
 export const EVENT_TYPES = [
   'created', 'stage_change', 'environment_change', 'watering', 'moisture_check', 'fertilizing',
   'pest_check', 'problem', 'problem_resolved', 'note', 'photo', 'measurement', 'milestone',
-  'harvest', 'evaluation', 'archive', 'unarchive', 'void'
+  'harvest', 'evaluation', 'archive', 'unarchive', 'void', 'batch_step', 'batch_check', 'care'
 ];
 /** Allowed on an archived plant. */
-const ARCHIVED_OK = ['unarchive', 'evaluation', 'note', 'photo', 'void'];
+const ARCHIVED_OK = ['unarchive', 'evaluation', 'note', 'photo', 'void', 'batch_step', 'batch_check'];
 /** Which snoozed task an event completes. */
 const COMPLETES = {
   watering: ['watering'], moisture_check: ['watering'], fertilizing: ['fertilizing'],
@@ -23,7 +28,7 @@ const bad = (msg = S.err.invalid) => new PhenoError('invalid', msg);
 const str = (v) => typeof v === 'string' && v.trim().length > 0;
 
 /** Validate one payload against the plant state; returns the cleaned payload. */
-function validatePayload(type, payload, plant, live) {
+function validatePayload(type, payload, plant, live, cur, opts = {}) {
   const p = payload || {};
   const cfg = CATEGORIES[plant.category];
   switch (type) {
@@ -90,14 +95,60 @@ function validatePayload(type, payload, plant, live) {
         if (!isNum(p.processingDays) || p.processingDays < 0) throw bad();
         out.processingDays = p.processingDays;
       }
+      if (p.estDays != null) {
+        if (!isNum(p.estDays) || p.estDays < 0.5 || p.estDays > 120) throw bad();
+        out.estDays = p.estDays;
+      }
       if (p.note) out.note = String(p.note);
       if (!Object.keys(out).length) throw bad();
+      if (p.final) out.final = true;
+      return out;
+    }
+    case 'batch_step': {
+      const b = openBatch(cur, p.batchId);
+      if (!BATCH_PHASES.includes(p.phase)) throw bad();
+      const out = { batchId: b.id, phase: p.phase };
+      if (p.method != null) {
+        if (!PROCESSING_METHODS.includes(p.method)) throw bad();
+        out.method = p.method;
+      }
+      if (p.estDays != null) {
+        if (!isNum(p.estDays) || p.estDays < 0.5 || p.estDays > 120) throw bad();
+        out.estDays = p.estDays;
+      }
+      if (p.note) out.note = String(p.note);
+      return out;
+    }
+    case 'batch_check': {
+      const b = openBatch(cur, p.batchId);
+      const out = { batchId: b.id };
+      if (p.dryness != null) {
+        if (!Number.isInteger(p.dryness) || p.dryness < 0 || p.dryness > DRYNESS_MAX) throw bad();
+        out.dryness = p.dryness;
+      }
+      if (p.mold != null) out.mold = !!p.mold;
+      for (const k of ['scent', 'appearance']) {
+        if (p[k] == null) continue;
+        if (!Number.isInteger(p[k]) || p[k] < 1 || p[k] > RATING_MAX) throw bad();
+        out[k] = p[k];
+      }
+      if (p.note) out.note = String(p.note);
+      if (p.photoId) out.photoId = String(p.photoId);
+      if (Object.keys(out).length < 2) throw bad();
+      return out;
+    }
+    case 'care': {
+      if (!CARE_KINDS.includes(p.kind)) throw bad();
+      const out = { kind: p.kind };
+      if (p.kind === 'custom') { if (!str(p.label)) throw bad(); out.label = p.label.trim().slice(0, 80); }
+      if (p.potVolumeL != null) { if (!isNum(p.potVolumeL) || p.potVolumeL <= 0) throw bad(); out.potVolumeL = p.potVolumeL; }
+      if (p.note) out.note = String(p.note);
       return out;
     }
     case 'evaluation': {
       if (!plant.harvestable && plant.lifecycle !== 'perennial') throw bad(S.err.notHarvestable);
       const scores = p.scores || {};
-      const allowed = ['overall', ...cfg.criteria];
+      const allowed = ['overall', ...activeCriteria(plant.category, opts.criteria).map((c) => c.key)];
       const out = {};
       for (const [k, v] of Object.entries(scores)) {
         if (!allowed.includes(k)) throw bad();
@@ -112,6 +163,18 @@ function validatePayload(type, payload, plant, live) {
         if (plant.lifecycle !== 'perennial' || !plant.harvestable || !Number.isInteger(p.season)) throw bad();
         res.season = p.season;
       }
+      if (p.batchId != null) {
+        const b = (cur?.cache?.batches || []).find((x) => x.id === p.batchId);
+        if (!b) throw bad();
+        res.batchId = b.id;
+      }
+      if (p.part) res.part = String(p.part).trim().slice(0, 80);
+      const c = cur?.cache;
+      const afterHarvest = res.batchId || res.season != null || c?.finalHarvestAt || ['harvested', 'done', 'dormant'].includes(c?.stage)
+        || (c?.batches || []).some((b) => b.readyAt || b.phase === 'used');
+      const kind = p.kind ?? (afterHarvest ? 'final' : 'tasting');
+      if (!EVAL_KINDS.includes(kind)) throw bad();
+      res.kind = kind;
       return res;
     }
     case 'archive': case 'unarchive':
@@ -124,6 +187,13 @@ function validatePayload(type, payload, plant, live) {
     default:
       throw bad();
   }
+}
+
+/** A batch that exists and is not used up or discarded; otherwise the payload is invalid. */
+function openBatch(cur, id) {
+  const b = (cur?.cache?.batches || []).find((x) => x.id === id);
+  if (!b || BATCH_ENDED.includes(b.phase)) throw bad();
+  return b;
 }
 
 function lastBefore(live, pred, at) {
@@ -145,7 +215,9 @@ export function buildEvents(plant, existing, inputs, now = nowIso(), opts = {}) 
       if (inp.type === 'unarchive' && !cur.archivedAt) throw new PhenoError('notArchived', S.err.notArchived);
     }
     const live = liveEvents(all);
-    const payload = validatePayload(inp.type, inp.payload, plant, live);
+    const payload = validatePayload(inp.type, inp.payload, plant, live, cur, opts);
+    const id = uid();
+    if (inp.type === 'harvest') payload.batchId = id;
     const occurredAt = inp.occurredAt || now;
     if (inp.type === 'watering' || inp.type === 'moisture_check') {
       const prev = lastBefore(live, (e) => e.type === 'watering' || (e.type === 'moisture_check' && e.payload.watered), occurredAt);
@@ -159,17 +231,19 @@ export function buildEvents(plant, existing, inputs, now = nowIso(), opts = {}) 
       const prev = lastBefore(live, (e) => e.type === 'harvest', occurredAt);
       payload.daysSinceLastHarvest = prev ? daysBetween(prev.occurredAt, occurredAt) : null;
     }
-    const ev = { id: uid(), plantId: plant.id, type: inp.type, occurredAt, recordedAt: now, payload };
+    const ev = { id, plantId: plant.id, type: inp.type, occurredAt, recordedAt: now, payload };
     built.push(ev);
     all = all.concat(ev);
   }
   return built;
 }
 
-/** Engine options stored in meta (hemisphere, asked once; default north). */
+/** Engine options stored in meta: hemisphere (default north) and the resolved rules (defaults + valid overrides). */
 async function readOpts(s) {
   const h = await idbReq(s.meta.get('hemisphere'));
-  return { hemisphere: h?.value === 'south' ? 'south' : 'north' };
+  const r = await idbReq(s.meta.get('rules'));
+  const cr = await idbReq(s.meta.get('criteria'));
+  return { hemisphere: h?.value === 'south' ? 'south' : 'north', rules: resolveRules(cleanRules(r?.value)), criteria: cleanCriteria(cr?.value) };
 }
 
 /** Append events to one plant and refresh its cache, in one transaction. Returns {plant, events}. */
@@ -181,7 +255,13 @@ export function appendEvents(db, plantId, inputs, { now } = {}) {
     const existing = await idbReq(s.events.index('plantId').getAll(plantId));
     const events = buildEvents(plant, existing, inputs, now, opts);
     const snoozed = { ...(plant.cache?.snoozedUntil || {}) };
-    for (const e of events) for (const k of COMPLETES[e.type] || []) delete snoozed[k];
+    for (const e of events) {
+      for (const k of COMPLETES[e.type] || []) delete snoozed[k];
+      const bid = e.payload?.batchId;
+      if (bid && ['batch_check', 'batch_step', 'evaluation'].includes(e.type)) {
+        for (const k of [`batchCheck:${bid}`, `useBy:${bid}`, `evaluation:${bid}`]) delete snoozed[k];
+      }
+    }
     const base = { ...plant, cache: { ...plant.cache, snoozedUntil: snoozed } };
     const next = projectPlant(base, existing.concat(events), opts);
     for (const e of events) s.events.put(e);
@@ -216,11 +296,12 @@ export function rebuildAll(db) {
   return withTx(db, ['plants', 'events', 'meta'], 'readwrite', async (s) => {
     const opts = await readOpts(s);
     const plants = await idbReq(s.plants.getAll());
+    let ok = 0;
     for (const pl of plants) {
       const evs = await idbReq(s.events.index('plantId').getAll(pl.id));
-      s.plants.put(projectPlant(pl, evs, opts));
+      try { s.plants.put(projectPlant(pl, evs, opts)); ok += 1; } catch (e) { console.error('rebuild failed for', pl.id, e); }
     }
-    return plants.length;
+    return ok;
   });
 }
 
@@ -240,6 +321,11 @@ export function updatePlantMeta(db, plantId, patch) {
     }
     if ('location' in patch) next.location = String(patch.location || '').trim();
     if ('source' in patch && SOURCES.includes(patch.source)) next.source = patch.source;
+    for (const k of ['potVolumeL', 'substrate', 'plannedHarvestAt']) {
+      if (!(k in patch)) continue;
+      if (patch[k] == null || patch[k] === '') delete next[k];
+      else { const v = optionalPot({ [k]: patch[k] }); if (!(k in v)) throw bad(); next[k] = v[k]; }
+    }
     if ('baseOverride' in patch) {
       const v = patch.baseOverride;
       if (v != null && (!isNum(v) || v <= 0)) throw bad();

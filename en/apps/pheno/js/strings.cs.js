@@ -6,7 +6,7 @@ export const S = {
   theme: { dark: 'Tmavé', light: 'Světlé' },
   category: {
     herb: 'Bylinka', vegetable: 'Zelenina', fruit: 'Ovoce',
-    flower: 'Květina', tree_shrub: 'Strom / keř', other: 'Jiné'
+    flower: 'Květina', tree_shrub: 'Strom / keř', houseplant: 'Pokojovka', other: 'Jiné'
   },
   environment: { outdoor: 'Venku', greenhouse: 'Skleník', indoor: 'Uvnitř', controlled: 'Řízené prostředí' },
   lifecycle: { cycle: 'Jednoletý cyklus', perennial: 'Víceletá' },
@@ -15,12 +15,89 @@ export const S = {
     budding: 'Poupata', flowering: 'Kvetení', fruiting: 'Plodení', harvested: 'Sklizeno',
     dormant: 'Klid', done: 'Dokončeno'
   },
+  substrate: { soil: 'Zemina', coco: 'Kokos', hydro: 'Hydro' },
+  crit: {
+    title: 'Kritéria hodnocení', open: 'Kritéria hodnocení', openHint: 'Pro každou kategorii přidej, přejmenuj nebo odeber kritéria. Stupnice zůstává 1–5.',
+    intro: 'Kritéria se nabízejí v hodnocení rostlin dané kategorie. „Celkově“ je povinné. Odebrané kritérium zmizí z nových hodnocení, ale staré hodnoty zůstanou v historii a do nových průměrů se nepočítají.',
+    overall: 'Celkově (povinné)', add: 'Přidat', addHint: 'Nové kritérium, např. Odolnost', removed: 'Odebraná kritéria', restore: 'Vrátit', remove: 'Odebrat',
+    reset: 'Výchozí kritéria', saved: 'Uloženo.', empty: 'Zatím jen „Celkově“.', limit: 'Dosažen maximální počet kritérií.', renameHint: 'Přejmenovat'
+  },
+  rules: {
+    title: 'Pravidla a intervaly', open: 'Pravidla a intervaly',
+    intro: 'Všechny intervaly a koeficienty, které aplikace používá. Změna se hned propíše do úkolů. Cokoli můžeš vrátit na výchozí hodnotu.',
+    openHint: 'Intervaly péče, kontroly dávek po sklizni, odhad sušení, květináče a roční období.',
+    def: 'výchozí', changed: 'změněno', reset: 'Výchozí', resetAll: 'Vrátit vše na výchozí', resetAllAsk: 'Všechny změněné hodnoty se vrátí na výchozí. Pokračovat?',
+    resetDone: 'Pravidla vrácena na výchozí', saved: 'Pravidla uložena', yes: 'Ano', no: 'Ne', changedCount: (n) => `Změněno: ${n}`,
+    invalid: (min, max) => `Zadej číslo od ${min} do ${max}.`, order: 'Hodnoty musí jít od menší k větší.',
+    group: {
+      category: 'Intervaly podle kategorie', fertilizing: 'Hnojení', batch: 'Dávky po sklizni', eval: 'Hodnocení a připomínky',
+      drying: 'Odhad doby sušení', pot: 'Květináč a substrát', season: 'Roční období', afterHarvest: 'Po poslední sklizni'
+    },
+    groupHint: {
+      category: 'Základní doba schnutí substrátu, interval hnojení a kontroly škůdců pro každou kategorii.',
+      fertilizing: 'Platí jen pro rostliny, o které se pečuje. Po sklizni se hnojení nepřipomíná.',
+      batch: 'Jak často kontrolovat dávky v zpracování a kdy připomenout spotřebu čerstvých plodů.',
+      eval: 'Připomínky se počítají od okamžiku „k použití“ (u čerstvých plodů od sklizně).',
+      drying: 'Doba sušení = reference × velikost dávky^exponent × prostředí × naučený poměr.',
+      pot: 'Větší květináč schne pomaleji, kokos a hydro rychleji.',
+      season: 'Násobek intervalu zálivky podle ročního období a prostředí.',
+      afterHarvest: 'Co se stane s rostlinou, když zaznamenáš poslední sklizeň.'
+    },
+    afterChoice: { ask: 'Zeptat se', auto: 'Přepnout automaticky', manual: 'Nic neměnit' },
+    afterHint: 'Zelenina, bylinky a květiny přejdou do „Sklizeno“, víceleté rostliny do „Klid“.',
+    label: {
+      'fertilizing.firstFeedDays': 'První hnojení po založení',
+      'fertilizing.fruitingFactor': 'Násobek intervalu hnojení při plodení',
+      'fertilizing.stopBeforeHarvestDays': 'Nehnojit před plánovanou sklizní',
+      'batch.drying.minDays': 'Sušení: nejkratší interval kontrol',
+      'batch.drying.maxDays': 'Sušení: nejdelší interval kontrol',
+      'batch.drying.fraction': 'Sušení: kontrola po části zbývající doby',
+      'batch.drying.nearDays': 'Sušení: interval u skoro suché dávky',
+      'batch.curing.firstWeekDays': 'Zrání: první týden',
+      'batch.curing.monthDays': 'Zrání: do 4 týdnů',
+      'batch.curing.laterDays': 'Zrání: později',
+      'batch.fermenting.days': 'Fermentace: interval kontrol',
+      'batch.storing.freshDays': 'Skladování čerstvých plodů: interval kontrol',
+      'batch.storing.driedDays': 'Skladování sušených dávek: interval kontrol',
+      'batch.pickling.days': 'Nakládání: interval kontrol',
+      'useBy.vegetable': 'Spotřebovat zeleninu do',
+      'useBy.fruit': 'Spotřebovat ovoce do',
+      'useBy.tree_shrub': 'Spotřebovat plody stromů a keřů do',
+      'eval.remind1Days': 'Hodnocení: 1. připomínka',
+      'eval.remind2Days': 'Hodnocení: 2. připomínka',
+      'eval.remind3Days': 'Hodnocení: 3. připomínka',
+      'eval.freshRemind1Days': 'Čerstvé plody: 1. připomínka',
+      'eval.freshRemind2Days': 'Čerstvé plody: 2. připomínka',
+      'eval.reviewDays': 'Připomenout „Změnil se tvůj názor?“ po',
+      'drying.refDays': 'Referenční doba sušení',
+      'drying.refWeightG': 'Referenční hmotnost dávky',
+      'drying.sizeExponent': 'Vliv velikosti dávky (exponent)',
+      'drying.minFactor': 'Nejkratší odhad (násobek reference)',
+      'drying.maxFactor': 'Nejdelší odhad (násobek reference)',
+      'drying.refHeightCm': 'Referenční výška rostliny',
+      'drying.blendOld': 'Váha dosavadního odhadu při učení',
+      'pot.refVolumeL': 'Referenční objem květináče',
+      'pot.volumeExponent': 'Vliv objemu květináče (exponent)',
+      'pot.minFactor': 'Nejmenší koeficient květináče',
+      'pot.maxFactor': 'Největší koeficient květináče',
+      afterFinalHarvest: 'Po poslední sklizni'
+    },
+    cat: { soilDays: 'schnutí substrátu', fertilizingDays: 'hnojení', pestCheckDays: 'kontrola škůdců' },
+    dryEnv: 'Sušení', potSub: 'Substrát', seasonOf: 'Sezóna', seasonOn: 'Sezónnost'
+  },
   moisture: { dry: 'Suché', ok: 'Akorát', wet: 'Vlhké' },
   problem: { pest: 'Škůdci', mold: 'Plíseň', wilting: 'Vadnutí', nutrient: 'Živiny', other: 'Jiné' },
   processing: {
-    drying: 'Sušení', fermenting: 'Fermentace', pickling: 'Nakládání',
+    drying: 'Sušení', curing: 'Zrání', fermenting: 'Fermentace', pickling: 'Nakládání',
     freezing: 'Zmrazení', storing: 'Skladování', none: 'Bez zpracování', other: 'Jiné'
   },
+  batchPhase: {
+    pending: 'Čeká na určení zpracování', drying: 'Sušení', curing: 'Zrání', fermenting: 'Fermentace', pickling: 'Nakládání',
+    freezing: 'Zmrazeno', storing: 'Skladování', other: 'Jiné zpracování', ready: 'K použití', used: 'Použito', discarded: 'Vyřazeno'
+  },
+  dryness: ['Čerstvé', 'Vlhké', 'Napůl suché', 'Skoro suché', 'Suché, dosychá', 'Hotovo, suché'],
+  care: { pruning: 'Řez', repotting: 'Přesazení', misting: 'Rosení', rotation: 'Otočení', cleaning: 'Čištění listů', custom: 'Jiná péče' },
+  evalKind: { tasting: 'Ochutnávka', final: 'Závěrečné hodnocení' },
   source: { seed: 'Semeno', cutting: 'Řízek', seedling: 'Sazenice', other: 'Jiné' },
   task: { watering: 'Zalít', fertilizing: 'Přihnojit', pestCheck: 'Zkontrolovat škůdce' },
   harvestField: {
@@ -32,7 +109,7 @@ export const S = {
   criterion: {
     overall: 'Celkově', aroma: 'Aroma', flavor: 'Chuť', usability: 'Využitelnost', taste: 'Chuť',
     texture: 'Textura', yieldSatisfaction: 'Spokojenost s výnosem', sweetness: 'Sladkost',
-    juiciness: 'Šťavnatost', appearance: 'Vzhled', fragrance: 'Vůně', bloomDuration: 'Doba kvetení'
+    juiciness: 'Šťavnatost', growth: 'Růst', health: 'Zdraví', appearance: 'Vzhled', fragrance: 'Vůně', bloomDuration: 'Doba kvetení'
   },
   err: {
     name: 'Zadej název rostliny.',
@@ -46,7 +123,7 @@ export const S = {
   },
   taskLabel: {
     moisture: 'Zkontrolovat vlhkost', fertilizing: 'Přihnojit', pestCheck: 'Zkontrolovat škůdce',
-    problemFollowUp: 'Zkontrolovat problém', evaluation: 'Ohodnotit sklizeň', evaluationReview: 'Změnil se tvůj názor?'
+    problemFollowUp: 'Zkontrolovat problém', batchCheck: 'Zkontrolovat dávku', useBy: 'Spotřebovat dávku', evaluation: 'Ohodnotit sklizeň', evaluationReview: 'Změnil se tvůj názor?'
   },
   ui: {
     today: 'Dnes', tomorrow: 'Zítra', yesterday: 'Včera', overdue: 'Po termínu', upcoming: 'Nadcházející',
@@ -78,7 +155,22 @@ export const S = {
     avgRating: 'Průměr hodnocení', growAgainShare: 'Pěstovat znovu', yieldTotal: 'Výnos celkem',
     yieldPerPlant: 'Na rostlinu', avgCycle: 'Délka cyklu', problemsPer: 'Problémů na rostlinu',
     cycles: 'Cyklů / sezón', noVarieties: 'Zatím není z čeho počítat.', overallRequired: 'Zvol celkové hodnocení.',
-    plantsOfVariety: 'Rostliny této odrůdy', fillOne: 'Vyplň aspoň jednu hodnotu.', seasonWord: 'Sezóna', resolved: 'Vyřešeno', recordedUndo: 'Zaznamenáno'
+    plantsOfVariety: 'Rostliny této odrůdy', fillOne: 'Vyplň aspoň jednu hodnotu.', seasonWord: 'Sezóna', resolved: 'Vyřešeno', recordedUndo: 'Zaznamenáno',
+    batchFine: 'V pořádku', lastHarvestTag: 'poslední sklizeň', pestClean: 'Čisto', pestFound: 'Nalezeno', finalHarvest: 'Je to poslední sklizeň této rostliny',
+    finalHint: 'Další úkoly péče skončí a dávky se dál zpracovávají.', estDays: 'Odhad doby zpracování (dny, nepovinné)',
+    pickMethod: 'Vyber zpracování.', afterHarvest: 'Po sklizni', batchCheck: 'Zkontrolovat', batchMove: 'Přesunout', batchMethod: 'Určit zpracování',
+    batchPending: 'Sklizeň čeká na určení zpracování', batchesTitle: 'Dávky', noBatches: 'Zatím žádné dávky.',
+    dryness: 'Stupeň vysušení', batchLook: 'Vzhled', mold: 'Plíseň', moldNone: 'Bez plísně', moldFound: 'Plíseň', scent: 'Vůně',
+    movePhase: 'Přesunout do', dryDone: 'Dávka je suchá. Co dál?', useAsk: 'Dávka je ke spotřebě. Co s ní?', stillHave: 'Ještě mám',
+    markUsed: 'Použito', markDiscarded: 'Vyřazeno', evalKind: 'Druh hodnocení', evalBatch: 'Co hodnotíš', evalPart: 'Jaká část (nepovinné)',
+    evalPartHint: 'Např. horní větve, první zrání, jedna sklenice.', wholePlant: 'Celá rostlina', tasting: 'Ochutnávka',
+    tastingHint: 'Průběžné hodnocení plodů. Nezapočítává se do závěrečného skóre.', finalEval: 'Závěrečné',
+    careKind: 'Druh péče', careLabel: 'Název', potVolume: 'Objem nového květináče (l)', ready: 'k použití', phaseSince: 'od',
+    dayOf: (t, n) => `den ${t} z ~${n}`, dryMeasured: (n) => `sušeno ${n} dní`,
+    dryLearned: (r, n) => `Naučený poměr sušení: ×${r} (z ${n} ${n === 1 ? 'dávky' : 'dávek'})`,
+    dryPrior: (r) => `Odhad podle ostatních rostlin: ×${r}`, afterFinalAsk: 'Poslední sklizeň zapsána. Přepnout rostlinu do dalšího stavu?',
+    switchTo: 'Přepnout na', notYet: 'Ještě ne', switched: 'Stav změněn', batchSaved: 'Dávka uložena', kindFinal: 'Závěrečné', kindTasting: 'Ochutnávky',
+    plantArchivedBatches: 'Rostlina je archivovaná, dávky se dál sledují.', noCareTasks: 'Rostlina je po sklizni, péče se nepřipomíná.'
   },
   persistWarn: 'Prohlížeč nepotvrdil trvalé úložiště. Doporučujeme pravidelně zálohovat.',
   profile: {

@@ -15,6 +15,8 @@ import { S } from './strings.cs.js';
 import { renderDashboard } from './ui-dashboard.js';
 import { renderPlant } from './ui-plant.js';
 import { renderPlantForm } from './ui-plant-form.js';
+import { renderCriteria } from './ui-criteria.js';
+import { renderRules } from './ui-rules.js';
 import { renderSettings } from './ui-settings.js';
 import { renderVarieties, renderVariety } from './ui-stats.js';
 import { VERSION } from './version.js';
@@ -45,6 +47,9 @@ async function boot() {
     return null;
   });
   if ((await metaGet(db, 'schemaVersion')) == null) await metaSet(db, 'schemaVersion', 1);
+  try {   // projection changed (RCv0.191): rebuild caches once; one broken plant must not block startup
+    if ((await metaGet(db, 'engineRev')) !== events.ENGINE_REV) { await events.rebuildAll(db); await metaSet(db, 'engineRev', events.ENGINE_REV); }
+  } catch (e) { console.error('cache rebuild failed', e); }
   if ((await listPlants(db)).length) await requestPersistence(db);
 
   route('/', renderDashboard, 'overview');
@@ -56,6 +61,8 @@ async function boot() {
   route('/varieties', renderVarieties, 'varieties');
   route('/variety/:category/:key', (r, p) => renderVariety(r, p.category, p.key), 'varieties');
   route('/settings', renderSettings, 'settings');
+  route('/settings/rules', renderRules, 'settings');
+  route('/settings/criteria', renderCriteria, 'settings');
   route('/install', renderInstall, 'settings');
   await startRouter(document.getElementById('view'));
   window.pheno = { db, ...events, ...model };

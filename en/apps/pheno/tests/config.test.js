@@ -45,3 +45,11 @@ test('utils', () => {
   assert.equal(weightedMean([1, 2, 3]), (1 + 4 + 9) / 6);
   assert.equal(coefVariation([2, 2, 2]), 0);
 });
+
+test('houseplant category (RCv0.191): perennial, not harvestable, 7/30/14 days, growth–health–appearance', () => {
+  const c = CATEGORIES.houseplant;
+  assert.deepEqual([c.lifecycle, c.harvestable, c.baseDryingDays, c.fertilizingDays, c.pestCheckDays], ['perennial', false, 7, 30, 14]);
+  assert.deepEqual(c.criteria, ['growth', 'health', 'appearance']);
+  assert.ok(S.category.houseplant);
+  for (const k of c.criteria) assert.ok(S.criterion[k]);
+});

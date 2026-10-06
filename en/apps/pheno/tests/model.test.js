@@ -214,7 +214,7 @@ test('projector registry lets later modules extend the projection', async () => 
 test('clonePlantInput: next #n, carries variety, env, learned values', async () => {
   const db = await freshDb();
   const p = await createPlant(db, basePlant({ name: 'Bazalka' }));
-  p.cache.dryingDays = { seedling: 2.5 };
+  p.cache.soilDryDays = { seedling: 2.5 };
   let c = clonePlantInput(p, []);
   assert.equal(c.name, 'Bazalka #2');
   assert.deepEqual(c.learnedBase, { seedling: 2.5 });

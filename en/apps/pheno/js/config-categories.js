@@ -5,10 +5,11 @@ export const CYCLE_STAGES = {
   fruit: ['planted', 'growing', 'flowering', 'fruiting', 'harvested', 'done'],
   tree_shrub: ['planted', 'growing', 'flowering', 'fruiting', 'harvested', 'done'],
   flower: ['seedling', 'vegetative', 'budding', 'flowering', 'done'],
+  houseplant: ['growing', 'done'],
   other: ['growing', 'harvested', 'done']
 };
 export const PERENNIAL_STAGES = ['planted', 'growing', 'flowering', 'fruiting', 'dormant'];
-export const STAGE_FLAGS = { done: { terminal: true }, dormant: { dormant: true } };
+export const STAGE_FLAGS = { done: { terminal: true }, harvested: { postHarvest: true }, dormant: { dormant: true } };
 
 const num = (key, min = 0) => ({ key, type: 'number', min });
 
@@ -38,6 +39,11 @@ export const CATEGORIES = {
     harvestFields: [num('totalWeight'), num('pieceCount')],
     criteria: ['taste', 'appearance']
   },
+  houseplant: {
+    lifecycle: 'perennial', harvestable: false, fertilizingDays: 30, pestCheckDays: 14, baseDryingDays: 7,
+    harvestFields: [],
+    criteria: ['growth', 'health', 'appearance']
+  },
   other: {
     lifecycle: 'cycle', harvestable: false, fertilizingDays: 14, pestCheckDays: 7, baseDryingDays: 3,
     harvestFields: [num('quantity')],
@@ -48,7 +54,16 @@ export const CATEGORIES = {
 export const ENVIRONMENTS = ['outdoor', 'greenhouse', 'indoor', 'controlled'];
 export const SOURCES = ['seed', 'cutting', 'seedling', 'other'];
 export const PROBLEM_TYPES = ['pest', 'mold', 'wilting', 'nutrient', 'other'];
-export const PROCESSING_METHODS = ['drying', 'fermenting', 'pickling', 'freezing', 'storing', 'none', 'other'];
+export const PROCESSING_METHODS = ['drying', 'curing', 'fermenting', 'pickling', 'freezing', 'storing', 'none', 'other'];
+/** Batch phases a user can move a batch to: the processing phases, then ready / used / discarded. */
+export const PROCESSING_PHASES = ['drying', 'curing', 'fermenting', 'pickling', 'freezing', 'storing', 'other'];
+export const BATCH_PHASES = [...PROCESSING_PHASES, 'ready', 'used', 'discarded'];
+export const BATCH_ENDED = ['used', 'discarded'];
+/** Categories whose harvest is eaten fresh: they get storage and "use by" handling, not drying. */
+export const FRESH_CATEGORIES = ['vegetable', 'fruit', 'tree_shrub'];
+export const DRYNESS_MAX = 5;
+export const CARE_KINDS = ['pruning', 'repotting', 'misting', 'rotation', 'cleaning', 'custom'];
+export const EVAL_KINDS = ['tasting', 'final'];
 export const MOISTURE_ANSWERS = ['dry', 'ok', 'wet'];
 export const RATING_MAX = 5;
 

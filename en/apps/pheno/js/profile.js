@@ -12,7 +12,7 @@ export const PROFILES = {
     examples: [['Rajče #1', 'San Marzano'], ['Jahodník', 'Elsanta'], ['Chilli', 'Habanero']]
   },
   houseplants: {
-    preselect: { environment: 'indoor', lifecycle: 'perennial', harvestable: false },
+    preselect: { category: 'houseplant', environment: 'indoor', lifecycle: 'perennial', harvestable: false },
     dashboard: ['tasks', 'milestones'],
     examples: [['Monstera', 'Deliciosa'], ['Fíkus', 'Benjamin'], ['Orchidej', 'Phalaenopsis']]
   },

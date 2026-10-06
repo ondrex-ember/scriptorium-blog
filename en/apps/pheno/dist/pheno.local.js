@@ -5,270 +5,6 @@
       __defProp(target, name, { get: all[name], enumerable: true });
   };
 
-  // js/storage.js
-  var DB_NAME = "pheno";
-  var DB_VERSION = 1;
-  var req = (r) => new Promise((res, rej) => {
-    r.onsuccess = () => res(r.result);
-    r.onerror = () => rej(r.error);
-  });
-  function openDb(name = DB_NAME, factory = globalThis.indexedDB) {
-    return new Promise((resolve, reject) => {
-      const r = factory.open(name, DB_VERSION);
-      r.onupgradeneeded = () => {
-        const db = r.result;
-        const plants = db.createObjectStore("plants", { keyPath: "id" });
-        plants.createIndex("archivedAt", "archivedAt");
-        plants.createIndex("varietyKey", "varietyKey");
-        const events = db.createObjectStore("events", { keyPath: "id" });
-        events.createIndex("plantId", "plantId");
-        events.createIndex("plantType", ["plantId", "type"]);
-        events.createIndex("occurredAt", "occurredAt");
-        const photos = db.createObjectStore("photos", { keyPath: "id" });
-        photos.createIndex("plantId", "plantId");
-        db.createObjectStore("meta", { keyPath: "key" });
-      };
-      r.onsuccess = () => resolve(r.result);
-      r.onerror = () => reject(r.error);
-    });
-  }
-  function withTx(db, storeNames, mode, fn) {
-    return new Promise((resolve, reject) => {
-      const names = [].concat(storeNames);
-      const tx = db.transaction(names, mode);
-      const stores = {};
-      for (const n of names) stores[n] = tx.objectStore(n);
-      let result;
-      tx.oncomplete = () => resolve(result);
-      tx.onerror = () => reject(tx.error);
-      tx.onabort = () => reject(tx.error || new Error("Transaction aborted"));
-      Promise.resolve().then(() => fn(stores)).then(
-        (r) => {
-          result = r;
-        },
-        (e) => {
-          try {
-            tx.abort();
-          } catch {
-          }
-          reject(e);
-        }
-      );
-    });
-  }
-  var idbReq = req;
-  var getPlant = (db, id) => withTx(db, "plants", "readonly", (s) => req(s.plants.get(id)));
-  var listPlants = (db) => withTx(db, "plants", "readonly", (s) => req(s.plants.getAll()));
-  var getEvents = (db, plantId) => withTx(db, "events", "readonly", (s) => req(s.events.index("plantId").getAll(plantId)));
-  var getAllEvents = (db) => withTx(db, "events", "readonly", (s) => req(s.events.getAll()));
-  var putPhoto = (db, photo) => withTx(db, "photos", "readwrite", (s) => req(s.photos.put(photo)));
-  var getPhoto = (db, id) => withTx(db, "photos", "readonly", (s) => req(s.photos.get(id)));
-  var metaGet = (db, key) => withTx(db, "meta", "readonly", async (s) => (await req(s.meta.get(key)))?.value);
-  var metaSet = (db, key, value) => withTx(db, "meta", "readwrite", (s) => req(s.meta.put({ key, value })));
-  function deletePlantData(db, plantId) {
-    return withTx(db, ["plants", "events", "photos"], "readwrite", async (s) => {
-      const evKeys = await req(s.events.index("plantId").getAllKeys(plantId));
-      const phKeys = await req(s.photos.index("plantId").getAllKeys(plantId));
-      for (const k of evKeys) s.events.delete(k);
-      for (const k of phKeys) s.photos.delete(k);
-      s.plants.delete(plantId);
-      return { events: evKeys.length, photos: phKeys.length };
-    });
-  }
-  async function ensurePersistence() {
-    try {
-      const st = globalThis.navigator?.storage;
-      if (!st?.persist) return { supported: false, persisted: false };
-      if (await st.persisted()) return { supported: true, persisted: true };
-      return { supported: true, persisted: await st.persist() };
-    } catch {
-      return { supported: false, persisted: false };
-    }
-  }
-  var listPhotoKeys = (db) => withTx(db, "photos", "readonly", (s) => req(s.photos.getAllKeys()));
-
-  // js/profile.js
-  var PROFILE_KEYS = ["garden", "houseplants", "controlled", "mixed"];
-  var PROFILE_SOURCES = ["url", "onboarding", "settings"];
-  var UTM_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_content"];
-  var PROFILES = {
-    garden: {
-      preselect: { environment: "outdoor", lifecycle: "cycle" },
-      dashboard: ["tasks", "season", "varieties"],
-      examples: [["Raj\u010De #1", "San Marzano"], ["Jahodn\xEDk", "Elsanta"], ["Chilli", "Habanero"]]
-    },
-    houseplants: {
-      preselect: { environment: "indoor", lifecycle: "perennial", harvestable: false },
-      dashboard: ["tasks", "milestones"],
-      examples: [["Monstera", "Deliciosa"], ["F\xEDkus", "Benjamin"], ["Orchidej", "Phalaenopsis"]]
-    },
-    controlled: {
-      preselect: { environment: "controlled", measurementsFirst: true },
-      dashboard: ["tasks", "measurements", "cycles"],
-      examples: [["Sal\xE1t", "Lollo rosso"], ["Bazalka #1", "Genovese"], ["Jahodn\xEDk", "Albion"]]
-    },
-    mixed: { preselect: {}, dashboard: ["tasks"], examples: null }
-  };
-  PROFILES.mixed.examples = [...PROFILES.garden.examples, ...PROFILES.houseplants.examples, ...PROFILES.controlled.examples];
-  var isProfile = (v) => PROFILE_KEYS.includes(v);
-  function example(profile, index = 0) {
-    const list = (PROFILES[profile] || PROFILES.mixed).examples;
-    return list[Math.abs(index) % list.length];
-  }
-  var clean = (v) => String(v).replace(/[\u0000-\u001f\u007f<>]/g, "").trim().slice(0, 100);
-  function parseAcquisition(search) {
-    const q = new URLSearchParams(search || "");
-    const profile = isProfile(q.get("profile")) ? q.get("profile") : null;
-    const utm = {};
-    for (const k of UTM_KEYS) {
-      const v = q.get(k);
-      if (v != null && clean(v)) utm[k] = clean(v);
-    }
-    return { profile, utm: Object.keys(utm).length ? utm : null };
-  }
-  function stripAcquisition(search) {
-    const q = new URLSearchParams(search || "");
-    for (const k of ["profile", ...UTM_KEYS]) q.delete(k);
-    const s = q.toString();
-    return s ? `?${s}` : "";
-  }
-  var getProfile = async (db) => {
-    const v = await metaGet(db, "profile");
-    return isProfile(v) ? v : null;
-  };
-  async function setProfile(db, profile, source) {
-    if (!isProfile(profile) || !PROFILE_SOURCES.includes(source)) throw new Error("Neplatn\xFD profil.");
-    await metaSet(db, "profile", profile);
-    await metaSet(db, "profileSource", source);
-  }
-  async function applyAcquisition(db, search, now2 = (/* @__PURE__ */ new Date()).toISOString()) {
-    const { profile, utm } = parseAcquisition(search);
-    if (utm && await metaGet(db, "acquisition") == null) await metaSet(db, "acquisition", { ...utm, capturedAt: now2 });
-    let current = await getProfile(db);
-    if (!current && profile) {
-      await setProfile(db, profile, "url");
-      current = profile;
-    }
-    return current;
-  }
-
-  // js/ctx.js
-  var ctx = { db: null, hemisphere: "north", profile: null };
-  var now = () => (/* @__PURE__ */ new Date()).toISOString();
-  async function initCtx(db) {
-    ctx.db = db;
-    ctx.hemisphere = await metaGet(db, "hemisphere") === "south" ? "south" : "north";
-    ctx.profile = await getProfile(db);
-    return ctx;
-  }
-  var hemisphereKnown = () => metaGet(ctx.db, "hemisphere").then((v) => v === "north" || v === "south");
-  async function setHemisphere(v) {
-    ctx.hemisphere = v;
-    await metaSet(ctx.db, "hemisphere", v);
-  }
-  async function loadAll() {
-    const [plants, events] = await Promise.all([listPlants(ctx.db), getAllEvents(ctx.db)]);
-    const byPlant = /* @__PURE__ */ new Map();
-    for (const e of events) {
-      if (!byPlant.has(e.plantId)) byPlant.set(e.plantId, []);
-      byPlant.get(e.plantId).push(e);
-    }
-    return { plants, byPlant, events };
-  }
-  var engineOpts = () => ({ hemisphere: ctx.hemisphere });
-  var THEME_KEY = "pheno.theme";
-  function getTheme() {
-    try {
-      return localStorage.getItem(THEME_KEY) === "svetle" ? "svetle" : "tmave";
-    } catch {
-      return "tmave";
-    }
-  }
-  function setTheme(name) {
-    document.documentElement.dataset.theme = name;
-    try {
-      localStorage.setItem(THEME_KEY, name);
-    } catch {
-    }
-  }
-
-  // js/dom.js
-  function h(tag, props = {}, ...children) {
-    const el = document.createElement(tag);
-    for (const [k, v] of Object.entries(props || {})) {
-      if (v == null || v === false) continue;
-      if (k === "class") el.className = v;
-      else if (k === "style") el.setAttribute("style", v);
-      else if (k === "dataset") Object.assign(el.dataset, v);
-      else if (k.startsWith("on") && typeof v === "function") el.addEventListener(k.slice(2).toLowerCase(), v);
-      else if (k in el && typeof v !== "string" || k === "value" || k === "checked" || k === "disabled" || k === "hidden") el[k] = v;
-      else el.setAttribute(k, v === true ? "" : v);
-    }
-    append(el, children);
-    return el;
-  }
-  function append(el, children) {
-    for (const c of children.flat(Infinity)) {
-      if (c == null || c === false) continue;
-      el.append(c instanceof Node ? c : document.createTextNode(String(c)));
-    }
-  }
-  function icon(name, cls = "") {
-    const ns = "http://www.w3.org/2000/svg";
-    const svg = document.createElementNS(ns, "svg");
-    svg.setAttribute("class", `ui-icon ${cls}`.trim());
-    svg.setAttribute("aria-hidden", "true");
-    const use = document.createElementNS(ns, "use");
-    use.setAttribute("href", `#i-${name}`);
-    svg.append(use);
-    return svg;
-  }
-  function clear(el) {
-    el.replaceChildren();
-    return el;
-  }
-  function put(el, ...children) {
-    el.append(...children.flat(Infinity).filter((c) => c != null && c !== false));
-    return el;
-  }
-  function field(label, input, hint) {
-    return h("div", { class: "field" }, h("label", {}, label), input, hint ? h("div", { class: "field-hint" }, hint) : null);
-  }
-  function chipGroup(options, value, onChange) {
-    let cur = value;
-    const el = h("div", { class: "chip-group", role: "radiogroup" });
-    const btns = options.map(([v, label]) => h("button", {
-      type: "button",
-      class: "chip" + (v === cur ? " selected" : ""),
-      dataset: { value: v },
-      onclick: () => {
-        set(v);
-        onChange?.(v);
-      }
-    }, label));
-    el.append(...btns);
-    function set(v) {
-      cur = v;
-      btns.forEach((b) => b.classList.toggle("selected", b.dataset.value === String(v)));
-    }
-    return { el, get: () => cur, set };
-  }
-
-  // js/events.js
-  var events_exports = {};
-  __export(events_exports, {
-    EVENT_TYPES: () => EVENT_TYPES,
-    appendEvents: () => appendEvents,
-    buildEvents: () => buildEvents,
-    compareEvents: () => compareEvents,
-    createPlant: () => createPlant,
-    deletePlantPermanently: () => deletePlantPermanently,
-    rebuildAll: () => rebuildAll,
-    snoozeTask: () => snoozeTask,
-    updatePlantMeta: () => updatePlantMeta,
-    voidEvent: () => voidEvent
-  });
-
   // js/config-categories.js
   var CYCLE_STAGES = {
     herb: ["seedling", "vegetative", "flowering", "harvested", "done"],
@@ -276,10 +12,11 @@
     fruit: ["planted", "growing", "flowering", "fruiting", "harvested", "done"],
     tree_shrub: ["planted", "growing", "flowering", "fruiting", "harvested", "done"],
     flower: ["seedling", "vegetative", "budding", "flowering", "done"],
+    houseplant: ["growing", "done"],
     other: ["growing", "harvested", "done"]
   };
   var PERENNIAL_STAGES = ["planted", "growing", "flowering", "fruiting", "dormant"];
-  var STAGE_FLAGS = { done: { terminal: true }, dormant: { dormant: true } };
+  var STAGE_FLAGS = { done: { terminal: true }, harvested: { postHarvest: true }, dormant: { dormant: true } };
   var num = (key, min = 0) => ({ key, type: "number", min });
   var CATEGORIES = {
     herb: {
@@ -327,6 +64,15 @@
       harvestFields: [num("totalWeight"), num("pieceCount")],
       criteria: ["taste", "appearance"]
     },
+    houseplant: {
+      lifecycle: "perennial",
+      harvestable: false,
+      fertilizingDays: 30,
+      pestCheckDays: 14,
+      baseDryingDays: 7,
+      harvestFields: [],
+      criteria: ["growth", "health", "appearance"]
+    },
     other: {
       lifecycle: "cycle",
       harvestable: false,
@@ -340,7 +86,14 @@
   var ENVIRONMENTS = ["outdoor", "greenhouse", "indoor", "controlled"];
   var SOURCES = ["seed", "cutting", "seedling", "other"];
   var PROBLEM_TYPES = ["pest", "mold", "wilting", "nutrient", "other"];
-  var PROCESSING_METHODS = ["drying", "fermenting", "pickling", "freezing", "storing", "none", "other"];
+  var PROCESSING_METHODS = ["drying", "curing", "fermenting", "pickling", "freezing", "storing", "none", "other"];
+  var PROCESSING_PHASES = ["drying", "curing", "fermenting", "pickling", "freezing", "storing", "other"];
+  var BATCH_PHASES = [...PROCESSING_PHASES, "ready", "used", "discarded"];
+  var BATCH_ENDED = ["used", "discarded"];
+  var FRESH_CATEGORIES = ["vegetable", "fruit", "tree_shrub"];
+  var DRYNESS_MAX = 5;
+  var CARE_KINDS = ["pruning", "repotting", "misting", "rotation", "cleaning", "custom"];
+  var EVAL_KINDS = ["tasting", "final"];
   var MOISTURE_ANSWERS = ["dry", "ok", "wet"];
   var RATING_MAX = 5;
   function getStages(category, lifecycle) {
@@ -362,7 +115,6 @@
     dormant: 3,
     done: 1
   };
-  var SEASON_MODIFIER = { summer: 0.85, spring: 1, autumn: 1, winter: 1.3 };
   var SEASONAL_ENVIRONMENTS = ["outdoor", "greenhouse"];
   var PEST_BOOST_DAYS = 14;
   var LEARN = {
@@ -384,11 +136,83 @@
     blendOk: 0.3,
     recheckFraction: 0.3
   };
-  var FERT_STAGE_FACTOR = {};
   var FOLLOWUP_DAYS = 3;
   var LOOKAHEAD_DAYS = 3;
-  var EVAL_REMINDER_DAYS = [14, 44, 74];
-  var EVAL_REVIEW_DAYS = 90;
+
+  // js/config-rules.js
+  var num2 = (key, group, def, min, max, unit, step = 1) => ({ key, group, kind: "num", def, min, max, unit, step });
+  var bool = (key, group, def) => ({ key, group, kind: "bool", def });
+  var choice = (key, group, def, options) => ({ key, group, kind: "choice", def, options });
+  var AFTER_FINAL_HARVEST = ["ask", "auto", "manual"];
+  var SUBSTRATES = ["soil", "coco", "hydro"];
+  var SEASON_NAMES = ["spring", "summer", "autumn", "winter"];
+  var SEASON_DEFAULTS = { spring: 1, summer: 0.85, autumn: 1, winter: 1.3 };
+  var SEASON_ON = { outdoor: true, greenhouse: true, indoor: false, controlled: false };
+  var categoryDefs = Object.entries(CATEGORIES).flatMap(([c, cfg]) => [
+    num2(`cat.${c}.soilDays`, "category", cfg.baseDryingDays, 0.5, 60, "dn\xED", 0.5),
+    num2(`cat.${c}.fertilizingDays`, "category", cfg.fertilizingDays, 1, 180, "dn\xED"),
+    num2(`cat.${c}.pestCheckDays`, "category", cfg.pestCheckDays, 1, 90, "dn\xED")
+  ]);
+  var RULE_DEFS = [
+    ...categoryDefs,
+    num2("fertilizing.firstFeedDays", "fertilizing", 14, 0, 90, "dn\xED"),
+    num2("fertilizing.fruitingFactor", "fertilizing", 0.8, 0.3, 1.5, "\xD7", 0.05),
+    num2("fertilizing.stopBeforeHarvestDays", "fertilizing", 0, 0, 60, "dn\xED"),
+    num2("batch.drying.minDays", "batch", 1, 1, 14, "dn\xED"),
+    num2("batch.drying.maxDays", "batch", 7, 1, 30, "dn\xED"),
+    num2("batch.drying.fraction", "batch", 0.3, 0.1, 0.6, "zb\xFDvaj\xEDc\xED doby", 0.05),
+    num2("batch.drying.nearDays", "batch", 1, 1, 7, "dn\xED"),
+    num2("batch.curing.firstWeekDays", "batch", 1, 1, 14, "dn\xED"),
+    num2("batch.curing.monthDays", "batch", 3, 1, 30, "dn\xED"),
+    num2("batch.curing.laterDays", "batch", 7, 1, 60, "dn\xED"),
+    num2("batch.fermenting.days", "batch", 2, 1, 30, "dn\xED"),
+    num2("batch.storing.freshDays", "batch", 7, 1, 90, "dn\xED"),
+    num2("batch.storing.driedDays", "batch", 30, 1, 365, "dn\xED"),
+    num2("batch.pickling.days", "batch", 30, 1, 365, "dn\xED"),
+    num2("useBy.vegetable", "batch", 10, 1, 365, "dn\xED od sklizn\u011B"),
+    num2("useBy.fruit", "batch", 14, 1, 365, "dn\xED od sklizn\u011B"),
+    num2("useBy.tree_shrub", "batch", 60, 1, 365, "dn\xED od sklizn\u011B"),
+    num2("eval.remind1Days", "eval", 30, 0, 730, "dn\xED od \u201Ek pou\u017Eit\xED\u201C"),
+    num2("eval.remind2Days", "eval", 90, 0, 730, "dn\xED od \u201Ek pou\u017Eit\xED\u201C"),
+    num2("eval.remind3Days", "eval", 365, 0, 1460, "dn\xED od \u201Ek pou\u017Eit\xED\u201C"),
+    num2("eval.freshRemind1Days", "eval", 0, 0, 365, "dn\xED (\u010Derstv\xE9 plody)"),
+    num2("eval.freshRemind2Days", "eval", 14, 0, 365, "dn\xED (\u010Derstv\xE9 plody)"),
+    num2("eval.reviewDays", "eval", 90, 7, 730, "dn\xED po prvn\xEDm hodnocen\xED"),
+    num2("drying.refDays", "drying", 7, 1, 60, "dn\xED"),
+    num2("drying.refWeightG", "drying", 50, 1, 5e3, "g"),
+    num2("drying.sizeExponent", "drying", 0.4, 0, 1, "", 0.05),
+    num2("drying.minFactor", "drying", 0.5, 0.1, 1, "\xD7", 0.05),
+    num2("drying.maxFactor", "drying", 8, 1, 20, "\xD7", 0.5),
+    num2("drying.refHeightCm", "drying", 30, 5, 300, "cm"),
+    num2("drying.blendOld", "drying", 0.6, 0.1, 0.95, "", 0.05),
+    ...ENVIRONMENTS.map((e) => num2(`drying.env.${e}`, "drying", e === "outdoor" || e === "greenhouse" ? 0.9 : 1, 0.5, 2, "\xD7", 0.05)),
+    num2("pot.refVolumeL", "pot", 5, 0.1, 500, "l", 0.5),
+    num2("pot.volumeExponent", "pot", 0.5, 0, 1, "", 0.05),
+    num2("pot.minFactor", "pot", 0.4, 0.1, 1, "\xD7", 0.05),
+    num2("pot.maxFactor", "pot", 3, 1, 10, "\xD7", 0.5),
+    ...SUBSTRATES.map((s) => num2(`pot.substrate.${s}`, "pot", { soil: 1, coco: 0.7, hydro: 0.5 }[s], 0.2, 3, "\xD7", 0.05)),
+    ...SEASON_NAMES.map((s) => num2(`season.${s}`, "season", SEASON_DEFAULTS[s], 0.3, 3, "\xD7", 0.05)),
+    ...ENVIRONMENTS.map((e) => bool(`season.on.${e}`, "season", SEASON_ON[e])),
+    choice("afterFinalHarvest", "afterHarvest", "ask", AFTER_FINAL_HARVEST)
+  ];
+  var RULE_GROUPS = [...new Set(RULE_DEFS.map((d) => d.group))];
+  var BY_KEY = new Map(RULE_DEFS.map((d) => [d.key, d]));
+  var DEFAULT_RULES = Object.freeze(Object.fromEntries(RULE_DEFS.map((d) => [d.key, d.def])));
+  function validRule(key, value) {
+    const d = BY_KEY.get(key);
+    if (!d) return false;
+    if (d.kind === "num") return typeof value === "number" && Number.isFinite(value) && value >= d.min && value <= d.max;
+    if (d.kind === "bool") return typeof value === "boolean";
+    return d.options.includes(value);
+  }
+  function cleanRules(raw) {
+    const out = {};
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return out;
+    for (const [k, v] of Object.entries(raw)) if (validRule(k, v) && v !== DEFAULT_RULES[k]) out[k] = v;
+    return out;
+  }
+  var resolveRules = (overrides) => ({ ...DEFAULT_RULES, ...cleanRules(overrides) });
+  var rv = (rules, key) => rules?.[key] ?? DEFAULT_RULES[key];
 
   // js/model.js
   var model_exports = {};
@@ -398,6 +222,7 @@
     clonePlantInput: () => clonePlantInput,
     emptyCache: () => emptyCache,
     liveEvents: () => liveEvents,
+    optionalPot: () => optionalPot,
     projectPlant: () => projectPlant,
     registerProjector: () => registerProjector,
     unregisterProjector: () => unregisterProjector
@@ -415,6 +240,7 @@
       fruit: "Ovoce",
       flower: "Kv\u011Btina",
       tree_shrub: "Strom / ke\u0159",
+      houseplant: "Pokojovka",
       other: "Jin\xE9"
     },
     environment: { outdoor: "Venku", greenhouse: "Sklen\xEDk", indoor: "Uvnit\u0159", controlled: "\u0158\xEDzen\xE9 prost\u0159ed\xED" },
@@ -431,10 +257,111 @@
       dormant: "Klid",
       done: "Dokon\u010Deno"
     },
+    substrate: { soil: "Zemina", coco: "Kokos", hydro: "Hydro" },
+    crit: {
+      title: "Krit\xE9ria hodnocen\xED",
+      open: "Krit\xE9ria hodnocen\xED",
+      openHint: "Pro ka\u017Edou kategorii p\u0159idej, p\u0159ejmenuj nebo odeber krit\xE9ria. Stupnice z\u016Fst\xE1v\xE1 1\u20135.",
+      intro: "Krit\xE9ria se nab\xEDzej\xED v hodnocen\xED rostlin dan\xE9 kategorie. \u201ECelkov\u011B\u201C je povinn\xE9. Odebran\xE9 krit\xE9rium zmiz\xED z nov\xFDch hodnocen\xED, ale star\xE9 hodnoty z\u016Fstanou v historii a do nov\xFDch pr\u016Fm\u011Br\u016F se nepo\u010D\xEDtaj\xED.",
+      overall: "Celkov\u011B (povinn\xE9)",
+      add: "P\u0159idat",
+      addHint: "Nov\xE9 krit\xE9rium, nap\u0159. Odolnost",
+      removed: "Odebran\xE1 krit\xE9ria",
+      restore: "Vr\xE1tit",
+      remove: "Odebrat",
+      reset: "V\xFDchoz\xED krit\xE9ria",
+      saved: "Ulo\u017Eeno.",
+      empty: "Zat\xEDm jen \u201ECelkov\u011B\u201C.",
+      limit: "Dosa\u017Een maxim\xE1ln\xED po\u010Det krit\xE9ri\xED.",
+      renameHint: "P\u0159ejmenovat"
+    },
+    rules: {
+      title: "Pravidla a intervaly",
+      open: "Pravidla a intervaly",
+      intro: "V\u0161echny intervaly a koeficienty, kter\xE9 aplikace pou\u017E\xEDv\xE1. Zm\u011Bna se hned prop\xED\u0161e do \xFAkol\u016F. Cokoli m\u016F\u017Ee\u0161 vr\xE1tit na v\xFDchoz\xED hodnotu.",
+      openHint: "Intervaly p\xE9\u010De, kontroly d\xE1vek po sklizni, odhad su\u0161en\xED, kv\u011Btin\xE1\u010De a ro\u010Dn\xED obdob\xED.",
+      def: "v\xFDchoz\xED",
+      changed: "zm\u011Bn\u011Bno",
+      reset: "V\xFDchoz\xED",
+      resetAll: "Vr\xE1tit v\u0161e na v\xFDchoz\xED",
+      resetAllAsk: "V\u0161echny zm\u011Bn\u011Bn\xE9 hodnoty se vr\xE1t\xED na v\xFDchoz\xED. Pokra\u010Dovat?",
+      resetDone: "Pravidla vr\xE1cena na v\xFDchoz\xED",
+      saved: "Pravidla ulo\u017Eena",
+      yes: "Ano",
+      no: "Ne",
+      changedCount: (n) => `Zm\u011Bn\u011Bno: ${n}`,
+      invalid: (min, max) => `Zadej \u010D\xEDslo od ${min} do ${max}.`,
+      order: "Hodnoty mus\xED j\xEDt od men\u0161\xED k v\u011Bt\u0161\xED.",
+      group: {
+        category: "Intervaly podle kategorie",
+        fertilizing: "Hnojen\xED",
+        batch: "D\xE1vky po sklizni",
+        eval: "Hodnocen\xED a p\u0159ipom\xEDnky",
+        drying: "Odhad doby su\u0161en\xED",
+        pot: "Kv\u011Btin\xE1\u010D a substr\xE1t",
+        season: "Ro\u010Dn\xED obdob\xED",
+        afterHarvest: "Po posledn\xED sklizni"
+      },
+      groupHint: {
+        category: "Z\xE1kladn\xED doba schnut\xED substr\xE1tu, interval hnojen\xED a kontroly \u0161k\u016Fdc\u016F pro ka\u017Edou kategorii.",
+        fertilizing: "Plat\xED jen pro rostliny, o kter\xE9 se pe\u010Duje. Po sklizni se hnojen\xED nep\u0159ipom\xEDn\xE1.",
+        batch: "Jak \u010Dasto kontrolovat d\xE1vky v zpracov\xE1n\xED a kdy p\u0159ipomenout spot\u0159ebu \u010Derstv\xFDch plod\u016F.",
+        eval: "P\u0159ipom\xEDnky se po\u010D\xEDtaj\xED od okam\u017Eiku \u201Ek pou\u017Eit\xED\u201C (u \u010Derstv\xFDch plod\u016F od sklizn\u011B).",
+        drying: "Doba su\u0161en\xED = reference \xD7 velikost d\xE1vky^exponent \xD7 prost\u0159ed\xED \xD7 nau\u010Den\xFD pom\u011Br.",
+        pot: "V\u011Bt\u0161\xED kv\u011Btin\xE1\u010D schne pomaleji, kokos a hydro rychleji.",
+        season: "N\xE1sobek intervalu z\xE1livky podle ro\u010Dn\xEDho obdob\xED a prost\u0159ed\xED.",
+        afterHarvest: "Co se stane s rostlinou, kdy\u017E zaznamen\xE1\u0161 posledn\xED sklize\u0148."
+      },
+      afterChoice: { ask: "Zeptat se", auto: "P\u0159epnout automaticky", manual: "Nic nem\u011Bnit" },
+      afterHint: "Zelenina, bylinky a kv\u011Btiny p\u0159ejdou do \u201ESklizeno\u201C, v\xEDcelet\xE9 rostliny do \u201EKlid\u201C.",
+      label: {
+        "fertilizing.firstFeedDays": "Prvn\xED hnojen\xED po zalo\u017Een\xED",
+        "fertilizing.fruitingFactor": "N\xE1sobek intervalu hnojen\xED p\u0159i ploden\xED",
+        "fertilizing.stopBeforeHarvestDays": "Nehnojit p\u0159ed pl\xE1novanou sklizn\xED",
+        "batch.drying.minDays": "Su\u0161en\xED: nejkrat\u0161\xED interval kontrol",
+        "batch.drying.maxDays": "Su\u0161en\xED: nejdel\u0161\xED interval kontrol",
+        "batch.drying.fraction": "Su\u0161en\xED: kontrola po \u010D\xE1sti zb\xFDvaj\xEDc\xED doby",
+        "batch.drying.nearDays": "Su\u0161en\xED: interval u skoro such\xE9 d\xE1vky",
+        "batch.curing.firstWeekDays": "Zr\xE1n\xED: prvn\xED t\xFDden",
+        "batch.curing.monthDays": "Zr\xE1n\xED: do 4 t\xFDdn\u016F",
+        "batch.curing.laterDays": "Zr\xE1n\xED: pozd\u011Bji",
+        "batch.fermenting.days": "Fermentace: interval kontrol",
+        "batch.storing.freshDays": "Skladov\xE1n\xED \u010Derstv\xFDch plod\u016F: interval kontrol",
+        "batch.storing.driedDays": "Skladov\xE1n\xED su\u0161en\xFDch d\xE1vek: interval kontrol",
+        "batch.pickling.days": "Nakl\xE1d\xE1n\xED: interval kontrol",
+        "useBy.vegetable": "Spot\u0159ebovat zeleninu do",
+        "useBy.fruit": "Spot\u0159ebovat ovoce do",
+        "useBy.tree_shrub": "Spot\u0159ebovat plody strom\u016F a ke\u0159\u016F do",
+        "eval.remind1Days": "Hodnocen\xED: 1. p\u0159ipom\xEDnka",
+        "eval.remind2Days": "Hodnocen\xED: 2. p\u0159ipom\xEDnka",
+        "eval.remind3Days": "Hodnocen\xED: 3. p\u0159ipom\xEDnka",
+        "eval.freshRemind1Days": "\u010Cerstv\xE9 plody: 1. p\u0159ipom\xEDnka",
+        "eval.freshRemind2Days": "\u010Cerstv\xE9 plody: 2. p\u0159ipom\xEDnka",
+        "eval.reviewDays": "P\u0159ipomenout \u201EZm\u011Bnil se tv\u016Fj n\xE1zor?\u201C po",
+        "drying.refDays": "Referen\u010Dn\xED doba su\u0161en\xED",
+        "drying.refWeightG": "Referen\u010Dn\xED hmotnost d\xE1vky",
+        "drying.sizeExponent": "Vliv velikosti d\xE1vky (exponent)",
+        "drying.minFactor": "Nejkrat\u0161\xED odhad (n\xE1sobek reference)",
+        "drying.maxFactor": "Nejdel\u0161\xED odhad (n\xE1sobek reference)",
+        "drying.refHeightCm": "Referen\u010Dn\xED v\xFD\u0161ka rostliny",
+        "drying.blendOld": "V\xE1ha dosavadn\xEDho odhadu p\u0159i u\u010Den\xED",
+        "pot.refVolumeL": "Referen\u010Dn\xED objem kv\u011Btin\xE1\u010De",
+        "pot.volumeExponent": "Vliv objemu kv\u011Btin\xE1\u010De (exponent)",
+        "pot.minFactor": "Nejmen\u0161\xED koeficient kv\u011Btin\xE1\u010De",
+        "pot.maxFactor": "Nejv\u011Bt\u0161\xED koeficient kv\u011Btin\xE1\u010De",
+        afterFinalHarvest: "Po posledn\xED sklizni"
+      },
+      cat: { soilDays: "schnut\xED substr\xE1tu", fertilizingDays: "hnojen\xED", pestCheckDays: "kontrola \u0161k\u016Fdc\u016F" },
+      dryEnv: "Su\u0161en\xED",
+      potSub: "Substr\xE1t",
+      seasonOf: "Sez\xF3na",
+      seasonOn: "Sez\xF3nnost"
+    },
     moisture: { dry: "Such\xE9", ok: "Akor\xE1t", wet: "Vlhk\xE9" },
     problem: { pest: "\u0160k\u016Fdci", mold: "Pl\xEDse\u0148", wilting: "Vadnut\xED", nutrient: "\u017Diviny", other: "Jin\xE9" },
     processing: {
       drying: "Su\u0161en\xED",
+      curing: "Zr\xE1n\xED",
       fermenting: "Fermentace",
       pickling: "Nakl\xE1d\xE1n\xED",
       freezing: "Zmrazen\xED",
@@ -442,6 +369,22 @@
       none: "Bez zpracov\xE1n\xED",
       other: "Jin\xE9"
     },
+    batchPhase: {
+      pending: "\u010Cek\xE1 na ur\u010Den\xED zpracov\xE1n\xED",
+      drying: "Su\u0161en\xED",
+      curing: "Zr\xE1n\xED",
+      fermenting: "Fermentace",
+      pickling: "Nakl\xE1d\xE1n\xED",
+      freezing: "Zmrazeno",
+      storing: "Skladov\xE1n\xED",
+      other: "Jin\xE9 zpracov\xE1n\xED",
+      ready: "K pou\u017Eit\xED",
+      used: "Pou\u017Eito",
+      discarded: "Vy\u0159azeno"
+    },
+    dryness: ["\u010Cerstv\xE9", "Vlhk\xE9", "Nap\u016Fl such\xE9", "Skoro such\xE9", "Such\xE9, dosych\xE1", "Hotovo, such\xE9"],
+    care: { pruning: "\u0158ez", repotting: "P\u0159esazen\xED", misting: "Rosen\xED", rotation: "Oto\u010Den\xED", cleaning: "\u010Ci\u0161t\u011Bn\xED list\u016F", custom: "Jin\xE1 p\xE9\u010De" },
+    evalKind: { tasting: "Ochutn\xE1vka", final: "Z\xE1v\u011Bre\u010Dn\xE9 hodnocen\xED" },
     source: { seed: "Semeno", cutting: "\u0158\xEDzek", seedling: "Sazenice", other: "Jin\xE9" },
     task: { watering: "Zal\xEDt", fertilizing: "P\u0159ihnojit", pestCheck: "Zkontrolovat \u0161k\u016Fdce" },
     harvestField: {
@@ -468,6 +411,8 @@
       yieldSatisfaction: "Spokojenost s v\xFDnosem",
       sweetness: "Sladkost",
       juiciness: "\u0160\u0165avnatost",
+      growth: "R\u016Fst",
+      health: "Zdrav\xED",
       appearance: "Vzhled",
       fragrance: "V\u016Fn\u011B",
       bloomDuration: "Doba kveten\xED"
@@ -487,6 +432,8 @@
       fertilizing: "P\u0159ihnojit",
       pestCheck: "Zkontrolovat \u0161k\u016Fdce",
       problemFollowUp: "Zkontrolovat probl\xE9m",
+      batchCheck: "Zkontrolovat d\xE1vku",
+      useBy: "Spot\u0159ebovat d\xE1vku",
       evaluation: "Ohodnotit sklize\u0148",
       evaluationReview: "Zm\u011Bnil se tv\u016Fj n\xE1zor?"
     },
@@ -604,7 +551,60 @@
       fillOne: "Vypl\u0148 aspo\u0148 jednu hodnotu.",
       seasonWord: "Sez\xF3na",
       resolved: "Vy\u0159e\u0161eno",
-      recordedUndo: "Zaznamen\xE1no"
+      recordedUndo: "Zaznamen\xE1no",
+      batchFine: "V po\u0159\xE1dku",
+      lastHarvestTag: "posledn\xED sklize\u0148",
+      pestClean: "\u010Cisto",
+      pestFound: "Nalezeno",
+      finalHarvest: "Je to posledn\xED sklize\u0148 t\xE9to rostliny",
+      finalHint: "Dal\u0161\xED \xFAkoly p\xE9\u010De skon\u010D\xED a d\xE1vky se d\xE1l zpracov\xE1vaj\xED.",
+      estDays: "Odhad doby zpracov\xE1n\xED (dny, nepovinn\xE9)",
+      pickMethod: "Vyber zpracov\xE1n\xED.",
+      afterHarvest: "Po sklizni",
+      batchCheck: "Zkontrolovat",
+      batchMove: "P\u0159esunout",
+      batchMethod: "Ur\u010Dit zpracov\xE1n\xED",
+      batchPending: "Sklize\u0148 \u010Dek\xE1 na ur\u010Den\xED zpracov\xE1n\xED",
+      batchesTitle: "D\xE1vky",
+      noBatches: "Zat\xEDm \u017E\xE1dn\xE9 d\xE1vky.",
+      dryness: "Stupe\u0148 vysu\u0161en\xED",
+      batchLook: "Vzhled",
+      mold: "Pl\xEDse\u0148",
+      moldNone: "Bez pl\xEDsn\u011B",
+      moldFound: "Pl\xEDse\u0148",
+      scent: "V\u016Fn\u011B",
+      movePhase: "P\u0159esunout do",
+      dryDone: "D\xE1vka je such\xE1. Co d\xE1l?",
+      useAsk: "D\xE1vka je ke spot\u0159eb\u011B. Co s n\xED?",
+      stillHave: "Je\u0161t\u011B m\xE1m",
+      markUsed: "Pou\u017Eito",
+      markDiscarded: "Vy\u0159azeno",
+      evalKind: "Druh hodnocen\xED",
+      evalBatch: "Co hodnot\xED\u0161",
+      evalPart: "Jak\xE1 \u010D\xE1st (nepovinn\xE9)",
+      evalPartHint: "Nap\u0159. horn\xED v\u011Btve, prvn\xED zr\xE1n\xED, jedna sklenice.",
+      wholePlant: "Cel\xE1 rostlina",
+      tasting: "Ochutn\xE1vka",
+      tastingHint: "Pr\u016Fb\u011B\u017En\xE9 hodnocen\xED plod\u016F. Nezapo\u010D\xEDt\xE1v\xE1 se do z\xE1v\u011Bre\u010Dn\xE9ho sk\xF3re.",
+      finalEval: "Z\xE1v\u011Bre\u010Dn\xE9",
+      careKind: "Druh p\xE9\u010De",
+      careLabel: "N\xE1zev",
+      potVolume: "Objem nov\xE9ho kv\u011Btin\xE1\u010De (l)",
+      ready: "k pou\u017Eit\xED",
+      phaseSince: "od",
+      dayOf: (t, n) => `den ${t} z ~${n}`,
+      dryMeasured: (n) => `su\u0161eno ${n} dn\xED`,
+      dryLearned: (r, n) => `Nau\u010Den\xFD pom\u011Br su\u0161en\xED: \xD7${r} (z ${n} ${n === 1 ? "d\xE1vky" : "d\xE1vek"})`,
+      dryPrior: (r) => `Odhad podle ostatn\xEDch rostlin: \xD7${r}`,
+      afterFinalAsk: "Posledn\xED sklize\u0148 zaps\xE1na. P\u0159epnout rostlinu do dal\u0161\xEDho stavu?",
+      switchTo: "P\u0159epnout na",
+      notYet: "Je\u0161t\u011B ne",
+      switched: "Stav zm\u011Bn\u011Bn",
+      batchSaved: "D\xE1vka ulo\u017Eena",
+      kindFinal: "Z\xE1v\u011Bre\u010Dn\xE9",
+      kindTasting: "Ochutn\xE1vky",
+      plantArchivedBatches: "Rostlina je archivovan\xE1, d\xE1vky se d\xE1l sleduj\xED.",
+      noCareTasks: "Rostlina je po sklizni, p\xE9\u010De se nep\u0159ipom\xEDn\xE1."
     },
     persistWarn: "Prohl\xED\u017Ee\u010D nepotvrdil trval\xE9 \xFAlo\u017Ei\u0161t\u011B. Doporu\u010Dujeme pravideln\u011B z\xE1lohovat.",
     profile: {
@@ -792,8 +792,9 @@
       openProblems: [],
       pestBoostUntil: null,
       snoozedUntil: { ...prev?.snoozedUntil || {} },
-      dryingDays: {},
+      soilDryDays: {},
       confidence: {},
+      batches: [],
       cacheRev: null
     };
   }
@@ -854,6 +855,13 @@
     for (const p of projectors) p.finalize?.(ctx2);
     return { ...plant, environment: cache.environment ?? plant.environment, archivedAt, cache };
   }
+  function optionalPot(input) {
+    const out = {};
+    if (Number.isFinite(input?.potVolumeL) && input.potVolumeL > 0) out.potVolumeL = input.potVolumeL;
+    if (SUBSTRATES.includes(input?.substrate)) out.substrate = input.substrate;
+    if (typeof input?.plannedHarvestAt === "string" && !Number.isNaN(Date.parse(input.plannedHarvestAt))) out.plannedHarvestAt = input.plannedHarvestAt;
+    return out;
+  }
   function buildPlant(input, now2 = nowIso()) {
     const name = String(input?.name || "").trim();
     if (!name) throw new PhenoError("name", S.err.name);
@@ -883,6 +891,8 @@
       archivedAt: null,
       cache: emptyCache()
     };
+    const pot = optionalPot(input);
+    Object.assign(plant, pot);
     return { plant, stage };
   }
   var esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -895,7 +905,8 @@
       const m = n.match(re);
       if (m) nums.push(Number(m[1]));
     }
-    const learned = plant.cache?.dryingDays && Object.keys(plant.cache.dryingDays).length ? { ...plant.cache.dryingDays } : plant.learnedBase;
+    const soil = plant.cache?.soilDryDays ?? plant.cache?.dryingDays;
+    const learned = soil && Object.keys(soil).length ? { ...soil } : plant.learnedBase;
     return {
       name: `${base} #${Math.max(...nums) + 1}`,
       variety: plant.variety,
@@ -906,7 +917,9 @@
       location: plant.location,
       source: plant.source,
       baseOverride: plant.baseOverride,
-      learnedBase: learned || null
+      learnedBase: learned || null,
+      potVolumeL: plant.cache?.pot?.volumeL ?? plant.potVolumeL,
+      substrate: plant.substrate
     };
   }
 
@@ -914,44 +927,143 @@
   var stageFactor = (stage) => STAGE_FACTOR[stage] ?? 1;
   var isTerminal = (stage) => !!STAGE_FLAGS[stage]?.terminal;
   var isDormant = (stage) => !!STAGE_FLAGS[stage]?.dormant;
-  function baseDrying(plant, env, stage) {
-    const cat = plant.baseOverride ?? CATEGORIES[plant.category]?.baseDryingDays ?? 3;
-    return cat * (ENV_MULTIPLIER[env] ?? 1) * stageFactor(stage);
+  var isPostHarvest = (stage) => !!STAGE_FLAGS[stage]?.postHarvest;
+  var isCaredFor = (stage) => !isTerminal(stage) && !isPostHarvest(stage);
+  var asOpts = (o) => typeof o === "string" ? { hemisphere: o } : o || {};
+  function potFactor(pot, rules) {
+    if (!pot || !isNum(pot.volumeL) && !pot.substrate) return 1;
+    const sub = rv(rules, `pot.substrate.${pot.substrate || "soil"}`) ?? 1;
+    const vol = isNum(pot.volumeL) ? (pot.volumeL / rv(rules, "pot.refVolumeL")) ** rv(rules, "pot.volumeExponent") : 1;
+    return clamp(vol * sub, rv(rules, "pot.minFactor"), rv(rules, "pot.maxFactor"));
   }
-  function seasonModifier(iso, env, hemisphere = "north") {
-    return SEASONAL_ENVIRONMENTS.includes(env) ? SEASON_MODIFIER[seasonOf(iso, hemisphere)] : 1;
+  function baseDrying(plant, env, stage, rules, pot) {
+    const cat = plant.baseOverride ?? rv(rules, `cat.${plant.category}.soilDays`) ?? 3;
+    const p = pot ?? plant.cache?.pot ?? { volumeL: plant.potVolumeL, substrate: plant.substrate };
+    return cat * (ENV_MULTIPLIER[env] ?? 1) * stageFactor(stage) * potFactor(p, rules);
   }
-  function dryingInfo(plant) {
+  function seasonModifier(iso, env, hemisphere = "north", rules) {
+    const o = asOpts(hemisphere);
+    const r = o.rules ?? rules;
+    return rv(r, `season.on.${env}`) ? rv(r, `season.${seasonOf(iso, o.hemisphere || "north")}`) : 1;
+  }
+  function dryingInfo(plant, rules) {
     const c = plant.cache || {};
     const stage = c.stage;
-    const base = baseDrying(plant, c.environment ?? plant.environment, stage);
-    const learned = c.dryingDays?.[stage] ?? null;
+    const base = baseDrying(plant, c.environment ?? plant.environment, stage, rules, c.pot);
+    const learnedMap = c.soilDryDays ?? c.dryingDays;
+    const learned = learnedMap?.[stage] ?? null;
     return { base, learned, d: learned ?? base, confidence: c.confidence?.[stage] ?? 0 };
   }
   var round2 = (v) => Math.round(v * 100) / 100;
+  function harvestWeightG(p) {
+    if (isNum(p.freshWeight)) return p.freshWeight;
+    if (isNum(p.totalWeight)) return p.totalWeight * 1e3;
+    return null;
+  }
+  function estimateDryingDays(batch, rules, learnedRatio = 1) {
+    const ref = rv(rules, "drying.refDays");
+    if (isNum(batch.estDays)) return batch.estDays;
+    let w = batch.weightG;
+    if (!isNum(w) && isNum(batch.heightCm)) w = rv(rules, "drying.refWeightG") * (batch.heightCm / rv(rules, "drying.refHeightCm")) ** 3;
+    const size = isNum(w) && w > 0 ? (w / rv(rules, "drying.refWeightG")) ** rv(rules, "drying.sizeExponent") : 1;
+    const env = rv(rules, `drying.env.${batch.env}`) ?? 1;
+    return clamp(ref * size * env * learnedRatio, ref * rv(rules, "drying.minFactor"), ref * rv(rules, "drying.maxFactor"));
+  }
+  var dryingElapsed = (batch, at) => batch.phase === "drying" ? Math.max(0, daysBetween(batch.phaseSince, at)) : null;
+  function effectiveDryingDays(batch, rules, ratio = 1) {
+    const est = estimateDryingDays(batch, rules, ratio);
+    const d = batch.dryLearn;
+    if (isNum(batch.estDays) || batch.phase !== "drying" || !d || d.actual || !(d.level >= 3)) return est;
+    const w = 0.5 * (d.level / 5);
+    return est * (1 - w) + d.days * w;
+  }
+  function batchRatio(plant, batch, priors) {
+    if (isNum(batch.ratio)) return batch.ratio;
+    const v = (plant.variety || "").trim().toLowerCase();
+    return priors?.variety?.[`${plant.category}|${v}`]?.ratio ?? priors?.category?.[plant.category]?.ratio ?? 1;
+  }
+  function buildDryingPriors(plants) {
+    const cat = {}, variety = {};
+    const add = (map, key, r) => {
+      const m = map[key] || (map[key] = { sum: 0, n: 0 });
+      m.sum += r;
+      m.n += 1;
+    };
+    for (const p of plants) {
+      const v = (p.variety || "").trim().toLowerCase();
+      for (const b of p.cache?.batches || []) {
+        if (!isNum(b.learnedR)) continue;
+        add(cat, p.category, b.learnedR);
+        if (v) add(variety, `${p.category}|${v}`, b.learnedR);
+      }
+    }
+    const fin = (map, min) => Object.fromEntries(Object.entries(map).filter(([, m]) => m.n >= min).map(([k, m]) => [k, { ratio: round2(m.sum / m.n), n: m.n }]));
+    return { category: fin(cat, 1), variety: fin(variety, 2) };
+  }
+  var newBatch = (e, p, k, c) => {
+    const method = p.processingMethod ?? null;
+    const instantlyReady = method === "none";
+    return {
+      id: p.batchId || e.id,
+      harvestedAt: e.occurredAt,
+      final: !!p.final,
+      fresh: FRESH_CATEGORIES.includes(k.category),
+      weightG: harvestWeightG(p),
+      estDays: isNum(p.estDays) ? p.estDays : null,
+      heightCm: c.lastHeightCm ?? null,
+      env: k.env,
+      method,
+      phase: method == null ? "pending" : instantlyReady ? "ready" : method,
+      phaseSince: e.occurredAt,
+      readyAt: instantlyReady ? e.occurredAt : null,
+      endedAt: null,
+      legacy: false,
+      checks: [],
+      lastCheckAt: null,
+      evals: [],
+      steps: [],
+      dryLearn: null,
+      dryDays: null,
+      learnedR: null,
+      ratio: null
+    };
+  };
+  var findBatch = (c, id) => c.batches.find((b) => b.id === id) ?? null;
+  function learnDrying(b, dryness, at) {
+    const t = dryingElapsed(b, at);
+    if (t == null || t < 0.5 || !isNum(dryness) || dryness < 1 || b.dryLearn?.actual) return;
+    b.dryLearn = dryness >= 5 ? { days: t, actual: true, level: 5, at } : { days: t * 5 / dryness, actual: false, level: dryness, at };
+    if (dryness >= 5) b.dryDays = round2(t);
+  }
   var cal = (ctx2) => ctx2.cal;
   var calendarProjector = {
     init(ctx2) {
       const c = ctx2.cache;
-      c.dryingDays = { ...ctx2.plant.learnedBase || {} };
+      c.soilDryDays = { ...ctx2.plant.learnedBase || {} };
       c.confidence = {};
       c.learn = {};
       c.recheckAt = null;
       c.lastHarvestAt = null;
       c.harvestDates = [];
+      c.finalHarvestAt = null;
       c.evaluations = [];
-      ctx2.cal = { stage: null, env: null, water: ctx2.plant.startDate };
+      c.batches = [];
+      c.dryLearn = { ratio: null, n: 0 };
+      c.lastHeightCm = null;
+      c.pot = { volumeL: isNum(ctx2.plant.potVolumeL) ? ctx2.plant.potVolumeL : null, substrate: ctx2.plant.substrate ?? null };
+      ctx2.cal = { stage: null, env: null, water: ctx2.plant.startDate, archived: false, category: ctx2.plant.category };
     },
     apply(e, ctx2) {
       const c = ctx2.cache, k = cal(ctx2), p = e.payload || {};
+      const rules = ctx2.opts?.rules;
       switch (e.type) {
         case "created":
           k.env = p.environment;
           break;
         case "stage_change": {
           const prev = k.stage;
-          if (prev && c.dryingDays[prev] != null && c.dryingDays[p.to] == null) {
-            c.dryingDays[p.to] = round2(c.dryingDays[prev] * stageFactor(p.to) / stageFactor(prev));
+          if (prev && c.soilDryDays[prev] != null && c.soilDryDays[p.to] == null) {
+            c.soilDryDays[p.to] = round2(c.soilDryDays[prev] * stageFactor(p.to) / stageFactor(prev));
             c.confidence[p.to] = round2((c.confidence[prev] || 0) / 2);
           }
           k.stage = p.to;
@@ -961,8 +1073,8 @@
           const from = k.env;
           if (from && from !== p.environment) {
             const ratio = (ENV_MULTIPLIER[p.environment] ?? 1) / (ENV_MULTIPLIER[from] ?? 1);
-            for (const st of Object.keys(c.dryingDays)) {
-              c.dryingDays[st] = round2(c.dryingDays[st] * ratio);
+            for (const st of Object.keys(c.soilDryDays)) {
+              c.soilDryDays[st] = round2(c.soilDryDays[st] * ratio);
               c.confidence[st] = round2((c.confidence[st] || 0) / 2);
             }
           }
@@ -977,25 +1089,112 @@
           learn(e, ctx2);
           if (p.watered) k.water = e.occurredAt;
           break;
+        case "measurement":
+          if (p.kind === "v\xFD\u0161ka" && isNum(p.value) && p.value > 0) c.lastHeightCm = p.value;
+          break;
+        case "care":
+          if (p.kind === "repotting" && isNum(p.potVolumeL)) {
+            const before = potFactor(c.pot, rules);
+            c.pot = { ...c.pot, volumeL: p.potVolumeL };
+            const ratio = potFactor(c.pot, rules) / before;
+            if (ratio !== 1) {
+              for (const st of Object.keys(c.soilDryDays)) {
+                c.soilDryDays[st] = round2(c.soilDryDays[st] * ratio);
+                c.confidence[st] = round2((c.confidence[st] || 0) / 2);
+              }
+            }
+          }
+          break;
         case "harvest":
           c.lastHarvestAt = e.occurredAt;
           c.harvestDates.push(e.occurredAt);
+          if (p.final) c.finalHarvestAt = e.occurredAt;
+          c.batches.push(newBatch(e, p, k, c));
           break;
-        case "evaluation":
-          c.evaluations.push({ at: e.occurredAt, season: p.season ?? null });
+        case "batch_step": {
+          const b = findBatch(c, p.batchId);
+          if (!b) break;
+          if (b.phase === "drying" && p.phase !== "drying" && p.phase !== "discarded" && !b.dryLearn?.actual) {
+            const t = dryingElapsed(b, e.occurredAt);
+            if (t >= 0.5) {
+              b.dryLearn = { days: t, actual: true, level: 5, at: e.occurredAt };
+              b.dryDays = round2(t);
+            }
+          }
+          b.phase = p.phase;
+          b.phaseSince = e.occurredAt;
+          if (p.method) b.method = p.method;
+          else if (PROCESSING_PHASES.includes(p.phase)) b.method = p.phase;
+          if (isNum(p.estDays)) b.estDays = p.estDays;
+          if (p.phase === "ready") b.readyAt = e.occurredAt;
+          if (BATCH_ENDED.includes(p.phase)) b.endedAt = e.occurredAt;
+          b.steps.push({ at: e.occurredAt, phase: p.phase });
+          break;
+        }
+        case "batch_check": {
+          const b = findBatch(c, p.batchId);
+          if (!b) break;
+          b.checks.push({
+            at: e.occurredAt,
+            phase: b.phase,
+            dryness: p.dryness ?? null,
+            mold: p.mold ?? null,
+            scent: p.scent ?? null,
+            appearance: p.appearance ?? null
+          });
+          b.lastCheckAt = e.occurredAt;
+          learnDrying(b, p.dryness, e.occurredAt);
+          break;
+        }
+        case "evaluation": {
+          const kind = p.kind ?? "final";
+          c.evaluations.push({ at: e.occurredAt, season: p.season ?? null, kind, batchId: p.batchId ?? null });
+          const target = p.batchId ? findBatch(c, p.batchId) : kind === "final" ? c.batches.at(-1) ?? null : null;
+          if (target) target.evals.push({ at: e.occurredAt, kind, part: p.part ?? null });
+          break;
+        }
+        case "archive":
+          k.archived = true;
+          break;
+        case "unarchive":
+          k.archived = false;
           break;
         default:
           break;
       }
+    },
+    finalize(ctx2) {
+      const c = ctx2.cache, k = cal(ctx2);
+      const ask = c.stage === "harvested" && !k.archived;
+      for (const b of c.batches) {
+        if (b.phase === "pending" && !ask) {
+          b.phase = "ready";
+          b.legacy = true;
+          b.readyAt = b.harvestedAt;
+        }
+      }
+      const rules = ctx2.opts?.rules, blendOld = rv(rules, "drying.blendOld");
+      let ratio = null, n = 0;
+      for (const b of c.batches) {
+        b.ratio = ratio;
+        if (!b.dryLearn?.actual) continue;
+        const model = estimateDryingDays({ ...b, estDays: null }, rules, 1);
+        const r = clamp(b.dryLearn.days / model, rv(rules, "drying.minFactor"), rv(rules, "drying.maxFactor"));
+        b.learnedR = round2(r);
+        const wNew = Math.max(1 - blendOld, 1 / (n + 2));
+        ratio = round2((1 - wNew) * (ratio ?? 1) + wNew * r);
+        n += 1;
+      }
+      c.dryLearn = { ratio, n };
     }
   };
   registerProjector(calendarProjector);
   function learn(e, ctx2) {
     const c = ctx2.cache, k = cal(ctx2), answer = e.payload.answer, stage = k.stage;
-    const env = k.env;
-    const base = baseDrying(ctx2.plant, env, stage);
-    let d = c.dryingDays[stage] ?? base;
-    const mod = seasonModifier(e.occurredAt, env, ctx2.opts?.hemisphere);
+    const env = k.env, rules = ctx2.opts?.rules;
+    const base = baseDrying(ctx2.plant, env, stage, rules, c.pot);
+    let d = c.soilDryDays[stage] ?? base;
+    const mod = seasonModifier(e.occurredAt, env, ctx2.opts?.hemisphere, rules);
     const t = daysBetween(k.water, e.occurredAt) / mod;
     let implied = null;
     if (answer === "dry") {
@@ -1019,10 +1218,10 @@
         d = LEARN.blendOld * d + LEARN.blendNew * weightedMean(st.implied);
         d = clamp(d, Math.max(1, LEARN.minFactor * base), LEARN.maxFactor * base);
       }
-      c.dryingDays[stage] = round2(d);
+      c.soilDryDays[stage] = round2(d);
       c.confidence[stage] = round2(Math.min(st.n / LEARN.confidenceN, 1) * (1 - Math.min(coefVariation(st.implied), 1)));
     }
-    c.recheckAt = answer === "wet" ? addDays(e.occurredAt, Math.max(1, Math.ceil((c.dryingDays[stage] ?? d) * RULE.recheckFraction))) : null;
+    c.recheckAt = answer === "wet" ? addDays(e.occurredAt, Math.max(1, Math.ceil((c.soilDryDays[stage] ?? d) * RULE.recheckFraction))) : null;
   }
   var SNOOZE_KEY = {
     moisture: "watering",
@@ -1032,71 +1231,131 @@
     evaluation: "evaluation",
     evaluationReview: "evaluation"
   };
-  function pestInterval(plant, now2) {
+  function pestInterval(plant, now2, rules) {
     const c = plant.cache;
-    const base = CATEGORIES[plant.category].pestCheckDays;
+    const base = rv(rules, `cat.${plant.category}.pestCheckDays`) ?? CATEGORIES[plant.category].pestCheckDays;
     const boosted = c.pestBoostUntil && now2 < c.pestBoostUntil;
     if (!boosted) return base;
     if (c.openProblems.some((x) => x.problemType === "mold" && x.severity >= 2)) return 2;
     return Math.max(1, Math.round(base / 2));
   }
   function nextMoistureDue(plant, now2, hemisphere = "north") {
+    const o = asOpts(hemisphere);
     const c = plant.cache, env = c.environment ?? plant.environment;
     if (c.recheckAt) return c.recheckAt;
-    const { d } = dryingInfo(plant);
+    const { d } = dryingInfo(plant, o.rules);
     const last = c.lastWateredAt ?? plant.startDate;
-    return addDays(last, d * seasonModifier(now2, env, hemisphere));
+    return addDays(last, d * seasonModifier(now2, env, o.hemisphere, o.rules));
   }
-  function evaluationDue(plant, now2) {
-    const c = plant.cache, cfg = plant.harvestable;
-    if (!cfg || plant.reminders === false || !c.harvestDates?.length) return null;
-    const evals = c.evaluations || [];
-    if (plant.lifecycle === "perennial") {
-      const years = [...new Set(c.harvestDates.map((h2) => new Date(h2).getFullYear()))].sort();
-      const missing = years.filter((y2) => !evals.some((x) => x.season === y2));
-      if (!missing.length) return null;
-      const y = missing[missing.length - 1];
-      const last = c.harvestDates.filter((h2) => new Date(h2).getFullYear() === y).sort().pop();
-      return { type: "evaluation", due: pickReminder(last, now2), season: y };
-    }
-    if (!evals.length) return { type: "evaluation", due: pickReminder(c.lastHarvestAt, now2), season: null };
-    if (evals.length === 1) {
-      const due = addDays(evals[0].at, EVAL_REVIEW_DAYS);
-      if (now2 >= due) return { type: "evaluationReview", due, season: evals[0].season };
-    }
-    return null;
+  function nextFertilizingDue(plant, rules) {
+    const c = plant.cache;
+    if (!isCaredFor(c.stage) || isDormant(c.stage)) return null;
+    const planned = plant.plannedHarvestAt;
+    const stop = rv(rules, "fertilizing.stopBeforeHarvestDays");
+    const factor = c.stage === "fruiting" ? rv(rules, "fertilizing.fruitingFactor") : 1;
+    const days = rv(rules, `cat.${plant.category}.fertilizingDays`) * factor;
+    const due = c.lastFertilizedAt ? addDays(c.lastFertilizedAt, days) : addDays(plant.startDate, rv(rules, "fertilizing.firstFeedDays"));
+    if (stop > 0 && planned && due >= addDays(planned, -stop)) return null;
+    return due;
   }
-  function pickReminder(lastHarvest, now2) {
-    const dates = EVAL_REMINDER_DAYS.map((n) => addDays(lastHarvest, n));
+  function batchCheckInterval(batch, rules, now2, ratio = batch.ratio ?? 1) {
+    const last = batch.lastCheckAt && batch.lastCheckAt > batch.phaseSince ? batch.lastCheckAt : batch.phaseSince;
+    const lastCheck = batch.checks.at(-1);
+    let days = null;
+    switch (batch.phase) {
+      case "drying": {
+        const t = daysBetween(batch.phaseSince, last);
+        const remaining = Math.max(0, effectiveDryingDays(batch, rules, ratio) - t);
+        days = clamp(rv(rules, "batch.drying.fraction") * remaining, rv(rules, "batch.drying.minDays"), rv(rules, "batch.drying.maxDays"));
+        if ((lastCheck?.dryness ?? 0) >= 4) days = Math.min(days, rv(rules, "batch.drying.nearDays"));
+        break;
+      }
+      case "curing": {
+        const age = daysBetween(batch.phaseSince, last);
+        days = age < 7 ? rv(rules, "batch.curing.firstWeekDays") : age < 28 ? rv(rules, "batch.curing.monthDays") : rv(rules, "batch.curing.laterDays");
+        break;
+      }
+      case "fermenting":
+        days = rv(rules, "batch.fermenting.days");
+        break;
+      case "pickling":
+        days = rv(rules, "batch.pickling.days");
+        break;
+      case "storing":
+        days = rv(rules, batch.fresh ? "batch.storing.freshDays" : "batch.storing.driedDays");
+        break;
+      default:
+        return null;
+    }
+    if (lastCheck?.mold && lastCheck.at === batch.lastCheckAt) days = Math.min(days, 1);
+    return { days, last };
+  }
+  var reminderOffsets = (batch, rules) => batch.fresh ? [rv(rules, "eval.freshRemind1Days"), rv(rules, "eval.freshRemind2Days")] : [rv(rules, "eval.remind1Days"), rv(rules, "eval.remind2Days"), rv(rules, "eval.remind3Days")];
+  var anchorOf = (b) => b.readyAt ?? (b.phase === "used" ? b.endedAt : null);
+  function pickReminder(anchor, offsets, now2) {
+    const dates = offsets.map((n) => addDays(anchor, n));
     const passed = dates.filter((x) => x <= now2);
     return passed.length ? passed[passed.length - 1] : dates[0];
   }
-  function getPlantTasks(plant, now2, { hemisphere = "north" } = {}) {
+  function evaluationDue(plant, now2, rules) {
     const c = plant.cache;
-    if (!c || plant.archivedAt) return [];
+    if (!plant.harvestable || plant.reminders === false) return null;
+    const anchored = c.batches.filter((b2) => !b2.legacy || !plant.archivedAt).filter((b2) => b2.phase !== "discarded" && anchorOf(b2));
+    if (!anchored.length) return null;
+    const finals = c.evaluations.filter((x) => x.kind === "final");
+    const lastBatch = (list) => list.reduce((a, b2) => anchorOf(a) >= anchorOf(b2) ? a : b2);
+    if (plant.lifecycle === "perennial") {
+      const year = (b3) => new Date(b3.harvestedAt).getFullYear();
+      const seasonOfEval = (x) => x.season ?? (x.batchId ? year(c.batches.find((b3) => b3.id === x.batchId) ?? { harvestedAt: x.at }) : null);
+      const missing = [...new Set(anchored.map(year))].sort().filter((y2) => !finals.some((x) => seasonOfEval(x) === y2));
+      if (!missing.length) return null;
+      const y = missing.at(-1);
+      const b2 = lastBatch(anchored.filter((x) => year(x) === y));
+      return { type: "evaluation", due: pickReminder(anchorOf(b2), reminderOffsets(b2, rules), now2), season: y, batchId: b2.id };
+    }
+    const b = lastBatch(anchored);
+    if (!finals.length) return { type: "evaluation", due: pickReminder(anchorOf(b), reminderOffsets(b, rules), now2), season: null, batchId: b.id };
+    if (finals.length === 1) {
+      const due = addDays(finals[0].at, rv(rules, "eval.reviewDays"));
+      if (now2 >= due) return { type: "evaluationReview", due, season: finals[0].season, batchId: finals[0].batchId };
+    }
+    return null;
+  }
+  function getPlantTasks(plant, now2, opts = {}) {
+    const o = asOpts(opts), rules = o.rules, hemisphere = o.hemisphere || "north";
+    const c = plant.cache;
+    if (!c) return [];
     const out = [];
     const push = (type, due, extra = {}) => out.push({
       plantId: plant.id,
       plantName: plant.name,
       type,
-      snoozeKey: SNOOZE_KEY[type],
+      snoozeKey: extra.snoozeKey ?? SNOOZE_KEY[type],
       dueAt: due,
       ...extra
     });
-    const ended = isTerminal(c.stage);
-    if (!ended) push("moisture", nextMoistureDue(plant, now2, hemisphere));
-    if (!ended && !isDormant(c.stage)) {
-      const days = CATEGORIES[plant.category].fertilizingDays * (FERT_STAGE_FACTOR[c.stage] ?? 1);
-      push("fertilizing", addDays(c.lastFertilizedAt ?? plant.startDate, days));
+    const caring = !plant.archivedAt && isCaredFor(c.stage);
+    if (caring) {
+      push("moisture", nextMoistureDue(plant, now2, { hemisphere, rules }));
+      const fert = nextFertilizingDue(plant, rules);
+      if (fert) push("fertilizing", fert);
+      push("pestCheck", addDays(c.lastPestCheckAt ?? plant.startDate, pestInterval(plant, now2, rules)));
+      for (const pr of c.openProblems) {
+        const ref = c.lastPestCheckAt && c.lastPestCheckAt > pr.since ? c.lastPestCheckAt : pr.since;
+        const due = addDays(ref, FOLLOWUP_DAYS);
+        if (due <= addDays(pr.since, PEST_BOOST_DAYS)) push("problemFollowUp", due, { problemId: pr.id });
+      }
     }
-    if (!ended) push("pestCheck", addDays(c.lastPestCheckAt ?? plant.startDate, pestInterval(plant, now2)));
-    for (const pr of ended ? [] : c.openProblems) {
-      const ref = c.lastPestCheckAt && c.lastPestCheckAt > pr.since ? c.lastPestCheckAt : pr.since;
-      const due = addDays(ref, FOLLOWUP_DAYS);
-      if (due <= addDays(pr.since, PEST_BOOST_DAYS)) push("problemFollowUp", due, { problemId: pr.id });
+    for (const b of c.batches) {
+      if (b.legacy || BATCH_ENDED.includes(b.phase) || b.phase === "pending") continue;
+      const iv = batchCheckInterval(b, rules, now2, batchRatio(plant, b, o.priors));
+      if (iv) push("batchCheck", addDays(iv.last, iv.days), { batchId: b.id, phase: b.phase, snoozeKey: `batchCheck:${b.id}` });
+      if (b.fresh && ["storing", "ready"].includes(b.phase)) {
+        push("useBy", addDays(b.harvestedAt, rv(rules, `useBy.${plant.category}`) ?? 10), { batchId: b.id, snoozeKey: `useBy:${b.id}` });
+      }
     }
-    const ev = evaluationDue(plant, now2);
-    if (ev) push(ev.type, ev.due, { season: ev.season });
+    const ev = evaluationDue(plant, now2, rules);
+    if (ev) push(ev.type, ev.due, { season: ev.season, batchId: ev.batchId });
     return out.filter((t) => {
       const until = c.snoozedUntil?.[t.snoozeKey];
       return !(until && until > now2);
@@ -1115,7 +1374,323 @@
     return out.sort((a, b) => ORDER[a.urgency] - ORDER[b.urgency] || (a.dueAt < b.dueAt ? -1 : a.dueAt > b.dueAt ? 1 : 0));
   }
 
+  // js/criteria.js
+  var CRITERIA_MAX = 12;
+  var LABEL_MAX = 40;
+  var KEY = /^[a-z][a-zA-Z0-9_]{0,31}$/;
+  var clean = (v) => String(v ?? "").replace(/[\u0000-\u001f\u007f<>]/g, "").trim().slice(0, LABEL_MAX);
+  var defaults = (category) => (CATEGORIES[category]?.criteria || []).map((key) => ({ key, label: S.criterion[key] || key }));
+  var same = (a, b) => a.length === b.length && a.every((x, i) => x.key === b[i].key && x.label === b[i].label && !x.removed);
+  function cleanCriteria(raw) {
+    const out = {};
+    if (!raw || typeof raw !== "object") return out;
+    for (const [cat, list] of Object.entries(raw)) {
+      if (!CATEGORIES[cat] || !Array.isArray(list)) continue;
+      const seen = /* @__PURE__ */ new Set(["overall"]);
+      const items = [];
+      for (const it of list.slice(0, CRITERIA_MAX)) {
+        if (!it || typeof it !== "object" || typeof it.key !== "string" || !KEY.test(it.key) || seen.has(it.key)) continue;
+        const label = clean(it.label);
+        if (!label) continue;
+        seen.add(it.key);
+        items.push(it.removed ? { key: it.key, label, removed: true } : { key: it.key, label });
+      }
+      if (!same(items, defaults(cat))) out[cat] = items;
+    }
+    return out;
+  }
+  var criteriaEntries = (category, custom) => custom?.[category] ?? defaults(category);
+  var activeCriteria = (category, custom) => criteriaEntries(category, custom).filter((c) => !c.removed);
+  function criterionLabel(key, custom, category) {
+    if (key === "overall") return S.criterion.overall;
+    const pools = category && custom?.[category] ? [custom[category]] : [];
+    for (const list of [...pools, ...Object.values(custom || {})]) {
+      const hit = list.find((c) => c.key === key);
+      if (hit) return hit.label;
+    }
+    return S.criterion[key] ?? null;
+  }
+  var slug = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-zA-Z0-9]+/g, " ").trim().split(" ").filter(Boolean).map((w, i) => i ? w[0].toUpperCase() + w.slice(1).toLowerCase() : w.toLowerCase()).join("");
+  function newCriterionKey(label, taken) {
+    const base = `c${slug(label) ? slug(label)[0].toUpperCase() + slug(label).slice(1) : "X"}`.slice(0, 28);
+    let key = base, i = 2;
+    while (taken.includes(key) || key === "overall") key = `${base}${i++}`;
+    return key;
+  }
+
+  // js/storage.js
+  var DB_NAME = "pheno";
+  var DB_VERSION = 1;
+  var req = (r) => new Promise((res, rej) => {
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+  function openDb(name = DB_NAME, factory = globalThis.indexedDB) {
+    return new Promise((resolve, reject) => {
+      const r = factory.open(name, DB_VERSION);
+      r.onupgradeneeded = () => {
+        const db = r.result;
+        const plants = db.createObjectStore("plants", { keyPath: "id" });
+        plants.createIndex("archivedAt", "archivedAt");
+        plants.createIndex("varietyKey", "varietyKey");
+        const events = db.createObjectStore("events", { keyPath: "id" });
+        events.createIndex("plantId", "plantId");
+        events.createIndex("plantType", ["plantId", "type"]);
+        events.createIndex("occurredAt", "occurredAt");
+        const photos = db.createObjectStore("photos", { keyPath: "id" });
+        photos.createIndex("plantId", "plantId");
+        db.createObjectStore("meta", { keyPath: "key" });
+      };
+      r.onsuccess = () => resolve(r.result);
+      r.onerror = () => reject(r.error);
+    });
+  }
+  function withTx(db, storeNames, mode, fn) {
+    return new Promise((resolve, reject) => {
+      const names = [].concat(storeNames);
+      const tx = db.transaction(names, mode);
+      const stores = {};
+      for (const n of names) stores[n] = tx.objectStore(n);
+      let result;
+      tx.oncomplete = () => resolve(result);
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error || new Error("Transaction aborted"));
+      Promise.resolve().then(() => fn(stores)).then(
+        (r) => {
+          result = r;
+        },
+        (e) => {
+          try {
+            tx.abort();
+          } catch {
+          }
+          reject(e);
+        }
+      );
+    });
+  }
+  var idbReq = req;
+  var getPlant = (db, id) => withTx(db, "plants", "readonly", (s) => req(s.plants.get(id)));
+  var listPlants = (db) => withTx(db, "plants", "readonly", (s) => req(s.plants.getAll()));
+  var getEvents = (db, plantId) => withTx(db, "events", "readonly", (s) => req(s.events.index("plantId").getAll(plantId)));
+  var getAllEvents = (db) => withTx(db, "events", "readonly", (s) => req(s.events.getAll()));
+  var putPhoto = (db, photo) => withTx(db, "photos", "readwrite", (s) => req(s.photos.put(photo)));
+  var getPhoto = (db, id) => withTx(db, "photos", "readonly", (s) => req(s.photos.get(id)));
+  var metaGet = (db, key) => withTx(db, "meta", "readonly", async (s) => (await req(s.meta.get(key)))?.value);
+  var metaSet = (db, key, value) => withTx(db, "meta", "readwrite", (s) => req(s.meta.put({ key, value })));
+  function deletePlantData(db, plantId) {
+    return withTx(db, ["plants", "events", "photos"], "readwrite", async (s) => {
+      const evKeys = await req(s.events.index("plantId").getAllKeys(plantId));
+      const phKeys = await req(s.photos.index("plantId").getAllKeys(plantId));
+      for (const k of evKeys) s.events.delete(k);
+      for (const k of phKeys) s.photos.delete(k);
+      s.plants.delete(plantId);
+      return { events: evKeys.length, photos: phKeys.length };
+    });
+  }
+  async function ensurePersistence() {
+    try {
+      const st = globalThis.navigator?.storage;
+      if (!st?.persist) return { supported: false, persisted: false };
+      if (await st.persisted()) return { supported: true, persisted: true };
+      return { supported: true, persisted: await st.persist() };
+    } catch {
+      return { supported: false, persisted: false };
+    }
+  }
+  var listPhotoKeys = (db) => withTx(db, "photos", "readonly", (s) => req(s.photos.getAllKeys()));
+
+  // js/profile.js
+  var PROFILE_KEYS = ["garden", "houseplants", "controlled", "mixed"];
+  var PROFILE_SOURCES = ["url", "onboarding", "settings"];
+  var UTM_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_content"];
+  var PROFILES = {
+    garden: {
+      preselect: { environment: "outdoor", lifecycle: "cycle" },
+      dashboard: ["tasks", "season", "varieties"],
+      examples: [["Raj\u010De #1", "San Marzano"], ["Jahodn\xEDk", "Elsanta"], ["Chilli", "Habanero"]]
+    },
+    houseplants: {
+      preselect: { category: "houseplant", environment: "indoor", lifecycle: "perennial", harvestable: false },
+      dashboard: ["tasks", "milestones"],
+      examples: [["Monstera", "Deliciosa"], ["F\xEDkus", "Benjamin"], ["Orchidej", "Phalaenopsis"]]
+    },
+    controlled: {
+      preselect: { environment: "controlled", measurementsFirst: true },
+      dashboard: ["tasks", "measurements", "cycles"],
+      examples: [["Sal\xE1t", "Lollo rosso"], ["Bazalka #1", "Genovese"], ["Jahodn\xEDk", "Albion"]]
+    },
+    mixed: { preselect: {}, dashboard: ["tasks"], examples: null }
+  };
+  PROFILES.mixed.examples = [...PROFILES.garden.examples, ...PROFILES.houseplants.examples, ...PROFILES.controlled.examples];
+  var isProfile = (v) => PROFILE_KEYS.includes(v);
+  function example(profile, index = 0) {
+    const list = (PROFILES[profile] || PROFILES.mixed).examples;
+    return list[Math.abs(index) % list.length];
+  }
+  var clean2 = (v) => String(v).replace(/[\u0000-\u001f\u007f<>]/g, "").trim().slice(0, 100);
+  function parseAcquisition(search) {
+    const q = new URLSearchParams(search || "");
+    const profile = isProfile(q.get("profile")) ? q.get("profile") : null;
+    const utm = {};
+    for (const k of UTM_KEYS) {
+      const v = q.get(k);
+      if (v != null && clean2(v)) utm[k] = clean2(v);
+    }
+    return { profile, utm: Object.keys(utm).length ? utm : null };
+  }
+  function stripAcquisition(search) {
+    const q = new URLSearchParams(search || "");
+    for (const k of ["profile", ...UTM_KEYS]) q.delete(k);
+    const s = q.toString();
+    return s ? `?${s}` : "";
+  }
+  var getProfile = async (db) => {
+    const v = await metaGet(db, "profile");
+    return isProfile(v) ? v : null;
+  };
+  async function setProfile(db, profile, source) {
+    if (!isProfile(profile) || !PROFILE_SOURCES.includes(source)) throw new Error("Neplatn\xFD profil.");
+    await metaSet(db, "profile", profile);
+    await metaSet(db, "profileSource", source);
+  }
+  async function applyAcquisition(db, search, now2 = (/* @__PURE__ */ new Date()).toISOString()) {
+    const { profile, utm } = parseAcquisition(search);
+    if (utm && await metaGet(db, "acquisition") == null) await metaSet(db, "acquisition", { ...utm, capturedAt: now2 });
+    let current = await getProfile(db);
+    if (!current && profile) {
+      await setProfile(db, profile, "url");
+      current = profile;
+    }
+    return current;
+  }
+
+  // js/ctx.js
+  var ctx = { db: null, hemisphere: "north", profile: null, overrides: {}, rules: resolveRules(), criteria: {}, priors: { category: {}, variety: {} } };
+  var now = () => (/* @__PURE__ */ new Date()).toISOString();
+  async function initCtx(db) {
+    ctx.db = db;
+    ctx.hemisphere = await metaGet(db, "hemisphere") === "south" ? "south" : "north";
+    ctx.profile = await getProfile(db);
+    ctx.overrides = cleanRules(await metaGet(db, "rules"));
+    ctx.rules = resolveRules(ctx.overrides);
+    ctx.criteria = cleanCriteria(await metaGet(db, "criteria"));
+    return ctx;
+  }
+  var hemisphereKnown = () => metaGet(ctx.db, "hemisphere").then((v) => v === "north" || v === "south");
+  async function setHemisphere(v) {
+    ctx.hemisphere = v;
+    await metaSet(ctx.db, "hemisphere", v);
+  }
+  async function loadAll() {
+    const [plants, events] = await Promise.all([listPlants(ctx.db), getAllEvents(ctx.db)]);
+    const byPlant = /* @__PURE__ */ new Map();
+    for (const e of events) {
+      if (!byPlant.has(e.plantId)) byPlant.set(e.plantId, []);
+      byPlant.get(e.plantId).push(e);
+    }
+    ctx.priors = buildDryingPriors(plants);
+    return { plants, byPlant, events };
+  }
+  async function refreshPriors() {
+    ctx.priors = buildDryingPriors(await listPlants(ctx.db));
+    return ctx.priors;
+  }
+  var engineOpts = () => ({ hemisphere: ctx.hemisphere, rules: ctx.rules, priors: ctx.priors, criteria: ctx.criteria });
+  var THEME_KEY = "pheno.theme";
+  function getTheme() {
+    try {
+      return localStorage.getItem(THEME_KEY) === "svetle" ? "svetle" : "tmave";
+    } catch {
+      return "tmave";
+    }
+  }
+  function setTheme(name) {
+    document.documentElement.dataset.theme = name;
+    try {
+      localStorage.setItem(THEME_KEY, name);
+    } catch {
+    }
+  }
+
+  // js/dom.js
+  function h(tag, props = {}, ...children) {
+    const el = document.createElement(tag);
+    for (const [k, v] of Object.entries(props || {})) {
+      if (v == null || v === false) continue;
+      if (k === "class") el.className = v;
+      else if (k === "style") el.setAttribute("style", v);
+      else if (k === "dataset") Object.assign(el.dataset, v);
+      else if (k.startsWith("on") && typeof v === "function") el.addEventListener(k.slice(2).toLowerCase(), v);
+      else if (k in el && typeof v !== "string" || k === "value" || k === "checked" || k === "disabled" || k === "hidden") el[k] = v;
+      else el.setAttribute(k, v === true ? "" : v);
+    }
+    append(el, children);
+    return el;
+  }
+  function append(el, children) {
+    for (const c of children.flat(Infinity)) {
+      if (c == null || c === false) continue;
+      el.append(c instanceof Node ? c : document.createTextNode(String(c)));
+    }
+  }
+  function icon(name, cls = "") {
+    const ns = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("class", `ui-icon ${cls}`.trim());
+    svg.setAttribute("aria-hidden", "true");
+    const use = document.createElementNS(ns, "use");
+    use.setAttribute("href", `#i-${name}`);
+    svg.append(use);
+    return svg;
+  }
+  function clear(el) {
+    el.replaceChildren();
+    return el;
+  }
+  function put(el, ...children) {
+    el.append(...children.flat(Infinity).filter((c) => c != null && c !== false));
+    return el;
+  }
+  function field(label, input, hint) {
+    return h("div", { class: "field" }, h("label", {}, label), input, hint ? h("div", { class: "field-hint" }, hint) : null);
+  }
+  function chipGroup(options, value, onChange) {
+    let cur = value;
+    const el = h("div", { class: "chip-group", role: "radiogroup" });
+    const btns = options.map(([v, label]) => h("button", {
+      type: "button",
+      class: "chip" + (v === cur ? " selected" : ""),
+      dataset: { value: v },
+      onclick: () => {
+        set(v);
+        onChange?.(v);
+      }
+    }, label));
+    el.append(...btns);
+    function set(v) {
+      cur = v;
+      btns.forEach((b) => b.classList.toggle("selected", b.dataset.value === String(v)));
+    }
+    return { el, get: () => cur, set };
+  }
+
   // js/events.js
+  var events_exports = {};
+  __export(events_exports, {
+    ENGINE_REV: () => ENGINE_REV,
+    EVENT_TYPES: () => EVENT_TYPES,
+    appendEvents: () => appendEvents,
+    buildEvents: () => buildEvents,
+    compareEvents: () => compareEvents,
+    createPlant: () => createPlant,
+    deletePlantPermanently: () => deletePlantPermanently,
+    rebuildAll: () => rebuildAll,
+    snoozeTask: () => snoozeTask,
+    updatePlantMeta: () => updatePlantMeta,
+    voidEvent: () => voidEvent
+  });
+  var ENGINE_REV = 3;
   var EVENT_TYPES = [
     "created",
     "stage_change",
@@ -1134,9 +1709,12 @@
     "evaluation",
     "archive",
     "unarchive",
-    "void"
+    "void",
+    "batch_step",
+    "batch_check",
+    "care"
   ];
-  var ARCHIVED_OK = ["unarchive", "evaluation", "note", "photo", "void"];
+  var ARCHIVED_OK = ["unarchive", "evaluation", "note", "photo", "void", "batch_step", "batch_check"];
   var COMPLETES = {
     watering: ["watering"],
     moisture_check: ["watering"],
@@ -1146,7 +1724,7 @@
   };
   var bad = (msg = S.err.invalid) => new PhenoError("invalid", msg);
   var str = (v) => typeof v === "string" && v.trim().length > 0;
-  function validatePayload(type, payload, plant, live) {
+  function validatePayload(type, payload, plant, live, cur, opts = {}) {
     const p = payload || {};
     const cfg = CATEGORIES[plant.category];
     switch (type) {
@@ -1216,14 +1794,66 @@
           if (!isNum(p.processingDays) || p.processingDays < 0) throw bad();
           out.processingDays = p.processingDays;
         }
+        if (p.estDays != null) {
+          if (!isNum(p.estDays) || p.estDays < 0.5 || p.estDays > 120) throw bad();
+          out.estDays = p.estDays;
+        }
         if (p.note) out.note = String(p.note);
         if (!Object.keys(out).length) throw bad();
+        if (p.final) out.final = true;
+        return out;
+      }
+      case "batch_step": {
+        const b = openBatch(cur, p.batchId);
+        if (!BATCH_PHASES.includes(p.phase)) throw bad();
+        const out = { batchId: b.id, phase: p.phase };
+        if (p.method != null) {
+          if (!PROCESSING_METHODS.includes(p.method)) throw bad();
+          out.method = p.method;
+        }
+        if (p.estDays != null) {
+          if (!isNum(p.estDays) || p.estDays < 0.5 || p.estDays > 120) throw bad();
+          out.estDays = p.estDays;
+        }
+        if (p.note) out.note = String(p.note);
+        return out;
+      }
+      case "batch_check": {
+        const b = openBatch(cur, p.batchId);
+        const out = { batchId: b.id };
+        if (p.dryness != null) {
+          if (!Number.isInteger(p.dryness) || p.dryness < 0 || p.dryness > DRYNESS_MAX) throw bad();
+          out.dryness = p.dryness;
+        }
+        if (p.mold != null) out.mold = !!p.mold;
+        for (const k of ["scent", "appearance"]) {
+          if (p[k] == null) continue;
+          if (!Number.isInteger(p[k]) || p[k] < 1 || p[k] > RATING_MAX) throw bad();
+          out[k] = p[k];
+        }
+        if (p.note) out.note = String(p.note);
+        if (p.photoId) out.photoId = String(p.photoId);
+        if (Object.keys(out).length < 2) throw bad();
+        return out;
+      }
+      case "care": {
+        if (!CARE_KINDS.includes(p.kind)) throw bad();
+        const out = { kind: p.kind };
+        if (p.kind === "custom") {
+          if (!str(p.label)) throw bad();
+          out.label = p.label.trim().slice(0, 80);
+        }
+        if (p.potVolumeL != null) {
+          if (!isNum(p.potVolumeL) || p.potVolumeL <= 0) throw bad();
+          out.potVolumeL = p.potVolumeL;
+        }
+        if (p.note) out.note = String(p.note);
         return out;
       }
       case "evaluation": {
         if (!plant.harvestable && plant.lifecycle !== "perennial") throw bad(S.err.notHarvestable);
         const scores = p.scores || {};
-        const allowed = ["overall", ...cfg.criteria];
+        const allowed = ["overall", ...activeCriteria(plant.category, opts.criteria).map((c2) => c2.key)];
         const out = {};
         for (const [k, v] of Object.entries(scores)) {
           if (!allowed.includes(k)) throw bad();
@@ -1238,6 +1868,17 @@
           if (plant.lifecycle !== "perennial" || !plant.harvestable || !Number.isInteger(p.season)) throw bad();
           res.season = p.season;
         }
+        if (p.batchId != null) {
+          const b = (cur?.cache?.batches || []).find((x) => x.id === p.batchId);
+          if (!b) throw bad();
+          res.batchId = b.id;
+        }
+        if (p.part) res.part = String(p.part).trim().slice(0, 80);
+        const c = cur?.cache;
+        const afterHarvest = res.batchId || res.season != null || c?.finalHarvestAt || ["harvested", "done", "dormant"].includes(c?.stage) || (c?.batches || []).some((b) => b.readyAt || b.phase === "used");
+        const kind = p.kind ?? (afterHarvest ? "final" : "tasting");
+        if (!EVAL_KINDS.includes(kind)) throw bad();
+        res.kind = kind;
         return res;
       }
       case "archive":
@@ -1251,6 +1892,11 @@
       default:
         throw bad();
     }
+  }
+  function openBatch(cur, id) {
+    const b = (cur?.cache?.batches || []).find((x) => x.id === id);
+    if (!b || BATCH_ENDED.includes(b.phase)) throw bad();
+    return b;
   }
   function lastBefore(live, pred, at) {
     let found = null;
@@ -1269,7 +1915,9 @@
         if (inp.type === "unarchive" && !cur.archivedAt) throw new PhenoError("notArchived", S.err.notArchived);
       }
       const live = liveEvents(all);
-      const payload = validatePayload(inp.type, inp.payload, plant, live);
+      const payload = validatePayload(inp.type, inp.payload, plant, live, cur, opts);
+      const id = uid();
+      if (inp.type === "harvest") payload.batchId = id;
       const occurredAt = inp.occurredAt || now2;
       if (inp.type === "watering" || inp.type === "moisture_check") {
         const prev = lastBefore(live, (e) => e.type === "watering" || e.type === "moisture_check" && e.payload.watered, occurredAt);
@@ -1283,7 +1931,7 @@
         const prev = lastBefore(live, (e) => e.type === "harvest", occurredAt);
         payload.daysSinceLastHarvest = prev ? daysBetween(prev.occurredAt, occurredAt) : null;
       }
-      const ev = { id: uid(), plantId: plant.id, type: inp.type, occurredAt, recordedAt: now2, payload };
+      const ev = { id, plantId: plant.id, type: inp.type, occurredAt, recordedAt: now2, payload };
       built.push(ev);
       all = all.concat(ev);
     }
@@ -1291,7 +1939,9 @@
   }
   async function readOpts(s) {
     const h2 = await idbReq(s.meta.get("hemisphere"));
-    return { hemisphere: h2?.value === "south" ? "south" : "north" };
+    const r = await idbReq(s.meta.get("rules"));
+    const cr = await idbReq(s.meta.get("criteria"));
+    return { hemisphere: h2?.value === "south" ? "south" : "north", rules: resolveRules(cleanRules(r?.value)), criteria: cleanCriteria(cr?.value) };
   }
   function appendEvents(db, plantId, inputs, { now: now2 } = {}) {
     return withTx(db, ["plants", "events", "meta"], "readwrite", async (s) => {
@@ -1301,7 +1951,13 @@
       const existing = await idbReq(s.events.index("plantId").getAll(plantId));
       const events = buildEvents(plant, existing, inputs, now2, opts);
       const snoozed = { ...plant.cache?.snoozedUntil || {} };
-      for (const e of events) for (const k of COMPLETES[e.type] || []) delete snoozed[k];
+      for (const e of events) {
+        for (const k of COMPLETES[e.type] || []) delete snoozed[k];
+        const bid = e.payload?.batchId;
+        if (bid && ["batch_check", "batch_step", "evaluation"].includes(e.type)) {
+          for (const k of [`batchCheck:${bid}`, `useBy:${bid}`, `evaluation:${bid}`]) delete snoozed[k];
+        }
+      }
       const base = { ...plant, cache: { ...plant.cache, snoozedUntil: snoozed } };
       const next = projectPlant(base, existing.concat(events), opts);
       for (const e of events) s.events.put(e);
@@ -1329,11 +1985,17 @@
     return withTx(db, ["plants", "events", "meta"], "readwrite", async (s) => {
       const opts = await readOpts(s);
       const plants = await idbReq(s.plants.getAll());
+      let ok = 0;
       for (const pl2 of plants) {
         const evs = await idbReq(s.events.index("plantId").getAll(pl2.id));
-        s.plants.put(projectPlant(pl2, evs, opts));
+        try {
+          s.plants.put(projectPlant(pl2, evs, opts));
+          ok += 1;
+        } catch (e) {
+          console.error("rebuild failed for", pl2.id, e);
+        }
       }
-      return plants.length;
+      return ok;
     });
   }
   function updatePlantMeta(db, plantId, patch) {
@@ -1351,6 +2013,15 @@
       }
       if ("location" in patch) next.location = String(patch.location || "").trim();
       if ("source" in patch && SOURCES.includes(patch.source)) next.source = patch.source;
+      for (const k of ["potVolumeL", "substrate", "plannedHarvestAt"]) {
+        if (!(k in patch)) continue;
+        if (patch[k] == null || patch[k] === "") delete next[k];
+        else {
+          const v = optionalPot({ [k]: patch[k] });
+          if (!(k in v)) throw bad();
+          next[k] = v[k];
+        }
+      }
       if ("baseOverride" in patch) {
         const v = patch.baseOverride;
         if (v != null && (!isNum(v) || v <= 0)) throw bad();
@@ -1535,11 +2206,11 @@
   }
 
   // js/version.js
-  var VERSION = "RCv0.19";
+  var VERSION = "RCv0.191";
 
   // js/backup.js
-  var SCHEMA_VERSION = 1;
-  var PORTABLE_META = ["hemisphere", "profile", "profileSource", "acquisition"];
+  var SCHEMA_VERSION = 2;
+  var PORTABLE_META = ["hemisphere", "profile", "profileSource", "acquisition", "rules", "criteria"];
   var MAX_TEXT = 2e4;
   var jszip = (JSZip) => JSZip || globalThis.JSZip || (() => {
     throw new Error("JSZip nen\xED na\u010Dten\xFD");
@@ -1600,6 +2271,7 @@
       startDate: p.startDate,
       createdAt: isDate(p.createdAt) ? p.createdAt : p.startDate,
       ...p.reminders === false ? { reminders: false } : {},
+      ...optionalPot(p),
       archivedAt: null,
       cache: emptyCache()
     };
@@ -1608,6 +2280,7 @@
     if (!isObj(e) || !isId(e.id) || !isId(e.plantId) || !EVENT_TYPES.includes(e.type)) return null;
     if (!isDate(e.occurredAt) || !isDate(e.recordedAt) || !isObj(e.payload)) return null;
     if (JSON.stringify(e.payload).length > MAX_TEXT) return null;
+    if (["batch_step", "batch_check"].includes(e.type) && !isId(e.payload.batchId)) return null;
     return { id: e.id, plantId: e.plantId, type: e.type, occurredAt: e.occurredAt, recordedAt: e.recordedAt, payload: e.payload };
   }
   async function readBackup(input, { JSZip } = {}) {
@@ -1643,6 +2316,14 @@
       delete meta.profileSource;
     }
     if (meta.profileSource && !PROFILE_SOURCES.includes(meta.profileSource)) delete meta.profileSource;
+    if ("rules" in meta) {
+      meta.rules = cleanRules(meta.rules);
+      if (!Object.keys(meta.rules).length) delete meta.rules;
+    }
+    if ("criteria" in meta) {
+      meta.criteria = cleanCriteria(meta.criteria);
+      if (!Object.keys(meta.criteria).length) delete meta.criteria;
+    }
     if ("acquisition" in meta) meta.acquisition = cleanAcquisition(meta.acquisition);
     if (meta.acquisition == null) delete meta.acquisition;
     return { zip, manifest, plants, events, photoList, meta, skipped, archivePlantIds: ids };
@@ -1654,7 +2335,7 @@
     if (typeof a.capturedAt === "string" && !Number.isNaN(Date.parse(a.capturedAt))) out.capturedAt = a.capturedAt;
     return Object.keys(out).length ? out : null;
   }
-  var same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  var same2 = (a, b) => JSON.stringify(a) === JSON.stringify(b);
   async function importBackup(db, input, { JSZip } = {}) {
     const parsed = await readBackup(input, { JSZip });
     const localPlants = new Map((await listPlants(db)).map((p) => [p.id, p]));
@@ -1687,7 +2368,7 @@
         continue;
       }
       report.eventsExisting += 1;
-      if (cur.plantId !== e.plantId || cur.type !== e.type || cur.occurredAt !== e.occurredAt || !same(cur.payload, e.payload)) {
+      if (cur.plantId !== e.plantId || cur.type !== e.type || cur.occurredAt !== e.occurredAt || !same2(cur.payload, e.payload)) {
         report.conflicts.push({ kind: "event", id: e.id, type: e.type });
       }
     }
@@ -1746,7 +2427,7 @@
     if (d === -1) return "v\u010Dera";
     return d > 0 ? `za ${d} ${daysWord(d)}` : `p\u0159ed ${-d} ${daysWord(-d)}`;
   }
-  var num2 = (v, digits = 1) => (Math.round(v * 10 ** digits) / 10 ** digits).toLocaleString("cs-CZ");
+  var num3 = (v, digits = 1) => (Math.round(v * 10 ** digits) / 10 ** digits).toLocaleString("cs-CZ");
   function toLocalInput(iso) {
     const d = new Date(iso);
     const p = (n) => String(n).padStart(2, "0");
@@ -1922,6 +2603,20 @@
       h(
         "div",
         { class: "card pad" },
+        h("h3", {}, S.rules.open),
+        h("p", { class: "muted" }, S.rules.openHint),
+        h("button", { type: "button", class: "btn btn-secondary", id: "btn-rules", onclick: () => navigate("/settings/rules") }, S.rules.open)
+      ),
+      h(
+        "div",
+        { class: "card pad" },
+        h("h3", {}, S.crit.open),
+        h("p", { class: "muted" }, S.crit.openHint),
+        h("button", { type: "button", class: "btn btn-secondary", id: "btn-criteria", onclick: () => navigate("/settings/criteria") }, S.crit.open)
+      ),
+      h(
+        "div",
+        { class: "card pad" },
         h("h3", {}, S.backup.title),
         h("p", { class: "muted" }, S.backup.hint),
         row(S.backup.lastExport, lastExport ? fmtDateTime(lastExport) : S.backup.never, "last-export"),
@@ -2011,7 +2706,7 @@
   }
 
   // js/timeline.js
-  var DONE_TYPES = ["watering", "moisture_check", "fertilizing", "pest_check"];
+  var DONE_TYPES = ["watering", "moisture_check", "fertilizing", "pest_check", "batch_check"];
   function doneToday(events, now2) {
     return liveEvents(events).filter((e) => DONE_TYPES.includes(e.type) && dayDiff(e.occurredAt, now2) === 0).length;
   }
@@ -2045,13 +2740,31 @@
       case "photo":
         return { icon: "camera", title: "Fotka", detail: p.caption || "", photoId: p.photoId };
       case "measurement":
-        return { icon: "thermo", title: `M\u011B\u0159en\xED: ${p.kind}`, detail: `${num2(p.value, 2)}${p.unit ? ` ${p.unit}` : ""}` };
+        return { icon: "thermo", title: `M\u011B\u0159en\xED: ${p.kind}`, detail: `${num3(p.value, 2)}${p.unit ? ` ${p.unit}` : ""}` };
       case "milestone":
         return { icon: "flag", title: p.label, detail: "" };
       case "harvest":
-        return { icon: "leaf", title: "Sklize\u0148", detail: "" };
+        return { icon: "leaf", title: p.final ? "Posledn\xED sklize\u0148" : "Sklize\u0148", detail: S.processing[p.processingMethod] || "" };
+      case "batch_step":
+        return { icon: "stage", title: `D\xE1vka: ${S.batchPhase[p.phase] || p.phase}`, detail: p.note || "" };
+      case "batch_check": {
+        const bits = [
+          p.dryness != null ? S.dryness[p.dryness] : null,
+          p.mold ? "pl\xEDse\u0148" : p.mold === false ? "bez pl\xEDsn\u011B" : null,
+          p.scent ? `v\u016Fn\u011B ${p.scent}/5` : null,
+          p.appearance ? `vzhled ${p.appearance}/5` : null,
+          p.note || null
+        ].filter(Boolean);
+        return { icon: "check", title: "Kontrola d\xE1vky", detail: bits.join(" \xB7 ") };
+      }
+      case "care":
+        return { icon: "leaf", title: p.kind === "custom" ? p.label : S.care[p.kind], detail: [p.potVolumeL ? `${num3(p.potVolumeL, 1)} l` : "", p.note || ""].filter(Boolean).join(" \xB7 ") };
       case "evaluation":
-        return { icon: "check", title: "Hodnocen\xED", detail: `${p.scores?.overall}/5` };
+        return {
+          icon: "check",
+          title: S.evalKind[p.kind ?? "final"],
+          detail: [`${p.scores?.overall}/5`, p.part || ""].filter(Boolean).join(" \xB7 ")
+        };
       case "archive":
         return { icon: "pot", title: "Archivov\xE1no", detail: "" };
       case "unarchive":
@@ -2067,16 +2780,17 @@
   // js/stats.js
   var overallOf = (e) => e.payload?.scores?.overall;
   var validOverall = (e) => Number.isFinite(overallOf(e));
+  var isFinalEval = (e) => (e.payload?.kind ?? "final") === "final";
+  var evalKey = (e) => `${e.payload.season ?? ""}|${e.payload.batchId ?? ""}|${e.payload.part ?? ""}`;
   var yieldKey = (category) => CATEGORIES[category]?.harvestFields[0]?.key ?? null;
   function currentEvaluations(plant, events) {
-    const evs = liveEvents(events).filter((e) => e.type === "evaluation" && validOverall(e));
-    if (plant.lifecycle !== "perennial") return evs.length ? [evs.at(-1)] : [];
-    const bySeason = /* @__PURE__ */ new Map();
-    for (const e of evs) bySeason.set(e.payload.season ?? null, e);
-    return [...bySeason.values()].sort((a, b) => a.occurredAt < b.occurredAt ? -1 : 1);
+    const evs = liveEvents(events).filter((e) => e.type === "evaluation" && validOverall(e) && isFinalEval(e));
+    const byKey = /* @__PURE__ */ new Map();
+    for (const e of evs) byKey.set(evalKey(e), e);
+    return [...byKey.values()].sort((a, b) => a.occurredAt < b.occurredAt ? -1 : 1);
   }
-  function latestEvaluation(events, season) {
-    const evs = liveEvents(events).filter((e) => e.type === "evaluation" && validOverall(e) && (season === void 0 || (e.payload.season ?? null) === season));
+  function latestEvaluation(events, season, batchId) {
+    const evs = liveEvents(events).filter((e) => e.type === "evaluation" && validOverall(e) && isFinalEval(e) && (season === void 0 || (e.payload.season ?? null) === season) && (batchId === void 0 || (e.payload.batchId ?? null) === batchId));
     return evs.at(-1) ?? null;
   }
   function evaluationHistory(events) {
@@ -2090,6 +2804,9 @@
         overall: overallOf(e),
         note: e.payload.note || "",
         season: e.payload.season ?? null,
+        kind: e.payload.kind ?? "final",
+        part: e.payload.part ?? null,
+        batchId: e.payload.batchId ?? null,
         daysAfterHarvest: prev ? daysBetween(prev.occurredAt, e.occurredAt) : e.payload.daysSinceLastHarvest ?? null
       };
     });
@@ -2206,7 +2923,7 @@
     h("button", { type: "button", class: "btn btn-primary", onclick: onSave }, label)
   );
   function moistureSheet(plant, done) {
-    const info = dryingInfo(plant);
+    const info = dryingInfo(plant, ctx.rules);
     const last = plant.cache.lastWateredAt ?? plant.startDate;
     const t = daysBetween(last, now());
     let answer = null, touched = false;
@@ -2238,7 +2955,7 @@
     openSheet(`${S.ui.moistureCheck} \u2013 ${plant.name}`, h(
       "div",
       {},
-      h("p", { class: "muted" }, `Od posledn\xED z\xE1livky uplynulo ${num2(t)} dne. O\u010Dek\xE1van\xE9 schnut\xED: ${num2(info.d)} dne.`),
+      h("p", { class: "muted" }, `Od posledn\xED z\xE1livky uplynulo ${num3(t)} dne. O\u010Dek\xE1van\xE9 schnut\xED: ${num3(info.d)} dne.`),
       h("div", { class: "moisture-row" }, opts),
       h("label", { class: "check-row" }, cb, h("span", {}, S.ui.watered)),
       d.el,
@@ -2257,16 +2974,17 @@
     ));
   }
   function pestCheckSheet(plant, done) {
-    const found = h("input", { type: "checkbox" });
+    const result = chipGroup([["clean", S.ui.pestClean], ["found", S.ui.pestFound]], "clean");
+    result.el.id = "pest-result";
     const note = h("textarea", { rows: 2 });
     const d = dateField();
     openSheet(`${S.ui.pestCheck} \u2013 ${plant.name}`, h(
       "div",
       {},
-      h("label", { class: "check-row" }, found, h("span", {}, S.ui.foundPests)),
+      field(S.ui.pestCheck, result.el),
       field(S.ui.note, note),
       d.el,
-      buttons(() => submit(plant.id, [{ type: "pest_check", occurredAt: d.get(), payload: { found: found.checked, note: note.value } }], "Kontrola zaps\xE1na", done))
+      buttons(() => submit(plant.id, [{ type: "pest_check", occurredAt: d.get(), payload: { found: result.get() === "found", note: note.value } }], "Kontrola zaps\xE1na", done))
     ));
   }
   function problemSheet(plant, done) {
@@ -2285,12 +3003,12 @@
     ));
   }
   function followUpSheet(plant, task, done) {
-    const btn = (label, cls, fn) => h("button", { type: "button", class: `btn ${cls}`, onclick: fn }, label);
+    const btn2 = (label, cls, fn) => h("button", { type: "button", class: `btn ${cls}`, onclick: fn }, label);
     openSheet(`${S.taskLabel.problemFollowUp} \u2013 ${plant.name}`, h(
       "div",
       { class: "stack" },
-      btn(S.ui.stillProblem, "btn-secondary", () => submit(plant.id, [{ type: "pest_check", payload: { found: true } }], "Kontrola zaps\xE1na", done)),
-      btn(S.ui.resolved, "btn-primary", () => submit(plant.id, [
+      btn2(S.ui.stillProblem, "btn-secondary", () => submit(plant.id, [{ type: "pest_check", payload: { found: true } }], "Kontrola zaps\xE1na", done)),
+      btn2(S.ui.resolved, "btn-primary", () => submit(plant.id, [
         { type: "pest_check", payload: { found: false } },
         { type: "problem_resolved", payload: { problemId: task.problemId } }
       ], "Probl\xE9m vy\u0159e\u0161en", done))
@@ -2377,7 +3095,7 @@
   }
   var quickWatered = (plant, done) => submit(plant.id, [{ type: "watering", payload: {} }], "Zalito", done);
   async function snoozeSheet(task, done) {
-    const btn = (n) => h("button", { type: "button", class: "btn btn-secondary", onclick: async () => {
+    const btn2 = (n) => h("button", { type: "button", class: "btn btn-secondary", onclick: async () => {
       const d = /* @__PURE__ */ new Date();
       d.setHours(0, 0, 0, 0);
       d.setDate(d.getDate() + n);
@@ -2386,9 +3104,11 @@
       toast(`Odlo\u017Eeno do ${relDay(d.toISOString(), now())}`);
       done?.();
     } }, n === 1 ? "Na z\xEDtra" : `Na ${n} dny`);
-    openSheet(`${S.ui.snooze} \u2013 ${task.plantName}`, h("div", { class: "stack" }, [1, 2, 3].map(btn)));
+    openSheet(`${S.ui.snooze} \u2013 ${task.plantName}`, h("div", { class: "stack" }, [1, 2, 3].map(btn2)));
   }
   var terminalStage = (plant) => getStages(plant.category, plant.lifecycle).find((k) => STAGE_FLAGS[k]?.terminal) ?? null;
+  var batchLabel = (b) => `${fmtDate(b.harvestedAt)} \xB7 ${S.batchPhase[b.phase] || b.phase}`;
+  var btn = (label, cls, fn, id) => h("button", { type: "button", class: `btn ${cls}`, id, onclick: fn }, label);
   function archiveSheet(plant, done) {
     openSheet(`${S.ui.archive} \u2013 ${plant.name}`, h(
       "div",
@@ -2407,60 +3127,210 @@
       h("button", { type: "button", class: "btn btn-secondary", onclick: closeSheet }, S.ui.later)
     ));
   }
-  function harvestFollowUp(plant, done) {
-    if (plant.lifecycle === "perennial") return;
+  function finalTarget(plant) {
+    if (plant.lifecycle === "perennial") return "dormant";
     const stages = getStages(plant.category, plant.lifecycle);
-    const term = terminalStage(plant);
-    const cur = stages.indexOf(plant.cache.stage);
-    const next = stages[cur + 1];
-    const btn = (label, cls, fn, id) => h("button", { type: "button", class: `btn ${cls}`, id, onclick: fn }, label);
-    const go = async (to, after) => {
+    return stages.includes("harvested") ? "harvested" : terminalStage(plant);
+  }
+  function afterFinalSheet(plant, target, done) {
+    const go = async () => {
       try {
-        await appendEvents(ctx.db, plant.id, [{ type: "stage_change", payload: { from: plant.cache.stage, to } }]);
+        await appendEvents(ctx.db, plant.id, [{ type: "stage_change", payload: { from: plant.cache.stage, to: target } }]);
         closeSheet();
+        toast(S.ui.switched);
         done?.();
-        after?.();
       } catch (e) {
         toast(e.message);
       }
     };
-    const buttons2 = [];
-    if (next && next !== term) buttons2.push(btn(`${S.ui.nextStage} \u201E${S.stage[next]}\u201C`, "btn-secondary", () => go(next), "btn-next-stage"));
-    if (term && plant.cache.stage !== term) {
-      buttons2.push(btn(S.ui.endCycle, "btn-primary", () => go(term, () => archiveSheet({ ...plant, cache: { ...plant.cache, stage: term } }, done)), "btn-end-cycle"));
-    }
-    buttons2.push(btn(S.ui.keepGoing, "btn-secondary", () => {
-      closeSheet();
-      done?.();
-    }, "btn-keep"));
-    openSheet(S.ui.harvestSaved, h("div", { class: "stack" }, buttons2));
+    openSheet(S.ui.harvestSaved, h(
+      "div",
+      { class: "stack" },
+      h("p", { class: "muted" }, S.ui.afterFinalAsk),
+      btn(`${S.ui.switchTo} \u201E${S.stage[target]}\u201C`, "btn-primary", go, "btn-final-switch"),
+      btn(S.ui.notYet, "btn-secondary", () => {
+        closeSheet();
+        done?.();
+      }, "btn-final-keep")
+    ));
+  }
+  var defaultMethod = (plant) => FRESH_CATEGORIES.includes(plant.category) ? "none" : "drying";
+  function methodPicker(plant, value = defaultMethod(plant)) {
+    const est = h("input", { type: "number", step: "0.5", min: "0.5", max: "120", inputmode: "decimal", id: "est-days" });
+    const estField = field(S.ui.estDays, est);
+    const toggle = (v) => {
+      estField.style.display = v === "drying" ? "" : "none";
+    };
+    const method = chipGroup(PROCESSING_METHODS.map((m) => [m, S.processing[m]]), value, toggle);
+    method.el.id = "processing-method";
+    toggle(value);
+    return { method, estField, est: () => est.value === "" ? null : Number(est.value) };
   }
   function harvestSheet(plant, done) {
     const cfg = CATEGORIES[plant.category];
     const inputs = cfg.harvestFields.map((f) => ({ f, el: h("input", { type: "number", step: "any", min: f.min, inputmode: "decimal", dataset: { key: f.key } }) }));
-    const method = chipGroup([["", "\u2014"], ...PROCESSING_METHODS.map((m) => [m, S.processing[m]])], "");
-    const days = h("input", { type: "number", step: "1", min: "0", inputmode: "numeric" });
+    const mp = methodPicker(plant);
     const note = h("textarea", { rows: 2 });
+    const fin = h("input", { type: "checkbox", id: "harvest-final" });
     const d = dateField();
     const save = async () => {
       const payload = {};
       for (const { f, el } of inputs) if (el.value !== "") payload[f.key] = Number(el.value);
       if (!Object.keys(payload).length) return toast(S.ui.fillOne);
-      if (method.get()) payload.processingMethod = method.get();
-      if (days.value !== "") payload.processingDays = Number(days.value);
+      payload.processingMethod = mp.method.get();
+      if (payload.processingMethod === "drying" && mp.est() != null) payload.estDays = mp.est();
       if (note.value.trim()) payload.note = note.value.trim();
-      const ok = await submit(plant.id, [{ type: "harvest", occurredAt: d.get(), payload }], S.ui.harvestSaved, done);
-      if (ok) harvestFollowUp(plant, done);
+      if (fin.checked) payload.final = true;
+      const rule = ctx.rules.afterFinalHarvest;
+      const target = fin.checked ? finalTarget(plant) : null;
+      const move = !!target && target !== plant.cache.stage;
+      const events = [{ type: "harvest", occurredAt: d.get(), payload }];
+      if (move && rule === "auto") events.push({ type: "stage_change", payload: { from: plant.cache.stage, to: target } });
+      const ok = await submit(plant.id, events, S.ui.harvestSaved, done);
+      if (ok && move && rule === "ask") afterFinalSheet(plant, target, done);
     };
     openSheet(`${S.ui.recordHarvest} \u2013 ${plant.name}`, h(
       "div",
       {},
       d.el,
       inputs.map(({ f, el }) => field(S.harvestField[f.key] || f.key, el)),
-      field(S.ui.processing, method.el),
-      field(S.ui.processingDays, days),
+      field(S.ui.processing, mp.method.el),
+      mp.estField,
+      h("label", { class: "check-row" }, fin, h("span", {}, S.ui.finalHarvest)),
+      h("div", { class: "field-hint" }, S.ui.finalHint),
       field(S.ui.note, note),
       buttons(save)
+    ));
+  }
+  function batchMethodSheet(plant, batch, done) {
+    const mp = methodPicker(plant);
+    openSheet(`${S.ui.batchMethod} \u2013 ${plant.name}`, h(
+      "div",
+      {},
+      h("p", { class: "muted" }, `${S.ui.batchPending}: ${fmtDate(batch.harvestedAt)}`),
+      field(S.ui.processing, mp.method.el),
+      mp.estField,
+      buttons(() => {
+        const m = mp.method.get();
+        const payload = { batchId: batch.id, phase: m === "none" ? "ready" : m, method: m };
+        if (m === "drying" && mp.est() != null) payload.estDays = mp.est();
+        submit(plant.id, [{ type: "batch_step", payload }], S.ui.batchSaved, done);
+      })
+    ));
+  }
+  function batchStepSheet(plant, batch, done, heading) {
+    const fresh = FRESH_CATEGORIES.includes(plant.category);
+    const order = fresh ? ["storing", "ready", "used", "discarded", ...PROCESSING_PHASES.filter((x) => x !== "storing")] : BATCH_PHASES;
+    const options = order.filter((x) => x !== batch.phase);
+    const start = batch.phase === "ready" ? "used" : options.includes("ready") ? "ready" : options[0];
+    const est = h("input", { type: "number", step: "0.5", min: "0.5", max: "120", inputmode: "decimal", id: "est-days" });
+    const estField = field(S.ui.estDays, est);
+    const toggle = (v) => {
+      estField.style.display = v === "drying" ? "" : "none";
+    };
+    const phase = chipGroup(options.map((x) => [x, S.batchPhase[x]]), start, toggle);
+    phase.el.id = "batch-phase";
+    toggle(start);
+    const note = h("textarea", { rows: 2 });
+    const d = dateField();
+    openSheet(`${S.ui.movePhase} \u2013 ${plant.name}`, h(
+      "div",
+      {},
+      h("p", { class: "muted" }, heading || batchLabel(batch)),
+      field(S.ui.movePhase, phase.el),
+      estField,
+      field(S.ui.note, note),
+      d.el,
+      buttons(() => {
+        const payload = { batchId: batch.id, phase: phase.get() };
+        if (payload.phase === "drying" && est.value !== "") payload.estDays = Number(est.value);
+        if (note.value.trim()) payload.note = note.value.trim();
+        submit(plant.id, [{ type: "batch_step", occurredAt: d.get(), payload }], S.ui.batchSaved, done);
+      })
+    ));
+  }
+  function batchCheckSheet(plant, batch, done) {
+    const drying = batch.phase === "drying";
+    const lastDry = batch.checks.filter((c) => c.dryness != null).at(-1)?.dryness ?? null;
+    const dry = chipGroup(Array.from({ length: DRYNESS_MAX + 1 }, (_, i) => [i, `${i} \xB7 ${S.dryness[i]}`]), lastDry);
+    dry.el.id = "batch-dryness";
+    const mold = chipGroup([["no", S.ui.moldNone], ["yes", S.ui.moldFound]], "no");
+    mold.el.id = "batch-mold";
+    const scent = starPicker(0), look = starPicker(0);
+    const note = h("textarea", { rows: 2 });
+    const d = dateField();
+    openSheet(`${S.ui.batchCheck} \u2013 ${plant.name}`, h(
+      "div",
+      {},
+      h("p", { class: "muted" }, batchLabel(batch)),
+      drying ? field(S.ui.dryness, dry.el) : null,
+      field(S.ui.mold, mold.el),
+      field(S.ui.scent, scent.el),
+      field(S.ui.batchLook, look.el),
+      field(S.ui.note, note),
+      d.el,
+      buttons(async () => {
+        if (drying && dry.get() == null) return toast(S.ui.dryness);
+        const payload = { batchId: batch.id, mold: mold.get() === "yes" };
+        if (drying) payload.dryness = Number(dry.get());
+        if (scent.get()) payload.scent = scent.get();
+        if (look.get()) payload.appearance = look.get();
+        if (note.value.trim()) payload.note = note.value.trim();
+        const ok = await submit(plant.id, [{ type: "batch_check", occurredAt: d.get(), payload }], "Kontrola zaps\xE1na", done);
+        if (ok && drying && payload.dryness === DRYNESS_MAX) batchStepSheet(plant, batch, done, S.ui.dryDone);
+      })
+    ));
+  }
+  function useBySheet(plant, task, done) {
+    const batch = (plant.cache.batches || []).find((b) => b.id === task.batchId);
+    if (!batch) return;
+    const step = (phase) => () => submit(plant.id, [{ type: "batch_step", payload: { batchId: batch.id, phase } }], S.batchPhase[phase], done);
+    openSheet(`${S.taskLabel.useBy} \u2013 ${plant.name}`, h(
+      "div",
+      { class: "stack" },
+      h("p", { class: "muted" }, `${S.ui.useAsk} ${batchLabel(batch)}`),
+      btn(S.ui.markUsed, "btn-primary", step("used"), "btn-batch-used"),
+      btn(S.ui.markDiscarded, "btn-secondary", step("discarded"), "btn-batch-discarded"),
+      btn(S.ui.stillHave, "btn-secondary", async () => {
+        const t = /* @__PURE__ */ new Date();
+        t.setHours(0, 0, 0, 0);
+        t.setDate(t.getDate() + 3);
+        await snoozeTask(ctx.db, plant.id, task.snoozeKey, t.toISOString());
+        closeSheet();
+        done?.();
+      }, "btn-batch-keep")
+    ));
+  }
+  var batchEstimate = (batch, plant) => effectiveDryingDays(batch, ctx.rules, plant ? batchRatio(plant, batch, ctx.priors) : batch.ratio ?? 1);
+  function careSheet(plant, done) {
+    const kind = chipGroup(CARE_KINDS.map((k) => [k, S.care[k]]), "pruning", (v) => {
+      label.style.display = v === "custom" ? "" : "none";
+      pot.style.display = v === "repotting" ? "" : "none";
+    });
+    kind.el.id = "care-kind";
+    const labelInput = h("input", { type: "text", placeholder: S.ui.careLabel, id: "care-label" });
+    const label = field(S.ui.careLabel, labelInput);
+    const potInput = h("input", { type: "number", step: "any", min: "0.1", inputmode: "decimal", id: "care-pot", value: plant.cache.pot?.volumeL ?? "" });
+    const pot = field(S.ui.potVolume, potInput);
+    label.style.display = "none";
+    pot.style.display = "none";
+    const note = h("textarea", { rows: 2 });
+    const d = dateField();
+    openSheet(`${S.ui.care} \u2013 ${plant.name}`, h(
+      "div",
+      {},
+      field(S.ui.careKind, kind.el),
+      label,
+      pot,
+      field(S.ui.note, note),
+      d.el,
+      buttons(() => {
+        const payload = { kind: kind.get() };
+        if (payload.kind === "custom") payload.label = labelInput.value;
+        if (payload.kind === "repotting" && potInput.value !== "") payload.potVolumeL = Number(potInput.value);
+        if (note.value.trim()) payload.note = note.value.trim();
+        submit(plant.id, [{ type: "care", occurredAt: d.get(), payload }], S.care[payload.kind], done);
+      })
     ));
   }
   function starPicker(value, onChange) {
@@ -2488,12 +3358,31 @@
     paint();
     return { el, get: () => cur };
   }
-  async function evaluationSheet(plant, done) {
+  async function evaluationSheet(plant, done, opts = {}) {
     const events = await getEvents(ctx.db, plant.id);
+    const c = plant.cache;
+    const batches = c.batches || [];
     const perennialHarvest = plant.lifecycle === "perennial" && plant.harvestable;
-    const prev = latestEvaluation(events);
+    const afterHarvest = !!c.finalHarvestAt || ["harvested", "done", "dormant"].includes(c.stage) || batches.some((b) => b.readyAt || b.phase === "used");
+    let kind = opts.kind ?? (afterHarvest || !plant.harvestable ? "final" : "tasting");
+    const kindChips = chipGroup([["tasting", S.ui.tasting], ["final", S.ui.finalEval]], kind, (v) => {
+      kind = v;
+      hint.style.display = v === "tasting" ? "" : "none";
+    });
+    kindChips.el.id = "eval-kind";
+    const hint = h("div", { class: "field-hint" }, S.ui.tastingHint);
+    hint.style.display = kind === "tasting" ? "" : "none";
+    let batchId = opts.batchId ?? "";
+    const batchChips = batches.length ? chipGroup([["", S.ui.wholePlant], ...batches.map((b) => [b.id, batchLabel(b)])], batchId, (v) => {
+      batchId = v;
+    }) : null;
+    if (batchChips) batchChips.el.id = "eval-batch";
+    const part = h("input", { type: "text", id: "eval-part", placeholder: S.ui.evalPartHint });
+    const prev = kind === "final" ? latestEvaluation(events, void 0, opts.batchId === void 0 ? void 0 : opts.batchId || null) : null;
     const p = prev?.payload || {};
-    const criteria = ["overall", ...CATEGORIES[plant.category].criteria];
+    if (p.part) part.value = p.part;
+    const criteriaList = [{ key: "overall", label: S.criterion.overall }, ...activeCriteria(plant.category, ctx.criteria)];
+    const criteria = criteriaList.map((c2) => c2.key);
     const pickers = Object.fromEntries(criteria.map((k) => [k, starPicker(p.scores?.[k])]));
     let grow = p.wouldGrowAgain ?? null;
     const growChips = chipGroup([["yes", S.ui.yes], ["no", S.ui.no]], grow == null ? null : grow ? "yes" : "no", (v) => {
@@ -2508,16 +3397,22 @@
       if (!pickers.overall.get()) return toast(S.ui.overallRequired);
       const scores = {};
       for (const k of criteria) if (pickers[k].get()) scores[k] = pickers[k].get();
-      const payload = { scores };
+      const payload = { scores, kind };
       if (grow != null) payload.wouldGrowAgain = grow;
       if (note.value.trim()) payload.note = note.value.trim();
       if (perennialHarvest && season.value !== "") payload.season = Number(season.value);
-      submit(plant.id, [{ type: "evaluation", occurredAt: d.get(), payload }], "Hodnocen\xED ulo\u017Eeno", done);
+      if (batchId) payload.batchId = batchId;
+      if (part.value.trim()) payload.part = part.value.trim();
+      submit(plant.id, [{ type: "evaluation", occurredAt: d.get(), payload }], kind === "tasting" ? "Ochutn\xE1vka ulo\u017Eena" : "Hodnocen\xED ulo\u017Eeno", done);
     };
     openSheet(`${S.ui.evaluation} \u2013 ${plant.name}`, h(
       "div",
       {},
-      criteria.map((k) => field(S.criterion[k], pickers[k].el)),
+      plant.harvestable ? field(S.ui.evalKind, kindChips.el) : null,
+      plant.harvestable ? hint : null,
+      batchChips ? field(S.ui.evalBatch, batchChips.el) : null,
+      plant.harvestable ? field(S.ui.evalPart, part) : null,
+      criteriaList.map((c2) => field(c2.label, pickers[c2.key].el)),
       field(S.ui.wouldGrowAgain, growChips.el),
       perennialHarvest ? field(S.ui.season, season) : null,
       field(S.ui.note, note),
@@ -2528,9 +3423,10 @@
 
   // js/ui-dashboard.js
   var filters = { location: "all", environment: "all", category: "all" };
-  var CAT_ICON = { herb: "leaf", vegetable: "sprout", fruit: "pot", flower: "sun", tree_shrub: "leaf", other: "pot" };
+  var CAT_ICON = { herb: "leaf", vegetable: "sprout", fruit: "pot", flower: "sun", tree_shrub: "leaf", houseplant: "sprout", other: "pot" };
   var DOT = { overdue: "expired", today: "missing", upcoming: "needs_check" };
   function runTask(task, plant, done) {
+    const batch = task.batchId ? (plant.cache.batches || []).find((b) => b.id === task.batchId) : null;
     switch (task.type) {
       case "moisture":
         return moistureSheet(plant, done);
@@ -2540,12 +3436,67 @@
         return submit(plant.id, [{ type: "pest_check", payload: { found: false } }], "Kontrola zaps\xE1na", done);
       case "problemFollowUp":
         return followUpSheet(plant, task, done);
+      case "batchCheck":
+        return batch ? batchCheckSheet(plant, batch, done) : null;
+      case "useBy":
+        return useBySheet(plant, task, done);
       case "evaluation":
       case "evaluationReview":
-        return evaluationSheet(plant, done);
+        return evaluationSheet(plant, done, { kind: "final", batchId: task.batchId ?? void 0 });
       default:
         return null;
     }
+  }
+  function afterHarvestRows(plants, nowIso2) {
+    return plants.flatMap((p) => (p.cache?.batches || []).filter((b) => !b.legacy && !BATCH_ENDED.includes(b.phase)).map((b) => ({
+      plant: p,
+      batch: b,
+      pending: b.phase === "pending",
+      progress: b.phase === "drying" ? { t: Math.floor(daysBetween(b.phaseSince, nowIso2)), est: Math.round(batchEstimate(b, p)) } : null
+    }))).sort((a, c) => a.batch.harvestedAt < c.batch.harvestedAt ? 1 : -1);
+  }
+  function afterHarvestSection(plants, nowIso2, rerender) {
+    const rows = afterHarvestRows(plants, nowIso2);
+    if (!rows.length) return null;
+    return h(
+      "section",
+      { class: "after-harvest", id: "after-harvest" },
+      h("div", { class: "section-title" }, S.ui.afterHarvest),
+      h("div", { class: "card task-list" }, rows.map(({ plant, batch, pending, progress }) => h(
+        "div",
+        {
+          class: "item-row batch-row",
+          role: "button",
+          tabindex: 0,
+          dataset: { batch: batch.id, plant: plant.id, phase: batch.phase },
+          onclick: () => navigate(`/plant/${plant.id}`)
+        },
+        h("span", { class: `badge-dot ${pending ? "missing" : "ok"}` }),
+        h(
+          "div",
+          { class: "item-info" },
+          h("div", { class: "item-name" }, `${plant.name} \u2013 ${S.batchPhase[batch.phase] || batch.phase}`),
+          h("div", { class: "item-detail" }, h(
+            "span",
+            { class: "item-sub" },
+            [fmtDate(batch.harvestedAt), progress ? S.ui.dayOf(progress.t + 1, progress.est) : null].filter(Boolean).join(" \xB7 ")
+          ))
+        ),
+        pending ? h(
+          "div",
+          { class: "item-actions" },
+          h("button", {
+            type: "button",
+            class: "btn btn-secondary btn-sm",
+            dataset: { act: "method" },
+            onclick: (e) => {
+              e.stopPropagation();
+              batchMethodSheet(plant, batch, rerender);
+            }
+          }, S.ui.batchMethod)
+        ) : null
+      )))
+    );
   }
   function matches(p) {
     return (filters.location === "all" || p.location === filters.location) && (filters.environment === "all" || p.cache.environment === filters.environment) && (filters.category === "all" || p.category === filters.category);
@@ -2582,7 +3533,7 @@
         "div",
         { class: "item-info" },
         h("div", { class: "item-name" }, `${task.plantName} \u2013 ${S.taskLabel[task.type]}`),
-        h("div", { class: "item-detail" }, h("span", { class: "item-sub" }, when))
+        h("div", { class: "item-detail" }, h("span", { class: "item-sub" }, task.phase ? `${S.batchPhase[task.phase] || task.phase} \xB7 ${when}` : when))
       ),
       h(
         "div",
@@ -2635,11 +3586,11 @@
     const active = plants.filter((p) => !p.archivedAt);
     const rerender = () => renderDashboard(root2);
     const list = active.filter(matches);
-    const byId = new Map(active.map((p) => [p.id, p]));
     const nowIso2 = now();
     const opts = engineOpts();
     const remind = active.length ? await backupReminderDue(ctx.db, nowIso2) : false;
-    const tasks = computeTasks(list, nowIso2, opts);
+    const byIdAll = new Map(plants.map((p) => [p.id, p]));
+    const tasks = computeTasks(plants.filter((p) => p.archivedAt ? true : matches(p)), nowIso2, opts);
     const count = (u) => tasks.filter((t) => t.urgency === u).length;
     const done = list.reduce((n, p) => n + doneToday(byPlant.get(p.id) || [], nowIso2), 0);
     const open = count("overdue") + count("today");
@@ -2700,9 +3651,9 @@
           role: "button",
           tabindex: 0,
           id: "next-action",
-          onclick: () => runTask(first, byId.get(first.plantId), rerender)
+          onclick: () => runTask(first, byIdAll.get(first.plantId), rerender)
         },
-        h("div", { class: "next-action-icon" }, icon(first.type === "moisture" ? "drop" : first.type === "fertilizing" ? "leaf" : first.type.startsWith("evaluation") ? "status-ok" : "bug")),
+        h("div", { class: "next-action-icon" }, icon(first.type === "moisture" ? "drop" : first.type === "fertilizing" ? "leaf" : first.type.startsWith("evaluation") ? "status-ok" : first.type === "batchCheck" || first.type === "useBy" ? "check" : "bug")),
         h(
           "div",
           { class: "next-action-copy" },
@@ -2716,7 +3667,9 @@
     const bar = filterBar(active, rerender);
     if (bar) root2.append(bar);
     root2.append(h("div", { class: "section-title" }, S.ui.needsAttention));
-    root2.append(tasks.length ? h("div", { class: "card task-list" }, tasks.map((t) => taskRow(t, byId.get(t.plantId), rerender))) : h("div", { class: "empty-state" }, S.ui.noTasks));
+    root2.append(tasks.length ? h("div", { class: "card task-list" }, tasks.map((t) => taskRow(t, byIdAll.get(t.plantId), rerender))) : h("div", { class: "empty-state" }, S.ui.noTasks));
+    const after = afterHarvestSection(plants, nowIso2, rerender);
+    if (after) root2.append(after);
     for (const key of PROFILES[ctx.profile]?.dashboard || []) {
       const sec = key === "tasks" ? null : profileSection(key, active, plants, byPlant, nowIso2);
       if (sec) root2.append(sec);
@@ -2756,11 +3709,11 @@
       const outdoor = active.filter((p) => SEASONAL_ENVIRONMENTS.includes(p.cache.environment));
       rows = [secRow(S_.seasonLine(S_[seasonOf(nowIso2, ctx.hemisphere)], outdoor.length))];
     } else if (key === "varieties") {
-      rows = aggregateVarieties(all, byPlant).slice(0, 3).map((g) => secRow(g.label, [S.category[g.category], g.avgOverall != null ? `${num2(g.avgOverall)} \u2605` : null, `${g.plantCount} ${plantsWord(g.plantCount)}`].filter(Boolean).join(" \xB7 "), `/variety/${g.category}/${encodeURIComponent(g.key)}`));
+      rows = aggregateVarieties(all, byPlant).slice(0, 3).map((g) => secRow(g.label, [S.category[g.category], g.avgOverall != null ? `${num3(g.avgOverall)} \u2605` : null, `${g.plantCount} ${plantsWord(g.plantCount)}`].filter(Boolean).join(" \xB7 "), `/variety/${g.category}/${encodeURIComponent(g.key)}`));
     } else if (key === "milestones" || key === "measurements") {
       const type = key === "milestones" ? "milestone" : "measurement";
       rows = active.flatMap((p) => liveEvents(byPlant.get(p.id) || []).filter((e) => e.type === type).map((e) => ({ p, e }))).sort((a, b) => a.e.occurredAt < b.e.occurredAt ? 1 : -1).slice(0, 5).map(({ p, e }) => secRow(
-        type === "milestone" ? `${p.name} \u2013 ${e.payload.label}` : `${p.name} \u2013 ${e.payload.kind}: ${num2(e.payload.value, 2)}${e.payload.unit ? ` ${e.payload.unit}` : ""}`,
+        type === "milestone" ? `${p.name} \u2013 ${e.payload.label}` : `${p.name} \u2013 ${e.payload.kind}: ${num3(e.payload.value, 2)}${e.payload.unit ? ` ${e.payload.unit}` : ""}`,
         fmtDate(e.occurredAt),
         `/plant/${p.id}`
       ));
@@ -2778,12 +3731,19 @@
   // js/ui-walk.js
   var cmp = (a, b) => (a || "").localeCompare(b || "", "cs");
   function walkPlants(plants) {
-    return plants.filter((p) => !p.archivedAt && !isTerminal(p.cache.stage) && !isDormant(p.cache.stage)).sort((a, b) => cmp(a.location, b.location) || cmp(a.name, b.name));
+    return plants.filter((p) => !p.archivedAt && isCaredFor(p.cache.stage) && !isDormant(p.cache.stage)).sort((a, b) => cmp(a.location, b.location) || cmp(a.name, b.name));
+  }
+  var WALK_PHASES = ["drying", "curing", "fermenting", "pickling", "storing"];
+  function walkBatches(plants) {
+    return plants.flatMap((p) => (p.cache?.batches || []).filter((b) => !b.legacy && WALK_PHASES.includes(b.phase)).map((b) => ({ plant: p, batch: b }))).sort((a, c) => cmp(a.plant.name, c.plant.name) || (a.batch.harvestedAt < c.batch.harvestedAt ? -1 : 1));
   }
   async function renderWalk(root2) {
     const alive = guard();
     const { plants, byPlant } = await loadAll();
-    const list = walkPlants(plants);
+    const list = [
+      ...walkPlants(plants).map((p) => ({ key: p.id, p })),
+      ...walkBatches(plants).map(({ plant, batch }) => ({ key: batch.id, p: plant, b: batch }))
+    ];
     if (!alive()) return void 0;
     if (!list.length) {
       put(clear(root2), h("div", { class: "top-bar" }, h("h1", {}, S.walk.title)), h("div", { class: "empty-state", id: "walk-empty" }, S.walk.empty));
@@ -2792,11 +3752,13 @@
     const opts = engineOpts();
     const nowIso2 = now();
     const state = { i: 0, written: 0, answers: /* @__PURE__ */ new Map() };
-    const due = new Set(list.filter((p) => getPlantTasks(p, nowIso2, opts).some((t) => t.type === "moisture" && t.dueAt <= nowIso2)).map((p) => p.id));
+    const due = new Set(list.filter((it) => !it.b).map((it) => it.p).filter((p) => getPlantTasks(p, nowIso2, opts).some((t) => t.type === "moisture" && t.dueAt <= nowIso2)).map((p) => p.id));
     async function show() {
       if (!alive()) return;
       if (state.i >= list.length) return summary();
-      const p = list[state.i];
+      const it = list[state.i];
+      if (it.b) return showBatch(it);
+      const p = it.p;
       const done = state.answers.get(p.id);
       const url = await photoUrl(ctx.db, latestPhotoId(byPlant.get(p.id) || []));
       const info = dryingInfo(p);
@@ -2830,7 +3792,7 @@
           ),
           h("h2", { class: "walk-name" }, p.name),
           h("div", { class: "plant-sub" }, [p.variety, p.location].filter(Boolean).join(" \xB7 ") || S.category[p.category]),
-          h("div", { class: "muted" }, `${S.walk.lastWatered}: ${last ? `${fmtDate(last)} (${num2(daysBetween(last, nowIso2))} d)` : S.walk.never} \xB7 ${S.walk.expected}: ${num2(info.d)} d`),
+          h("div", { class: "muted" }, `${S.walk.lastWatered}: ${last ? `${fmtDate(last)} (${num3(daysBetween(last, nowIso2))} d)` : S.walk.never} \xB7 ${S.walk.expected}: ${num3(info.d)} d`),
           done ? h("div", { class: "banner walk-answered", id: "walk-answered" }, `${S.walk.answered}: ${S.moisture[done.answer]}`) : null,
           h("div", { class: "moisture-row walk-row" }, answerBtns),
           done ? null : h("label", { class: "check-row" }, cb, h("span", {}, S.ui.watered))
@@ -2864,6 +3826,76 @@
     function go(dir) {
       state.i = Math.max(0, state.i + dir);
       show();
+    }
+    function shell(it, body, done) {
+      const card = h(
+        "div",
+        { class: "walk-card", id: "walk-card" },
+        h("div", { class: "walk-photo" }, icon(CAT_ICON[it.p.category] || "pot", "plant-photo-icon")),
+        h("div", { class: "walk-body" }, body),
+        h(
+          "div",
+          { class: "walk-nav" },
+          h("button", { type: "button", class: "btn btn-secondary", id: "walk-prev", disabled: state.i === 0, onclick: () => go(-1) }, S.walk.prev),
+          h("button", { type: "button", class: "btn btn-secondary", id: "walk-next", onclick: () => go(1) }, done ? S.walk.next : S.walk.skip)
+        ),
+        h("p", { class: "muted walk-hint" }, S.walk.swipe)
+      );
+      put(clear(root2), h(
+        "div",
+        { class: "top-bar" },
+        h("h1", {}, S.walk.title),
+        h("button", { type: "button", class: "btn btn-ghost", id: "walk-exit", "aria-label": S.ui.back, onclick: () => navigate("/") }, icon("close"))
+      ), card);
+    }
+    function showBatch(it) {
+      const { p, b, key } = it;
+      const done = state.answers.get(key);
+      const nowIso22 = now();
+      const mold = h("input", { type: "checkbox", id: "walk-mold" });
+      const t = b.phase === "drying" ? Math.floor(daysBetween(b.phaseSince, nowIso22)) : null;
+      const btns = b.phase === "drying" ? Array.from({ length: DRYNESS_MAX + 1 }, (_, i) => h("button", {
+        type: "button",
+        class: `btn btn-secondary walk-dry${done?.dryness === i ? " selected" : ""}`,
+        dataset: { dryness: i },
+        disabled: !!done,
+        onclick: () => writeBatch(it, { dryness: i, mold: mold.checked })
+      }, `${i} \xB7 ${S.dryness[i]}`)) : [h("button", {
+        type: "button",
+        class: "btn btn-primary walk-ok",
+        id: "walk-batch-ok",
+        disabled: !!done,
+        onclick: () => writeBatch(it, { mold: mold.checked })
+      }, S.ui.batchFine)];
+      shell(it, [
+        h("div", { class: "walk-progress" }, S.walk.progress(state.i + 1, list.length), h("span", { class: "tag" }, S.ui.batchesTitle)),
+        h("h2", { class: "walk-name" }, `${p.name} \u2013 ${S.batchPhase[b.phase]}`),
+        h("div", { class: "plant-sub" }, [fmtDate(b.harvestedAt), t != null ? S.ui.dayOf(t + 1, Math.round(batchEstimate(b, p))) : null].filter(Boolean).join(" \xB7 ")),
+        done ? h("div", { class: "banner walk-answered", id: "walk-answered" }, S.walk.answered) : null,
+        h("div", { class: "stack walk-dry-row" }, btns),
+        done ? null : h("label", { class: "check-row" }, mold, h("span", {}, S.ui.moldFound))
+      ], !!done);
+    }
+    async function writeBatch(it, payload) {
+      const { p, b, key } = it;
+      try {
+        const { events } = await appendEvents(ctx.db, p.id, [{ type: "batch_check", payload: { batchId: b.id, ...payload } }]);
+        state.answers.set(key, { ...payload, eventId: events[0].id });
+        state.written += 1;
+        toast(`${p.name}: ${payload.dryness != null ? S.dryness[payload.dryness] : S.ui.batchFine}${payload.mold ? " \xB7 pl\xEDse\u0148" : ""}`, {
+          action: S.ui.undo,
+          onAction: async () => {
+            await voidEvent(ctx.db, p.id, events[0].id);
+            state.answers.delete(key);
+            state.written -= 1;
+            show();
+          }
+        });
+        state.i += 1;
+        show();
+      } catch (e) {
+        toast(e.message || S.err.invalid);
+      }
     }
     async function write(p, answer, watered) {
       try {
@@ -2914,7 +3946,7 @@
   async function renderInstall(root2) {
     const { ios } = platform();
     const build = () => {
-      const btn = h("button", {
+      const btn2 = h("button", {
         type: "button",
         class: "btn btn-primary",
         id: "btn-install",
@@ -2940,7 +3972,7 @@
           { class: "card pad", id: "install-chrome" },
           h("h3", {}, S.install.chromeTitle),
           steps(S.install.chrome),
-          ios ? null : btn,
+          ios ? null : btn2,
           !ios && !canPromptInstall() ? h("p", { class: "muted" }, S.install.unavailable) : null
         )
       );
@@ -2992,8 +4024,11 @@
       harvestable: editing.harvestable,
       location: editing.location,
       source: editing.source,
-      baseOverride: editing.baseOverride
-    } : source ? clonePlantInput(source, plants.map((p) => p.name)) : { category: null, environment: pre.environment ?? null, lifecycle: pre.lifecycle, harvestable: pre.harvestable, source: "seed" };
+      baseOverride: editing.baseOverride,
+      potVolumeL: editing.potVolumeL,
+      substrate: editing.substrate,
+      plannedHarvestAt: editing.plannedHarvestAt
+    } : source ? clonePlantInput(source, plants.map((p) => p.name)) : { category: pre.category ?? null, environment: pre.environment ?? null, lifecycle: pre.lifecycle, harvestable: pre.harvestable, source: "seed" };
     const [exName, exVariety] = example(ctx.profile, plants.length);
     const st = { category: init.category, lifecycle: init.lifecycle, environment: init.environment, source: init.source || "seed" };
     const name = h("input", { type: "text", id: "f-name", value: init.name || "", placeholder: `nap\u0159. ${exName}` });
@@ -3030,6 +4065,15 @@
       value: init.baseOverride ?? "",
       placeholder: "ponech pr\xE1zdn\xE9 = automaticky"
     });
+    const potVol = h("input", { type: "number", id: "f-pot", step: "any", min: "0.1", inputmode: "decimal", value: init.potVolumeL ?? "", placeholder: "nepovinn\xE9" });
+    let substrate = init.substrate ?? "";
+    const subChips = chipGroup([["", S.ui.unspecified], ...SUBSTRATES.map((x) => [x, S.substrate[x]])], substrate, (v) => {
+      substrate = v;
+    });
+    subChips.el.id = "f-substrate";
+    const planned = h("input", { type: "date", id: "f-planned", value: init.plannedHarvestAt ? dateOnly(init.plannedHarvestAt) : "" });
+    const potValue = () => potVol.value === "" ? null : Number(potVol.value);
+    const plannedIso = () => planned.value ? (/* @__PURE__ */ new Date(`${planned.value}T12:00:00`)).toISOString() : null;
     function fillStages() {
       if (!st.category) {
         stage.replaceChildren();
@@ -3061,7 +4105,10 @@
             variety: variety.value,
             location: location2.value,
             source: st.source,
-            baseOverride: base.value === "" ? null : Number(base.value)
+            baseOverride: base.value === "" ? null : Number(base.value),
+            potVolumeL: potValue(),
+            substrate: substrate || null,
+            plannedHarvestAt: plannedIso()
           });
           if (st.environment && st.environment !== editing.cache.environment) {
             if (SEASONAL_ENVIRONMENTS.includes(st.environment)) await askHemisphere();
@@ -3086,7 +4133,10 @@
           source: st.source,
           startDate: toIso(start.value),
           baseOverride: base.value === "" ? null : Number(base.value),
-          learnedBase: init.learnedBase || null
+          learnedBase: init.learnedBase || null,
+          potVolumeL: potValue() ?? void 0,
+          substrate: substrate || void 0,
+          plannedHarvestAt: plannedIso() ?? void 0
         });
         const extra = [];
         if (photo.files[0]) {
@@ -3152,6 +4202,9 @@
         field(S.ui.location, location2),
         field(S.ui.sourceLabel, src.el),
         editing ? null : field(S.ui.startDate, start),
+        field(S.ui.potVolume2, potVol),
+        field(S.ui.substrateLabel, subChips.el),
+        field(S.ui.plannedHarvest, planned),
         field(S.ui.baseOverride, base),
         editing ? null : field(S.ui.photo, photo),
         editing ? null : field(S.ui.note, note),
@@ -3178,14 +4231,16 @@
     const alive = guard();
     const plant = await getPlant(ctx.db, id);
     if (!plant) return navigate("/");
+    await refreshPriors();
     const events = await getEvents(ctx.db, id);
     const refresh = () => renderPlant(root2, id);
     const nowIso2 = now();
     const url = await photoUrl(ctx.db, latestPhotoId(events));
     const stages = getStages(plant.category, plant.lifecycle);
-    const info = dryingInfo(plant);
+    const info = dryingInfo(plant, ctx.rules);
     const tasks = getPlantTasks(plant, nowIso2, engineOpts()).sort((a, b) => a.dueAt < b.dueAt ? -1 : 1);
     const locked = !!plant.archivedAt;
+    const pendingBatches = (plant.cache.batches || []).filter((b) => b.phase === "pending");
     const stageSel = h("select", {
       id: "stage-select",
       disabled: locked,
@@ -3201,17 +4256,21 @@
       icon(ic),
       h("span", {}, label)
     );
+    const caring = !locked && isCaredFor(plant.cache.stage);
+    const feeding = caring && !isDormant(plant.cache.stage);
     const actionList = [
-      act("water", "drop", S.ui.wateredNow, () => quickWatered(plant, refresh)),
-      act("moisture", "drop", S.ui.moistureCheck, () => moistureSheet(plant, refresh)),
-      act("fertilize", "leaf", S.ui.fertilize, () => fertilizeSheet(plant, refresh)),
-      act("pest", "bug", S.ui.pestCheck, () => pestCheckSheet(plant, refresh)),
-      act("problem", "status-critical", S.ui.problem, () => problemSheet(plant, refresh)),
+      caring ? act("water", "drop", S.ui.wateredNow, () => quickWatered(plant, refresh)) : null,
+      caring ? act("moisture", "drop", S.ui.moistureCheck, () => moistureSheet(plant, refresh)) : null,
+      feeding ? act("fertilize", "leaf", S.ui.fertilize, () => fertilizeSheet(plant, refresh)) : null,
+      caring ? act("pest", "bug", S.ui.pestCheck, () => pestCheckSheet(plant, refresh)) : null,
+      caring ? act("problem", "status-critical", S.ui.problem, () => problemSheet(plant, refresh)) : null,
       act("note", "note", S.ui.addNote, () => noteSheet(plant, refresh)),
       act("photo", "camera", S.ui.addPhoto, () => photoSheet(plant, refresh)),
       act("measure", "thermo", S.ui.measurement, () => measurementSheet(plant, refresh)),
       act("milestone", "flag", S.ui.milestone, () => milestoneSheet(plant, refresh)),
+      act("care", "leaf", S.ui.care, () => careSheet(plant, refresh)),
       plant.harvestable ? act("harvest", "leaf", S.ui.harvest, () => harvestSheet(plant, refresh)) : null,
+      plant.harvestable ? act("taste", "check", S.ui.tasting, () => evaluationSheet(plant, refresh, { kind: "tasting" })) : null,
       act("env", "swap", S.ui.changeEnv, async () => {
         await askHemisphere();
         environmentSheet(plant, refresh);
@@ -3227,7 +4286,7 @@
         "div",
         { class: "item-info" },
         h("div", { class: "item-name" }, S.taskLabel[t.type]),
-        h("div", { class: "item-detail" }, h("span", { class: "item-sub" }, relDay(t.dueAt, nowIso2)))
+        h("div", { class: "item-detail" }, h("span", { class: "item-sub" }, `${t.phase ? `${S.batchPhase[t.phase] || t.phase} \xB7 ` : ""}${relDay(t.dueAt, nowIso2)}`))
       ),
       h(
         "div",
@@ -3263,7 +4322,7 @@
       const rows = diaryRows(events);
       const items = await Promise.all(rows.map(async (r) => {
         const src = r.photoId ? await photoUrl(ctx.db, r.photoId) : null;
-        const canVoid = !locked || ["note", "photo", "evaluation"].includes(r.event.type);
+        const canVoid = !locked || ["note", "photo", "evaluation", "batch_step", "batch_check"].includes(r.event.type);
         return h(
           "div",
           { class: "timeline-row", dataset: { event: r.event.type } },
@@ -3295,11 +4354,45 @@
       }));
       return h("div", { class: "card timeline" }, items);
     }
+    const batchOf = (e) => (plant.cache.batches || []).find((b) => b.id === (e.payload.batchId ?? e.id)) ?? null;
+    function batchBlock(b) {
+      if (!b || b.legacy) return null;
+      const open = !BATCH_ENDED.includes(b.phase);
+      const t = b.phase === "drying" ? Math.floor((Date.parse(nowIso2) - Date.parse(b.phaseSince)) / 864e5) : null;
+      const lastCheck = b.checks.at(-1);
+      const bits = [
+        S.batchPhase[b.phase] || b.phase,
+        t != null ? S.ui.dayOf(t + 1, Math.round(batchEstimate(b, plant))) : null,
+        b.dryDays != null ? S.ui.dryMeasured(num3(b.dryDays, 1)) : null,
+        lastCheck?.dryness != null ? `${S.ui.dryness}: ${lastCheck.dryness}/5` : null,
+        lastCheck?.mold ? S.ui.moldFound : null,
+        b.evals.length ? `${S.ui.evaluation}: ${b.evals.length}\xD7` : null
+      ].filter(Boolean);
+      return h(
+        "div",
+        { class: "batch-block", dataset: { batch: b.id, phase: b.phase } },
+        h("div", { class: "timeline-detail batch-state" }, bits.join(" \xB7 ")),
+        h(
+          "div",
+          { class: "batch-actions" },
+          b.phase === "pending" ? h("button", { type: "button", class: "btn btn-primary btn-sm", dataset: { act: "method" }, onclick: () => batchMethodSheet(plant, b, refresh) }, S.ui.batchMethod) : null,
+          open && b.phase !== "pending" ? h("button", { type: "button", class: "btn btn-secondary btn-sm", dataset: { act: "check" }, onclick: () => batchCheckSheet(plant, b, refresh) }, S.ui.batchCheck) : null,
+          open && b.phase !== "pending" ? h("button", { type: "button", class: "btn btn-secondary btn-sm", dataset: { act: "move" }, onclick: () => batchStepSheet(plant, b, refresh) }, S.ui.batchMove) : null,
+          plant.harvestable && b.phase !== "discarded" ? h("button", { type: "button", class: "btn btn-secondary btn-sm", dataset: { act: "eval" }, onclick: () => evaluationSheet(plant, refresh, { batchId: b.id }) }, S.ui.evaluate) : null
+        )
+      );
+    }
+    function learnNote() {
+      const own = plant.cache.dryLearn;
+      if (own?.ratio != null) return h("div", { class: "muted drying-learn", id: "drying-learn" }, S.ui.dryLearned(num3(own.ratio, 2), own.n));
+      const r = batchRatio(plant, { ratio: null }, ctx.priors);
+      return r !== 1 ? h("div", { class: "muted drying-learn", id: "drying-prior" }, S.ui.dryPrior(num3(r, 2))) : null;
+    }
     function harvestsPanel() {
       const cfg = CATEGORIES[plant.category];
       const hv = live.filter((e) => e.type === "harvest").reverse();
       const totals = harvestTotals(plant, events);
-      const line = (p) => cfg.harvestFields.filter((f) => Number.isFinite(p[f.key])).map((f) => `${S.harvestField[f.key]}: ${num2(p[f.key], 2)}`).join(" \xB7 ");
+      const line = (p) => cfg.harvestFields.filter((f) => Number.isFinite(p[f.key])).map((f) => `${S.harvestField[f.key]}: ${num3(p[f.key], 2)}`).join(" \xB7 ");
       return h(
         "div",
         {},
@@ -3311,12 +4404,14 @@
           h(
             "div",
             { class: "timeline-body" },
-            h("div", { class: "timeline-title" }, fmtDate(e.occurredAt)),
+            h("div", { class: "timeline-title" }, `${fmtDate(e.occurredAt)}${e.payload.final ? ` \xB7 ${S.ui.lastHarvestTag}` : ""}`),
             h("div", { class: "timeline-detail" }, line(e.payload)),
-            e.payload.processingMethod ? h("div", { class: "timeline-detail" }, `${S.processing[e.payload.processingMethod]}${e.payload.processingDays != null ? ` \xB7 ${e.payload.processingDays} ${S.ui.days}` : ""}`) : null,
-            e.payload.note ? h("div", { class: "timeline-detail" }, e.payload.note) : null
+            e.payload.processingDays != null ? h("div", { class: "timeline-detail" }, `${S.ui.processingDays}: ${e.payload.processingDays}`) : null,
+            e.payload.note ? h("div", { class: "timeline-detail" }, e.payload.note) : null,
+            batchBlock(batchOf(e))
           )
         ))) : h("div", { class: "empty-state" }, S.ui.noHarvests),
+        learnNote(),
         hv.length ? h("div", { class: "card pad", id: "harvest-total" }, h("strong", {}, `${S.ui.total}: `), line(totals)) : null
       );
     }
@@ -3341,19 +4436,44 @@
     }
     function evaluationPanel() {
       const hist = evaluationHistory(events);
-      const cur = hist[0];
-      const criteria = ["overall", ...cfgCriteria()];
+      const cur = hist.find((r) => r.kind === "final");
+      const taste = hist.filter((r) => r.kind === "tasting");
+      const current = ["overall", ...activeCriteria(plant.category, ctx.criteria).map((c) => c.key)];
+      const stored = Object.keys(cur?.event.payload.scores || {});
+      const criteria = [...current, ...stored.filter((k) => !current.includes(k))];
+      const rows = (list) => list.map((r) => h(
+        "div",
+        { class: "timeline-row muted-row", dataset: { kind: r.kind } },
+        h(
+          "div",
+          { class: "timeline-body" },
+          h(
+            "div",
+            { class: "timeline-title" },
+            h("span", { class: "stars" }, starsText(r.overall)),
+            [r.season ? ` \xB7 ${r.season}` : "", r.part ? ` \xB7 ${r.part}` : ""].join("")
+          ),
+          r.note ? h("div", { class: "timeline-detail" }, r.note) : null,
+          h("div", { class: "timeline-date" }, `${fmtDate(r.at)}${r.daysAfterHarvest != null ? ` \xB7 ${r.daysAfterHarvest} ${S.ui.daysAfter}` : ""}`)
+        )
+      ));
       return h(
         "div",
         {},
         cur ? h(
           "div",
           { class: "card pad", id: "eval-current" },
-          h("div", { class: "eval-head" }, h("strong", {}, S.ui.current), cur.season ? h("span", { class: "tag" }, `${S.ui.seasonWord} ${cur.season}`) : null),
+          h(
+            "div",
+            { class: "eval-head" },
+            h("strong", {}, S.ui.current),
+            cur.season ? h("span", { class: "tag" }, `${S.ui.seasonWord} ${cur.season}`) : null,
+            cur.part ? h("span", { class: "tag" }, cur.part) : null
+          ),
           criteria.filter((k) => cur.event.payload.scores[k]).map((k) => h(
             "div",
             { class: "eval-line" },
-            h("span", {}, S.criterion[k]),
+            h("span", {}, criterionLabel(k, ctx.criteria, plant.category) ?? k),
             h("span", { class: "stars" }, starsText(cur.event.payload.scores[k]))
           )),
           cur.event.payload.wouldGrowAgain != null ? h("div", { class: "eval-line" }, h("span", {}, S.ui.wouldGrowAgain), h("strong", {}, cur.event.payload.wouldGrowAgain ? S.ui.yes : S.ui.no)) : null,
@@ -3361,39 +4481,34 @@
         ) : h("div", { class: "empty-state" }, S.ui.noEval),
         h(
           "button",
-          { type: "button", class: "btn btn-primary panel-btn", id: "btn-evaluate", onclick: () => evaluationSheet(plant, refresh) },
+          { type: "button", class: "btn btn-primary panel-btn", id: "btn-evaluate", onclick: () => evaluationSheet(plant, refresh, { kind: "final" }) },
           icon("check"),
           cur ? S.ui.updateEval : S.ui.evaluate
         ),
-        hist.length > 1 ? h("div", { class: "section-title flush" }, S.ui.history) : null,
-        hist.length > 1 ? h("div", { class: "card timeline", id: "eval-history" }, hist.map((r) => h(
-          "div",
-          { class: "timeline-row muted-row" },
-          h(
-            "div",
-            { class: "timeline-body" },
-            h("div", { class: "timeline-title" }, h("span", { class: "stars" }, starsText(r.overall)), r.season ? ` \xB7 ${r.season}` : ""),
-            r.note ? h("div", { class: "timeline-detail" }, r.note) : null,
-            h("div", { class: "timeline-date" }, `${fmtDate(r.at)}${r.daysAfterHarvest != null ? ` \xB7 ${r.daysAfterHarvest} ${S.ui.daysAfter}` : ""}`)
-          )
-        ))) : null
+        plant.harvestable ? h(
+          "button",
+          { type: "button", class: "btn btn-secondary panel-btn", id: "btn-taste", onclick: () => evaluationSheet(plant, refresh, { kind: "tasting" }) },
+          icon("check"),
+          S.ui.tasting
+        ) : null,
+        taste.length ? h("div", { class: "section-title flush" }, S.ui.kindTasting) : null,
+        taste.length ? h("div", { class: "card timeline", id: "eval-tastings" }, rows(taste)) : null,
+        hist.filter((r) => r.kind === "final").length > 1 ? h("div", { class: "section-title flush" }, S.ui.history) : null,
+        hist.filter((r) => r.kind === "final").length > 1 ? h("div", { class: "card timeline", id: "eval-history" }, rows(hist.filter((r) => r.kind === "final"))) : null
       );
-    }
-    function cfgCriteria() {
-      return CATEGORIES[plant.category].criteria;
     }
     function carePanel() {
       return h(
         "div",
         {},
-        h(
+        caring ? h(
           "div",
           { class: "card drying-info", id: "drying-info" },
-          h("div", {}, `${S.ui.base}: `, h("strong", {}, `${num2(info.base)} ${S.ui.days}`)),
-          h("div", {}, `${S.ui.learned}: `, h("strong", {}, info.learned == null ? "\u2014" : `${num2(info.learned)} ${S.ui.days}`)),
+          h("div", {}, `${S.ui.base}: `, h("strong", {}, `${num3(info.base)} ${S.ui.days}`)),
+          h("div", {}, `${S.ui.learned}: `, h("strong", {}, info.learned == null ? "\u2014" : `${num3(info.learned)} ${S.ui.days}`)),
           h("div", {}, `${S.ui.confidence}: `, h("strong", {}, `${Math.round((info.confidence || 0) * 100)} %`)),
-          plant.baseOverride ? h("div", {}, `${S.ui.baseOverride}: `, h("strong", {}, num2(plant.baseOverride))) : null
-        ),
+          plant.baseOverride ? h("div", {}, `${S.ui.baseOverride}: `, h("strong", {}, num3(plant.baseOverride))) : null
+        ) : locked ? null : h("div", { class: "empty-state", id: "no-care-tasks" }, S.ui.noCareTasks),
         tasks.length ? h("div", { class: "card task-list" }, taskRows) : h("div", { class: "empty-state" }, S.ui.noTasks)
       );
     }
@@ -3467,6 +4582,17 @@
         icon("status-critical"),
         plant.cache.openProblems.map((p) => S.problem[p.problemType]).join(", ")
       ) : null,
+      pendingBatches.length ? h(
+        "div",
+        { class: "banner pending-banner", id: "pending-banner" },
+        h("span", { class: "grow" }, S.ui.batchPending),
+        pendingBatches.map((b) => h("button", {
+          type: "button",
+          class: "btn btn-primary btn-sm",
+          dataset: { act: "method" },
+          onclick: () => batchMethodSheet(plant, b, refresh)
+        }, `${S.ui.batchMethod} ${fmtDate(b.harvestedAt)}`))
+      ) : null,
       actions,
       tabBar,
       panel,
@@ -3475,13 +4601,309 @@
     return void 0;
   }
 
+  // js/ui-criteria.js
+  async function saveCriteria(next) {
+    const clean3 = cleanCriteria(next);
+    await metaSet(ctx.db, "criteria", clean3);
+    ctx.criteria = clean3;
+    return clean3;
+  }
+  var withEntries = (category, list) => ({ ...ctx.criteria, [category]: list });
+  function categoryCard(category, refresh) {
+    const entries = criteriaEntries(category, ctx.criteria);
+    const active = entries.filter((e) => !e.removed);
+    const removed = entries.filter((e) => e.removed);
+    const commit = async (list) => {
+      await saveCriteria(withEntries(category, list));
+      toast(S.crit.saved);
+      refresh();
+    };
+    const err = h("div", { class: "form-error" });
+    const rowFor = (e) => {
+      const input = h("input", {
+        type: "text",
+        class: "crit-input",
+        maxlength: String(LABEL_MAX),
+        value: e.label,
+        "aria-label": S.crit.renameHint,
+        dataset: { crit: e.key },
+        onchange: async (ev) => {
+          const label = ev.target.value.replace(/[\u0000-\u001f\u007f<>]/g, "").trim();
+          if (!label) {
+            ev.target.value = e.label;
+            return;
+          }
+          await commit(entries.map((x) => x.key === e.key ? { ...x, label } : x));
+        }
+      });
+      return h(
+        "div",
+        { class: "crit-row", dataset: { key: e.key } },
+        input,
+        h("button", {
+          type: "button",
+          class: "btn btn-ghost btn-sm",
+          title: S.crit.remove,
+          "aria-label": S.crit.remove,
+          dataset: { remove: e.key },
+          onclick: () => commit(entries.map((x) => x.key === e.key ? { ...x, removed: true } : x))
+        }, icon("trash"))
+      );
+    };
+    const addInput = h("input", { type: "text", class: "crit-input", maxlength: String(LABEL_MAX), placeholder: S.crit.addHint, id: `crit-new-${category}` });
+    const add = async () => {
+      err.textContent = "";
+      const label = addInput.value.replace(/[\u0000-\u001f\u007f<>]/g, "").trim();
+      if (!label) return;
+      if (entries.length >= CRITERIA_MAX) {
+        err.textContent = S.crit.limit;
+        return;
+      }
+      await commit([...entries, { key: newCriterionKey(label, entries.map((x) => x.key)), label }]);
+    };
+    addInput.addEventListener("keydown", (ev) => {
+      if (ev.key === "Enter") {
+        ev.preventDefault();
+        add();
+      }
+    });
+    return h(
+      "section",
+      { class: "card pad crit-group", dataset: { category } },
+      h("h3", {}, S.category[category]),
+      h("div", { class: "crit-row crit-fixed" }, h("span", { class: "crit-label" }, S.crit.overall)),
+      active.length ? active.map(rowFor) : h("p", { class: "muted" }, S.crit.empty),
+      h(
+        "div",
+        { class: "crit-row crit-add" },
+        addInput,
+        h("button", { type: "button", class: "btn btn-secondary btn-sm", id: `crit-add-${category}`, onclick: add }, icon("plus"), S.crit.add)
+      ),
+      err,
+      removed.length ? h(
+        "div",
+        { class: "crit-removed" },
+        h("div", { class: "muted" }, S.crit.removed),
+        removed.map((e) => h(
+          "div",
+          { class: "crit-row", dataset: { removed: e.key } },
+          h("span", { class: "crit-label muted" }, e.label),
+          h("button", {
+            type: "button",
+            class: "btn btn-ghost btn-sm",
+            dataset: { restore: e.key },
+            onclick: () => commit(entries.map((x) => x.key === e.key ? { key: x.key, label: x.label } : x))
+          }, S.crit.restore)
+        ))
+      ) : null,
+      ctx.criteria[category] ? h("button", {
+        type: "button",
+        class: "btn btn-ghost btn-sm",
+        dataset: { reset: category },
+        onclick: async () => {
+          const next = { ...ctx.criteria };
+          delete next[category];
+          await saveCriteria(next);
+          toast(S.crit.saved);
+          refresh();
+        }
+      }, icon("swap"), S.crit.reset) : null
+    );
+  }
+  async function renderCriteria(root2) {
+    const alive = guard();
+    const refresh = () => renderCriteria(root2);
+    if (!alive()) return void 0;
+    put(
+      clear(root2),
+      h(
+        "div",
+        { class: "top-bar" },
+        h("button", { type: "button", class: "btn btn-ghost", id: "btn-back", "aria-label": S.ui.back, onclick: () => navigate("/settings") }, icon("back")),
+        h("h1", {}, S.crit.title),
+        h("span")
+      ),
+      h("p", { class: "muted rules-intro" }, S.crit.intro),
+      Object.keys(CATEGORIES).map((c) => categoryCard(c, refresh))
+    );
+    return void 0;
+  }
+
+  // js/ui-rules.js
+  var ORDERED = [
+    ["eval.remind1Days", "eval.remind2Days", "eval.remind3Days"],
+    ["eval.freshRemind1Days", "eval.freshRemind2Days"],
+    ["batch.drying.minDays", "batch.drying.maxDays"],
+    ["drying.minFactor", "drying.maxFactor"],
+    ["pot.minFactor", "pot.maxFactor"]
+  ];
+  function orderViolation(rules, key, value) {
+    const next = { ...rules, [key]: value };
+    return ORDERED.some((grp) => grp.includes(key) && grp.some((k, i) => i > 0 && next[k] < next[grp[i - 1]]));
+  }
+  async function saveRules(overrides) {
+    const clean3 = cleanRules(overrides);
+    await metaSet(ctx.db, "rules", clean3);
+    ctx.overrides = clean3;
+    ctx.rules = resolveRules(clean3);
+    await rebuildAll(ctx.db);
+    return clean3;
+  }
+  function ruleLabel(def) {
+    const L = S.rules.label[def.key];
+    if (L) return L;
+    const parts = def.key.split(".");
+    if (parts[0] === "cat") return `${S.category[parts[1]]}: ${S.rules.cat[parts[2]]}`;
+    if (def.key.startsWith("drying.env.")) return `${S.rules.dryEnv}: ${S.environment[parts[2]]}`;
+    if (def.key.startsWith("pot.substrate.")) return `${S.rules.potSub}: ${S.substrate[parts[2]]}`;
+    if (def.key.startsWith("season.on.")) return `${S.rules.seasonOn}: ${S.environment[parts[2]]}`;
+    if (def.key.startsWith("season.")) return `${S.rules.seasonOf}: ${S.profile[parts[1]]}`;
+    return def.key;
+  }
+  var defText = (def) => {
+    if (def.kind === "bool") return def.def ? S.rules.yes : S.rules.no;
+    if (def.kind === "choice") return S.rules.afterChoice[def.def];
+    return `${num3(def.def, 2)}${def.unit ? ` ${def.unit}` : ""}`;
+  };
+  function ruleRow(def, refresh) {
+    const cur = ctx.rules[def.key];
+    const changed = cur !== DEFAULT_RULES[def.key];
+    const err = h("div", { class: "form-error rule-error" });
+    const apply = async (value) => {
+      err.textContent = "";
+      if (!validRule(def.key, value)) {
+        err.textContent = def.kind === "num" ? S.rules.invalid(def.min, def.max) : S.err.invalid;
+        return false;
+      }
+      if (def.kind === "num" && orderViolation(ctx.rules, def.key, value)) {
+        err.textContent = S.rules.order;
+        return false;
+      }
+      const next = { ...ctx.overrides };
+      if (value === DEFAULT_RULES[def.key]) delete next[def.key];
+      else next[def.key] = value;
+      try {
+        await saveRules(next);
+        toast(S.rules.saved);
+      } catch (e) {
+        err.textContent = e.message || S.err.invalid;
+        return false;
+      }
+      refresh();
+      return true;
+    };
+    let control;
+    if (def.kind === "num") {
+      control = h("input", {
+        type: "number",
+        class: "rule-input",
+        id: `rule-${def.key}`,
+        step: String(def.step),
+        min: String(def.min),
+        max: String(def.max),
+        inputmode: "decimal",
+        value: cur,
+        dataset: { rule: def.key },
+        onchange: async (e) => {
+          if (e.target.value === "") return apply(DEFAULT_RULES[def.key]);
+          const ok = await apply(Number(e.target.value));
+          if (!ok) e.target.value = cur;
+          return ok;
+        }
+      });
+    } else if (def.kind === "bool") {
+      const g = chipGroup([[true, S.rules.yes], [false, S.rules.no]], cur, (v) => apply(v));
+      g.el.id = `rule-${def.key}`;
+      control = g.el;
+    } else {
+      const g = chipGroup(def.options.map((o) => [o, S.rules.afterChoice[o]]), cur, (v) => apply(v));
+      g.el.id = `rule-${def.key}`;
+      control = g.el;
+    }
+    return h(
+      "div",
+      { class: `rule-row${changed ? " changed" : ""}`, dataset: { rule: def.key } },
+      h(
+        "div",
+        { class: "rule-main" },
+        h("div", { class: "rule-label" }, ruleLabel(def)),
+        h("div", { class: "rule-meta" }, `${S.rules.def}: ${defText(def)}${changed ? ` \xB7 ${S.rules.changed}` : ""}`)
+      ),
+      h(
+        "div",
+        { class: "rule-control" },
+        control,
+        def.kind === "num" && def.unit ? h("span", { class: "rule-unit" }, def.unit) : null,
+        changed ? h("button", {
+          type: "button",
+          class: "btn btn-ghost btn-sm",
+          dataset: { reset: def.key },
+          "aria-label": S.rules.reset,
+          title: S.rules.reset,
+          onclick: () => apply(DEFAULT_RULES[def.key])
+        }, icon("swap")) : null
+      ),
+      err
+    );
+  }
+  async function renderRules(root2) {
+    const alive = guard();
+    const refresh = () => renderRules(root2);
+    const changedCount = RULE_DEFS.filter((d) => ctx.rules[d.key] !== d.def).length;
+    if (!alive()) return void 0;
+    put(
+      clear(root2),
+      h(
+        "div",
+        { class: "top-bar" },
+        h("button", { type: "button", class: "btn btn-ghost", id: "btn-back", "aria-label": S.ui.back, onclick: () => navigate("/settings") }, icon("back")),
+        h("h1", {}, S.rules.title),
+        h("span")
+      ),
+      h("p", { class: "muted rules-intro" }, S.rules.intro),
+      h(
+        "div",
+        { class: "rules-summary" },
+        h("strong", { id: "rules-changed" }, S.rules.changedCount(changedCount)),
+        h("button", { type: "button", class: "btn btn-secondary btn-sm", id: "btn-rules-reset", disabled: !changedCount, onclick: () => resetAll(refresh) }, S.rules.resetAll)
+      ),
+      RULE_GROUPS.map((g) => h(
+        "section",
+        { class: "card pad rules-group", dataset: { group: g } },
+        h("h3", {}, S.rules.group[g]),
+        h("p", { class: "muted" }, S.rules.groupHint[g]),
+        g === "afterHarvest" ? h("p", { class: "muted" }, S.rules.afterHint) : null,
+        RULE_DEFS.filter((d) => d.group === g).map((d) => ruleRow(d, refresh))
+      ))
+    );
+    return void 0;
+  }
+  function resetAll(refresh) {
+    openSheet(S.rules.resetAll, h(
+      "div",
+      { class: "stack" },
+      h("p", { class: "muted" }, S.rules.resetAllAsk),
+      h("button", { type: "button", class: "btn btn-primary", id: "btn-rules-reset-go", onclick: async () => {
+        try {
+          await saveRules({});
+          closeSheet();
+          toast(S.rules.resetDone);
+          refresh();
+        } catch (e) {
+          toast(e.message);
+        }
+      } }, S.rules.resetAll),
+      h("button", { type: "button", class: "btn btn-secondary", onclick: closeSheet }, S.ui.cancel)
+    ));
+  }
+
   // js/ui-stats.js
   var unitOf = (category) => {
     const key = CATEGORIES[category].harvestFields[0].key;
     return (S.harvestField[key].match(/\(([^)]+)\)/) || [])[1] || "";
   };
   var pct = (v) => v == null ? "\u2014" : `${Math.round(v * 100)} %`;
-  var rating = (v) => v == null ? "\u2014" : h("span", { class: "stars" }, starsText(v), ` ${num2(v)}`);
+  var rating = (v) => v == null ? "\u2014" : h("span", { class: "stars" }, starsText(v), ` ${num3(v)}`);
   var kv = (label, value) => h("div", { class: "kv" }, h("span", {}, label), h("strong", {}, value));
   function varietyCard(g) {
     const unit = unitOf(g.category);
@@ -3509,7 +4931,7 @@
         { class: "variety-grid" },
         kv(S.ui.avgRating, rating(g.avgOverall)),
         kv(S.ui.growAgainShare, pct(g.wouldGrowAgainShare)),
-        kv(S.ui.yieldTotal, g.totalYield ? `${num2(g.totalYield, 2)} ${unit}` : "\u2014"),
+        kv(S.ui.yieldTotal, g.totalYield ? `${num3(g.totalYield, 2)} ${unit}` : "\u2014"),
         kv(S.ui.avgCycle, g.avgCycleDays == null ? "\u2014" : `${Math.round(g.avgCycleDays)} ${S.ui.days}`)
       )
     );
@@ -3585,7 +5007,7 @@
         "div",
         { class: "variety-grid" },
         kv(S.ui.harvests, s.harvestCount),
-        kv(S.ui.yieldTotal, s.yield ? `${num2(s.yield, 2)} ${unit}` : "\u2014"),
+        kv(S.ui.yieldTotal, s.yield ? `${num3(s.yield, 2)} ${unit}` : "\u2014"),
         kv(S.ui.avgCycle, s.cycleDays == null ? "\u2014" : `${s.cycleDays} ${S.ui.days}`),
         kv(S.ui.growAgainShare, s.wouldGrowAgain == null ? "\u2014" : s.wouldGrowAgain ? S.ui.yes : S.ui.no)
       )
@@ -3604,7 +5026,7 @@
       varietyCard(g),
       h("div", { class: "section-title" }, S.ui.plantsOfVariety),
       h("div", { class: "variety-list", id: "variety-plants" }, rows),
-      h("div", { class: "card pad" }, kv(S.ui.cycles, g.cycles), kv(S.ui.problemsPer, num2(g.problemsPerPlant)))
+      h("div", { class: "card pad" }, kv(S.ui.cycles, g.cycles), kv(S.ui.problemsPer, num3(g.problemsPerPlant)))
     );
   }
 
@@ -3636,6 +5058,14 @@
       return null;
     });
     if (await metaGet(db, "schemaVersion") == null) await metaSet(db, "schemaVersion", 1);
+    try {
+      if (await metaGet(db, "engineRev") !== ENGINE_REV) {
+        await rebuildAll(db);
+        await metaSet(db, "engineRev", ENGINE_REV);
+      }
+    } catch (e) {
+      console.error("cache rebuild failed", e);
+    }
     if ((await listPlants(db)).length) await requestPersistence(db);
     route("/", renderDashboard, "overview");
     route("/new", (r, _p, q) => renderPlantForm(r, null, q), "overview");
@@ -3646,6 +5076,8 @@
     route("/varieties", renderVarieties, "varieties");
     route("/variety/:category/:key", (r, p) => renderVariety(r, p.category, p.key), "varieties");
     route("/settings", renderSettings, "settings");
+    route("/settings/rules", renderRules, "settings");
+    route("/settings/criteria", renderCriteria, "settings");
     route("/install", renderInstall, "settings");
     await startRouter(document.getElementById("view"));
     window.pheno = { db, ...events_exports, ...model_exports };

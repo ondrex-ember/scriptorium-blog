@@ -9,29 +9,59 @@ import { doneToday, latestPhotoId } from './timeline.js';
 import { PROFILES } from './profile.js';
 import { liveEvents } from './model.js';
 import { aggregateVarieties } from './stats.js';
-import { seasonOf, dayDiff } from './utils.js';
+import { seasonOf, dayDiff, daysBetween } from './utils.js';
 import { SEASONAL_ENVIRONMENTS } from './config-engine.js';
 import { fmtDate, num, plantsWord } from './format.js';
-import { evaluationSheet, fertilizeSheet, followUpSheet, moistureSheet, snoozeSheet, submit } from './ui-forms.js';
+import { batchCheckSheet, batchEstimate, batchMethodSheet, evaluationSheet, followUpSheet, moistureSheet, snoozeSheet, submit, useBySheet } from './ui-forms.js';
 import { navigate, guard } from './router.js';
 import { backupReminderDue, dismissBackupReminder } from './backup.js';
 import { doExport } from './ui-settings.js';
-import { CATEGORIES } from './config-categories.js';
+import { BATCH_ENDED, CATEGORIES } from './config-categories.js';
 
 const filters = { location: 'all', environment: 'all', category: 'all' };
-export const CAT_ICON = { herb: 'leaf', vegetable: 'sprout', fruit: 'pot', flower: 'sun', tree_shrub: 'leaf', other: 'pot' };
+export const CAT_ICON = { herb: 'leaf', vegetable: 'sprout', fruit: 'pot', flower: 'sun', tree_shrub: 'leaf', houseplant: 'sprout', other: 'pot' };
 const DOT = { overdue: 'expired', today: 'missing', upcoming: 'needs_check' };
 
 /** Run a task from the list: moisture opens the sheet, quick tasks write directly. */
 export function runTask(task, plant, done) {
+  const batch = task.batchId ? (plant.cache.batches || []).find((b) => b.id === task.batchId) : null;
   switch (task.type) {
     case 'moisture': return moistureSheet(plant, done);
     case 'fertilizing': return submit(plant.id, [{ type: 'fertilizing', payload: {} }], 'Přihnojeno', done);
     case 'pestCheck': return submit(plant.id, [{ type: 'pest_check', payload: { found: false } }], 'Kontrola zapsána', done);
     case 'problemFollowUp': return followUpSheet(plant, task, done);
-    case 'evaluation': case 'evaluationReview': return evaluationSheet(plant, done);
+    case 'batchCheck': return batch ? batchCheckSheet(plant, batch, done) : null;
+    case 'useBy': return useBySheet(plant, task, done);
+    case 'evaluation': case 'evaluationReview': return evaluationSheet(plant, done, { kind: 'final', batchId: task.batchId ?? undefined });
     default: return null;
   }
+}
+
+/** Open batches of every plant (archived ones too): what is still being processed, stored or waiting for use. */
+export function afterHarvestRows(plants, nowIso) {
+  return plants.flatMap((p) => (p.cache?.batches || [])
+    .filter((b) => !b.legacy && !BATCH_ENDED.includes(b.phase))
+    .map((b) => ({ plant: p, batch: b, pending: b.phase === 'pending',
+      progress: b.phase === 'drying' ? { t: Math.floor(daysBetween(b.phaseSince, nowIso)), est: Math.round(batchEstimate(b, p)) } : null })))
+    .sort((a, c) => (a.batch.harvestedAt < c.batch.harvestedAt ? 1 : -1));
+}
+
+function afterHarvestSection(plants, nowIso, rerender) {
+  const rows = afterHarvestRows(plants, nowIso);
+  if (!rows.length) return null;
+  return h('section', { class: 'after-harvest', id: 'after-harvest' },
+    h('div', { class: 'section-title' }, S.ui.afterHarvest),
+    h('div', { class: 'card task-list' }, rows.map(({ plant, batch, pending, progress }) => h('div', {
+      class: 'item-row batch-row', role: 'button', tabindex: 0, dataset: { batch: batch.id, plant: plant.id, phase: batch.phase },
+      onclick: () => navigate(`/plant/${plant.id}`) },
+    h('span', { class: `badge-dot ${pending ? 'missing' : 'ok'}` }),
+    h('div', { class: 'item-info' },
+      h('div', { class: 'item-name' }, `${plant.name} – ${S.batchPhase[batch.phase] || batch.phase}`),
+      h('div', { class: 'item-detail' }, h('span', { class: 'item-sub' },
+        [fmtDate(batch.harvestedAt), progress ? S.ui.dayOf(progress.t + 1, progress.est) : null].filter(Boolean).join(' · ')))),
+    pending ? h('div', { class: 'item-actions' },
+      h('button', { type: 'button', class: 'btn btn-secondary btn-sm', dataset: { act: 'method' },
+        onclick: (e) => { e.stopPropagation(); batchMethodSheet(plant, batch, rerender); } }, S.ui.batchMethod)) : null))));
 }
 
 function matches(p) {
@@ -62,7 +92,7 @@ function taskRow(task, plant, done) {
     h('span', { class: `badge-dot ${DOT[task.urgency]}` }),
     h('div', { class: 'item-info' },
       h('div', { class: 'item-name' }, `${task.plantName} – ${S.taskLabel[task.type]}`),
-      h('div', { class: 'item-detail' }, h('span', { class: 'item-sub' }, when))),
+      h('div', { class: 'item-detail' }, h('span', { class: 'item-sub' }, task.phase ? `${S.batchPhase[task.phase] || task.phase} · ${when}` : when))),
     h('div', { class: 'item-actions qty-stepper' },
       h('button', { type: 'button', class: 'btn-quick', 'aria-label': S.ui.done, dataset: { act: 'do' },
         onclick: (e) => { e.stopPropagation(); runTask(task, plant, done); } }, icon('check')),
@@ -90,12 +120,12 @@ export async function renderDashboard(root) {
   const active = plants.filter((p) => !p.archivedAt);
   const rerender = () => renderDashboard(root);
   const list = active.filter(matches);
-  const byId = new Map(active.map((p) => [p.id, p]));
   const nowIso = now();
   const opts = engineOpts();
   const remind = active.length ? await backupReminderDue(ctx.db, nowIso) : false;
 
-  const tasks = computeTasks(list, nowIso, opts);
+  const byIdAll = new Map(plants.map((p) => [p.id, p]));
+  const tasks = computeTasks(plants.filter((p) => (p.archivedAt ? true : matches(p))), nowIso, opts);
   const count = (u) => tasks.filter((t) => t.urgency === u).length;
   const done = list.reduce((n, p) => n + doneToday(byPlant.get(p.id) || [], nowIso), 0);
   const open = count('overdue') + count('today');
@@ -130,8 +160,8 @@ export async function renderDashboard(root) {
   const first = tasks[0];
   if (first) {
     root.append(h('div', { class: 'next-action', role: 'button', tabindex: 0, id: 'next-action',
-      onclick: () => runTask(first, byId.get(first.plantId), rerender) },
-      h('div', { class: 'next-action-icon' }, icon(first.type === 'moisture' ? 'drop' : first.type === 'fertilizing' ? 'leaf' : first.type.startsWith('evaluation') ? 'status-ok' : 'bug')),
+      onclick: () => runTask(first, byIdAll.get(first.plantId), rerender) },
+      h('div', { class: 'next-action-icon' }, icon(first.type === 'moisture' ? 'drop' : first.type === 'fertilizing' ? 'leaf' : first.type.startsWith('evaluation') ? 'status-ok' : first.type === 'batchCheck' || first.type === 'useBy' ? 'check' : 'bug')),
       h('div', { class: 'next-action-copy' }, h('span', {}, S.ui.nextStep),
         h('strong', {}, `${first.plantName} – ${S.taskLabel[first.type]}`), h('small', {}, relDay(first.dueAt, nowIso))),
       h('button', { type: 'button', 'aria-label': S.ui.done }, icon('chevron'))));
@@ -142,8 +172,11 @@ export async function renderDashboard(root) {
 
   root.append(h('div', { class: 'section-title' }, S.ui.needsAttention));
   root.append(tasks.length
-    ? h('div', { class: 'card task-list' }, tasks.map((t) => taskRow(t, byId.get(t.plantId), rerender)))
+    ? h('div', { class: 'card task-list' }, tasks.map((t) => taskRow(t, byIdAll.get(t.plantId), rerender)))
     : h('div', { class: 'empty-state' }, S.ui.noTasks));
+
+  const after = afterHarvestSection(plants, nowIso, rerender);
+  if (after) root.append(after);
 
   for (const key of PROFILES[ctx.profile]?.dashboard || []) {
     const sec = key === 'tasks' ? null : profileSection(key, active, plants, byPlant, nowIso);

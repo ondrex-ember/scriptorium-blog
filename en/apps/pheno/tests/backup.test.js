@@ -34,7 +34,7 @@ test('export → wipe → import gives identical plants, events, photos, meta', 
   const zip = await JSZip.loadAsync(bytes);
   assert.deepEqual(Object.keys(zip.files).sort(), ['data.json', 'manifest.json', 'photos/', 'photos/ph1.jpg']);
   const manifest = JSON.parse(await zip.file('manifest.json').async('string'));
-  assert.equal(manifest.schemaVersion, 1); assert.equal(manifest.counts.plants, 2); assert.equal(manifest.counts.photos, 1);
+  assert.equal(manifest.schemaVersion, 2); assert.equal(manifest.counts.plants, 2); assert.equal(manifest.counts.photos, 1);
 
   const dst = await freshDb();
   const rep = await importBackup(dst, bytes, { JSZip });
@@ -45,7 +45,7 @@ test('export → wipe → import gives identical plants, events, photos, meta', 
   assert.deepEqual(await listPhotoKeys(dst), ['ph1']);
   assert.equal(await metaGet(dst, 'hemisphere'), 'south');
   assert.equal(await metaGet(dst, 'lastExportAt'), undefined);      // device-specific keys do not travel
-  assert.equal(await metaGet(dst, 'schemaVersion'), 1);
+  assert.equal(await metaGet(dst, 'schemaVersion'), 2);
   const t = async (d) => computeTasks(await listPlants(d), day(90), { hemisphere: 'south' }).map((x) => [x.plantId, x.type, x.dueAt]);
   assert.deepEqual(await t(dst), await t(src));
 });
@@ -82,7 +82,7 @@ test('import refuses newer schema, garbage, and drops invalid or orphan records'
     for (const [k, v] of Object.entries(photos)) z.file(`photos/${k}.jpg`, v);
     return z.generateAsync({ type: 'uint8array' });
   };
-  await assert.rejects(importBackup(dst, await mk({ schemaVersion: 2 }, { plants: [], events: [] }), { JSZip }), /novější/);
+  await assert.rejects(importBackup(dst, await mk({ schemaVersion: 3 }, { plants: [], events: [] }), { JSZip }), /novější/);
   const good = { id: 'p1', name: '<img src=x onerror=alert(1)>', category: 'herb', environment: 'indoor', startDate: T0, lifecycle: 'cycle', harvestable: true, extra: 'x' };
   const ev = (o) => ({ id: 'e1', plantId: 'p1', type: 'note', occurredAt: T0, recordedAt: T0, payload: { text: 'a' }, ...o });
   const bytes = await mk({ schemaVersion: 1 }, {
@@ -116,4 +116,25 @@ test('backup reminder: 30 days and 10 new events since last export, dismissal hi
   assert.equal(await backupReminderDue(db, at(39)), true);
   await exportBackup(db, { JSZip, now: at(39) });
   assert.equal(await backupReminderDue(db, at(80)), false);              // no new events since the export
+});
+
+test('RCv0.191: batches, care events, rules and pot fields survive a round trip; invalid rules are dropped', async () => {
+  const src = await freshDb();
+  const a = await createPlant(src, basePlant({ name: 'Bazalka', potVolumeL: 3, substrate: 'coco' }), { now: T0 });
+  await metaSet(src, 'rules', { 'cat.herb.pestCheckDays': 4, 'batch.storing.driedDays': 9999, 'bogus.key': 1 });
+  await add(src, a.id, 'harvest', { freshWeight: 30, processingMethod: 'drying' }, day(40));
+  const batch = (await getAllEvents(src)).find((e) => e.type === 'harvest');
+  await add(src, a.id, 'batch_check', { batchId: batch.id, dryness: 2, mold: false }, day(42));
+  await add(src, a.id, 'batch_step', { batchId: batch.id, phase: 'ready' }, day(46));
+  await add(src, a.id, 'care', { kind: 'repotting', potVolumeL: 6 }, day(47));
+  const bytes = await exportBackup(src, { JSZip });
+  const dst = await freshDb();
+  const rep = await importBackup(dst, bytes, { JSZip });
+  assert.equal(rep.eventsAdded, (await getAllEvents(src)).length);
+  assert.equal(rep.skipped, 0);
+  assert.deepEqual(await metaGet(dst, 'rules'), { 'cat.herb.pestCheckDays': 4 });
+  const [got] = await listPlants(dst);
+  assert.equal(got.potVolumeL, 3); assert.equal(got.substrate, 'coco');
+  assert.equal(got.cache.batches[0].phase, 'ready');
+  assert.equal(got.cache.pot.volumeL, 6);
 });

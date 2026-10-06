@@ -1,6 +1,7 @@
 // Plant model: pure construction helpers and projectPlant (replay of the event log).
 import { CATEGORIES, ENVIRONMENTS, SOURCES, getStages } from './config-categories.js';
 import { PEST_BOOST_DAYS } from './config-engine.js';
+import { SUBSTRATES } from './config-rules.js';
 import { S } from './strings.cs.js';
 import { PhenoError, addDays, compareEvents, normalizeKey, nowIso, uid } from './utils.js';
 
@@ -16,7 +17,7 @@ export function emptyCache(prev) {
     lastWateredAt: null, lastFertilizedAt: null, lastPestCheckAt: null,
     openProblems: [], pestBoostUntil: null,
     snoozedUntil: { ...(prev?.snoozedUntil || {}) },
-    dryingDays: {}, confidence: {},
+    soilDryDays: {}, confidence: {}, batches: [],
     cacheRev: null
   };
 }
@@ -83,6 +84,15 @@ export function projectPlant(plant, events, opts = {}) {
   return { ...plant, environment: cache.environment ?? plant.environment, archivedAt, cache };
 }
 
+/** Optional size fields: pot volume (l), substrate, planned harvest date. Only valid values are kept. */
+export function optionalPot(input) {
+  const out = {};
+  if (Number.isFinite(input?.potVolumeL) && input.potVolumeL > 0) out.potVolumeL = input.potVolumeL;
+  if (SUBSTRATES.includes(input?.substrate)) out.substrate = input.substrate;
+  if (typeof input?.plannedHarvestAt === 'string' && !Number.isNaN(Date.parse(input.plannedHarvestAt))) out.plannedHarvestAt = input.plannedHarvestAt;
+  return out;
+}
+
 /** Validate input; returns {plant, stage} (plant has an empty cache until events are projected). Throws PhenoError. */
 export function buildPlant(input, now = nowIso()) {
   const name = String(input?.name || '').trim();
@@ -106,6 +116,8 @@ export function buildPlant(input, now = nowIso()) {
     startDate: input.startDate || now, createdAt: now, archivedAt: null,
     cache: emptyCache()
   };
+  const pot = optionalPot(input);
+  Object.assign(plant, pot);
   return { plant, stage };
 }
 
@@ -121,13 +133,14 @@ export function clonePlantInput(plant, existingNames = []) {
     const m = n.match(re);
     if (m) nums.push(Number(m[1]));
   }
-  const learned = plant.cache?.dryingDays && Object.keys(plant.cache.dryingDays).length
-    ? { ...plant.cache.dryingDays } : plant.learnedBase;
+  const soil = plant.cache?.soilDryDays ?? plant.cache?.dryingDays;
+  const learned = soil && Object.keys(soil).length ? { ...soil } : plant.learnedBase;
   return {
     name: `${base} #${Math.max(...nums) + 1}`,
     variety: plant.variety, category: plant.category, lifecycle: plant.lifecycle,
     environment: plant.cache?.environment ?? plant.environment,
     harvestable: plant.harvestable, location: plant.location, source: plant.source,
-    baseOverride: plant.baseOverride, learnedBase: learned || null
+    baseOverride: plant.baseOverride, learnedBase: learned || null,
+    potVolumeL: plant.cache?.pot?.volumeL ?? plant.potVolumeL, substrate: plant.substrate
   };
 }
