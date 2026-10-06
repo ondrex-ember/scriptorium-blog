@@ -208,6 +208,13 @@
       .article-body img.float-qr { width: 100px; margin-right: 1rem; }
     }
 
+    /* MOBIL: banner (varianty b, c) se nezkracuje na pruh 21:8 s ořezem,
+       ale zobrazí se celý v původním poměru stran. */
+    @media (max-width: 600px) {
+      .hl-b .hl-img,
+      .hl-c .hl-img { aspect-ratio: auto; height: auto; object-fit: contain; }
+    }
+
   </style>
 </head>
 
