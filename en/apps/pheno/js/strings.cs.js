@@ -31,7 +31,8 @@ export const S = {
     invalid: (min, max) => `Zadej číslo od ${min} do ${max}.`, order: 'Hodnoty musí jít od menší k větší.',
     group: {
       category: 'Intervaly podle kategorie', fertilizing: 'Hnojení', batch: 'Dávky po sklizni', eval: 'Hodnocení a připomínky',
-      drying: 'Odhad doby sušení', pot: 'Květináč a substrát', season: 'Roční období', afterHarvest: 'Po poslední sklizni'
+      drying: 'Odhad doby sušení', pot: 'Květináč a substrát', season: 'Roční období', afterHarvest: 'Po poslední sklizni',
+      dashboard: 'Přehled', stock: 'Zásoby po sklizni'
     },
     groupHint: {
       category: 'Základní doba schnutí substrátu, interval hnojení a kontroly škůdců pro každou kategorii.',
@@ -41,11 +42,19 @@ export const S = {
       drying: 'Doba sušení = reference × velikost dávky^exponent × prostředí × naučený poměr.',
       pot: 'Větší květináč schne pomaleji, kokos a hydro rychleji.',
       season: 'Násobek intervalu zálivky podle ročního období a prostředí.',
-      afterHarvest: 'Co se stane s rostlinou, když zaznamenáš poslední sklizeň.'
+      afterHarvest: 'Co se stane s rostlinou, když zaznamenáš poslední sklizeň.',
+      dashboard: 'Hlavní seznam ukazuje jen úkoly po termínu a dnešní. Další jsou v rozbalovací sekci „Nadcházející“.',
+      stock: 'Predikce spotřeby a prahy čerstvosti. Poločasy a kontroly jednotlivých způsobů skladování nastavíš v Nastavení → Skladování.'
     },
     afterChoice: { ask: 'Zeptat se', auto: 'Přepnout automaticky', manual: 'Nic neměnit' },
     afterHint: 'Zelenina, bylinky a květiny přejdou do „Sklizeno“, víceleté rostliny do „Klid“.',
     label: {
+      'dashboard.lookaheadDays': 'Nadcházející úkoly: kolik dní dopředu',
+      'stock.lowDays': 'Upozornit na dochází zásoba, když vydrží méně než',
+      'stock.rateWindowDays': 'Spotřeba: okno pro výpočet průměru',
+      'stock.useByPct': 'Spotřebovat do: práh čerstvosti',
+      'stock.lowQualityPct': 'Varování při čerstvosti pod',
+      'stock.minRateDays': 'Predikce až po (dní od prvního odběru)',
       'fertilizing.firstFeedDays': 'První hnojení po založení',
       'fertilizing.fruitingFactor': 'Násobek intervalu hnojení při plodení',
       'fertilizing.stopBeforeHarvestDays': 'Nehnojit před plánovanou sklizní',
@@ -119,14 +128,76 @@ export const S = {
     archived: 'Rostlina je archivovaná.',
     notArchived: 'Rostlina není archivovaná.',
     confirmName: 'Pro trvalé smazání opiš název rostliny.',
-    invalid: 'Neplatný záznam.'
+    invalid: 'Neplatný záznam.',
+    harvestDate: 'Sklizeň nemůže být později než její zpracování a kontroly.',
+    stockInit: 'Zásobu lze založit až po určení zpracování a jen jednou.', noStock: 'Zásobník neexistuje nebo už je prázdný.',
+    stockAmount: 'Odebíráš víc, než v zásobníku zbývá.', stockDate: 'Záznam nemůže být dřív než sklizeň nebo založení zásoby.'
   },
   taskLabel: {
     moisture: 'Zkontrolovat vlhkost', fertilizing: 'Přihnojit', pestCheck: 'Zkontrolovat škůdce',
-    problemFollowUp: 'Zkontrolovat problém', batchCheck: 'Zkontrolovat dávku', useBy: 'Spotřebovat dávku', evaluation: 'Ohodnotit sklizeň', evaluationReview: 'Změnil se tvůj názor?'
+    problemFollowUp: 'Zkontrolovat problém', batchCheck: 'Zkontrolovat dávku', useBy: 'Spotřebovat dávku', evaluation: 'Ohodnotit sklizeň', evaluationReview: 'Změnil se tvůj názor?',
+    stockCheck: 'Zkontrolovat zásobník', stockAir: 'Vyvětrat zásobník', stockUseBy: 'Spotřebovat zásobník', stockLow: 'Dochází zásoba'
+  },
+  stock: {
+    method: {
+      freezer: 'Mrazák', vacuum: 'Vakuum', jar: 'Uzavřená sklenice', fridge: 'Lednice', soil: 'Zakopané v zemi',
+      hanging: 'Visí v sušárně', open: 'Tma, pokojová teplota', light: 'Na světle', other: 'Jiný způsob'
+    },
+    preset: { generic: 'Obecná', tea: 'Čaj a sušené bylinky', cure: 'Zrání (delší vyležení)', fresh: 'Čerstvé plody' },
+    param: {
+      tHalfProcessed: 'Poločas čerstvosti zpracovaného (dny)', tHalfFresh: 'Poločas čerstvosti nezpracovaného (dny)',
+      checkDays: 'Kontrola každých (dny)', moldRisk: 'Riziko plísně (0–2)', airEveryDays: 'Vyvětrat každých (dny, 0 = nikdy)',
+      airForDays: 'Větrat prvních (dní)', maturingDays: 'Zrání bez ztráty (dny)', openCost: 'Ztráta za otevření (podíl)'
+    },
+    presetField: { method: 'Výchozí způsob', maturingDays: 'Zrání bez ztráty (dny)', useByPct: 'Spotřebovat při čerstvosti pod (%)', checkDays: 'Kontrola každých (dny)', kFactor: 'Rychlost stárnutí (×)' },
+    tab: 'Zásoba', title: 'Zásoba', overview: 'Zásoby', overviewIntro: 'Co ještě zbývá po sklizni, napříč rostlinami.',
+    empty: 'Zatím žádná zásoba. Po určení zpracování ji založ vážením.',
+    none: 'Žádné zásoby k zobrazení.',
+    init: 'Založit zásobu', initTitle: 'Založit zásobu',
+    initHint: 'Kolik opravdu máš po zpracování. Můžeš ji rozdělit do více zásobníků (sklenice, sáčky) s různým uložením.',
+    suggest: {
+      processed: 'Podle zadané zpracované hmotnosti.', fresh: 'Podle hmotnosti sklizně.', none: 'Množství zadej ručně.',
+      learned: (r) => `Odhad podle tvých předchozích dávek (×${r}). Zvaž a přepiš podle vážení.`,
+      default: 'Hrubý odhad (čtvrtina čerstvé hmotnosti). Zvaž a přepiš podle vážení.'
+    },
+    unit: 'Jednotka', source: { weighed: 'Zváženo', estimate: 'Odhad' },
+    estimate: 'Jen odhaduji', amount: 'Množství', label: 'Označení (nepovinné)', labelPh: 'např. sklenice A', storedIn: 'Uložení',
+    addContainer: 'Přidat zásobník', removeContainer: 'Odebrat řádek', containerN: (n) => `Zásobník ${n}`, tooMany: 'Víc zásobníků už nejde.',
+    needAmount: 'Zadej množství u každého zásobníku.', saved: 'Zásoba založena',
+    left: 'Zbývá', of: 'z', fresh: 'čerstvost', maturing: (d) => `zraje do ${d}`, useBy: (d) => `spotřebuj do ${d}`,
+    belowUseBy: 'pod prahem čerstvosti', moldTag: 'plíseň', opened: (n) => `otevřeno ${n}×`, since: 'od',
+    learnedTag: (r, n) => `naučeno ×${r} (${n} ${n === 1 ? 'kontrola' : n >= 2 && n <= 4 ? 'kontroly' : 'kontrol'})`,
+    priorTag: (r) => `odhad z ostatních ×${r}`,
+    emptied: (n) => `Vyčerpáno nebo vyřazeno: ${n}`, batch: 'Dávka',
+    use: 'Odebrat', useTitle: 'Odebrat ze zásoby', useHint: 'Kolik teď bereš.', useAll: 'Vzít vše', useCustom: 'Jiné množství',
+    used: 'Odebráno', usedAll: 'Zásobník je prázdný', batchUsedUp: 'Dávka je spotřebovaná', firstUse: 'První odběr',
+    tasteAsk: 'Ochutnáno? Zapiš si krátké hodnocení, než ti vyprchá z paměti.', tasteNow: 'Ohodnotit', tasteSkip: 'Teď ne',
+    adjust: 'Zbývá cca', adjustTitle: 'Upravit zbývající množství', adjustHint: 'Odhadni nebo zvaž, kolik ve skutečnosti zbývá. Rozdíl se zapíše jako spotřeba.',
+    adjusted: 'Množství upraveno',
+    move: 'Přesunout', scope: 'Rozsah', moveTitle: 'Přesunout nebo rozdělit', moveWhole: 'Celý zásobník', movePart: 'Jen část', moveAmount: 'Kolik přesunout',
+    moveTo: 'Nový způsob uložení', moved: 'Přesunuto', moveNeed: 'Vyber jiný způsob nebo část.',
+    check: 'Kontrola', checkTitle: 'Kontrola zásobníku', checkHint: 'Vůně a vzhled stačí. Z nich se učí, jak rychle ti tenhle způsob uložení stárne.',
+    scent: 'Vůně', look: 'Vzhled', mold: 'Plíseň', moldNo: 'Bez plísně', moldYes: 'Plíseň', rh: 'Vlhkost vzduchu v nádobě (%)', aired: 'Vyvětráno',
+    checked: 'Kontrola zapsána', needCheck: 'Vyplň aspoň vůni, vzhled, plíseň nebo vlhkost.',
+    moldAsk: 'Plíseň v zásobníku. Vyřadit ho? Ostatní zásobníky dostanou kontrolu hned.', moldKeep: 'Ponechat',
+    discard: 'Vyřadit', discardTitle: 'Vyřadit zbytek', discardAsk: (a) => `Vyřadit zbývajících ${a}?`, discarded: 'Vyřazeno', reason: 'Důvod (nepovinné)',
+    summary: 'Celkem zbývá', rate: (a, w) => `spotřeba ${a}/den (posledních ${w} dní)`, noRate: 'Spotřebu odhadnu po pár dnech odběrů.',
+    runOut: (days, d) => `vydrží ~${days} dní (do ${d})`, presetLabel: 'Předvolba', presetHint: 'Mění výchozí uložení, zrání a práh čerstvosti.',
+    presetDefault: 'Výchozí', presetPlant: 'Předvolba zásoby', presetPlantHint: 'Řídí výchozí uložení a stárnutí zásoby. Pamatuje se i pro odrůdu.',
+    weighPrompt: 'Dávka je hotová. Zvážit a založit zásobu?', weighNow: 'Založit zásobu', weighLater: 'Později',
+    archiveWarn: (n) => `Zbývá ${n}. Zásoba půjde dál spotřebovávat i po archivaci.`,
+    settingsTitle: 'Skladování', settingsIntro: 'Způsoby uložení a předvolby zásoby. Čísla jsou výchozí odhady, přesněji se doladí z tvých kontrol.',
+    methods: 'Způsoby uložení', presets: 'Předvolby zásoby', categoryDefaults: 'Výchozí předvolba podle kategorie',
+    addMethod: 'Vlastní způsob', addPreset: 'Vlastní předvolba', cloneOf: 'Vychází z', reset: 'Vrátit výchozí', custom: 'vlastní',
+    name: 'Název', delete: 'Smazat', saved2: 'Uloženo', nameNeeded: 'Zadej název.', invalid: 'Hodnota je mimo rozsah.',
+    comparison: 'Jak se osvědčilo', comparisonHint: 'Průměrné hodnocení vůně a vzhledu při kontrolách podle způsobu uložení.',
+    comparisonRow: (n, avg, age) => `${n}× · ${avg}/5 · typicky po ${age} dnech`, lateAvg: (n, avg) => `po 60+ dnech: ${avg}/5 (${n}×)`,
+    comparisonNone: 'Zatím nemáš dost kontrol s hodnocením.', openOverview: 'Zásoby po sklizni', fromTasks: 'Otevřít zásobu',
+    lowTask: (d) => `Při současné spotřebě vydrží asi ${d} dní.`, useByTask: 'Čerstvost klesla pod nastavený práh.',
+    checkTask: 'Podívej se na vůni a vzhled.', airTask: 'Otevři a nech vyvětrat.'
   },
   ui: {
-    today: 'Dnes', tomorrow: 'Zítra', yesterday: 'Včera', overdue: 'Po termínu', upcoming: 'Nadcházející',
+    today: 'Dnes', tomorrow: 'Zítra', yesterday: 'Včera', overdue: 'Po termínu', upcoming: 'Nadcházející', upcomingSection: 'Nadcházející',
     doneToday: 'Hotovo dnes', careToday: 'Dnešní péče', nextStep: 'Nejbližší krok', needsAttention: 'Vyžaduje pozornost',
     myPlants: 'Moje rostliny', newPlant: 'Nová rostlina', all: 'Vše', save: 'Uložit', cancel: 'Zrušit', back: 'Zpět',
     edit: 'Upravit', delete: 'Smazat trvale', snooze: 'Odložit', undo: 'Zpět', done: 'Hotovo',
@@ -147,7 +218,8 @@ export const S = {
     processing: 'Zpracování po sklizni', processingDays: 'Dní zpracování', wouldGrowAgain: 'Pěstoval bych znovu',
     yes: 'Ano', no: 'Ne', season: 'Sezóna (rok)', current: 'Aktuální', history: 'Historie',
     noHarvests: 'Zatím žádné sklizně.', noMilestones: 'Zatím žádné milníky.', noEval: 'Zatím nehodnoceno.',
-    total: 'Celkem', daysAfter: 'dní po sklizni', harvestSaved: 'Sklizeň uložena',
+    total: 'Celkem', daysAfter: 'dní po sklizni', harvestSaved: 'Sklizeň uložena', editHarvest: 'Upravit sklizeň', harvestEdited: 'Sklizeň upravena', editedTag: 'upraveno',
+    voidHarvestAsk: 'Zrušením sklizně zmizí i její zpracování a kontroly (hodnocení zůstanou). Opravdu zrušit?', voidConfirm: 'Zrušit sklizeň',
     nextStage: 'Přesunout do fáze', endCycle: 'Ukončit cyklus', keepGoing: 'Ještě sklízím',
     archive: 'Archivovat', unarchive: 'Obnovit z archivu', archived: 'Archivováno', later: 'Později',
     archiveAsk: 'Archivovat rostlinu? Zůstane v Odrůdách a půjde ji hodnotit dál.',

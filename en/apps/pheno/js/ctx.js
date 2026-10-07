@@ -2,10 +2,12 @@
 import { buildDryingPriors } from './calendar.js';
 import { cleanRules, resolveRules } from './config-rules.js';
 import { cleanCriteria } from './criteria.js';
+import { buildStockPriors } from './stock.js';
+import { cleanStock } from './stockcfg.js';
 import { getProfile } from './profile.js';
 import { getAllEvents, listPlants, metaGet, metaSet } from './storage.js';
 
-export const ctx = { db: null, hemisphere: 'north', profile: null, overrides: {}, rules: resolveRules(), criteria: {}, priors: { category: {}, variety: {} } };
+export const ctx = { db: null, hemisphere: 'north', profile: null, overrides: {}, rules: resolveRules(), criteria: {}, stockCfg: cleanStock(null), priors: { category: {}, variety: {}, stock: { method: {}, variety: {} } } };
 export const now = () => new Date().toISOString();
 
 export async function initCtx(db) {
@@ -15,6 +17,7 @@ export async function initCtx(db) {
   ctx.overrides = cleanRules(await metaGet(db, 'rules'));
   ctx.rules = resolveRules(ctx.overrides);
   ctx.criteria = cleanCriteria(await metaGet(db, 'criteria'));
+  ctx.stockCfg = cleanStock(await metaGet(db, 'stock'));
   return ctx;
 }
 export const hemisphereKnown = () => metaGet(ctx.db, 'hemisphere').then((v) => v === 'north' || v === 'south');
@@ -28,17 +31,19 @@ export async function loadAll() {
     if (!byPlant.has(e.plantId)) byPlant.set(e.plantId, []);
     byPlant.get(e.plantId).push(e);
   }
-  ctx.priors = buildDryingPriors(plants);
+  ctx.priors = buildPriors(plants);
   return { plants, byPlant, events };
 }
 
 /** Recompute cross-plant drying priors from the stored caches (cheap: no events read). */
 export async function refreshPriors() {
-  ctx.priors = buildDryingPriors(await listPlants(ctx.db));
+  ctx.priors = buildPriors(await listPlants(ctx.db));
   return ctx.priors;
 }
 
-export const engineOpts = () => ({ hemisphere: ctx.hemisphere, rules: ctx.rules, priors: ctx.priors, criteria: ctx.criteria });
+const buildPriors = (plants) => ({ ...buildDryingPriors(plants), stock: buildStockPriors(plants, ctx.stockCfg) });
+
+export const engineOpts = () => ({ hemisphere: ctx.hemisphere, rules: ctx.rules, priors: ctx.priors, criteria: ctx.criteria, stockCfg: ctx.stockCfg });
 
 const THEME_KEY = 'pheno.theme';
 export function getTheme() {

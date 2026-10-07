@@ -3,16 +3,17 @@ import { CATEGORIES, ENVIRONMENTS, SOURCES } from './config-categories.js';
 import { cleanRules } from './config-rules.js';
 import { cleanCriteria } from './criteria.js';
 import { EVENT_TYPES, rebuildAll } from './events.js';
-import { emptyCache, optionalPot } from './model.js';
+import { emptyCache, isPresetKey, optionalPot } from './model.js';
+import { cleanStock } from './stockcfg.js';
 import { PROFILE_KEYS, PROFILE_SOURCES, UTM_KEYS } from './profile.js';
 import { getAllEvents, getPhoto, listPhotoKeys, listPlants, metaGet, metaSet, putPhoto, withTx } from './storage.js';
 import { normalizeKey, nowIso } from './utils.js';
 import { VERSION } from './version.js';
 
 /** 2 = RCv0.191: batch_step / batch_check / care events and meta.rules. Version-1 archives still import. */
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 /** Meta keys that travel with a backup; device-specific ones (persistGranted, backup bookkeeping) do not. */
-export const PORTABLE_META = ['hemisphere', 'profile', 'profileSource', 'acquisition', 'rules', 'criteria'];
+export const PORTABLE_META = ['hemisphere', 'profile', 'profileSource', 'acquisition', 'rules', 'criteria', 'stock'];
 const MAX_TEXT = 20000;
 
 const jszip = (JSZip) => JSZip || globalThis.JSZip || (() => { throw new Error('JSZip není načtený'); })();
@@ -65,7 +66,7 @@ function cleanPlant(p) {
     baseOverride: Number.isFinite(p.baseOverride) && p.baseOverride > 0 ? p.baseOverride : null,
     learnedBase: learned && Object.keys(learned).length ? learned : null,
     startDate: p.startDate, createdAt: isDate(p.createdAt) ? p.createdAt : p.startDate,
-    ...(p.reminders === false ? { reminders: false } : {}), ...optionalPot(p),
+    ...(p.reminders === false ? { reminders: false } : {}), ...optionalPot(p), ...(isPresetKey(p.stockPreset) ? { stockPreset: p.stockPreset } : {}),
     archivedAt: null, cache: emptyCache()
   };
 }
@@ -101,6 +102,7 @@ export async function readBackup(input, { JSZip } = {}) {
   if (meta.profile && !PROFILE_KEYS.includes(meta.profile)) { delete meta.profile; delete meta.profileSource; }
   if (meta.profileSource && !PROFILE_SOURCES.includes(meta.profileSource)) delete meta.profileSource;
   if ('rules' in meta) { meta.rules = cleanRules(meta.rules); if (!Object.keys(meta.rules).length) delete meta.rules; }
+  if ('stock' in meta) { meta.stock = cleanStock(meta.stock); if (!Object.values(meta.stock).some((v) => Object.keys(v).length)) delete meta.stock; }
   if ('criteria' in meta) { meta.criteria = cleanCriteria(meta.criteria); if (!Object.keys(meta.criteria).length) delete meta.criteria; }
   if ('acquisition' in meta) meta.acquisition = cleanAcquisition(meta.acquisition);
   if (meta.acquisition == null) delete meta.acquisition;

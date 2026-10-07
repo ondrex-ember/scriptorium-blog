@@ -1,10 +1,11 @@
 // Calendar engine (spec 4, MRD RCv0.191). Pure functions: learning projector, harvest batches, task list. No DOM, no storage.
 import { BATCH_ENDED, CATEGORIES, FRESH_CATEGORIES, PROCESSING_PHASES, STAGE_FLAGS } from './config-categories.js';
 import {
-  ENV_MULTIPLIER, FOLLOWUP_DAYS, LEARN, LOOKAHEAD_DAYS, PEST_BOOST_DAYS, RULE, STAGE_FACTOR
+  ENV_MULTIPLIER, FOLLOWUP_DAYS, LEARN, PEST_BOOST_DAYS, RULE, STAGE_FACTOR
 } from './config-engine.js';
 import { rv } from './config-rules.js';
 import { registerProjector } from './model.js';
+import { applyStockEvent, stockTasks } from './stock.js';
 import { addDays, clamp, coefVariation, dayDiff, daysBetween, isNum, seasonOf, weightedMean } from './utils.js';
 
 // ---------- base values ----------
@@ -116,11 +117,11 @@ const newBatch = (e, p, k, c) => {
   const instantlyReady = method === 'none';
   return {
     id: p.batchId || e.id, harvestedAt: e.occurredAt, final: !!p.final,
-    fresh: FRESH_CATEGORIES.includes(k.category), weightG: harvestWeightG(p), estDays: isNum(p.estDays) ? p.estDays : null,
+    fresh: FRESH_CATEGORIES.includes(k.category), weightG: harvestWeightG(p), processedG: isNum(p.processedWeight) ? p.processedWeight : null, estDays: isNum(p.estDays) ? p.estDays : null,
     heightCm: c.lastHeightCm ?? null, env: k.env, method,
     phase: method == null ? 'pending' : instantlyReady ? 'ready' : method, phaseSince: e.occurredAt,
     readyAt: instantlyReady ? e.occurredAt : null, endedAt: null, legacy: false,
-    checks: [], lastCheckAt: null, evals: [], steps: [],
+    checks: [], lastCheckAt: null, evals: [], steps: [], stock: null,
     dryLearn: null, dryDays: null, learnedR: null, ratio: null
   };
 };
@@ -244,6 +245,9 @@ export const calendarProjector = {
         if (target) target.evals.push({ at: e.occurredAt, kind, part: p.part ?? null });
         break;
       }
+      case 'stock_init': case 'stock_use': case 'stock_adjust': case 'stock_move': case 'stock_check':
+        applyStockEvent(c, e);
+        break;
       case 'archive':
         k.archived = true;
         break;
@@ -453,10 +457,17 @@ export function getPlantTasks(plant, now, opts = {}) {
   for (const b of c.batches) {
     if (b.legacy || BATCH_ENDED.includes(b.phase) || b.phase === 'pending') continue;
     const iv = batchCheckInterval(b, rules, now, batchRatio(plant, b, o.priors));
-    if (iv) push('batchCheck', addDays(iv.last, iv.days), { batchId: b.id, phase: b.phase, snoozeKey: `batchCheck:${b.id}` });
-    if (b.fresh && ['storing', 'ready'].includes(b.phase)) {
+    // once the material sits in weighed containers, their own checks replace the batch-level storing check
+    const inStock = b.stock?.containers.some((k) => k.status === 'open');
+    if (iv && !(inStock && b.phase === 'storing')) push('batchCheck', addDays(iv.last, iv.days), { batchId: b.id, phase: b.phase, snoozeKey: `batchCheck:${b.id}` });
+    if (b.fresh && !b.stock && ['storing', 'ready'].includes(b.phase)) {
       push('useBy', addDays(b.harvestedAt, rv(rules, `useBy.${plant.category}`) ?? 10), { batchId: b.id, snoozeKey: `useBy:${b.id}` });
     }
+  }
+
+  for (const t of stockTasks(plant, now, { rules, cfg: o.stockCfg, priors: o.priors })) {
+    const { type, due, ...extra } = t;
+    push(type, due, extra);
   }
 
   const ev = evaluationDue(plant, now, rules);
@@ -473,10 +484,11 @@ const ORDER = { overdue: 0, today: 1, upcoming: 2 };
 /** All tasks within the look-ahead window, sorted by urgency then due date. */
 export function computeTasks(plants, now, opts = {}) {
   const out = [];
+  const look = rv(asOpts(opts).rules, 'dashboard.lookaheadDays');
   for (const plant of plants) {
     for (const t of getPlantTasks(plant, now, opts)) {
       const daysUntil = dayDiff(now, t.dueAt);
-      if (daysUntil > LOOKAHEAD_DAYS) continue;
+      if (daysUntil > look) continue;
       out.push({ ...t, daysUntil, urgency: daysUntil < 0 ? 'overdue' : daysUntil === 0 ? 'today' : 'upcoming' });
     }
   }

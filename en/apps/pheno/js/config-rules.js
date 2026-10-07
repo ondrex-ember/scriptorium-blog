@@ -58,7 +58,13 @@ export const RULE_DEFS = [
   ...SUBSTRATES.map((s) => num(`pot.substrate.${s}`, 'pot', { soil: 1, coco: 0.7, hydro: 0.5 }[s], 0.2, 3, '×', 0.05)),
   ...SEASON_NAMES.map((s) => num(`season.${s}`, 'season', SEASON_DEFAULTS[s], 0.3, 3, '×', 0.05)),
   ...ENVIRONMENTS.map((e) => bool(`season.on.${e}`, 'season', SEASON_ON[e])),
-  choice('afterFinalHarvest', 'afterHarvest', 'ask', AFTER_FINAL_HARVEST)
+  choice('afterFinalHarvest', 'afterHarvest', 'ask', AFTER_FINAL_HARVEST),
+  num('dashboard.lookaheadDays', 'dashboard', 3, 0, 14, 'dní'),
+  num('stock.lowDays', 'stock', 10, 1, 120, 'dní do vyčerpání'),
+  num('stock.rateWindowDays', 'stock', 28, 7, 180, 'dní'),
+  num('stock.useByPct', 'stock', 50, 5, 95, '% čerstvosti'),
+  num('stock.lowQualityPct', 'stock', 30, 5, 90, '% čerstvosti'),
+  num('stock.minRateDays', 'stock', 7, 1, 60, 'dní od prvního odběru')
 ];
 
 export const RULE_GROUPS = [...new Set(RULE_DEFS.map((d) => d.group))];

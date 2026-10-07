@@ -1,1 +1,1 @@
-export const VERSION = 'RCv0.191';
+export const VERSION = 'RCv0.192';

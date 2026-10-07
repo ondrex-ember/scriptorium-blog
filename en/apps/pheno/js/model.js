@@ -25,7 +25,33 @@ export function emptyCache(prev) {
 /** Events that count: void events and the events they void are dropped. */
 export function liveEvents(events) {
   const voided = new Set(events.filter((e) => e.type === 'void').map((e) => e.payload.targetId));
-  return events.filter((e) => e.type !== 'void' && !voided.has(e.id)).sort(compareEvents);
+  const base = events.filter((e) => e.type !== 'void' && !voided.has(e.id));
+  // corrections: the latest harvest_edit replaces the fields of its harvest (the original stays in the log)
+  const edits = new Map();
+  base.filter((e) => e.type === 'harvest_edit')
+    .sort((a, b) => (a.recordedAt < b.recordedAt ? -1 : a.recordedAt > b.recordedAt ? 1 : 0))
+    .forEach((e) => edits.set(e.payload.harvestId, e));
+  // a voided harvest takes its processing steps and checks with it; ratings survive as plain ratings
+  const goneBatches = new Set(events.filter((e) => e.type === 'harvest' && voided.has(e.id)).map((e) => e.id));
+  // stock events hang on their stock_init: voiding it (or the harvest) removes the withdrawals, moves and checks with it
+  const goneStock = new Set(events.filter((e) => e.type === 'stock_init' && voided.has(e.id)).map((e) => e.id));
+  const out = [];
+  for (const e of base) {
+    if (e.type === 'harvest_edit') continue;
+    const bid = e.payload?.batchId;
+    const isStock = e.type.startsWith('stock_');
+    if (isStock && ((bid && goneBatches.has(bid)) || (e.payload?.stockId && goneStock.has(e.payload.stockId)))) continue;
+    if (bid && goneBatches.has(bid)) {
+      if (e.type === 'batch_step' || e.type === 'batch_check') continue;
+      if (e.type === 'evaluation') { const pl = { ...e.payload }; delete pl.batchId; out.push({ ...e, payload: pl }); continue; }
+    }
+    const ed = e.type === 'harvest' ? edits.get(e.id) : null;
+    if (ed) {
+      const fields = { ...ed.payload }; const date = fields.date; delete fields.harvestId; delete fields.date;
+      out.push({ ...e, occurredAt: date ?? e.occurredAt, payload: { ...fields, batchId: e.payload.batchId, daysSinceLastHarvest: e.payload.daysSinceLastHarvest, edited: true } });
+    } else out.push(e);
+  }
+  return out.sort(compareEvents);
 }
 
 /** Pure: rebuild plant.cache and archivedAt from events. Same input, same output. */
@@ -118,8 +144,12 @@ export function buildPlant(input, now = nowIso()) {
   };
   const pot = optionalPot(input);
   Object.assign(plant, pot);
+  if (isPresetKey(input.stockPreset)) plant.stockPreset = input.stockPreset;
   return { plant, stage };
 }
+
+/** Shape of a stock preset key stored on a plant (it is checked against the catalogue when used). */
+export const isPresetKey = (v) => typeof v === 'string' && /^[a-zA-Z0-9]{1,32}$/.test(v);
 
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -141,6 +171,7 @@ export function clonePlantInput(plant, existingNames = []) {
     environment: plant.cache?.environment ?? plant.environment,
     harvestable: plant.harvestable, location: plant.location, source: plant.source,
     baseOverride: plant.baseOverride, learnedBase: learned || null,
-    potVolumeL: plant.cache?.pot?.volumeL ?? plant.potVolumeL, substrate: plant.substrate
+    potVolumeL: plant.cache?.pot?.volumeL ?? plant.potVolumeL, substrate: plant.substrate,
+    stockPreset: plant.stockPreset
   };
 }

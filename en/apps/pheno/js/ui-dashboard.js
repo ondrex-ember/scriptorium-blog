@@ -14,11 +14,14 @@ import { SEASONAL_ENVIRONMENTS } from './config-engine.js';
 import { fmtDate, num, plantsWord } from './format.js';
 import { batchCheckSheet, batchEstimate, batchMethodSheet, evaluationSheet, followUpSheet, moistureSheet, snoozeSheet, submit, useBySheet } from './ui-forms.js';
 import { navigate, guard } from './router.js';
+import { runStockTask } from './ui-stock.js';
+import { batchRemaining } from './stock.js';
 import { backupReminderDue, dismissBackupReminder } from './backup.js';
 import { doExport } from './ui-settings.js';
 import { BATCH_ENDED, CATEGORIES } from './config-categories.js';
 
 const filters = { location: 'all', environment: 'all', category: 'all' };
+let upcomingOpen = false;   // the "Nadcházející" section starts collapsed on every visit to the app
 export const CAT_ICON = { herb: 'leaf', vegetable: 'sprout', fruit: 'pot', flower: 'sun', tree_shrub: 'leaf', houseplant: 'sprout', other: 'pot' };
 const DOT = { overdue: 'expired', today: 'missing', upcoming: 'needs_check' };
 
@@ -33,7 +36,7 @@ export function runTask(task, plant, done) {
     case 'batchCheck': return batch ? batchCheckSheet(plant, batch, done) : null;
     case 'useBy': return useBySheet(plant, task, done);
     case 'evaluation': case 'evaluationReview': return evaluationSheet(plant, done, { kind: 'final', batchId: task.batchId ?? undefined });
-    default: return null;
+    default: return task.type.startsWith('stock') ? runStockTask(task, plant, done) : null;
   }
 }
 
@@ -50,7 +53,8 @@ function afterHarvestSection(plants, nowIso, rerender) {
   const rows = afterHarvestRows(plants, nowIso);
   if (!rows.length) return null;
   return h('section', { class: 'after-harvest', id: 'after-harvest' },
-    h('div', { class: 'section-title' }, S.ui.afterHarvest),
+    h('div', { class: 'section-title section-title-row' }, h('span', {}, S.ui.afterHarvest),
+      rows.some(({ batch }) => batch.stock) ? h('button', { type: 'button', class: 'btn btn-ghost btn-sm', id: 'btn-stock-overview', onclick: () => navigate('/stock') }, S.stock.overview) : null),
     h('div', { class: 'card task-list' }, rows.map(({ plant, batch, pending, progress }) => h('div', {
       class: 'item-row batch-row', role: 'button', tabindex: 0, dataset: { batch: batch.id, plant: plant.id, phase: batch.phase },
       onclick: () => navigate(`/plant/${plant.id}`) },
@@ -58,7 +62,8 @@ function afterHarvestSection(plants, nowIso, rerender) {
     h('div', { class: 'item-info' },
       h('div', { class: 'item-name' }, `${plant.name} – ${S.batchPhase[batch.phase] || batch.phase}`),
       h('div', { class: 'item-detail' }, h('span', { class: 'item-sub' },
-        [fmtDate(batch.harvestedAt), progress ? S.ui.dayOf(progress.t + 1, progress.est) : null].filter(Boolean).join(' · ')))),
+        [fmtDate(batch.harvestedAt), progress ? S.ui.dayOf(progress.t + 1, progress.est) : null,
+          batch.stock ? `${S.stock.left} ${num(batchRemaining(batch), 2)} ${batch.stock.unit}` : null].filter(Boolean).join(' · ')))),
     pending ? h('div', { class: 'item-actions' },
       h('button', { type: 'button', class: 'btn btn-secondary btn-sm', dataset: { act: 'method' },
         onclick: (e) => { e.stopPropagation(); batchMethodSheet(plant, batch, rerender); } }, S.ui.batchMethod)) : null))));
@@ -91,7 +96,7 @@ function taskRow(task, plant, done) {
     onclick: () => navigate(`/plant/${task.plantId}`) },
     h('span', { class: `badge-dot ${DOT[task.urgency]}` }),
     h('div', { class: 'item-info' },
-      h('div', { class: 'item-name' }, `${task.plantName} – ${S.taskLabel[task.type]}`),
+      h('div', { class: 'item-name' }, `${task.plantName} – ${S.taskLabel[task.type]}${task.note && task.type.startsWith('stock') && task.type !== 'stockLow' ? ` · ${task.note}` : ''}`),
       h('div', { class: 'item-detail' }, h('span', { class: 'item-sub' }, task.phase ? `${S.batchPhase[task.phase] || task.phase} · ${when}` : when))),
     h('div', { class: 'item-actions qty-stepper' },
       h('button', { type: 'button', class: 'btn-quick', 'aria-label': S.ui.done, dataset: { act: 'do' },
@@ -128,7 +133,9 @@ export async function renderDashboard(root) {
   const tasks = computeTasks(plants.filter((p) => (p.archivedAt ? true : matches(p))), nowIso, opts);
   const count = (u) => tasks.filter((t) => t.urgency === u).length;
   const done = list.reduce((n, p) => n + doneToday(byPlant.get(p.id) || [], nowIso), 0);
-  const open = count('overdue') + count('today');
+  const due = tasks.filter((t) => t.urgency !== 'upcoming');
+  const later = tasks.filter((t) => t.urgency === 'upcoming');
+  const open = due.length;
   const total = done + open;
   const pct = total ? Math.round((done / total) * 100) : (active.length ? 100 : 0);
   const level = !active.length ? 'empty' : pct >= 100 ? 'done' : pct < 34 ? 'starting' : 'building';
@@ -157,11 +164,11 @@ export async function renderDashboard(root) {
       h('button', { type: 'button', class: 'btn btn-ghost btn-sm', id: 'banner-dismiss', onclick: async () => { await dismissBackupReminder(ctx.db); rerender(); } }, S.backup.dismiss)));
   }
 
-  const first = tasks[0];
+  const first = due[0];
   if (first) {
     root.append(h('div', { class: 'next-action', role: 'button', tabindex: 0, id: 'next-action',
       onclick: () => runTask(first, byIdAll.get(first.plantId), rerender) },
-      h('div', { class: 'next-action-icon' }, icon(first.type === 'moisture' ? 'drop' : first.type === 'fertilizing' ? 'leaf' : first.type.startsWith('evaluation') ? 'status-ok' : first.type === 'batchCheck' || first.type === 'useBy' ? 'check' : 'bug')),
+      h('div', { class: 'next-action-icon' }, icon(first.type === 'moisture' ? 'drop' : first.type === 'fertilizing' ? 'leaf' : first.type.startsWith('evaluation') ? 'status-ok' : first.type === 'batchCheck' || first.type === 'useBy' || first.type.startsWith('stock') ? 'check' : 'bug')),
       h('div', { class: 'next-action-copy' }, h('span', {}, S.ui.nextStep),
         h('strong', {}, `${first.plantName} – ${S.taskLabel[first.type]}`), h('small', {}, relDay(first.dueAt, nowIso))),
       h('button', { type: 'button', 'aria-label': S.ui.done }, icon('chevron'))));
@@ -171,9 +178,17 @@ export async function renderDashboard(root) {
   if (bar) root.append(bar);
 
   root.append(h('div', { class: 'section-title' }, S.ui.needsAttention));
-  root.append(tasks.length
-    ? h('div', { class: 'card task-list' }, tasks.map((t) => taskRow(t, byIdAll.get(t.plantId), rerender)))
-    : h('div', { class: 'empty-state' }, S.ui.noTasks));
+  root.append(due.length
+    ? h('div', { class: 'card task-list', id: 'due-list' }, due.map((t) => taskRow(t, byIdAll.get(t.plantId), rerender)))
+    : h('div', { class: 'empty-state', id: 'no-due' }, S.ui.noTasks));
+  if (later.length) {
+    const body = h('div', { class: 'card task-list', id: 'upcoming-list', hidden: !upcomingOpen }, later.map((t) => taskRow(t, byIdAll.get(t.plantId), rerender)));
+    const toggle = h('button', { type: 'button', class: 'upcoming-toggle', id: 'btn-upcoming', 'aria-expanded': String(upcomingOpen),
+      onclick: () => { upcomingOpen = !upcomingOpen; body.hidden = !upcomingOpen; toggle.setAttribute('aria-expanded', String(upcomingOpen)); toggle.classList.toggle('open', upcomingOpen); } },
+    icon('chevron'), h('span', {}, `${S.ui.upcomingSection} (${later.length})`));
+    toggle.classList.toggle('open', upcomingOpen);
+    root.append(toggle, body);
+  }
 
   const after = afterHarvestSection(plants, nowIso, rerender);
   if (after) root.append(after);
@@ -188,9 +203,10 @@ export async function renderDashboard(root) {
     root.append(h('div', { class: 'empty-state' }, S.ui.noPlants));
   } else {
     const cards = await Promise.all(list.map((p) => {
-      const next = getPlantTasks(p, nowIso, opts)
+      // the card only mentions what is due now; future plans live in the collapsed "Nadcházející" section
+      const next = getPlantTasks(p, nowIso, opts).filter((t) => dayDiff(nowIso, t.dueAt) <= 0)
         .sort((a, b) => (a.dueAt < b.dueAt ? -1 : 1))[0];
-      const withUrg = next ? { ...next, urgency: next.dueAt < nowIso ? 'overdue' : 'upcoming' } : null;
+      const withUrg = next ? { ...next, urgency: dayDiff(nowIso, next.dueAt) < 0 ? 'overdue' : 'today' } : null;
       return plantCard(p, byPlant.get(p.id) || [], withUrg);
     }));
     root.append(h('div', { class: 'plant-grid' }, cards));

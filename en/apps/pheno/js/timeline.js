@@ -18,8 +18,10 @@ export function latestPhotoId(events) {
 }
 
 /** Describe one event: {icon, title, detail}. */
-export function describeEvent(e) {
+export function describeEvent(e, units = {}) {
   const p = e.payload || {};
+  const unit = units[p.batchId] ?? '';
+  const mlabel = (k) => S.stock.method[k] ?? S.stock.method.other;
   switch (e.type) {
     case 'created': return { icon: 'sprout', title: 'Rostlina založena', detail: `${S.environment[p.environment] || ''}` };
     case 'stage_change': return { icon: 'stage', title: `Fáze: ${S.stage[p.to] || p.to}`, detail: '' };
@@ -42,6 +44,18 @@ export function describeEvent(e) {
         p.scent ? `vůně ${p.scent}/5` : null, p.appearance ? `vzhled ${p.appearance}/5` : null, p.note || null].filter(Boolean);
       return { icon: 'check', title: 'Kontrola dávky', detail: bits.join(' · ') };
     }
+    case 'stock_init': return { icon: 'check', title: S.stock.saved,
+      detail: `${p.containers?.map((c) => `${num(c.amount, 2)} ${p.unit}${c.label ? ` ${c.label}` : ''} · ${mlabel(c.method)}`).join('; ')}` };
+    case 'stock_use': return p.kind === 'discard'
+      ? { icon: 'trash', title: S.stock.discarded, detail: `${num(p.amount, 2)} ${unit}${p.reason ? ` · ${p.reason}` : ''}` }
+      : { icon: 'leaf', title: S.stock.used, detail: `${num(p.amount, 2)} ${unit}` };
+    case 'stock_adjust': return { icon: 'ruler', title: S.stock.adjusted, detail: `${S.stock.left} ${num(p.remaining, 2)} ${unit}` };
+    case 'stock_move': return { icon: 'swap', title: S.stock.moved, detail: `${mlabel(p.method)}${p.amount ? ` · ${num(p.amount, 2)} ${unit}` : ''}` };
+    case 'stock_check': {
+      const bits = [p.scent ? `vůně ${p.scent}/5` : null, p.appearance ? `vzhled ${p.appearance}/5` : null, p.mold ? 'plíseň' : null,
+        p.rh != null ? `${p.rh} %` : null, p.aired ? S.stock.aired : null, p.note || null].filter(Boolean);
+      return { icon: 'check', title: S.stock.checkTitle, detail: bits.join(' · ') };
+    }
     case 'care': return { icon: 'leaf', title: p.kind === 'custom' ? p.label : S.care[p.kind], detail: [p.potVolumeL ? `${num(p.potVolumeL, 1)} l` : '', p.note || ''].filter(Boolean).join(' · ') };
     case 'evaluation': return {
       icon: 'check', title: S.evalKind[p.kind ?? 'final'],
@@ -55,5 +69,7 @@ export function describeEvent(e) {
 
 /** Diary rows newest first; voided events and void markers are left out. */
 export function diaryRows(events) {
-  return liveEvents(events).slice().reverse().map((e) => ({ event: e, ...describeEvent(e) }));
+  const live = liveEvents(events);
+  const units = Object.fromEntries(live.filter((e) => e.type === 'stock_init').map((e) => [e.payload.batchId, e.payload.unit]));
+  return live.slice().reverse().map((e) => ({ event: e, ...describeEvent(e, units) }));
 }

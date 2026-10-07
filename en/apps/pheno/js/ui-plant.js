@@ -12,7 +12,7 @@ import { getEvents, getPlant } from './storage.js';
 import { photoUrl } from './photos.js';
 import { PROFILES } from './profile.js';
 import { navigate, guard } from './router.js';
-import { toast } from './sheet.js';
+import { closeSheet, openSheet, toast } from './sheet.js';
 import { S } from './strings.cs.js';
 import { diaryRows, latestPhotoId } from './timeline.js';
 import { CAT_ICON, runTask } from './ui-dashboard.js';
@@ -22,6 +22,7 @@ import {
   snoozeSheet, submit
 } from './ui-forms.js';
 import { askHemisphere } from './ui-plant-form.js';
+import { hasStockTab, stockEligible, stockInitSheet, stockPanel, tabRequest } from './ui-stock.js';
 
 let tab = 'diary';
 let tabPlant = null;
@@ -72,7 +73,7 @@ export async function renderPlant(root, id) {
 
   const taskRows = tasks.map((t) => h('div', { class: 'item-row task-row', dataset: { task: t.type } },
     h('span', { class: `badge-dot ${DOT[t.urgency]}` }),
-    h('div', { class: 'item-info' }, h('div', { class: 'item-name' }, S.taskLabel[t.type]),
+    h('div', { class: 'item-info' }, h('div', { class: 'item-name' }, S.taskLabel[t.type] + (t.note && t.type !== 'stockLow' ? ` – ${t.note}` : '')),
       h('div', { class: 'item-detail' }, h('span', { class: 'item-sub' }, `${t.phase ? `${S.batchPhase[t.phase] || t.phase} · ` : ''}${relDay(t.dueAt, nowIso)}`))),
     h('div', { class: 'item-actions qty-stepper' },
       h('button', { type: 'button', class: 'btn-quick', 'aria-label': S.ui.done, onclick: () => runTask(t, plant, refresh) }, icon('check')),
@@ -82,13 +83,17 @@ export async function renderPlant(root, id) {
   const canEval = plant.harvestable || plant.lifecycle === 'perennial';
   const tabs = [['diary', S.ui.timeline],
     plant.harvestable ? ['harvests', S.ui.harvests] : ['milestones', S.ui.milestones],
+    hasStockTab(plant) ? ['stock', S.stock.tab] : null,
     canEval ? ['evaluation', S.ui.evaluation] : null, ['care', S.ui.careTab]].filter(Boolean);
+  if (tabRequest.id === id && tabs.some(([k]) => k === tabRequest.tab)) { tab = tabRequest.tab; tabPlant = id; }
+  tabRequest.id = null;
   if (tabPlant !== id || !tabs.some(([k]) => k === tab)) { tab = 'diary'; tabPlant = id; }
 
   const panel = h('div', { id: 'tab-panel' });
   const showTab = async () => { put(panel.replaceChildren() ?? panel, await buildPanel()); };
   async function buildPanel() {
     if (tab === 'harvests') return harvestsPanel();
+    if (tab === 'stock') return stockPanel(plant, refresh, nowIso);
     if (tab === 'milestones') return milestonesPanel();
     if (tab === 'evaluation') return evaluationPanel();
     if (tab === 'care') return carePanel();
@@ -99,7 +104,7 @@ export async function renderPlant(root, id) {
     const rows = diaryRows(events);
     const items = await Promise.all(rows.map(async (r) => {
       const src = r.photoId ? await photoUrl(ctx.db, r.photoId) : null;
-      const canVoid = !locked || ['note', 'photo', 'evaluation', 'batch_step', 'batch_check'].includes(r.event.type);
+      const canVoid = !locked || ['note', 'photo', 'evaluation', 'batch_step', 'batch_check', 'stock_init', 'stock_use', 'stock_adjust', 'stock_move', 'stock_check'].includes(r.event.type);
       return h('div', { class: 'timeline-row', dataset: { event: r.event.type } },
         h('div', { class: 'timeline-icon' }, icon(r.icon)),
         h('div', { class: 'timeline-body' },
@@ -110,7 +115,14 @@ export async function renderPlant(root, id) {
         r.event.type === 'created' || !canVoid ? null
           : h('button', { type: 'button', class: 'btn btn-ghost btn-sm', 'aria-label': S.ui.voidIt, title: S.ui.voidIt,
             onclick: async () => {
-              try { await voidEvent(ctx.db, id, r.event.id); toast('Záznam zrušen'); refresh(); } catch (e) { toast(e.message); }
+              const doVoid = async () => {
+                try { await voidEvent(ctx.db, id, r.event.id); closeSheet(); toast('Záznam zrušen'); refresh(); } catch (e) { toast(e.message); }
+              };
+              if (r.event.type !== 'harvest') return doVoid();
+              openSheet(S.ui.voidConfirm, h('div', { class: 'stack' },
+                h('p', { class: 'muted' }, S.ui.voidHarvestAsk),
+                h('button', { type: 'button', class: 'btn btn-danger', id: 'btn-void-harvest', onclick: doVoid }, S.ui.voidConfirm),
+                h('button', { type: 'button', class: 'btn btn-secondary', onclick: closeSheet }, S.ui.cancel)));
             } }, icon('trash')));
     }));
     return h('div', { class: 'card timeline' }, items);
@@ -135,6 +147,7 @@ export async function renderPlant(root, id) {
         b.phase === 'pending' ? h('button', { type: 'button', class: 'btn btn-primary btn-sm', dataset: { act: 'method' }, onclick: () => batchMethodSheet(plant, b, refresh) }, S.ui.batchMethod) : null,
         open && b.phase !== 'pending' ? h('button', { type: 'button', class: 'btn btn-secondary btn-sm', dataset: { act: 'check' }, onclick: () => batchCheckSheet(plant, b, refresh) }, S.ui.batchCheck) : null,
         open && b.phase !== 'pending' ? h('button', { type: 'button', class: 'btn btn-secondary btn-sm', dataset: { act: 'move' }, onclick: () => batchStepSheet(plant, b, refresh) }, S.ui.batchMove) : null,
+        stockEligible(b) ? h('button', { type: 'button', class: 'btn btn-secondary btn-sm', dataset: { act: 'stock' }, onclick: () => stockInitSheet(plant, b, refresh) }, S.stock.init) : null,
         plant.harvestable && b.phase !== 'discarded' ? h('button', { type: 'button', class: 'btn btn-secondary btn-sm', dataset: { act: 'eval' }, onclick: () => evaluationSheet(plant, refresh, { batchId: b.id }) }, S.ui.evaluate) : null));
   }
 
@@ -157,11 +170,13 @@ export async function renderPlant(root, id) {
       hv.length ? h('div', { class: 'card timeline' }, hv.map((e) => h('div', { class: 'timeline-row', dataset: { event: 'harvest' } },
         h('div', { class: 'timeline-icon' }, icon('leaf')),
         h('div', { class: 'timeline-body' },
-          h('div', { class: 'timeline-title' }, `${fmtDate(e.occurredAt)}${e.payload.final ? ` · ${S.ui.lastHarvestTag}` : ''}`),
+          h('div', { class: 'timeline-title' }, `${fmtDate(e.occurredAt)}${e.payload.final ? ` · ${S.ui.lastHarvestTag}` : ''}${e.payload.edited ? ` · ${S.ui.editedTag}` : ''}`),
           h('div', { class: 'timeline-detail' }, line(e.payload)),
           e.payload.processingDays != null ? h('div', { class: 'timeline-detail' }, `${S.ui.processingDays}: ${e.payload.processingDays}`) : null,
           e.payload.note ? h('div', { class: 'timeline-detail' }, e.payload.note) : null,
-          batchBlock(batchOf(e)))))) : h('div', { class: 'empty-state' }, S.ui.noHarvests),
+          batchBlock(batchOf(e))),
+        locked ? null : h('button', { type: 'button', class: 'btn btn-ghost btn-sm', dataset: { act: 'edit-harvest' }, 'aria-label': S.ui.editHarvest, title: S.ui.editHarvest,
+          onclick: () => harvestSheet(plant, refresh, e) }, icon('edit'))))) : h('div', { class: 'empty-state' }, S.ui.noHarvests),
       learnNote(),
       hv.length ? h('div', { class: 'card pad', id: 'harvest-total' }, h('strong', {}, `${S.ui.total}: `), line(totals)) : null);
   }

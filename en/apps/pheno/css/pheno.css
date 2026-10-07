@@ -182,3 +182,28 @@ input, select, textarea { font-size: 16px; }
 .crit-removed { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border); }
 .crit-add { margin-top: 10px; }
 .crit-group .form-error:empty { display: none; }
+
+/* RCv0.192: collapsible "Nadcházející" section on the dashboard */
+[hidden] { display: none !important; }
+.upcoming-toggle { display: flex; align-items: center; gap: 8px; width: 100%; margin: 12px 0 8px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 12px;
+  background: var(--surface); color: var(--text-muted, var(--text)); font: inherit; font-weight: 600; cursor: pointer; text-align: left; }
+.upcoming-toggle .ui-icon { transition: transform .15s; }
+.upcoming-toggle.open .ui-icon { transform: rotate(90deg); }
+
+/* ---- RCv0.192: zásoba / skladování ---- */
+.section-title-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.stock-batch { display: flex; flex-direction: column; gap: 12px; }
+.stock-container { display: flex; flex-direction: column; gap: 8px; padding: 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+.stock-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.stock-head strong { margin-right: auto; }
+.stock-bar { height: 6px; border-radius: 999px; background: var(--surface-alt); overflow: hidden; }
+.stock-bar > span { display: block; height: 100%; background: var(--accent); border-radius: inherit; }
+.stock-row { display: flex; flex-direction: column; gap: 8px; cursor: pointer; }
+.stock-row-head { display: flex; align-items: center; gap: 8px; justify-content: space-between; }
+.stock-amount { font-weight: 700; font-variant-numeric: tabular-nums; }
+.quick-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
+.quick-row .btn { width: auto; }
+.tag.q-ok { background: var(--status-ok-bg); color: var(--status-ok); border-color: transparent; }
+.tag.q-mid { background: var(--status-expiring-bg); color: var(--status-expiring); border-color: transparent; }
+.tag.q-low { background: var(--status-expired-bg); color: var(--status-expired); border-color: transparent; }
+.stock-q { font-weight: 700; font-variant-numeric: tabular-nums; }

@@ -1,6 +1,6 @@
 // App-shell cache. User data lives in IndexedDB and is never cached here.
 // CACHE must match VERSION in js/version.js (tools/lint.js checks it), so a new release replaces the old shell.
-const CACHE = 'pheno-shell-RCv0.191';
+const CACHE = 'pheno-shell-RCv0.192';
 const SHELL = [
   './index.html',
   './manifest.json',
@@ -29,6 +29,10 @@ const SHELL = [
   './js/sheet.js',
   './js/stats.js',
   './js/storage.js',
+  './js/stock.js',
+  './js/stockcfg.js',
+  './js/ui-stock.js',
+  './js/ui-stockcfg.js',
   './js/strings.cs.js',
   './js/timeline.js',
   './js/ui-dashboard.js',

@@ -34,7 +34,7 @@ test('export → wipe → import gives identical plants, events, photos, meta', 
   const zip = await JSZip.loadAsync(bytes);
   assert.deepEqual(Object.keys(zip.files).sort(), ['data.json', 'manifest.json', 'photos/', 'photos/ph1.jpg']);
   const manifest = JSON.parse(await zip.file('manifest.json').async('string'));
-  assert.equal(manifest.schemaVersion, 2); assert.equal(manifest.counts.plants, 2); assert.equal(manifest.counts.photos, 1);
+  assert.equal(manifest.schemaVersion, 3); assert.equal(manifest.counts.plants, 2); assert.equal(manifest.counts.photos, 1);
 
   const dst = await freshDb();
   const rep = await importBackup(dst, bytes, { JSZip });
@@ -45,7 +45,7 @@ test('export → wipe → import gives identical plants, events, photos, meta', 
   assert.deepEqual(await listPhotoKeys(dst), ['ph1']);
   assert.equal(await metaGet(dst, 'hemisphere'), 'south');
   assert.equal(await metaGet(dst, 'lastExportAt'), undefined);      // device-specific keys do not travel
-  assert.equal(await metaGet(dst, 'schemaVersion'), 2);
+  assert.equal(await metaGet(dst, 'schemaVersion'), 3);
   const t = async (d) => computeTasks(await listPlants(d), day(90), { hemisphere: 'south' }).map((x) => [x.plantId, x.type, x.dueAt]);
   assert.deepEqual(await t(dst), await t(src));
 });
@@ -82,7 +82,7 @@ test('import refuses newer schema, garbage, and drops invalid or orphan records'
     for (const [k, v] of Object.entries(photos)) z.file(`photos/${k}.jpg`, v);
     return z.generateAsync({ type: 'uint8array' });
   };
-  await assert.rejects(importBackup(dst, await mk({ schemaVersion: 3 }, { plants: [], events: [] }), { JSZip }), /novější/);
+  await assert.rejects(importBackup(dst, await mk({ schemaVersion: 4 }, { plants: [], events: [] }), { JSZip }), /novější/);
   const good = { id: 'p1', name: '<img src=x onerror=alert(1)>', category: 'herb', environment: 'indoor', startDate: T0, lifecycle: 'cycle', harvestable: true, extra: 'x' };
   const ev = (o) => ({ id: 'e1', plantId: 'p1', type: 'note', occurredAt: T0, recordedAt: T0, payload: { text: 'a' }, ...o });
   const bytes = await mk({ schemaVersion: 1 }, {
@@ -137,4 +137,22 @@ test('RCv0.191: batches, care events, rules and pot fields survive a round trip;
   assert.equal(got.potVolumeL, 3); assert.equal(got.substrate, 'coco');
   assert.equal(got.cache.batches[0].phase, 'ready');
   assert.equal(got.cache.pot.volumeL, 6);
+});
+
+test('RCv0.192: stock config and plant stock preset survive a round trip; junk is dropped', async () => {
+  const src = await freshDb();
+  const a = await createPlant(src, basePlant({ name: 'Máta', stockPreset: 'tea' }), { now: T0 });
+  await metaSet(src, 'stock', { methods: { jar: { tHalfProcessed: 300 }, junk: 5 }, presets: { pMine: { label: 'Moje', method: 'freezer' } },
+    categoryPreset: { herb: 'tea' }, varietyPreset: { 'herb|genovese': 'cure' } });
+  const bytes = await exportBackup(src, { JSZip });
+  const dst = await freshDb();
+  await importBackup(dst, bytes, { JSZip });
+  const stock = await metaGet(dst, 'stock');
+  assert.equal(stock.methods.jar.tHalfProcessed, 300);
+  assert.equal(stock.presets.pMine.method, 'freezer');
+  assert.equal(stock.categoryPreset.herb, 'tea');
+  assert.equal(stock.varietyPreset['herb|genovese'], 'cure');
+  assert.equal(stock.methods.junk, undefined);
+  const got = (await listPlants(dst)).find((p) => p.id === a.id);
+  assert.equal(got.stockPreset, 'tea');
 });

@@ -137,7 +137,6 @@
     recheckFraction: 0.3
   };
   var FOLLOWUP_DAYS = 3;
-  var LOOKAHEAD_DAYS = 3;
 
   // js/config-rules.js
   var num2 = (key, group, def, min, max, unit, step = 1) => ({ key, group, kind: "num", def, min, max, unit, step });
@@ -193,7 +192,13 @@
     ...SUBSTRATES.map((s) => num2(`pot.substrate.${s}`, "pot", { soil: 1, coco: 0.7, hydro: 0.5 }[s], 0.2, 3, "\xD7", 0.05)),
     ...SEASON_NAMES.map((s) => num2(`season.${s}`, "season", SEASON_DEFAULTS[s], 0.3, 3, "\xD7", 0.05)),
     ...ENVIRONMENTS.map((e) => bool(`season.on.${e}`, "season", SEASON_ON[e])),
-    choice("afterFinalHarvest", "afterHarvest", "ask", AFTER_FINAL_HARVEST)
+    choice("afterFinalHarvest", "afterHarvest", "ask", AFTER_FINAL_HARVEST),
+    num2("dashboard.lookaheadDays", "dashboard", 3, 0, 14, "dn\xED"),
+    num2("stock.lowDays", "stock", 10, 1, 120, "dn\xED do vy\u010Derp\xE1n\xED"),
+    num2("stock.rateWindowDays", "stock", 28, 7, 180, "dn\xED"),
+    num2("stock.useByPct", "stock", 50, 5, 95, "% \u010Derstvosti"),
+    num2("stock.lowQualityPct", "stock", 30, 5, 90, "% \u010Derstvosti"),
+    num2("stock.minRateDays", "stock", 7, 1, 60, "dn\xED od prvn\xEDho odb\u011Bru")
   ];
   var RULE_GROUPS = [...new Set(RULE_DEFS.map((d) => d.group))];
   var BY_KEY = new Map(RULE_DEFS.map((d) => [d.key, d]));
@@ -221,6 +226,7 @@
     clearProjectors: () => clearProjectors,
     clonePlantInput: () => clonePlantInput,
     emptyCache: () => emptyCache,
+    isPresetKey: () => isPresetKey,
     liveEvents: () => liveEvents,
     optionalPot: () => optionalPot,
     projectPlant: () => projectPlant,
@@ -300,7 +306,9 @@
         drying: "Odhad doby su\u0161en\xED",
         pot: "Kv\u011Btin\xE1\u010D a substr\xE1t",
         season: "Ro\u010Dn\xED obdob\xED",
-        afterHarvest: "Po posledn\xED sklizni"
+        afterHarvest: "Po posledn\xED sklizni",
+        dashboard: "P\u0159ehled",
+        stock: "Z\xE1soby po sklizni"
       },
       groupHint: {
         category: "Z\xE1kladn\xED doba schnut\xED substr\xE1tu, interval hnojen\xED a kontroly \u0161k\u016Fdc\u016F pro ka\u017Edou kategorii.",
@@ -310,11 +318,19 @@
         drying: "Doba su\u0161en\xED = reference \xD7 velikost d\xE1vky^exponent \xD7 prost\u0159ed\xED \xD7 nau\u010Den\xFD pom\u011Br.",
         pot: "V\u011Bt\u0161\xED kv\u011Btin\xE1\u010D schne pomaleji, kokos a hydro rychleji.",
         season: "N\xE1sobek intervalu z\xE1livky podle ro\u010Dn\xEDho obdob\xED a prost\u0159ed\xED.",
-        afterHarvest: "Co se stane s rostlinou, kdy\u017E zaznamen\xE1\u0161 posledn\xED sklize\u0148."
+        afterHarvest: "Co se stane s rostlinou, kdy\u017E zaznamen\xE1\u0161 posledn\xED sklize\u0148.",
+        dashboard: "Hlavn\xED seznam ukazuje jen \xFAkoly po term\xEDnu a dne\u0161n\xED. Dal\u0161\xED jsou v rozbalovac\xED sekci \u201ENadch\xE1zej\xEDc\xED\u201C.",
+        stock: "Predikce spot\u0159eby a prahy \u010Derstvosti. Polo\u010Dasy a kontroly jednotliv\xFDch zp\u016Fsob\u016F skladov\xE1n\xED nastav\xED\u0161 v Nastaven\xED \u2192 Skladov\xE1n\xED."
       },
       afterChoice: { ask: "Zeptat se", auto: "P\u0159epnout automaticky", manual: "Nic nem\u011Bnit" },
       afterHint: "Zelenina, bylinky a kv\u011Btiny p\u0159ejdou do \u201ESklizeno\u201C, v\xEDcelet\xE9 rostliny do \u201EKlid\u201C.",
       label: {
+        "dashboard.lookaheadDays": "Nadch\xE1zej\xEDc\xED \xFAkoly: kolik dn\xED dop\u0159edu",
+        "stock.lowDays": "Upozornit na doch\xE1z\xED z\xE1soba, kdy\u017E vydr\u017E\xED m\xE9n\u011B ne\u017E",
+        "stock.rateWindowDays": "Spot\u0159eba: okno pro v\xFDpo\u010Det pr\u016Fm\u011Bru",
+        "stock.useByPct": "Spot\u0159ebovat do: pr\xE1h \u010Derstvosti",
+        "stock.lowQualityPct": "Varov\xE1n\xED p\u0159i \u010Derstvosti pod",
+        "stock.minRateDays": "Predikce a\u017E po (dn\xED od prvn\xEDho odb\u011Bru)",
         "fertilizing.firstFeedDays": "Prvn\xED hnojen\xED po zalo\u017Een\xED",
         "fertilizing.fruitingFactor": "N\xE1sobek intervalu hnojen\xED p\u0159i ploden\xED",
         "fertilizing.stopBeforeHarvestDays": "Nehnojit p\u0159ed pl\xE1novanou sklizn\xED",
@@ -425,7 +441,12 @@
       archived: "Rostlina je archivovan\xE1.",
       notArchived: "Rostlina nen\xED archivovan\xE1.",
       confirmName: "Pro trval\xE9 smaz\xE1n\xED opi\u0161 n\xE1zev rostliny.",
-      invalid: "Neplatn\xFD z\xE1znam."
+      invalid: "Neplatn\xFD z\xE1znam.",
+      harvestDate: "Sklize\u0148 nem\u016F\u017Ee b\xFDt pozd\u011Bji ne\u017E jej\xED zpracov\xE1n\xED a kontroly.",
+      stockInit: "Z\xE1sobu lze zalo\u017Eit a\u017E po ur\u010Den\xED zpracov\xE1n\xED a jen jednou.",
+      noStock: "Z\xE1sobn\xEDk neexistuje nebo u\u017E je pr\xE1zdn\xFD.",
+      stockAmount: "Odeb\xEDr\xE1\u0161 v\xEDc, ne\u017E v z\xE1sobn\xEDku zb\xFDv\xE1.",
+      stockDate: "Z\xE1znam nem\u016F\u017Ee b\xFDt d\u0159\xEDv ne\u017E sklize\u0148 nebo zalo\u017Een\xED z\xE1soby."
     },
     taskLabel: {
       moisture: "Zkontrolovat vlhkost",
@@ -435,7 +456,161 @@
       batchCheck: "Zkontrolovat d\xE1vku",
       useBy: "Spot\u0159ebovat d\xE1vku",
       evaluation: "Ohodnotit sklize\u0148",
-      evaluationReview: "Zm\u011Bnil se tv\u016Fj n\xE1zor?"
+      evaluationReview: "Zm\u011Bnil se tv\u016Fj n\xE1zor?",
+      stockCheck: "Zkontrolovat z\xE1sobn\xEDk",
+      stockAir: "Vyv\u011Btrat z\xE1sobn\xEDk",
+      stockUseBy: "Spot\u0159ebovat z\xE1sobn\xEDk",
+      stockLow: "Doch\xE1z\xED z\xE1soba"
+    },
+    stock: {
+      method: {
+        freezer: "Mraz\xE1k",
+        vacuum: "Vakuum",
+        jar: "Uzav\u0159en\xE1 sklenice",
+        fridge: "Lednice",
+        soil: "Zakopan\xE9 v zemi",
+        hanging: "Vis\xED v su\u0161\xE1rn\u011B",
+        open: "Tma, pokojov\xE1 teplota",
+        light: "Na sv\u011Btle",
+        other: "Jin\xFD zp\u016Fsob"
+      },
+      preset: { generic: "Obecn\xE1", tea: "\u010Caj a su\u0161en\xE9 bylinky", cure: "Zr\xE1n\xED (del\u0161\xED vyle\u017Een\xED)", fresh: "\u010Cerstv\xE9 plody" },
+      param: {
+        tHalfProcessed: "Polo\u010Das \u010Derstvosti zpracovan\xE9ho (dny)",
+        tHalfFresh: "Polo\u010Das \u010Derstvosti nezpracovan\xE9ho (dny)",
+        checkDays: "Kontrola ka\u017Ed\xFDch (dny)",
+        moldRisk: "Riziko pl\xEDsn\u011B (0\u20132)",
+        airEveryDays: "Vyv\u011Btrat ka\u017Ed\xFDch (dny, 0 = nikdy)",
+        airForDays: "V\u011Btrat prvn\xEDch (dn\xED)",
+        maturingDays: "Zr\xE1n\xED bez ztr\xE1ty (dny)",
+        openCost: "Ztr\xE1ta za otev\u0159en\xED (pod\xEDl)"
+      },
+      presetField: { method: "V\xFDchoz\xED zp\u016Fsob", maturingDays: "Zr\xE1n\xED bez ztr\xE1ty (dny)", useByPct: "Spot\u0159ebovat p\u0159i \u010Derstvosti pod (%)", checkDays: "Kontrola ka\u017Ed\xFDch (dny)", kFactor: "Rychlost st\xE1rnut\xED (\xD7)" },
+      tab: "Z\xE1soba",
+      title: "Z\xE1soba",
+      overview: "Z\xE1soby",
+      overviewIntro: "Co je\u0161t\u011B zb\xFDv\xE1 po sklizni, nap\u0159\xED\u010D rostlinami.",
+      empty: "Zat\xEDm \u017E\xE1dn\xE1 z\xE1soba. Po ur\u010Den\xED zpracov\xE1n\xED ji zalo\u017E v\xE1\u017Een\xEDm.",
+      none: "\u017D\xE1dn\xE9 z\xE1soby k zobrazen\xED.",
+      init: "Zalo\u017Eit z\xE1sobu",
+      initTitle: "Zalo\u017Eit z\xE1sobu",
+      initHint: "Kolik opravdu m\xE1\u0161 po zpracov\xE1n\xED. M\u016F\u017Ee\u0161 ji rozd\u011Blit do v\xEDce z\xE1sobn\xEDk\u016F (sklenice, s\xE1\u010Dky) s r\u016Fzn\xFDm ulo\u017Een\xEDm.",
+      suggest: {
+        processed: "Podle zadan\xE9 zpracovan\xE9 hmotnosti.",
+        fresh: "Podle hmotnosti sklizn\u011B.",
+        none: "Mno\u017Estv\xED zadej ru\u010Dn\u011B.",
+        learned: (r) => `Odhad podle tv\xFDch p\u0159edchoz\xEDch d\xE1vek (\xD7${r}). Zva\u017E a p\u0159epi\u0161 podle v\xE1\u017Een\xED.`,
+        default: "Hrub\xFD odhad (\u010Dtvrtina \u010Derstv\xE9 hmotnosti). Zva\u017E a p\u0159epi\u0161 podle v\xE1\u017Een\xED."
+      },
+      unit: "Jednotka",
+      source: { weighed: "Zv\xE1\u017Eeno", estimate: "Odhad" },
+      estimate: "Jen odhaduji",
+      amount: "Mno\u017Estv\xED",
+      label: "Ozna\u010Den\xED (nepovinn\xE9)",
+      labelPh: "nap\u0159. sklenice A",
+      storedIn: "Ulo\u017Een\xED",
+      addContainer: "P\u0159idat z\xE1sobn\xEDk",
+      removeContainer: "Odebrat \u0159\xE1dek",
+      containerN: (n) => `Z\xE1sobn\xEDk ${n}`,
+      tooMany: "V\xEDc z\xE1sobn\xEDk\u016F u\u017E nejde.",
+      needAmount: "Zadej mno\u017Estv\xED u ka\u017Ed\xE9ho z\xE1sobn\xEDku.",
+      saved: "Z\xE1soba zalo\u017Eena",
+      left: "Zb\xFDv\xE1",
+      of: "z",
+      fresh: "\u010Derstvost",
+      maturing: (d) => `zraje do ${d}`,
+      useBy: (d) => `spot\u0159ebuj do ${d}`,
+      belowUseBy: "pod prahem \u010Derstvosti",
+      moldTag: "pl\xEDse\u0148",
+      opened: (n) => `otev\u0159eno ${n}\xD7`,
+      since: "od",
+      learnedTag: (r, n) => `nau\u010Deno \xD7${r} (${n} ${n === 1 ? "kontrola" : n >= 2 && n <= 4 ? "kontroly" : "kontrol"})`,
+      priorTag: (r) => `odhad z ostatn\xEDch \xD7${r}`,
+      emptied: (n) => `Vy\u010Derp\xE1no nebo vy\u0159azeno: ${n}`,
+      batch: "D\xE1vka",
+      use: "Odebrat",
+      useTitle: "Odebrat ze z\xE1soby",
+      useHint: "Kolik te\u010F bere\u0161.",
+      useAll: "Vz\xEDt v\u0161e",
+      useCustom: "Jin\xE9 mno\u017Estv\xED",
+      used: "Odebr\xE1no",
+      usedAll: "Z\xE1sobn\xEDk je pr\xE1zdn\xFD",
+      batchUsedUp: "D\xE1vka je spot\u0159ebovan\xE1",
+      firstUse: "Prvn\xED odb\u011Br",
+      tasteAsk: "Ochutn\xE1no? Zapi\u0161 si kr\xE1tk\xE9 hodnocen\xED, ne\u017E ti vyprch\xE1 z pam\u011Bti.",
+      tasteNow: "Ohodnotit",
+      tasteSkip: "Te\u010F ne",
+      adjust: "Zb\xFDv\xE1 cca",
+      adjustTitle: "Upravit zb\xFDvaj\xEDc\xED mno\u017Estv\xED",
+      adjustHint: "Odhadni nebo zva\u017E, kolik ve skute\u010Dnosti zb\xFDv\xE1. Rozd\xEDl se zap\xED\u0161e jako spot\u0159eba.",
+      adjusted: "Mno\u017Estv\xED upraveno",
+      move: "P\u0159esunout",
+      scope: "Rozsah",
+      moveTitle: "P\u0159esunout nebo rozd\u011Blit",
+      moveWhole: "Cel\xFD z\xE1sobn\xEDk",
+      movePart: "Jen \u010D\xE1st",
+      moveAmount: "Kolik p\u0159esunout",
+      moveTo: "Nov\xFD zp\u016Fsob ulo\u017Een\xED",
+      moved: "P\u0159esunuto",
+      moveNeed: "Vyber jin\xFD zp\u016Fsob nebo \u010D\xE1st.",
+      check: "Kontrola",
+      checkTitle: "Kontrola z\xE1sobn\xEDku",
+      checkHint: "V\u016Fn\u011B a vzhled sta\u010D\xED. Z nich se u\u010D\xED, jak rychle ti tenhle zp\u016Fsob ulo\u017Een\xED st\xE1rne.",
+      scent: "V\u016Fn\u011B",
+      look: "Vzhled",
+      mold: "Pl\xEDse\u0148",
+      moldNo: "Bez pl\xEDsn\u011B",
+      moldYes: "Pl\xEDse\u0148",
+      rh: "Vlhkost vzduchu v n\xE1dob\u011B (%)",
+      aired: "Vyv\u011Btr\xE1no",
+      checked: "Kontrola zaps\xE1na",
+      needCheck: "Vypl\u0148 aspo\u0148 v\u016Fni, vzhled, pl\xEDse\u0148 nebo vlhkost.",
+      moldAsk: "Pl\xEDse\u0148 v z\xE1sobn\xEDku. Vy\u0159adit ho? Ostatn\xED z\xE1sobn\xEDky dostanou kontrolu hned.",
+      moldKeep: "Ponechat",
+      discard: "Vy\u0159adit",
+      discardTitle: "Vy\u0159adit zbytek",
+      discardAsk: (a) => `Vy\u0159adit zb\xFDvaj\xEDc\xEDch ${a}?`,
+      discarded: "Vy\u0159azeno",
+      reason: "D\u016Fvod (nepovinn\xE9)",
+      summary: "Celkem zb\xFDv\xE1",
+      rate: (a, w) => `spot\u0159eba ${a}/den (posledn\xEDch ${w} dn\xED)`,
+      noRate: "Spot\u0159ebu odhadnu po p\xE1r dnech odb\u011Br\u016F.",
+      runOut: (days, d) => `vydr\u017E\xED ~${days} dn\xED (do ${d})`,
+      presetLabel: "P\u0159edvolba",
+      presetHint: "M\u011Bn\xED v\xFDchoz\xED ulo\u017Een\xED, zr\xE1n\xED a pr\xE1h \u010Derstvosti.",
+      presetDefault: "V\xFDchoz\xED",
+      presetPlant: "P\u0159edvolba z\xE1soby",
+      presetPlantHint: "\u0158\xEDd\xED v\xFDchoz\xED ulo\u017Een\xED a st\xE1rnut\xED z\xE1soby. Pamatuje se i pro odr\u016Fdu.",
+      weighPrompt: "D\xE1vka je hotov\xE1. Zv\xE1\u017Eit a zalo\u017Eit z\xE1sobu?",
+      weighNow: "Zalo\u017Eit z\xE1sobu",
+      weighLater: "Pozd\u011Bji",
+      archiveWarn: (n) => `Zb\xFDv\xE1 ${n}. Z\xE1soba p\u016Fjde d\xE1l spot\u0159ebov\xE1vat i po archivaci.`,
+      settingsTitle: "Skladov\xE1n\xED",
+      settingsIntro: "Zp\u016Fsoby ulo\u017Een\xED a p\u0159edvolby z\xE1soby. \u010C\xEDsla jsou v\xFDchoz\xED odhady, p\u0159esn\u011Bji se dolad\xED z tv\xFDch kontrol.",
+      methods: "Zp\u016Fsoby ulo\u017Een\xED",
+      presets: "P\u0159edvolby z\xE1soby",
+      categoryDefaults: "V\xFDchoz\xED p\u0159edvolba podle kategorie",
+      addMethod: "Vlastn\xED zp\u016Fsob",
+      addPreset: "Vlastn\xED p\u0159edvolba",
+      cloneOf: "Vych\xE1z\xED z",
+      reset: "Vr\xE1tit v\xFDchoz\xED",
+      custom: "vlastn\xED",
+      name: "N\xE1zev",
+      delete: "Smazat",
+      saved2: "Ulo\u017Eeno",
+      nameNeeded: "Zadej n\xE1zev.",
+      invalid: "Hodnota je mimo rozsah.",
+      comparison: "Jak se osv\u011Bd\u010Dilo",
+      comparisonHint: "Pr\u016Fm\u011Brn\xE9 hodnocen\xED v\u016Fn\u011B a vzhledu p\u0159i kontrol\xE1ch podle zp\u016Fsobu ulo\u017Een\xED.",
+      comparisonRow: (n, avg2, age) => `${n}\xD7 \xB7 ${avg2}/5 \xB7 typicky po ${age} dnech`,
+      lateAvg: (n, avg2) => `po 60+ dnech: ${avg2}/5 (${n}\xD7)`,
+      comparisonNone: "Zat\xEDm nem\xE1\u0161 dost kontrol s hodnocen\xEDm.",
+      openOverview: "Z\xE1soby po sklizni",
+      fromTasks: "Otev\u0159\xEDt z\xE1sobu",
+      lowTask: (d) => `P\u0159i sou\u010Dasn\xE9 spot\u0159eb\u011B vydr\u017E\xED asi ${d} dn\xED.`,
+      useByTask: "\u010Cerstvost klesla pod nastaven\xFD pr\xE1h.",
+      checkTask: "Pod\xEDvej se na v\u016Fni a vzhled.",
+      airTask: "Otev\u0159i a nech vyv\u011Btrat."
     },
     ui: {
       today: "Dnes",
@@ -443,6 +618,7 @@
       yesterday: "V\u010Dera",
       overdue: "Po term\xEDnu",
       upcoming: "Nadch\xE1zej\xEDc\xED",
+      upcomingSection: "Nadch\xE1zej\xEDc\xED",
       doneToday: "Hotovo dnes",
       careToday: "Dne\u0161n\xED p\xE9\u010De",
       nextStep: "Nejbli\u017E\u0161\xED krok",
@@ -526,6 +702,11 @@
       total: "Celkem",
       daysAfter: "dn\xED po sklizni",
       harvestSaved: "Sklize\u0148 ulo\u017Eena",
+      editHarvest: "Upravit sklize\u0148",
+      harvestEdited: "Sklize\u0148 upravena",
+      editedTag: "upraveno",
+      voidHarvestAsk: "Zru\u0161en\xEDm sklizn\u011B zmiz\xED i jej\xED zpracov\xE1n\xED a kontroly (hodnocen\xED z\u016Fstanou). Opravdu zru\u0161it?",
+      voidConfirm: "Zru\u0161it sklize\u0148",
       nextStage: "P\u0159esunout do f\xE1ze",
       endCycle: "Ukon\u010Dit cyklus",
       keepGoing: "Je\u0161t\u011B skl\xEDz\xEDm",
@@ -619,7 +800,7 @@
       label: "Co p\u011Bstuji nejv\xEDc",
       settingsHint: "M\u011Bn\xED jen v\xFDchoz\xED hodnoty a po\u0159ad\xED p\u0159ehledu.",
       season: "Sez\xF3na",
-      seasonLine: (env, n) => `${n} ${n === 1 ? "rostlina" : n >= 2 && n <= 4 ? "rostliny" : "rostlin"} venku a ve sklen\xEDku \xB7 ${env}`,
+      seasonLine: (env2, n) => `${n} ${n === 1 ? "rostlina" : n >= 2 && n <= 4 ? "rostliny" : "rostlin"} venku a ve sklen\xEDku \xB7 ${env2}`,
       spring: "jaro",
       summer: "l\xE9to",
       autumn: "podzim",
@@ -737,18 +918,18 @@
   }
   function coefVariation(a) {
     if (a.length < 2) return 0;
-    const m = mean(a);
-    if (m === 0) return 0;
-    const v = a.reduce((s, x) => s + (x - m) ** 2, 0) / a.length;
-    return Math.sqrt(v) / m;
+    const m2 = mean(a);
+    if (m2 === 0) return 0;
+    const v = a.reduce((s, x) => s + (x - m2) ** 2, 0) / a.length;
+    return Math.sqrt(v) / m2;
   }
   function normalizeKey(s) {
     return String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
   }
   var MIRROR = { winter: "summer", summer: "winter", spring: "autumn", autumn: "spring" };
   function seasonOf(iso, hemisphere = "north") {
-    const m = new Date(iso).getMonth();
-    const north = m === 11 || m <= 1 ? "winter" : m <= 4 ? "spring" : m <= 7 ? "summer" : "autumn";
+    const m2 = new Date(iso).getMonth();
+    const north = m2 === 11 || m2 <= 1 ? "winter" : m2 <= 4 ? "spring" : m2 <= 7 ? "summer" : "autumn";
     return hemisphere === "south" ? MIRROR[north] : north;
   }
   function dayDiff(aIso, bIso) {
@@ -800,7 +981,36 @@
   }
   function liveEvents(events) {
     const voided = new Set(events.filter((e) => e.type === "void").map((e) => e.payload.targetId));
-    return events.filter((e) => e.type !== "void" && !voided.has(e.id)).sort(compareEvents);
+    const base = events.filter((e) => e.type !== "void" && !voided.has(e.id));
+    const edits = /* @__PURE__ */ new Map();
+    base.filter((e) => e.type === "harvest_edit").sort((a, b) => a.recordedAt < b.recordedAt ? -1 : a.recordedAt > b.recordedAt ? 1 : 0).forEach((e) => edits.set(e.payload.harvestId, e));
+    const goneBatches = new Set(events.filter((e) => e.type === "harvest" && voided.has(e.id)).map((e) => e.id));
+    const goneStock = new Set(events.filter((e) => e.type === "stock_init" && voided.has(e.id)).map((e) => e.id));
+    const out = [];
+    for (const e of base) {
+      if (e.type === "harvest_edit") continue;
+      const bid = e.payload?.batchId;
+      const isStock = e.type.startsWith("stock_");
+      if (isStock && (bid && goneBatches.has(bid) || e.payload?.stockId && goneStock.has(e.payload.stockId))) continue;
+      if (bid && goneBatches.has(bid)) {
+        if (e.type === "batch_step" || e.type === "batch_check") continue;
+        if (e.type === "evaluation") {
+          const pl2 = { ...e.payload };
+          delete pl2.batchId;
+          out.push({ ...e, payload: pl2 });
+          continue;
+        }
+      }
+      const ed = e.type === "harvest" ? edits.get(e.id) : null;
+      if (ed) {
+        const fields = { ...ed.payload };
+        const date = fields.date;
+        delete fields.harvestId;
+        delete fields.date;
+        out.push({ ...e, occurredAt: date ?? e.occurredAt, payload: { ...fields, batchId: e.payload.batchId, daysSinceLastHarvest: e.payload.daysSinceLastHarvest, edited: true } });
+      } else out.push(e);
+    }
+    return out.sort(compareEvents);
   }
   function projectPlant(plant, events, opts = {}) {
     const live = liveEvents(events);
@@ -851,7 +1061,7 @@
       for (const pr of projectors) pr.apply?.(e, ctx2);
       cache.cacheRev = e.id;
     }
-    cache.pestBoostUntil = cache.openProblems.length ? addDays(cache.openProblems.reduce((m, x) => x.since > m ? x.since : m, ""), PEST_BOOST_DAYS) : null;
+    cache.pestBoostUntil = cache.openProblems.length ? addDays(cache.openProblems.reduce((m2, x) => x.since > m2 ? x.since : m2, ""), PEST_BOOST_DAYS) : null;
     for (const p of projectors) p.finalize?.(ctx2);
     return { ...plant, environment: cache.environment ?? plant.environment, archivedAt, cache };
   }
@@ -893,8 +1103,10 @@
     };
     const pot = optionalPot(input);
     Object.assign(plant, pot);
+    if (isPresetKey(input.stockPreset)) plant.stockPreset = input.stockPreset;
     return { plant, stage };
   }
+  var isPresetKey = (v) => typeof v === "string" && /^[a-zA-Z0-9]{1,32}$/.test(v);
   var esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   function clonePlantInput(plant, existingNames = []) {
     const base = plant.name.replace(/\s*#\d+$/, "").trim();
@@ -902,8 +1114,8 @@
     const nums = [1];
     for (const n of [plant.name, ...existingNames]) {
       if (n === base) nums.push(1);
-      const m = n.match(re);
-      if (m) nums.push(Number(m[1]));
+      const m2 = n.match(re);
+      if (m2) nums.push(Number(m2[1]));
     }
     const soil = plant.cache?.soilDryDays ?? plant.cache?.dryingDays;
     const learned = soil && Object.keys(soil).length ? { ...soil } : plant.learnedBase;
@@ -919,8 +1131,502 @@
       baseOverride: plant.baseOverride,
       learnedBase: learned || null,
       potVolumeL: plant.cache?.pot?.volumeL ?? plant.potVolumeL,
-      substrate: plant.substrate
+      substrate: plant.substrate,
+      stockPreset: plant.stockPreset
     };
+  }
+
+  // js/stockcfg.js
+  var LABEL_MAX = 40;
+  var clean = (v) => String(v ?? "").replace(/[\u0000-\u001f\u007f<>]/g, "").trim().slice(0, LABEL_MAX);
+  var isNum2 = (v) => typeof v === "number" && Number.isFinite(v);
+  var METHOD_PARAMS = [
+    { key: "tHalfProcessed", min: 1, max: 2e4, unit: "dn\xED" },
+    { key: "tHalfFresh", min: 0.5, max: 3650, unit: "dn\xED" },
+    { key: "checkDays", min: 1, max: 730, unit: "dn\xED" },
+    { key: "moldRisk", min: 0, max: 2, unit: "0\u20132", int: true },
+    { key: "airEveryDays", min: 0, max: 30, unit: "dn\xED" },
+    { key: "airForDays", min: 0, max: 365, unit: "dn\xED" },
+    { key: "maturingDays", min: 0, max: 365, unit: "dn\xED" },
+    { key: "openCost", min: 0, max: 0.2, unit: "pod\xEDl", step: 5e-3 }
+  ];
+  var PARAM = Object.fromEntries(METHOD_PARAMS.map((p) => [p.key, p]));
+  var m = (tHalfProcessed, tHalfFresh, checkDays, moldRisk, airEveryDays, airForDays, maturingDays, openCost) => ({ tHalfProcessed, tHalfFresh, checkDays, moldRisk, airEveryDays, airForDays, maturingDays, openCost });
+  var BUILTIN_METHODS = {
+    freezer: m(1e3, 120, 90, 0, 0, 0, 0, 0.01),
+    vacuum: m(365, 7, 30, 0, 0, 0, 0, 0.03),
+    jar: m(180, 5, 14, 1, 2, 14, 14, 0.01),
+    fridge: m(240, 14, 30, 1, 0, 0, 0, 0.01),
+    soil: m(120, 60, 14, 2, 0, 0, 14, 0.01),
+    hanging: m(20, 3, 5, 1, 0, 0, 0, 0),
+    open: m(45, 4, 7, 1, 0, 0, 0, 0.02),
+    light: m(30, 2, 7, 1, 0, 0, 0, 0.02),
+    other: m(90, 7, 14, 1, 0, 0, 0, 0.01)
+  };
+  var METHOD_ORDER = Object.keys(BUILTIN_METHODS);
+  var BUILTIN_PRESETS = {
+    generic: { method: "jar", maturingDays: null, useByPct: null, checkDays: null, kFactor: 1 },
+    tea: { method: "jar", maturingDays: 0, useByPct: 40, checkDays: null, kFactor: 1 },
+    cure: { method: "jar", maturingDays: 28, useByPct: 50, checkDays: null, kFactor: 1 },
+    fresh: { method: "fridge", maturingDays: 0, useByPct: 40, checkDays: null, kFactor: 1 }
+  };
+  var PRESET_ORDER = Object.keys(BUILTIN_PRESETS);
+  var METHOD_KEY = /^x[a-zA-Z0-9]{1,30}$/;
+  var PRESET_KEY = /^p[a-zA-Z0-9]{1,30}$/;
+  var VARIETY_KEY = /^[a-z_]+\|.{0,100}$/;
+  var validParam = (key, v) => {
+    const d = PARAM[key];
+    return d && isNum2(v) && v >= d.min && v <= d.max && (!d.int || Number.isInteger(v));
+  };
+  function cleanStock(raw) {
+    const out = { methods: {}, presets: {}, categoryPreset: {}, varietyPreset: {} };
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return out;
+    for (const [key, v] of Object.entries(raw.methods || {})) {
+      const builtin = key in BUILTIN_METHODS;
+      if (!builtin && !METHOD_KEY.test(key)) continue;
+      if (!v || typeof v !== "object") continue;
+      const o = {};
+      const label = clean(v.label);
+      if (label) o.label = label;
+      if (!builtin && !label) continue;
+      for (const p of METHOD_PARAMS) {
+        if (v[p.key] == null) continue;
+        if (validParam(p.key, v[p.key]) && (!builtin || v[p.key] !== BUILTIN_METHODS[key][p.key])) o[p.key] = v[p.key];
+      }
+      if (builtin && label && label === S.stock.method[key]) delete o.label;
+      if (Object.keys(o).length) out.methods[key] = o;
+    }
+    const methodKeys = /* @__PURE__ */ new Set([...METHOD_ORDER, ...Object.keys(out.methods).filter((k) => !(k in BUILTIN_METHODS))]);
+    for (const [key, v] of Object.entries(raw.presets || {})) {
+      const builtin = key in BUILTIN_PRESETS;
+      if (!builtin && !PRESET_KEY.test(key)) continue;
+      if (!v || typeof v !== "object") continue;
+      const o = {};
+      const label = clean(v.label);
+      if (label && !(builtin && label === S.stock.preset[key])) o.label = label;
+      if (!builtin && !label) continue;
+      if (typeof v.method === "string" && methodKeys.has(v.method)) o.method = v.method;
+      else if (!builtin) continue;
+      for (const [f, lo, hi] of [["maturingDays", 0, 365], ["useByPct", 5, 95], ["checkDays", 1, 730], ["kFactor", 0.2, 5]]) {
+        if (isNum2(v[f]) && v[f] >= lo && v[f] <= hi) o[f] = v[f];
+      }
+      if (builtin) {
+        for (const f of Object.keys(o)) if (o[f] === BUILTIN_PRESETS[key][f]) delete o[f];
+      }
+      if (Object.keys(o).length) out.presets[key] = o;
+    }
+    const presetKeys = /* @__PURE__ */ new Set([...PRESET_ORDER, ...Object.keys(out.presets).filter((k) => !(k in BUILTIN_PRESETS))]);
+    for (const [cat, key] of Object.entries(raw.categoryPreset || {})) {
+      if (CATEGORIES[cat] && presetKeys.has(key)) out.categoryPreset[cat] = key;
+    }
+    for (const [vk, key] of Object.entries(raw.varietyPreset || {})) {
+      if (VARIETY_KEY.test(vk) && presetKeys.has(key) && Object.keys(out.varietyPreset).length < 500) out.varietyPreset[vk] = key;
+    }
+    return out;
+  }
+  function resolveMethods(cfg) {
+    const out = {};
+    const ov = cfg?.methods || {};
+    for (const k of METHOD_ORDER) out[k] = { key: k, label: ov[k]?.label ?? S.stock.method[k], custom: false, ...BUILTIN_METHODS[k], ...pick(ov[k]) };
+    for (const [k, v] of Object.entries(ov)) {
+      if (k in BUILTIN_METHODS) continue;
+      out[k] = { key: k, label: v.label, custom: true, ...BUILTIN_METHODS.other, ...pick(v) };
+    }
+    return out;
+  }
+  var pick = (o) => Object.fromEntries(METHOD_PARAMS.filter((p) => o && o[p.key] != null).map((p) => [p.key, o[p.key]]));
+  function resolvePresets(cfg) {
+    const out = {};
+    const ov = cfg?.presets || {};
+    for (const k of PRESET_ORDER) out[k] = { key: k, label: ov[k]?.label ?? S.stock.preset[k], custom: false, ...BUILTIN_PRESETS[k], ...ov[k] };
+    for (const [k, v] of Object.entries(ov)) {
+      if (k in BUILTIN_PRESETS) continue;
+      out[k] = { key: k, custom: true, maturingDays: null, useByPct: null, checkDays: null, kFactor: 1, ...v };
+    }
+    return out;
+  }
+  var varietyKey = (plant) => `${plant.category}|${(plant.variety || "").trim().toLowerCase()}`;
+  var defaultPresetKey = (plant) => FRESH_CATEGORIES.includes(plant.category) ? "fresh" : "generic";
+  function presetFor(plant, cfg) {
+    const presets = resolvePresets(cfg);
+    const key = [plant.stockPreset, plant.variety ? cfg?.varietyPreset?.[varietyKey(plant)] : null, cfg?.categoryPreset?.[plant.category], defaultPresetKey(plant)].find((k) => k && presets[k]);
+    return presets[key];
+  }
+  function newKey(prefix, taken) {
+    let key;
+    do
+      key = prefix + Math.random().toString(36).slice(2, 8);
+    while (taken.includes(key));
+    return key;
+  }
+
+  // js/stock.js
+  var STOCK_UNITS = ["g", "kg", "ks"];
+  var STOCK_EVENT_TYPES = ["stock_init", "stock_use", "stock_adjust", "stock_move", "stock_check"];
+  var MAX_CONTAINERS = 12;
+  var EPS = 1e-9;
+  var LN2 = Math.LN2;
+  var MAX_OPEN_LOSS = 0.3;
+  var round3 = (v) => Math.round(v * 1e3) / 1e3;
+  var round2 = (v) => Math.round(v * 100) / 100;
+  var dayMs = 864e5;
+  var findBatch = (c, id) => (c.batches || []).find((b) => b.id === id) ?? null;
+  var findContainer = (st, id) => st?.containers.find((k) => k.id === id) ?? null;
+  var defaultUnit = (plant) => plant.category === "herb" ? "g" : FRESH_CATEGORIES.includes(plant.category) ? "kg" : "ks";
+  function convertAmount(amount, from, to) {
+    if (from === to) return amount;
+    if (from === "g" && to === "kg") return amount / 1e3;
+    if (from === "kg" && to === "g") return amount * 1e3;
+    return null;
+  }
+  var batchMaterial = (b) => b.fresh && (b.method == null || b.method === "none") ? "fresh" : "processed";
+  function newContainer(spec, at, source) {
+    return {
+      id: spec.id,
+      label: spec.label ?? "",
+      method: spec.method,
+      amount: round3(spec.amount),
+      initial: round3(spec.amount),
+      since: source?.since ?? at,
+      segments: source?.segments ? [...source.segments, { method: spec.method, from: at }] : [{ method: spec.method, from: at }],
+      opens: 0,
+      used: 0,
+      discarded: 0,
+      lastOpenAt: null,
+      lastCheckAt: null,
+      lastAirAt: at,
+      moldAt: null,
+      checks: [],
+      status: "open",
+      endedAt: null,
+      parent: source?.id ?? null
+    };
+  }
+  function closeIfEmpty(k, at, discard) {
+    if (k.amount > EPS) return;
+    k.amount = 0;
+    k.status = discard && k.used <= EPS ? "discarded" : "empty";
+    k.endedAt = at;
+  }
+  function endBatchIfDone(b, at) {
+    const st = b.stock;
+    if (!st || BATCH_ENDED.includes(b.phase) || st.containers.some((k) => k.status === "open")) return;
+    const phase = st.uses.length ? "used" : "discarded";
+    b.phase = phase;
+    b.phaseSince = at;
+    b.endedAt = at;
+    b.steps.push({ at, phase });
+  }
+  function applyStockEvent(c, e) {
+    const p = e.payload || {};
+    const b = findBatch(c, p.batchId);
+    if (!b) return;
+    const at = e.occurredAt;
+    if (e.type === "stock_init") {
+      if (b.stock || !Array.isArray(p.containers)) return;
+      const containers = p.containers.map((s) => newContainer(s, at));
+      b.stock = {
+        id: e.id,
+        unit: p.unit,
+        source: p.source ?? "weighed",
+        at,
+        containers,
+        uses: [],
+        firstUseAt: null,
+        initial: round3(containers.reduce((n, k2) => n + k2.initial, 0))
+      };
+      return;
+    }
+    const st = b.stock;
+    if (!st || st.id !== p.stockId) return;
+    const k = findContainer(st, p.containerId);
+    if (!k || k.status !== "open") return;
+    switch (e.type) {
+      case "stock_use": {
+        const amt = Math.min(p.amount, k.amount);
+        if (!(amt > 0)) return;
+        k.amount = round3(k.amount - amt);
+        if (p.kind === "discard") k.discarded = round3(k.discarded + amt);
+        else {
+          st.uses.push({ at, amount: round3(amt), containerId: k.id });
+          k.used = round3(k.used + amt);
+          k.opens += 1;
+          k.lastOpenAt = at;
+          k.lastAirAt = at;
+          st.firstUseAt = st.firstUseAt ?? at;
+        }
+        closeIfEmpty(k, at, p.kind === "discard");
+        break;
+      }
+      case "stock_adjust": {
+        const diff = k.amount - p.remaining;
+        if (diff > EPS) {
+          st.uses.push({ at, amount: round3(diff), containerId: k.id, adjust: true });
+          k.used = round3(k.used + diff);
+          st.firstUseAt = st.firstUseAt ?? at;
+        } else if (diff < -EPS) {
+          k.initial = round3(k.initial - diff);
+          st.initial = round3(st.initial - diff);
+        }
+        k.amount = round3(p.remaining);
+        closeIfEmpty(k, at, false);
+        break;
+      }
+      case "stock_move": {
+        if (p.method === k.method && !(p.amount > 0 && p.amount < k.amount - EPS)) return;
+        if (p.amount > 0 && p.amount < k.amount - EPS) {
+          const part = newContainer({ id: p.newContainerId, label: p.label ?? k.label, method: p.method, amount: p.amount }, at, k);
+          part.checks = [];
+          k.amount = round3(k.amount - p.amount);
+          k.opens += 1;
+          k.lastOpenAt = at;
+          k.lastAirAt = at;
+          st.containers.push(part);
+        } else {
+          k.segments.push({ method: p.method, from: at });
+          k.method = p.method;
+          k.opens = 0;
+          k.lastAirAt = at;
+          if (p.label) k.label = p.label;
+        }
+        break;
+      }
+      case "stock_check": {
+        const hasRating = isNum(p.scent) || isNum(p.appearance);
+        if (hasRating || p.mold != null || p.rh != null || p.note) {
+          k.checks.push({
+            at,
+            scent: p.scent ?? null,
+            appearance: p.appearance ?? null,
+            mold: !!p.mold,
+            rh: p.rh ?? null,
+            rated: hasRating,
+            method: k.method
+          });
+          k.lastCheckAt = at;
+          if (p.mold) k.moldAt = at;
+        }
+        if (p.aired) k.lastAirAt = at;
+        break;
+      }
+      default:
+        break;
+    }
+    endBatchIfDone(b, at);
+  }
+  function maturingFor(seg, preset, M, material) {
+    if (material === "fresh") return 0;
+    const m2 = M[seg.method] ?? M.other;
+    return preset && preset.method === seg.method && isNum(preset.maturingDays) ? preset.maturingDays : m2.maturingDays;
+  }
+  function modelAge(k, at, M, material, preset) {
+    const end = Date.parse(at);
+    const kFactor = preset?.kFactor ?? 1;
+    let x = 0;
+    k.segments.forEach((seg, i) => {
+      const from = Date.parse(seg.from);
+      const to = i + 1 < k.segments.length ? Date.parse(k.segments[i + 1].from) : end;
+      let days = Math.max(0, Math.min(to, end) - from) / dayMs;
+      if (i === 0) days = Math.max(0, days - maturingFor(seg, preset, M, material));
+      const m2 = M[seg.method] ?? M.other;
+      x += days / ((material === "fresh" ? m2.tHalfFresh : m2.tHalfProcessed) * kFactor);
+    });
+    return x;
+  }
+  var ratingToQ = (r) => 0.15 + (clamp(r, 1, 5) - 1) * 0.1925;
+  function ownRatio(k, M, material, preset) {
+    const obs = [];
+    for (const ch of k.checks) {
+      if (ch.mold) continue;
+      const r = [ch.scent, ch.appearance].filter(isNum);
+      if (!r.length) continue;
+      const x = modelAge(k, ch.at, M, material, preset);
+      if (x < 0.12) continue;
+      const q = ratingToQ(r.reduce((a, b) => a + b, 0) / r.length);
+      obs.push({ r: clamp(LN2 * x / -Math.log(q), 0.25, 4), w: Math.min(x, 1) });
+    }
+    const recent = obs.slice(-5);
+    if (!recent.length) return null;
+    const w = recent.reduce((a, o) => a + o.w, 0);
+    return { r: round2(recent.reduce((a, o) => a + o.r * o.w, 0) / w), n: recent.length };
+  }
+  function buildStockPriors(plants, cfg) {
+    const M = resolveMethods(cfg);
+    const byMethod = {}, byVariety = {};
+    const add = (map, key, r) => {
+      const m2 = map[key] || (map[key] = { sum: 0, n: 0 });
+      m2.sum += r;
+      m2.n += 1;
+    };
+    for (const pl2 of plants) {
+      const preset = presetFor(pl2, cfg);
+      const vk = (pl2.variety || "").trim() ? varietyKey(pl2) : null;
+      for (const b of pl2.cache?.batches || []) {
+        for (const k of b.stock?.containers || []) {
+          const o = ownRatio(k, M, batchMaterial(b), preset);
+          if (!o) continue;
+          add(byMethod, k.method, o.r);
+          if (vk) add(byVariety, `${k.method}|${vk}`, o.r);
+        }
+      }
+    }
+    const fin = (map, min) => Object.fromEntries(Object.entries(map).filter(([, m2]) => m2.n >= min).map(([k, m2]) => [k, { r: round2(m2.sum / m2.n), n: m2.n }]));
+    return { method: fin(byMethod, 1), variety: fin(byVariety, 2) };
+  }
+  function decayRatio(plant, k, own, priors) {
+    const vk = (plant.variety || "").trim() ? varietyKey(plant) : null;
+    const prior = vk && priors?.variety?.[`${k.method}|${vk}`] || priors?.method?.[k.method] || null;
+    const base = prior?.r ?? 1;
+    if (!own) return { r: base, source: prior ? "prior" : "default", n: 0 };
+    return { r: round2((own.r * own.n + base) / (own.n + 1)), source: "own", n: own.n };
+  }
+  function containerState(plant, batch, k, now2, env2 = {}) {
+    const M = env2.methods ?? resolveMethods(env2.cfg);
+    const preset = env2.preset ?? presetFor(plant, env2.cfg);
+    const material = batchMaterial(batch);
+    const x = modelAge(k, now2, M, material, preset);
+    const own = ownRatio(k, M, material, preset);
+    const dr = decayRatio(plant, k, own, env2.priors?.stock);
+    const cur = M[k.method] ?? M.other;
+    const openLoss = Math.min(MAX_OPEN_LOSS, cur.openCost * k.opens);
+    const decay = Math.exp(-LN2 * x / dr.r);
+    const q = clamp(decay * (1 - openLoss), 0, 1);
+    const threshold = (preset?.useByPct ?? rv(env2.rules, "stock.useByPct")) / 100;
+    const seg0 = k.segments[0];
+    const matureEnd = k.segments.length === 1 ? addDays(seg0.from, maturingFor(seg0, preset, M, material)) : null;
+    const maturing = !!matureEnd && matureEnd > now2;
+    let useByAt = null, below = false;
+    if (q <= threshold + 1e-9) below = true;
+    else {
+      const needX = -dr.r * Math.log(threshold / (1 - openLoss)) / LN2;
+      const th = (material === "fresh" ? cur.tHalfFresh : cur.tHalfProcessed) * (preset?.kFactor ?? 1);
+      const days = Math.max(0, needX - x) * th + (maturing ? daysBetween(now2, matureEnd) : 0);
+      useByAt = days < 36500 ? addDays(now2, days) : null;
+    }
+    return { q, pct: Math.round(q * 100), x, ratio: dr, maturing, maturingUntil: maturing ? matureEnd : null, useByAt, below, threshold, method: cur };
+  }
+  var batchRemaining = (b) => round3((b.stock?.containers || []).filter((k) => k.status === "open").reduce((n, k) => n + k.amount, 0));
+  function consumptionRate(plant, now2, rules, unit) {
+    const uses = [];
+    for (const b of plant.cache?.batches || []) {
+      if (!b.stock) continue;
+      for (const u of b.stock.uses) {
+        const amt = convertAmount(u.amount, b.stock.unit, unit);
+        if (amt != null) uses.push({ at: u.at, amount: amt });
+      }
+    }
+    if (!uses.length) return null;
+    const first = uses.reduce((a, u) => u.at < a ? u.at : a, uses[0].at);
+    const span = daysBetween(first, now2);
+    if (span < rv(rules, "stock.minRateDays")) return null;
+    const w = Math.min(rv(rules, "stock.rateWindowDays"), span);
+    const from = addDays(now2, -w);
+    const sum = uses.filter((u) => u.at >= from).reduce((n, u) => n + u.amount, 0);
+    return sum > 0 ? { perDay: sum / w, windowDays: w } : null;
+  }
+  function plantStock(plant, now2, env2 = {}) {
+    const batches = (plant.cache?.batches || []).filter((b) => b.stock);
+    if (!batches.length) return null;
+    const M = resolveMethods(env2.cfg), preset = presetFor(plant, env2.cfg);
+    const e = { ...env2, methods: M, preset };
+    const unit = batches.at(-1).stock.unit;
+    let remaining = 0;
+    const list = batches.map((b) => {
+      const containers = b.stock.containers.map((k) => ({ k, state: k.status === "open" ? containerState(plant, b, k, now2, e) : null }));
+      const left = batchRemaining(b);
+      const conv = convertAmount(left, b.stock.unit, unit);
+      if (conv != null) remaining += conv;
+      return { batch: b, stock: b.stock, containers, remaining: left };
+    });
+    const rate = consumptionRate(plant, now2, env2.rules, unit);
+    const runOutDays = rate && remaining > 0 ? remaining / rate.perDay : null;
+    return {
+      unit,
+      remaining: round3(remaining),
+      rate,
+      runOutDays,
+      runOutAt: runOutDays != null ? addDays(now2, runOutDays) : null,
+      batches: list,
+      preset,
+      methods: M
+    };
+  }
+  function stockTasks(plant, now2, env2 = {}) {
+    const ps = plantStock(plant, now2, env2);
+    if (!ps) return [];
+    const out = [];
+    const M = ps.methods;
+    for (const { batch, containers } of ps.batches) {
+      if (BATCH_ENDED.includes(batch.phase) && !containers.some(({ k }) => k.status === "open")) continue;
+      for (const { k, state } of containers) {
+        if (k.status !== "open" || !state) continue;
+        const m2 = M[k.method] ?? M.other;
+        const segFrom = k.segments.at(-1).from;
+        const label = k.label || m2.label;
+        const base = { batchId: batch.id, containerId: k.id, note: label };
+        const lastRef = [segFrom, k.lastCheckAt].filter(Boolean).reduce((a, x) => x > a ? x : a);
+        let due = addDays(lastRef, ps.preset.checkDays ?? m2.checkDays);
+        const sibling = containers.find(({ k: o }) => o !== k && o.moldAt && (!k.lastCheckAt || k.lastCheckAt < o.moldAt));
+        if (sibling) due = sibling.k.moldAt < due ? sibling.k.moldAt : due;
+        out.push({ type: "stockCheck", due, snoozeKey: `stockCheck:${k.id}`, ...base });
+        const age = daysBetween(segFrom, now2);
+        if (m2.airEveryDays > 0 && age < m2.airForDays) {
+          out.push({ type: "stockAir", due: addDays(k.lastAirAt ?? segFrom, m2.airEveryDays), snoozeKey: `stockAir:${k.id}`, ...base });
+        }
+        if (!state.maturing && (state.below || state.useByAt)) {
+          out.push({ type: "stockUseBy", due: state.below ? now2 : state.useByAt, snoozeKey: `stockUseBy:${k.id}`, ...base });
+        }
+      }
+    }
+    const lowDays = rv(env2.rules, "stock.lowDays");
+    if (ps.runOutDays != null && ps.runOutDays < lowDays) {
+      out.push({ type: "stockLow", due: now2, snoozeKey: "stockLow", note: `~${Math.max(1, Math.round(ps.runOutDays))}`, batchId: ps.batches.find((x) => x.remaining > 0)?.batch.id });
+    }
+    return out;
+  }
+  function suggestInitial(plant, batch) {
+    const unit = defaultUnit(plant);
+    if (isNum(batch.processedG) && batch.processedG > 0 && unit === "g") return { amount: batch.processedG, unit, basis: "processed" };
+    const w = batch.weightG;
+    if (!isNum(w) || w <= 0) return { amount: null, unit, basis: "none" };
+    if (batchMaterial(batch) === "fresh") return { amount: unit === "kg" ? round3(w / 1e3) : round3(w), unit, basis: "fresh" };
+    const done = (plant.cache?.batches || []).filter((x) => x.stock?.source === "weighed" && isNum(x.weightG) && x.weightG > 0 && x.stock.unit === "g" && x.id !== batch.id);
+    if (done.length) {
+      const r = done.reduce((n, x) => n + x.stock.initial / x.weightG, 0) / done.length;
+      return { amount: round3(w * r), unit: "g", basis: "learned", ratio: round2(r) };
+    }
+    return { amount: unit === "g" ? round3(w * 0.25) : null, unit, basis: "default", ratio: 0.25 };
+  }
+  function methodComparison(plants) {
+    const acc = {};
+    for (const pl2 of plants) {
+      for (const b of pl2.cache?.batches || []) {
+        for (const k of b.stock?.containers || []) {
+          for (const ch of k.checks) {
+            const r = [ch.scent, ch.appearance].filter(isNum);
+            if (!r.length || ch.mold) continue;
+            const m2 = acc[ch.method] || (acc[ch.method] = { method: ch.method, n: 0, sum: 0, lateN: 0, lateSum: 0, ageSum: 0 });
+            const rating2 = r.reduce((a, x) => a + x, 0) / r.length;
+            const age = daysBetween(k.since, ch.at);
+            m2.n += 1;
+            m2.sum += rating2;
+            m2.ageSum += age;
+            if (age >= 60) {
+              m2.lateN += 1;
+              m2.lateSum += rating2;
+            }
+          }
+        }
+      }
+    }
+    return Object.values(acc).map((m2) => ({
+      method: m2.method,
+      n: m2.n,
+      avg: round2(m2.sum / m2.n),
+      avgAge: Math.round(m2.ageSum / m2.n),
+      lateN: m2.lateN,
+      lateAvg: m2.lateN ? round2(m2.lateSum / m2.lateN) : null
+    })).sort((a, b) => (b.lateAvg ?? b.avg) - (a.lateAvg ?? a.avg));
   }
 
   // js/calendar.js
@@ -936,15 +1642,15 @@
     const vol = isNum(pot.volumeL) ? (pot.volumeL / rv(rules, "pot.refVolumeL")) ** rv(rules, "pot.volumeExponent") : 1;
     return clamp(vol * sub, rv(rules, "pot.minFactor"), rv(rules, "pot.maxFactor"));
   }
-  function baseDrying(plant, env, stage, rules, pot) {
+  function baseDrying(plant, env2, stage, rules, pot) {
     const cat = plant.baseOverride ?? rv(rules, `cat.${plant.category}.soilDays`) ?? 3;
     const p = pot ?? plant.cache?.pot ?? { volumeL: plant.potVolumeL, substrate: plant.substrate };
-    return cat * (ENV_MULTIPLIER[env] ?? 1) * stageFactor(stage) * potFactor(p, rules);
+    return cat * (ENV_MULTIPLIER[env2] ?? 1) * stageFactor(stage) * potFactor(p, rules);
   }
-  function seasonModifier(iso, env, hemisphere = "north", rules) {
+  function seasonModifier(iso, env2, hemisphere = "north", rules) {
     const o = asOpts(hemisphere);
     const r = o.rules ?? rules;
-    return rv(r, `season.on.${env}`) ? rv(r, `season.${seasonOf(iso, o.hemisphere || "north")}`) : 1;
+    return rv(r, `season.on.${env2}`) ? rv(r, `season.${seasonOf(iso, o.hemisphere || "north")}`) : 1;
   }
   function dryingInfo(plant, rules) {
     const c = plant.cache || {};
@@ -954,7 +1660,7 @@
     const learned = learnedMap?.[stage] ?? null;
     return { base, learned, d: learned ?? base, confidence: c.confidence?.[stage] ?? 0 };
   }
-  var round2 = (v) => Math.round(v * 100) / 100;
+  var round22 = (v) => Math.round(v * 100) / 100;
   function harvestWeightG(p) {
     if (isNum(p.freshWeight)) return p.freshWeight;
     if (isNum(p.totalWeight)) return p.totalWeight * 1e3;
@@ -966,8 +1672,8 @@
     let w = batch.weightG;
     if (!isNum(w) && isNum(batch.heightCm)) w = rv(rules, "drying.refWeightG") * (batch.heightCm / rv(rules, "drying.refHeightCm")) ** 3;
     const size = isNum(w) && w > 0 ? (w / rv(rules, "drying.refWeightG")) ** rv(rules, "drying.sizeExponent") : 1;
-    const env = rv(rules, `drying.env.${batch.env}`) ?? 1;
-    return clamp(ref * size * env * learnedRatio, ref * rv(rules, "drying.minFactor"), ref * rv(rules, "drying.maxFactor"));
+    const env2 = rv(rules, `drying.env.${batch.env}`) ?? 1;
+    return clamp(ref * size * env2 * learnedRatio, ref * rv(rules, "drying.minFactor"), ref * rv(rules, "drying.maxFactor"));
   }
   var dryingElapsed = (batch, at) => batch.phase === "drying" ? Math.max(0, daysBetween(batch.phaseSince, at)) : null;
   function effectiveDryingDays(batch, rules, ratio = 1) {
@@ -985,9 +1691,9 @@
   function buildDryingPriors(plants) {
     const cat = {}, variety = {};
     const add = (map, key, r) => {
-      const m = map[key] || (map[key] = { sum: 0, n: 0 });
-      m.sum += r;
-      m.n += 1;
+      const m2 = map[key] || (map[key] = { sum: 0, n: 0 });
+      m2.sum += r;
+      m2.n += 1;
     };
     for (const p of plants) {
       const v = (p.variety || "").trim().toLowerCase();
@@ -997,7 +1703,7 @@
         if (v) add(variety, `${p.category}|${v}`, b.learnedR);
       }
     }
-    const fin = (map, min) => Object.fromEntries(Object.entries(map).filter(([, m]) => m.n >= min).map(([k, m]) => [k, { ratio: round2(m.sum / m.n), n: m.n }]));
+    const fin = (map, min) => Object.fromEntries(Object.entries(map).filter(([, m2]) => m2.n >= min).map(([k, m2]) => [k, { ratio: round22(m2.sum / m2.n), n: m2.n }]));
     return { category: fin(cat, 1), variety: fin(variety, 2) };
   }
   var newBatch = (e, p, k, c) => {
@@ -1009,6 +1715,7 @@
       final: !!p.final,
       fresh: FRESH_CATEGORIES.includes(k.category),
       weightG: harvestWeightG(p),
+      processedG: isNum(p.processedWeight) ? p.processedWeight : null,
       estDays: isNum(p.estDays) ? p.estDays : null,
       heightCm: c.lastHeightCm ?? null,
       env: k.env,
@@ -1022,18 +1729,19 @@
       lastCheckAt: null,
       evals: [],
       steps: [],
+      stock: null,
       dryLearn: null,
       dryDays: null,
       learnedR: null,
       ratio: null
     };
   };
-  var findBatch = (c, id) => c.batches.find((b) => b.id === id) ?? null;
+  var findBatch2 = (c, id) => c.batches.find((b) => b.id === id) ?? null;
   function learnDrying(b, dryness, at) {
     const t = dryingElapsed(b, at);
     if (t == null || t < 0.5 || !isNum(dryness) || dryness < 1 || b.dryLearn?.actual) return;
     b.dryLearn = dryness >= 5 ? { days: t, actual: true, level: 5, at } : { days: t * 5 / dryness, actual: false, level: dryness, at };
-    if (dryness >= 5) b.dryDays = round2(t);
+    if (dryness >= 5) b.dryDays = round22(t);
   }
   var cal = (ctx2) => ctx2.cal;
   var calendarProjector = {
@@ -1063,8 +1771,8 @@
         case "stage_change": {
           const prev = k.stage;
           if (prev && c.soilDryDays[prev] != null && c.soilDryDays[p.to] == null) {
-            c.soilDryDays[p.to] = round2(c.soilDryDays[prev] * stageFactor(p.to) / stageFactor(prev));
-            c.confidence[p.to] = round2((c.confidence[prev] || 0) / 2);
+            c.soilDryDays[p.to] = round22(c.soilDryDays[prev] * stageFactor(p.to) / stageFactor(prev));
+            c.confidence[p.to] = round22((c.confidence[prev] || 0) / 2);
           }
           k.stage = p.to;
           break;
@@ -1074,8 +1782,8 @@
           if (from && from !== p.environment) {
             const ratio = (ENV_MULTIPLIER[p.environment] ?? 1) / (ENV_MULTIPLIER[from] ?? 1);
             for (const st of Object.keys(c.soilDryDays)) {
-              c.soilDryDays[st] = round2(c.soilDryDays[st] * ratio);
-              c.confidence[st] = round2((c.confidence[st] || 0) / 2);
+              c.soilDryDays[st] = round22(c.soilDryDays[st] * ratio);
+              c.confidence[st] = round22((c.confidence[st] || 0) / 2);
             }
           }
           k.env = p.environment;
@@ -1099,8 +1807,8 @@
             const ratio = potFactor(c.pot, rules) / before;
             if (ratio !== 1) {
               for (const st of Object.keys(c.soilDryDays)) {
-                c.soilDryDays[st] = round2(c.soilDryDays[st] * ratio);
-                c.confidence[st] = round2((c.confidence[st] || 0) / 2);
+                c.soilDryDays[st] = round22(c.soilDryDays[st] * ratio);
+                c.confidence[st] = round22((c.confidence[st] || 0) / 2);
               }
             }
           }
@@ -1112,13 +1820,13 @@
           c.batches.push(newBatch(e, p, k, c));
           break;
         case "batch_step": {
-          const b = findBatch(c, p.batchId);
+          const b = findBatch2(c, p.batchId);
           if (!b) break;
           if (b.phase === "drying" && p.phase !== "drying" && p.phase !== "discarded" && !b.dryLearn?.actual) {
             const t = dryingElapsed(b, e.occurredAt);
             if (t >= 0.5) {
               b.dryLearn = { days: t, actual: true, level: 5, at: e.occurredAt };
-              b.dryDays = round2(t);
+              b.dryDays = round22(t);
             }
           }
           b.phase = p.phase;
@@ -1132,7 +1840,7 @@
           break;
         }
         case "batch_check": {
-          const b = findBatch(c, p.batchId);
+          const b = findBatch2(c, p.batchId);
           if (!b) break;
           b.checks.push({
             at: e.occurredAt,
@@ -1149,10 +1857,17 @@
         case "evaluation": {
           const kind = p.kind ?? "final";
           c.evaluations.push({ at: e.occurredAt, season: p.season ?? null, kind, batchId: p.batchId ?? null });
-          const target = p.batchId ? findBatch(c, p.batchId) : kind === "final" ? c.batches.at(-1) ?? null : null;
+          const target = p.batchId ? findBatch2(c, p.batchId) : kind === "final" ? c.batches.at(-1) ?? null : null;
           if (target) target.evals.push({ at: e.occurredAt, kind, part: p.part ?? null });
           break;
         }
+        case "stock_init":
+        case "stock_use":
+        case "stock_adjust":
+        case "stock_move":
+        case "stock_check":
+          applyStockEvent(c, e);
+          break;
         case "archive":
           k.archived = true;
           break;
@@ -1180,9 +1895,9 @@
         if (!b.dryLearn?.actual) continue;
         const model = estimateDryingDays({ ...b, estDays: null }, rules, 1);
         const r = clamp(b.dryLearn.days / model, rv(rules, "drying.minFactor"), rv(rules, "drying.maxFactor"));
-        b.learnedR = round2(r);
+        b.learnedR = round22(r);
         const wNew = Math.max(1 - blendOld, 1 / (n + 2));
-        ratio = round2((1 - wNew) * (ratio ?? 1) + wNew * r);
+        ratio = round22((1 - wNew) * (ratio ?? 1) + wNew * r);
         n += 1;
       }
       c.dryLearn = { ratio, n };
@@ -1191,10 +1906,10 @@
   registerProjector(calendarProjector);
   function learn(e, ctx2) {
     const c = ctx2.cache, k = cal(ctx2), answer = e.payload.answer, stage = k.stage;
-    const env = k.env, rules = ctx2.opts?.rules;
-    const base = baseDrying(ctx2.plant, env, stage, rules, c.pot);
+    const env2 = k.env, rules = ctx2.opts?.rules;
+    const base = baseDrying(ctx2.plant, env2, stage, rules, c.pot);
     let d = c.soilDryDays[stage] ?? base;
-    const mod = seasonModifier(e.occurredAt, env, ctx2.opts?.hemisphere, rules);
+    const mod = seasonModifier(e.occurredAt, env2, ctx2.opts?.hemisphere, rules);
     const t = daysBetween(k.water, e.occurredAt) / mod;
     let implied = null;
     if (answer === "dry") {
@@ -1218,8 +1933,8 @@
         d = LEARN.blendOld * d + LEARN.blendNew * weightedMean(st.implied);
         d = clamp(d, Math.max(1, LEARN.minFactor * base), LEARN.maxFactor * base);
       }
-      c.soilDryDays[stage] = round2(d);
-      c.confidence[stage] = round2(Math.min(st.n / LEARN.confidenceN, 1) * (1 - Math.min(coefVariation(st.implied), 1)));
+      c.soilDryDays[stage] = round22(d);
+      c.confidence[stage] = round22(Math.min(st.n / LEARN.confidenceN, 1) * (1 - Math.min(coefVariation(st.implied), 1)));
     }
     c.recheckAt = answer === "wet" ? addDays(e.occurredAt, Math.max(1, Math.ceil((c.soilDryDays[stage] ?? d) * RULE.recheckFraction))) : null;
   }
@@ -1241,11 +1956,11 @@
   }
   function nextMoistureDue(plant, now2, hemisphere = "north") {
     const o = asOpts(hemisphere);
-    const c = plant.cache, env = c.environment ?? plant.environment;
+    const c = plant.cache, env2 = c.environment ?? plant.environment;
     if (c.recheckAt) return c.recheckAt;
     const { d } = dryingInfo(plant, o.rules);
     const last = c.lastWateredAt ?? plant.startDate;
-    return addDays(last, d * seasonModifier(now2, env, o.hemisphere, o.rules));
+    return addDays(last, d * seasonModifier(now2, env2, o.hemisphere, o.rules));
   }
   function nextFertilizingDue(plant, rules) {
     const c = plant.cache;
@@ -1349,10 +2064,15 @@
     for (const b of c.batches) {
       if (b.legacy || BATCH_ENDED.includes(b.phase) || b.phase === "pending") continue;
       const iv = batchCheckInterval(b, rules, now2, batchRatio(plant, b, o.priors));
-      if (iv) push("batchCheck", addDays(iv.last, iv.days), { batchId: b.id, phase: b.phase, snoozeKey: `batchCheck:${b.id}` });
-      if (b.fresh && ["storing", "ready"].includes(b.phase)) {
+      const inStock = b.stock?.containers.some((k) => k.status === "open");
+      if (iv && !(inStock && b.phase === "storing")) push("batchCheck", addDays(iv.last, iv.days), { batchId: b.id, phase: b.phase, snoozeKey: `batchCheck:${b.id}` });
+      if (b.fresh && !b.stock && ["storing", "ready"].includes(b.phase)) {
         push("useBy", addDays(b.harvestedAt, rv(rules, `useBy.${plant.category}`) ?? 10), { batchId: b.id, snoozeKey: `useBy:${b.id}` });
       }
+    }
+    for (const t of stockTasks(plant, now2, { rules, cfg: o.stockCfg, priors: o.priors })) {
+      const { type, due, ...extra } = t;
+      push(type, due, extra);
     }
     const ev = evaluationDue(plant, now2, rules);
     if (ev) push(ev.type, ev.due, { season: ev.season, batchId: ev.batchId });
@@ -1364,10 +2084,11 @@
   var ORDER = { overdue: 0, today: 1, upcoming: 2 };
   function computeTasks(plants, now2, opts = {}) {
     const out = [];
+    const look = rv(asOpts(opts).rules, "dashboard.lookaheadDays");
     for (const plant of plants) {
       for (const t of getPlantTasks(plant, now2, opts)) {
         const daysUntil = dayDiff(now2, t.dueAt);
-        if (daysUntil > LOOKAHEAD_DAYS) continue;
+        if (daysUntil > look) continue;
         out.push({ ...t, daysUntil, urgency: daysUntil < 0 ? "overdue" : daysUntil === 0 ? "today" : "upcoming" });
       }
     }
@@ -1376,9 +2097,9 @@
 
   // js/criteria.js
   var CRITERIA_MAX = 12;
-  var LABEL_MAX = 40;
+  var LABEL_MAX2 = 40;
   var KEY = /^[a-z][a-zA-Z0-9_]{0,31}$/;
-  var clean = (v) => String(v ?? "").replace(/[\u0000-\u001f\u007f<>]/g, "").trim().slice(0, LABEL_MAX);
+  var clean2 = (v) => String(v ?? "").replace(/[\u0000-\u001f\u007f<>]/g, "").trim().slice(0, LABEL_MAX2);
   var defaults = (category) => (CATEGORIES[category]?.criteria || []).map((key) => ({ key, label: S.criterion[key] || key }));
   var same = (a, b) => a.length === b.length && a.every((x, i) => x.key === b[i].key && x.label === b[i].label && !x.removed);
   function cleanCriteria(raw) {
@@ -1390,7 +2111,7 @@
       const items = [];
       for (const it of list.slice(0, CRITERIA_MAX)) {
         if (!it || typeof it !== "object" || typeof it.key !== "string" || !KEY.test(it.key) || seen.has(it.key)) continue;
-        const label = clean(it.label);
+        const label = clean2(it.label);
         if (!label) continue;
         seen.add(it.key);
         items.push(it.removed ? { key: it.key, label, removed: true } : { key: it.key, label });
@@ -1528,14 +2249,14 @@
     const list = (PROFILES[profile] || PROFILES.mixed).examples;
     return list[Math.abs(index) % list.length];
   }
-  var clean2 = (v) => String(v).replace(/[\u0000-\u001f\u007f<>]/g, "").trim().slice(0, 100);
+  var clean3 = (v) => String(v).replace(/[\u0000-\u001f\u007f<>]/g, "").trim().slice(0, 100);
   function parseAcquisition(search) {
     const q = new URLSearchParams(search || "");
     const profile = isProfile(q.get("profile")) ? q.get("profile") : null;
     const utm = {};
     for (const k of UTM_KEYS) {
       const v = q.get(k);
-      if (v != null && clean2(v)) utm[k] = clean2(v);
+      if (v != null && clean3(v)) utm[k] = clean3(v);
     }
     return { profile, utm: Object.keys(utm).length ? utm : null };
   }
@@ -1566,7 +2287,7 @@
   }
 
   // js/ctx.js
-  var ctx = { db: null, hemisphere: "north", profile: null, overrides: {}, rules: resolveRules(), criteria: {}, priors: { category: {}, variety: {} } };
+  var ctx = { db: null, hemisphere: "north", profile: null, overrides: {}, rules: resolveRules(), criteria: {}, stockCfg: cleanStock(null), priors: { category: {}, variety: {}, stock: { method: {}, variety: {} } } };
   var now = () => (/* @__PURE__ */ new Date()).toISOString();
   async function initCtx(db) {
     ctx.db = db;
@@ -1575,6 +2296,7 @@
     ctx.overrides = cleanRules(await metaGet(db, "rules"));
     ctx.rules = resolveRules(ctx.overrides);
     ctx.criteria = cleanCriteria(await metaGet(db, "criteria"));
+    ctx.stockCfg = cleanStock(await metaGet(db, "stock"));
     return ctx;
   }
   var hemisphereKnown = () => metaGet(ctx.db, "hemisphere").then((v) => v === "north" || v === "south");
@@ -1589,14 +2311,15 @@
       if (!byPlant.has(e.plantId)) byPlant.set(e.plantId, []);
       byPlant.get(e.plantId).push(e);
     }
-    ctx.priors = buildDryingPriors(plants);
+    ctx.priors = buildPriors(plants);
     return { plants, byPlant, events };
   }
   async function refreshPriors() {
-    ctx.priors = buildDryingPriors(await listPlants(ctx.db));
+    ctx.priors = buildPriors(await listPlants(ctx.db));
     return ctx.priors;
   }
-  var engineOpts = () => ({ hemisphere: ctx.hemisphere, rules: ctx.rules, priors: ctx.priors, criteria: ctx.criteria });
+  var buildPriors = (plants) => ({ ...buildDryingPriors(plants), stock: buildStockPriors(plants, ctx.stockCfg) });
+  var engineOpts = () => ({ hemisphere: ctx.hemisphere, rules: ctx.rules, priors: ctx.priors, criteria: ctx.criteria, stockCfg: ctx.stockCfg });
   var THEME_KEY = "pheno.theme";
   function getTheme() {
     try {
@@ -1690,7 +2413,7 @@
     updatePlantMeta: () => updatePlantMeta,
     voidEvent: () => voidEvent
   });
-  var ENGINE_REV = 3;
+  var ENGINE_REV = 4;
   var EVENT_TYPES = [
     "created",
     "stage_change",
@@ -1712,9 +2435,11 @@
     "void",
     "batch_step",
     "batch_check",
-    "care"
+    "care",
+    "harvest_edit",
+    ...STOCK_EVENT_TYPES
   ];
-  var ARCHIVED_OK = ["unarchive", "evaluation", "note", "photo", "void", "batch_step", "batch_check"];
+  var ARCHIVED_OK = ["unarchive", "evaluation", "note", "photo", "void", "batch_step", "batch_check", ...STOCK_EVENT_TYPES];
   var COMPLETES = {
     watering: ["watering"],
     moisture_check: ["watering"],
@@ -1803,6 +2528,20 @@
         if (p.final) out.final = true;
         return out;
       }
+      case "harvest_edit": {
+        const target = live.find((e) => e.id === p.harvestId && e.type === "harvest");
+        if (!target) throw bad();
+        const out = validatePayload("harvest", p, plant, live, cur, opts);
+        out.harvestId = target.id;
+        if (p.date != null) {
+          const t = Date.parse(p.date);
+          if (!Number.isFinite(t)) throw bad();
+          const first = live.filter((e) => e.payload?.batchId === target.id && e.id !== target.id).map((e) => Date.parse(e.occurredAt));
+          if (first.some((x) => t > x)) throw bad(S.err.harvestDate);
+          out.date = p.date;
+        }
+        return out;
+      }
       case "batch_step": {
         const b = openBatch(cur, p.batchId);
         if (!BATCH_PHASES.includes(p.phase)) throw bad();
@@ -1836,6 +2575,12 @@
         if (Object.keys(out).length < 2) throw bad();
         return out;
       }
+      case "stock_init":
+      case "stock_use":
+      case "stock_adjust":
+      case "stock_move":
+      case "stock_check":
+        return validateStock(type, p, plant, cur, opts);
       case "care": {
         if (!CARE_KINDS.includes(p.kind)) throw bad();
         const out = { kind: p.kind };
@@ -1885,12 +2630,84 @@
       case "unarchive":
         return {};
       case "void": {
-        const target = live.find((e) => e.id === p.targetId);
+        const voided = new Set((opts.rawEvents || []).filter((e) => e.type === "void").map((e) => e.payload.targetId));
+        const target = live.find((e) => e.id === p.targetId) || (opts.rawEvents || []).find((e) => e.id === p.targetId && e.type === "harvest_edit" && !voided.has(e.id));
         if (!target || target.type === "created") throw bad();
         return { targetId: p.targetId, ...p.reason ? { reason: String(p.reason) } : {} };
       }
       default:
         throw bad();
+    }
+  }
+  var amountOk = (v) => isNum(v) && v > 0 && v < 1e7;
+  var idOk = (v) => typeof v === "string" && /^[\w.-]{1,60}$/.test(v);
+  function validateStock(type, p, plant, cur, opts) {
+    const methods = resolveMethods(opts.stockCfg);
+    const b = (cur?.cache?.batches || []).find((x) => x.id === p.batchId);
+    if (!plant.harvestable || !b) throw bad();
+    if (opts.at && Date.parse(opts.at) < Date.parse(b.stock?.at ?? b.harvestedAt)) throw bad(S.err.stockDate);
+    if (type === "stock_init") {
+      if (b.stock || b.phase === "pending" || BATCH_ENDED.includes(b.phase)) throw bad(S.err.stockInit);
+      if (!STOCK_UNITS.includes(p.unit)) throw bad();
+      if (!Array.isArray(p.containers) || !p.containers.length || p.containers.length > MAX_CONTAINERS) throw bad();
+      const taken = new Set((cur.cache.batches || []).flatMap((x) => (x.stock?.containers || []).map((k2) => k2.id)));
+      const containers = p.containers.map((s) => {
+        if (!s || !idOk(s.id) || taken.has(s.id) || !amountOk(s.amount) || !methods[s.method]) throw bad();
+        taken.add(s.id);
+        return { id: s.id, amount: s.amount, method: s.method, ...s.label ? { label: String(s.label).replace(/[\u0000-\u001f<>]/g, "").trim().slice(0, 40) } : {} };
+      });
+      return { batchId: b.id, unit: p.unit, containers, source: p.source === "estimate" ? "estimate" : "weighed" };
+    }
+    const st = b.stock;
+    if (!st) throw bad(S.err.noStock);
+    const k = st.containers.find((x) => x.id === p.containerId);
+    if (!k || k.status !== "open") throw bad(S.err.noStock);
+    const out = { batchId: b.id, stockId: st.id, containerId: k.id };
+    switch (type) {
+      case "stock_use":
+        if (!amountOk(p.amount) || p.amount > k.amount + 1e-9) throw bad(S.err.stockAmount);
+        out.amount = p.amount;
+        if (p.kind === "discard") {
+          out.kind = "discard";
+          if (p.reason) out.reason = String(p.reason).slice(0, 80);
+        }
+        return out;
+      case "stock_adjust":
+        if (!isNum(p.remaining) || p.remaining < 0 || p.remaining > 1e7) throw bad();
+        out.remaining = p.remaining;
+        return out;
+      case "stock_move": {
+        if (!methods[p.method]) throw bad();
+        const partial = p.amount != null && p.amount < k.amount - 1e-9;
+        if (p.amount != null && !amountOk(p.amount)) throw bad();
+        if (p.amount != null && p.amount > k.amount + 1e-9) throw bad(S.err.stockAmount);
+        if (!partial && p.method === k.method) throw bad();
+        out.method = p.method;
+        if (partial) {
+          const taken = new Set((cur.cache.batches || []).flatMap((x) => (x.stock?.containers || []).map((c) => c.id)));
+          if (!idOk(p.newContainerId) || taken.has(p.newContainerId)) throw bad();
+          out.amount = p.amount;
+          out.newContainerId = p.newContainerId;
+        }
+        if (p.label) out.label = String(p.label).replace(/[\u0000-\u001f<>]/g, "").trim().slice(0, 40);
+        return out;
+      }
+      default: {
+        for (const f of ["scent", "appearance"]) {
+          if (p[f] == null) continue;
+          if (!Number.isInteger(p[f]) || p[f] < 1 || p[f] > RATING_MAX) throw bad();
+          out[f] = p[f];
+        }
+        if (p.mold != null) out.mold = !!p.mold;
+        if (p.rh != null) {
+          if (!isNum(p.rh) || p.rh < 0 || p.rh > 100) throw bad();
+          out.rh = p.rh;
+        }
+        if (p.aired) out.aired = true;
+        if (p.note) out.note = String(p.note).slice(0, 300);
+        if (Object.keys(out).length <= 3) throw bad();
+        return out;
+      }
     }
   }
   function openBatch(cur, id) {
@@ -1915,10 +2732,10 @@
         if (inp.type === "unarchive" && !cur.archivedAt) throw new PhenoError("notArchived", S.err.notArchived);
       }
       const live = liveEvents(all);
-      const payload = validatePayload(inp.type, inp.payload, plant, live, cur, opts);
+      const occurredAt = inp.occurredAt || now2;
+      const payload = validatePayload(inp.type, inp.payload, plant, live, cur, { ...opts, rawEvents: all, at: occurredAt });
       const id = uid();
       if (inp.type === "harvest") payload.batchId = id;
-      const occurredAt = inp.occurredAt || now2;
       if (inp.type === "watering" || inp.type === "moisture_check") {
         const prev = lastBefore(live, (e) => e.type === "watering" || e.type === "moisture_check" && e.payload.watered, occurredAt);
         payload.daysSinceWatering = prev ? daysBetween(prev.occurredAt, occurredAt) : null;
@@ -1941,7 +2758,8 @@
     const h2 = await idbReq(s.meta.get("hemisphere"));
     const r = await idbReq(s.meta.get("rules"));
     const cr = await idbReq(s.meta.get("criteria"));
-    return { hemisphere: h2?.value === "south" ? "south" : "north", rules: resolveRules(cleanRules(r?.value)), criteria: cleanCriteria(cr?.value) };
+    const st = await idbReq(s.meta.get("stock"));
+    return { hemisphere: h2?.value === "south" ? "south" : "north", rules: resolveRules(cleanRules(r?.value)), criteria: cleanCriteria(cr?.value), stockCfg: cleanStock(st?.value) };
   }
   function appendEvents(db, plantId, inputs, { now: now2 } = {}) {
     return withTx(db, ["plants", "events", "meta"], "readwrite", async (s) => {
@@ -1953,6 +2771,9 @@
       const snoozed = { ...plant.cache?.snoozedUntil || {} };
       for (const e of events) {
         for (const k of COMPLETES[e.type] || []) delete snoozed[k];
+        const cid = e.payload?.containerId;
+        if (cid && e.type === "stock_check") for (const k of [`stockCheck:${cid}`, `stockAir:${cid}`]) delete snoozed[k];
+        if (cid && e.type === "stock_use") delete snoozed[`stockUseBy:${cid}`];
         const bid = e.payload?.batchId;
         if (bid && ["batch_check", "batch_step", "evaluation"].includes(e.type)) {
           for (const k of [`batchCheck:${bid}`, `useBy:${bid}`, `evaluation:${bid}`]) delete snoozed[k];
@@ -2021,6 +2842,10 @@
           if (!(k in v)) throw bad();
           next[k] = v[k];
         }
+      }
+      if ("stockPreset" in patch) {
+        if (isPresetKey(patch.stockPreset)) next.stockPreset = patch.stockPreset;
+        else delete next.stockPreset;
       }
       if ("baseOverride" in patch) {
         const v = patch.baseOverride;
@@ -2184,9 +3009,9 @@
       return;
     }
     for (const r of routes) {
-      const m = path.match(r.re);
-      if (!m) continue;
-      const params = Object.fromEntries(r.keys.map((k, i) => [k, decodeURIComponent(m[i + 1])]));
+      const m2 = path.match(r.re);
+      if (!m2) continue;
+      const params = Object.fromEntries(r.keys.map((k, i) => [k, decodeURIComponent(m2[i + 1])]));
       document.querySelectorAll(".bottom-nav button").forEach((b) => b.classList.toggle("active", b.dataset.nav === r.nav));
       try {
         await r.handler(root, params, query);
@@ -2206,11 +3031,11 @@
   }
 
   // js/version.js
-  var VERSION = "RCv0.191";
+  var VERSION = "RCv0.192";
 
   // js/backup.js
-  var SCHEMA_VERSION = 2;
-  var PORTABLE_META = ["hemisphere", "profile", "profileSource", "acquisition", "rules", "criteria"];
+  var SCHEMA_VERSION = 3;
+  var PORTABLE_META = ["hemisphere", "profile", "profileSource", "acquisition", "rules", "criteria", "stock"];
   var MAX_TEXT = 2e4;
   var jszip = (JSZip) => JSZip || globalThis.JSZip || (() => {
     throw new Error("JSZip nen\xED na\u010Dten\xFD");
@@ -2272,6 +3097,7 @@
       createdAt: isDate(p.createdAt) ? p.createdAt : p.startDate,
       ...p.reminders === false ? { reminders: false } : {},
       ...optionalPot(p),
+      ...isPresetKey(p.stockPreset) ? { stockPreset: p.stockPreset } : {},
       archivedAt: null,
       cache: emptyCache()
     };
@@ -2319,6 +3145,10 @@
     if ("rules" in meta) {
       meta.rules = cleanRules(meta.rules);
       if (!Object.keys(meta.rules).length) delete meta.rules;
+    }
+    if ("stock" in meta) {
+      meta.stock = cleanStock(meta.stock);
+      if (!Object.values(meta.stock).some((v) => Object.keys(v).length)) delete meta.stock;
     }
     if ("criteria" in meta) {
       meta.criteria = cleanCriteria(meta.criteria);
@@ -2406,7 +3236,7 @@
     const [last, atExport, dismissed] = await Promise.all([metaGet(db, "lastExportAt"), metaGet(db, "eventsAtExport"), metaGet(db, "backupDismissedAt")]);
     const events = await getAllEvents(db);
     if (!events.length) return false;
-    const since = last ?? events.reduce((m, e) => e.recordedAt < m ? e.recordedAt : m, events[0].recordedAt);
+    const since = last ?? events.reduce((m2, e) => e.recordedAt < m2 ? e.recordedAt : m2, events[0].recordedAt);
     const days = (Date.parse(now2) - Date.parse(since)) / 864e5;
     const fresh = events.length - (atExport ?? 0);
     if (days < 30 || fresh < 10) return false;
@@ -2610,6 +3440,13 @@
       h(
         "div",
         { class: "card pad" },
+        h("h3", {}, S.stock.settingsTitle),
+        h("p", { class: "muted" }, S.stock.settingsIntro),
+        h("button", { type: "button", class: "btn btn-secondary", id: "btn-stock-cfg", onclick: () => navigate("/settings/stock") }, S.stock.settingsTitle)
+      ),
+      h(
+        "div",
+        { class: "card pad" },
         h("h3", {}, S.crit.open),
         h("p", { class: "muted" }, S.crit.openHint),
         h("button", { type: "button", class: "btn btn-secondary", id: "btn-criteria", onclick: () => navigate("/settings/criteria") }, S.crit.open)
@@ -2714,8 +3551,10 @@
     const photos = liveEvents(events).filter((e) => e.type === "photo");
     return photos.length ? photos.at(-1).payload.photoId : null;
   }
-  function describeEvent(e) {
+  function describeEvent(e, units = {}) {
     const p = e.payload || {};
+    const unit = units[p.batchId] ?? "";
+    const mlabel = (k) => S.stock.method[k] ?? S.stock.method.other;
     switch (e.type) {
       case "created":
         return { icon: "sprout", title: "Rostlina zalo\u017Eena", detail: `${S.environment[p.environment] || ""}` };
@@ -2757,6 +3596,29 @@
         ].filter(Boolean);
         return { icon: "check", title: "Kontrola d\xE1vky", detail: bits.join(" \xB7 ") };
       }
+      case "stock_init":
+        return {
+          icon: "check",
+          title: S.stock.saved,
+          detail: `${p.containers?.map((c) => `${num3(c.amount, 2)} ${p.unit}${c.label ? ` ${c.label}` : ""} \xB7 ${mlabel(c.method)}`).join("; ")}`
+        };
+      case "stock_use":
+        return p.kind === "discard" ? { icon: "trash", title: S.stock.discarded, detail: `${num3(p.amount, 2)} ${unit}${p.reason ? ` \xB7 ${p.reason}` : ""}` } : { icon: "leaf", title: S.stock.used, detail: `${num3(p.amount, 2)} ${unit}` };
+      case "stock_adjust":
+        return { icon: "ruler", title: S.stock.adjusted, detail: `${S.stock.left} ${num3(p.remaining, 2)} ${unit}` };
+      case "stock_move":
+        return { icon: "swap", title: S.stock.moved, detail: `${mlabel(p.method)}${p.amount ? ` \xB7 ${num3(p.amount, 2)} ${unit}` : ""}` };
+      case "stock_check": {
+        const bits = [
+          p.scent ? `v\u016Fn\u011B ${p.scent}/5` : null,
+          p.appearance ? `vzhled ${p.appearance}/5` : null,
+          p.mold ? "pl\xEDse\u0148" : null,
+          p.rh != null ? `${p.rh} %` : null,
+          p.aired ? S.stock.aired : null,
+          p.note || null
+        ].filter(Boolean);
+        return { icon: "check", title: S.stock.checkTitle, detail: bits.join(" \xB7 ") };
+      }
       case "care":
         return { icon: "leaf", title: p.kind === "custom" ? p.label : S.care[p.kind], detail: [p.potVolumeL ? `${num3(p.potVolumeL, 1)} l` : "", p.note || ""].filter(Boolean).join(" \xB7 ") };
       case "evaluation":
@@ -2774,7 +3636,9 @@
     }
   }
   function diaryRows(events) {
-    return liveEvents(events).slice().reverse().map((e) => ({ event: e, ...describeEvent(e) }));
+    const live = liveEvents(events);
+    const units = Object.fromEntries(live.filter((e) => e.type === "stock_init").map((e) => [e.payload.batchId, e.payload.unit]));
+    return live.slice().reverse().map((e) => ({ event: e, ...describeEvent(e, units) }));
   }
 
   // js/stats.js
@@ -2894,6 +3758,11 @@
   }
 
   // js/ui-forms.js
+  var stockOffer = null;
+  var setStockOffer = (fn) => {
+    stockOffer = fn;
+  };
+  var OFFER_PHASES = ["ready", "storing", "freezing", "curing"];
   async function submit(plantId, inputs, message, done) {
     try {
       const { events } = await appendEvents(ctx.db, plantId, inputs);
@@ -2912,8 +3781,8 @@
       return null;
     }
   }
-  function dateField() {
-    const input = h("input", { type: "datetime-local", value: toLocalInput(now()) });
+  function dateField(value) {
+    const input = h("input", { type: "datetime-local", value: toLocalInput(value ?? now()) });
     return { el: field(S.ui.date, input), get: () => fromLocalInput(input.value) };
   }
   var buttons = (onSave, label = S.ui.save) => h(
@@ -2940,10 +3809,10 @@
         answer = a;
         opts.forEach((o) => o.classList.toggle("selected", o.dataset.answer === a));
         if (!touched) cb.checked = a !== "wet";
-        save.disabled = false;
+        save2.disabled = false;
       }
     }, S.moisture[a]));
-    const save = h("button", { type: "button", class: "btn btn-primary", disabled: true, onclick: () => {
+    const save2 = h("button", { type: "button", class: "btn btn-primary", disabled: true, onclick: () => {
       if (!answer) return;
       submit(
         plant.id,
@@ -2959,7 +3828,7 @@
       h("div", { class: "moisture-row" }, opts),
       h("label", { class: "check-row" }, cb, h("span", {}, S.ui.watered)),
       d.el,
-      h("div", { class: "form-actions" }, h("button", { type: "button", class: "btn btn-secondary", onclick: closeSheet }, S.ui.cancel), save)
+      h("div", { class: "form-actions" }, h("button", { type: "button", class: "btn btn-secondary", onclick: closeSheet }, S.ui.cancel), save2)
     ));
   }
   function fertilizeSheet(plant, done) {
@@ -3066,7 +3935,7 @@
   var MILESTONES = ["P\u0159esazen\xED", "\u0158ez", "Zako\u0159en\u011Bn\xED", "V\xFDsev", "P\u0159enesen\xED ven"];
   function milestoneSheet(plant, done) {
     const label = h("input", { type: "text", placeholder: "nap\u0159. P\u0159esazen\xED" });
-    const chips = chipGroup(MILESTONES.map((m) => [m, m]), null, (v) => {
+    const chips = chipGroup(MILESTONES.map((m2) => [m2, m2]), null, (v) => {
       label.value = v;
     });
     const d = dateField();
@@ -3080,16 +3949,16 @@
     ));
   }
   function environmentSheet(plant, done) {
-    const env = chipGroup(Object.entries(S.environment), plant.cache.environment);
+    const env2 = chipGroup(Object.entries(S.environment), plant.cache.environment);
     const d = dateField();
     openSheet(`${S.ui.changeEnv} \u2013 ${plant.name}`, h(
       "div",
       {},
-      field(S.ui.environment, env.el),
+      field(S.ui.environment, env2.el),
       d.el,
       buttons(() => {
-        if (env.get() === plant.cache.environment) return closeSheet();
-        submit(plant.id, [{ type: "environment_change", occurredAt: d.get(), payload: { environment: env.get() } }], "Prost\u0159ed\xED zm\u011Bn\u011Bno", done);
+        if (env2.get() === plant.cache.environment) return closeSheet();
+        submit(plant.id, [{ type: "environment_change", occurredAt: d.get(), payload: { environment: env2.get() } }], "Prost\u0159ed\xED zm\u011Bn\u011Bno", done);
       })
     ));
   }
@@ -3110,10 +3979,12 @@
   var batchLabel = (b) => `${fmtDate(b.harvestedAt)} \xB7 ${S.batchPhase[b.phase] || b.phase}`;
   var btn = (label, cls, fn, id) => h("button", { type: "button", class: `btn ${cls}`, id, onclick: fn }, label);
   function archiveSheet(plant, done) {
+    const ps = plantStock(plant, now(), { cfg: ctx.stockCfg, rules: ctx.rules, priors: ctx.priors });
     openSheet(`${S.ui.archive} \u2013 ${plant.name}`, h(
       "div",
       { class: "stack" },
       h("p", { class: "muted" }, S.ui.archiveAsk),
+      ps && ps.remaining > 0 ? h("p", { class: "muted", id: "archive-stock-warn" }, S.stock.archiveWarn(`${num3(ps.remaining, 2)} ${ps.unit}`)) : null,
       h("button", { type: "button", class: "btn btn-primary", id: "btn-do-archive", onclick: async () => {
         try {
           await appendEvents(ctx.db, plant.id, [{ type: "archive", payload: {} }]);
@@ -3155,25 +4026,26 @@
     ));
   }
   var defaultMethod = (plant) => FRESH_CATEGORIES.includes(plant.category) ? "none" : "drying";
-  function methodPicker(plant, value = defaultMethod(plant)) {
-    const est = h("input", { type: "number", step: "0.5", min: "0.5", max: "120", inputmode: "decimal", id: "est-days" });
+  function methodPicker(plant, value = defaultMethod(plant), estValue = null) {
+    const est = h("input", { type: "number", step: "0.5", min: "0.5", max: "120", inputmode: "decimal", id: "est-days", value: estValue ?? "" });
     const estField = field(S.ui.estDays, est);
     const toggle = (v) => {
       estField.style.display = v === "drying" ? "" : "none";
     };
-    const method = chipGroup(PROCESSING_METHODS.map((m) => [m, S.processing[m]]), value, toggle);
+    const method = chipGroup(PROCESSING_METHODS.map((m2) => [m2, S.processing[m2]]), value, toggle);
     method.el.id = "processing-method";
     toggle(value);
     return { method, estField, est: () => est.value === "" ? null : Number(est.value) };
   }
-  function harvestSheet(plant, done) {
+  function harvestSheet(plant, done, edit = null) {
     const cfg = CATEGORIES[plant.category];
-    const inputs = cfg.harvestFields.map((f) => ({ f, el: h("input", { type: "number", step: "any", min: f.min, inputmode: "decimal", dataset: { key: f.key } }) }));
-    const mp = methodPicker(plant);
-    const note = h("textarea", { rows: 2 });
-    const fin = h("input", { type: "checkbox", id: "harvest-final" });
-    const d = dateField();
-    const save = async () => {
+    const ep = edit?.payload ?? {};
+    const inputs = cfg.harvestFields.map((f) => ({ f, el: h("input", { type: "number", step: "any", min: f.min, inputmode: "decimal", dataset: { key: f.key }, value: ep[f.key] ?? "" }) }));
+    const mp = methodPicker(plant, ep.processingMethod ?? defaultMethod(plant), ep.estDays ?? null);
+    const note = h("textarea", { rows: 2 }, ep.note ?? "");
+    const fin = h("input", { type: "checkbox", id: "harvest-final", checked: !!ep.final });
+    const d = dateField(edit?.occurredAt);
+    const save2 = async () => {
       const payload = {};
       for (const { f, el } of inputs) if (el.value !== "") payload[f.key] = Number(el.value);
       if (!Object.keys(payload).length) return toast(S.ui.fillOne);
@@ -3181,6 +4053,12 @@
       if (payload.processingMethod === "drying" && mp.est() != null) payload.estDays = mp.est();
       if (note.value.trim()) payload.note = note.value.trim();
       if (fin.checked) payload.final = true;
+      if (edit) {
+        if (ep.processingDays != null) payload.processingDays = ep.processingDays;
+        const date = d.get();
+        if (toLocalInput(date) !== toLocalInput(edit.occurredAt)) payload.date = date;
+        return submit(plant.id, [{ type: "harvest_edit", payload: { harvestId: edit.id, ...payload } }], S.ui.harvestEdited, done);
+      }
       const rule = ctx.rules.afterFinalHarvest;
       const target = fin.checked ? finalTarget(plant) : null;
       const move = !!target && target !== plant.cache.stage;
@@ -3189,7 +4067,7 @@
       const ok = await submit(plant.id, events, S.ui.harvestSaved, done);
       if (ok && move && rule === "ask") afterFinalSheet(plant, target, done);
     };
-    openSheet(`${S.ui.recordHarvest} \u2013 ${plant.name}`, h(
+    openSheet(`${edit ? S.ui.editHarvest : S.ui.recordHarvest} \u2013 ${plant.name}`, h(
       "div",
       {},
       d.el,
@@ -3199,7 +4077,7 @@
       h("label", { class: "check-row" }, fin, h("span", {}, S.ui.finalHarvest)),
       h("div", { class: "field-hint" }, S.ui.finalHint),
       field(S.ui.note, note),
-      buttons(save)
+      buttons(save2)
     ));
   }
   function batchMethodSheet(plant, batch, done) {
@@ -3211,10 +4089,12 @@
       field(S.ui.processing, mp.method.el),
       mp.estField,
       buttons(() => {
-        const m = mp.method.get();
-        const payload = { batchId: batch.id, phase: m === "none" ? "ready" : m, method: m };
-        if (m === "drying" && mp.est() != null) payload.estDays = mp.est();
-        submit(plant.id, [{ type: "batch_step", payload }], S.ui.batchSaved, done);
+        const m2 = mp.method.get();
+        const payload = { batchId: batch.id, phase: m2 === "none" ? "ready" : m2, method: m2 };
+        if (m2 === "drying" && mp.est() != null) payload.estDays = mp.est();
+        submit(plant.id, [{ type: "batch_step", payload }], S.ui.batchSaved, done).then((ok) => {
+          if (ok && OFFER_PHASES.includes(payload.phase)) stockOffer?.(plant.id, batch.id, done);
+        });
       })
     ));
   }
@@ -3245,7 +4125,9 @@
         const payload = { batchId: batch.id, phase: phase.get() };
         if (payload.phase === "drying" && est.value !== "") payload.estDays = Number(est.value);
         if (note.value.trim()) payload.note = note.value.trim();
-        submit(plant.id, [{ type: "batch_step", occurredAt: d.get(), payload }], S.ui.batchSaved, done);
+        submit(plant.id, [{ type: "batch_step", occurredAt: d.get(), payload }], S.ui.batchSaved, done).then((ok) => {
+          if (ok && OFFER_PHASES.includes(payload.phase)) stockOffer?.(plant.id, batch.id, done);
+        });
       })
     ));
   }
@@ -3393,7 +4275,7 @@
     note.value = p.note || "";
     const season = h("input", { type: "number", step: "1", min: "2000", max: "2100", value: p.season ?? (/* @__PURE__ */ new Date()).getFullYear() });
     const d = dateField();
-    const save = () => {
+    const save2 = () => {
       if (!pickers.overall.get()) return toast(S.ui.overallRequired);
       const scores = {};
       for (const k of criteria) if (pickers[k].get()) scores[k] = pickers[k].get();
@@ -3417,12 +4299,484 @@
       perennialHarvest ? field(S.ui.season, season) : null,
       field(S.ui.note, note),
       d.el,
-      buttons(save)
+      buttons(save2)
     ));
+  }
+
+  // js/ui-stock.js
+  var T = S.stock;
+  var DIGITS = { g: 1, kg: 2, ks: 0 };
+  var fmtAmt = (a, unit) => `${num3(a, DIGITS[unit] ?? 1)} ${unit}`;
+  var env = () => ({ cfg: ctx.stockCfg, rules: ctx.rules, priors: ctx.priors });
+  var methodChips = (value, onChange) => chipGroup(Object.values(resolveMethods(ctx.stockCfg)).map((m2) => [m2.key, m2.label]), value, onChange);
+  var methodLabel = (key) => resolveMethods(ctx.stockCfg)[key]?.label ?? T.method.other;
+  var qClass = (pct2) => pct2 >= 70 ? "q-ok" : pct2 >= 40 ? "q-mid" : "q-low";
+  var tabRequest = { id: null, tab: null };
+  var stockEligible = (b) => !b.legacy && !b.stock && !["pending", "drying"].includes(b.phase) && !BATCH_ENDED.includes(b.phase);
+  var findContainer2 = (plant, containerId) => {
+    for (const b of plant.cache.batches || []) {
+      const k = b.stock?.containers.find((x) => x.id === containerId);
+      if (k) return { batch: b, k };
+    }
+    return { batch: null, k: null };
+  };
+  function stockInitSheet(plant, batch, done) {
+    const sug = suggestInitial(plant, batch);
+    let unit = sug.unit;
+    const preset = presetFor(plant, ctx.stockCfg);
+    const rows = [];
+    const list = h("div", { class: "stack", id: "stock-rows" });
+    const addBtn = h("button", { type: "button", class: "btn btn-secondary btn-sm", id: "btn-add-container", onclick: () => addRow(null) }, icon("plus"), T.addContainer);
+    function addRow(amount) {
+      if (rows.length >= MAX_CONTAINERS) return toast(T.tooMany);
+      const amt = h("input", { type: "number", step: "any", min: "0", inputmode: "decimal", class: "stock-amount", value: amount ?? "" });
+      const method = methodChips(preset.method);
+      const label = h("input", { type: "text", maxlength: 40, placeholder: T.labelPh });
+      const rm = h("button", { type: "button", class: "btn btn-ghost btn-sm", "aria-label": T.removeContainer, onclick: () => {
+        rows.splice(rows.indexOf(row2), 1);
+        row2.el.remove();
+        renumber();
+      } }, icon("trash"));
+      const title = h("strong", {});
+      const row2 = { amt, method, label, title, rm, el: h(
+        "div",
+        { class: "card pad stock-row" },
+        h("div", { class: "stock-row-head" }, title, rm),
+        field(T.amount, amt),
+        field(T.storedIn, method.el),
+        field(T.label, label)
+      ) };
+      rows.push(row2);
+      list.append(row2.el);
+      renumber();
+    }
+    function renumber() {
+      rows.forEach((r, i) => {
+        r.title.textContent = T.containerN(i + 1);
+        r.rm.style.display = rows.length > 1 ? "" : "none";
+      });
+      addBtn.disabled = rows.length >= MAX_CONTAINERS;
+    }
+    addRow(sug.amount != null ? Math.round(sug.amount * 1e3) / 1e3 : null);
+    const unitChips = chipGroup(STOCK_UNITS.map((u) => [u, u]), unit, (u) => {
+      for (const r of rows) {
+        const v = Number(r.amt.value);
+        const c = r.amt.value !== "" && Number.isFinite(v) ? convertAmount(v, unit, u) : null;
+        if (c != null) r.amt.value = String(Math.round(c * 1e3) / 1e3);
+      }
+      unit = u;
+    });
+    unitChips.el.id = "stock-unit";
+    const est = h("input", { type: "checkbox", id: "stock-estimate", checked: sug.basis === "default" || sug.basis === "none" });
+    const d = dateField();
+    const hint = sug.basis === "learned" ? T.suggest.learned(num3(sug.ratio, 2)) : T.suggest[sug.basis];
+    openSheet(`${T.initTitle} \u2013 ${plant.name}`, h(
+      "div",
+      {},
+      h("p", { class: "muted" }, `${batchLabel(batch)} \xB7 ${T.initHint}`),
+      h("div", { class: "field-hint", id: "stock-suggest" }, hint),
+      field(T.unit, unitChips.el),
+      list,
+      addBtn,
+      h("label", { class: "check-row" }, est, h("span", {}, T.estimate)),
+      d.el,
+      buttons(() => {
+        const containers = rows.map((r) => ({ id: uid(), amount: Number(r.amt.value), method: r.method.get(), ...r.label.value.trim() ? { label: r.label.value.trim() } : {} }));
+        if (containers.some((c) => !(c.amount > 0))) return toast(T.needAmount);
+        submit(plant.id, [{ type: "stock_init", occurredAt: d.get(), payload: { batchId: batch.id, unit, containers, source: est.checked ? "estimate" : "weighed" } }], T.saved, done);
+      })
+    ));
+  }
+  var QUICK = { g: [1, 2, 3, 5, 10], kg: [0.1, 0.25, 0.5, 1], ks: [1, 2, 3, 5] };
+  function stockUseSheet(plant, batch, k, done) {
+    const unit = batch.stock.unit;
+    const d = dateField();
+    const first = !batch.stock.uses.length && !batch.evals.some((e) => e.kind === "tasting");
+    const use = async (amount) => {
+      if (!(amount > 0)) return toast(T.needAmount);
+      const amt = Math.min(amount, k.amount);
+      const ok = await submit(
+        plant.id,
+        [{ type: "stock_use", occurredAt: d.get(), payload: { batchId: batch.id, stockId: batch.stock.id, containerId: k.id, amount: amt } }],
+        amt >= k.amount - 1e-9 ? T.usedAll : T.used,
+        done
+      );
+      if (ok && first && plant.harvestable) tastePrompt(plant, batch, done);
+    };
+    const custom = h("input", { type: "number", step: "any", min: "0", inputmode: "decimal", id: "use-custom" });
+    const quick = (QUICK[unit] || []).filter((a) => a < k.amount - 1e-9);
+    openSheet(`${T.useTitle} \u2013 ${plant.name}`, h(
+      "div",
+      { class: "stack" },
+      h("p", { class: "muted" }, `${k.label || methodLabel(k.method)} \xB7 ${T.left} ${fmtAmt(k.amount, unit)}`),
+      h(
+        "div",
+        { class: "quick-row" },
+        quick.map((a) => h("button", { type: "button", class: "btn btn-secondary", dataset: { amount: a }, onclick: () => use(a) }, fmtAmt(a, unit))),
+        h("button", { type: "button", class: "btn btn-secondary", id: "btn-use-all", onclick: () => use(k.amount) }, T.useAll)
+      ),
+      field(T.useCustom, custom),
+      d.el,
+      h(
+        "div",
+        { class: "form-actions" },
+        h("button", { type: "button", class: "btn btn-secondary", onclick: closeSheet }, S.ui.cancel),
+        h("button", { type: "button", class: "btn btn-primary", id: "btn-use-custom", onclick: () => use(Number(custom.value)) }, T.use)
+      )
+    ));
+  }
+  function tastePrompt(plant, batch, done) {
+    openSheet(T.firstUse, h(
+      "div",
+      { class: "stack" },
+      h("p", { class: "muted" }, T.tasteAsk),
+      h("button", { type: "button", class: "btn btn-primary", id: "btn-taste-now", onclick: () => {
+        closeSheet();
+        evaluationSheet(plant, done, { kind: "tasting", batchId: batch.id });
+      } }, T.tasteNow),
+      h("button", { type: "button", class: "btn btn-secondary", onclick: closeSheet }, T.tasteSkip)
+    ));
+  }
+  function stockAdjustSheet(plant, batch, k, done) {
+    const unit = batch.stock.unit;
+    const rem = h("input", { type: "number", step: "any", min: "0", inputmode: "decimal", id: "adjust-remaining", value: k.amount });
+    const d = dateField();
+    openSheet(`${T.adjustTitle} \u2013 ${plant.name}`, h(
+      "div",
+      {},
+      h("p", { class: "muted" }, `${k.label || methodLabel(k.method)} \xB7 ${T.adjustHint}`),
+      field(`${T.left} (${unit})`, rem),
+      d.el,
+      buttons(() => {
+        const v = Number(rem.value);
+        if (rem.value === "" || !(v >= 0)) return toast(T.needAmount);
+        submit(plant.id, [{ type: "stock_adjust", occurredAt: d.get(), payload: { batchId: batch.id, stockId: batch.stock.id, containerId: k.id, remaining: v } }], T.adjusted, done);
+      })
+    ));
+  }
+  function stockMoveSheet(plant, batch, k, done) {
+    const unit = batch.stock.unit;
+    let scope = "whole";
+    const scopeChips = chipGroup([["whole", T.moveWhole], ["part", T.movePart]], scope, (v) => {
+      scope = v;
+      amtField.style.display = v === "part" ? "" : "none";
+    });
+    scopeChips.el.id = "move-scope";
+    const amt = h("input", { type: "number", step: "any", min: "0", inputmode: "decimal", id: "move-amount", value: Math.round(k.amount / 2 * 1e3) / 1e3 });
+    const amtField = field(`${T.moveAmount} (${unit})`, amt);
+    amtField.style.display = "none";
+    const method = methodChips(k.method);
+    method.el.id = "move-method";
+    const label = h("input", { type: "text", maxlength: 40, placeholder: T.labelPh });
+    const d = dateField();
+    openSheet(`${T.moveTitle} \u2013 ${plant.name}`, h(
+      "div",
+      {},
+      h("p", { class: "muted" }, `${k.label || methodLabel(k.method)} \xB7 ${T.left} ${fmtAmt(k.amount, unit)}`),
+      field(T.scope, scopeChips.el),
+      amtField,
+      field(T.moveTo, method.el),
+      field(T.label, label),
+      d.el,
+      buttons(() => {
+        const payload = { batchId: batch.id, stockId: batch.stock.id, containerId: k.id, method: method.get() };
+        const v = Number(amt.value);
+        const partial = scope === "part" && v > 0 && v < k.amount - 1e-9;
+        if (scope === "part" && !(v > 0)) return toast(T.needAmount);
+        if (!partial && payload.method === k.method) return toast(T.moveNeed);
+        if (partial) {
+          payload.amount = v;
+          payload.newContainerId = uid();
+        }
+        if (label.value.trim()) payload.label = label.value.trim();
+        submit(plant.id, [{ type: "stock_move", occurredAt: d.get(), payload }], T.moved, done);
+      })
+    ));
+  }
+  function stockCheckSheet(plant, batch, k, done) {
+    const m2 = resolveMethods(ctx.stockCfg)[k.method];
+    const scent = starPicker(0), look = starPicker(0);
+    const mold = chipGroup([["no", T.moldNo], ["yes", T.moldYes]], "no");
+    mold.el.id = "stock-mold";
+    const rh = h("input", { type: "number", step: "1", min: "0", max: "100", inputmode: "decimal", id: "stock-rh" });
+    const aired = h("input", { type: "checkbox", id: "stock-aired" });
+    const note = h("textarea", { rows: 2 });
+    const d = dateField();
+    openSheet(`${T.checkTitle} \u2013 ${plant.name}`, h(
+      "div",
+      {},
+      h("p", { class: "muted" }, `${k.label || methodLabel(k.method)} \xB7 ${T.checkHint}`),
+      field(T.scent, scent.el),
+      field(T.look, look.el),
+      field(T.mold, mold.el),
+      field(T.rh, rh),
+      m2?.airEveryDays > 0 ? h("label", { class: "check-row" }, aired, h("span", {}, T.aired)) : null,
+      field(S.ui.note, note),
+      d.el,
+      buttons(async () => {
+        const payload = { batchId: batch.id, stockId: batch.stock.id, containerId: k.id, mold: mold.get() === "yes" };
+        if (scent.get()) payload.scent = scent.get();
+        if (look.get()) payload.appearance = look.get();
+        if (rh.value !== "") payload.rh = Number(rh.value);
+        if (aired.checked) payload.aired = true;
+        if (note.value.trim()) payload.note = note.value.trim();
+        const ok = await submit(plant.id, [{ type: "stock_check", occurredAt: d.get(), payload }], T.checked, done);
+        if (ok && payload.mold) moldPrompt(plant, batch, k, done);
+      })
+    ));
+  }
+  function moldPrompt(plant, batch, k, done) {
+    openSheet(T.moldYes, h(
+      "div",
+      { class: "stack" },
+      h("p", { class: "muted" }, T.moldAsk),
+      h("button", { type: "button", class: "btn btn-danger", id: "btn-mold-discard", onclick: () => {
+        closeSheet();
+        stockDiscardSheet(plant, batch, k, done, "mold");
+      } }, T.discard),
+      h("button", { type: "button", class: "btn btn-secondary", onclick: () => {
+        closeSheet();
+        done?.();
+      } }, T.moldKeep)
+    ));
+  }
+  function stockDiscardSheet(plant, batch, k, done, reason = "") {
+    const why = h("input", { type: "text", maxlength: 80, id: "discard-reason", value: reason === "mold" ? T.moldYes : "" });
+    const d = dateField();
+    openSheet(`${T.discardTitle} \u2013 ${plant.name}`, h(
+      "div",
+      {},
+      h("p", { class: "muted" }, T.discardAsk(fmtAmt(k.amount, batch.stock.unit))),
+      field(T.reason, why),
+      d.el,
+      h(
+        "div",
+        { class: "form-actions" },
+        h("button", { type: "button", class: "btn btn-secondary", onclick: closeSheet }, S.ui.cancel),
+        h("button", { type: "button", class: "btn btn-danger", id: "btn-discard", onclick: () => submit(plant.id, [{
+          type: "stock_use",
+          occurredAt: d.get(),
+          payload: { batchId: batch.id, stockId: batch.stock.id, containerId: k.id, amount: k.amount, kind: "discard", ...why.value.trim() ? { reason: why.value.trim() } : {} }
+        }], T.discarded, done) }, T.discard)
+      )
+    ));
+  }
+  function runStockTask(task, plant, done) {
+    const { batch, k } = findContainer2(plant, task.containerId);
+    const snooze = async (days) => {
+      const t = /* @__PURE__ */ new Date();
+      t.setHours(0, 0, 0, 0);
+      t.setDate(t.getDate() + days);
+      await snoozeTask(ctx.db, plant.id, task.snoozeKey, t.toISOString());
+      closeSheet();
+      toast(`Odlo\u017Eeno do ${relDay(t.toISOString(), now())}`);
+      done?.();
+    };
+    const open = () => {
+      tabRequest.id = plant.id;
+      tabRequest.tab = "stock";
+      closeSheet();
+      navigate(`/plant/${plant.id}`);
+      done?.();
+    };
+    switch (task.type) {
+      case "stockCheck":
+        return batch && k ? stockCheckSheet(plant, batch, k, done) : null;
+      case "stockAir":
+        return batch && k ? submit(plant.id, [{ type: "stock_check", payload: { batchId: batch.id, stockId: batch.stock.id, containerId: k.id, aired: true } }], T.checked, done) : null;
+      case "stockUseBy":
+        if (!batch || !k) return null;
+        return openSheet(`${S.taskLabel.stockUseBy} \u2013 ${plant.name}`, h(
+          "div",
+          { class: "stack" },
+          h("p", { class: "muted" }, `${k.label || methodLabel(k.method)} \xB7 ${T.useByTask}`),
+          h("button", { type: "button", class: "btn btn-primary", id: "btn-useby-use", onclick: () => {
+            closeSheet();
+            stockUseSheet(plant, batch, k, done);
+          } }, T.use),
+          h("button", { type: "button", class: "btn btn-secondary", id: "btn-useby-check", onclick: () => {
+            closeSheet();
+            stockCheckSheet(plant, batch, k, done);
+          } }, T.check),
+          h("button", { type: "button", class: "btn btn-secondary", id: "btn-useby-discard", onclick: () => {
+            closeSheet();
+            stockDiscardSheet(plant, batch, k, done);
+          } }, T.discard),
+          h("button", { type: "button", class: "btn btn-secondary", id: "btn-useby-keep", onclick: () => snooze(3) }, S.ui.stillHave)
+        ));
+      case "stockLow":
+        return openSheet(`${S.taskLabel.stockLow} \u2013 ${plant.name}`, h(
+          "div",
+          { class: "stack" },
+          h("p", { class: "muted" }, T.lowTask(task.note ?? "?")),
+          h("button", { type: "button", class: "btn btn-primary", id: "btn-low-open", onclick: open }, T.fromTasks),
+          h("button", { type: "button", class: "btn btn-secondary", id: "btn-low-snooze", onclick: () => snooze(7) }, S.ui.later)
+        ));
+      default:
+        return null;
+    }
+  }
+  async function offerStock(plantId, batchId, done) {
+    const plant = await getPlant(ctx.db, plantId);
+    const batch = plant?.cache.batches?.find((b) => b.id === batchId);
+    if (!plant?.harvestable || !batch || !stockEligible(batch)) return;
+    openSheet(T.init, h(
+      "div",
+      { class: "stack" },
+      h("p", { class: "muted" }, T.weighPrompt),
+      h("button", { type: "button", class: "btn btn-primary", id: "btn-weigh-now", onclick: () => {
+        closeSheet();
+        stockInitSheet(plant, batch, done);
+      } }, T.weighNow),
+      h("button", { type: "button", class: "btn btn-secondary", id: "btn-weigh-later", onclick: closeSheet }, T.weighLater)
+    ));
+  }
+  setStockOffer(offerStock);
+  function stockSummaryNode(ps, nowIso2) {
+    const bits = [];
+    if (ps.rate) bits.push(T.rate(fmtAmt(ps.rate.perDay, ps.unit), Math.round(ps.rate.windowDays)));
+    else if (ps.remaining > 0) bits.push(T.noRate);
+    if (ps.runOutDays != null) bits.push(T.runOut(Math.max(1, Math.round(ps.runOutDays)), fmtDate(ps.runOutAt)));
+    return h(
+      "div",
+      { class: "card pad", id: "stock-summary" },
+      h("div", { class: "eval-line" }, h("span", {}, T.summary), h("strong", { id: "stock-total" }, fmtAmt(ps.remaining, ps.unit))),
+      bits.map((x) => h("div", { class: "muted" }, x)),
+      h("div", { class: "muted" }, `${T.presetLabel}: ${ps.preset.label}`)
+    );
+  }
+  function containerRow(plant, batch, entry, done) {
+    const { k, state } = entry;
+    const unit = batch.stock.unit;
+    const m2 = state.method;
+    const bits = [
+      `${T.left} ${fmtAmt(k.amount, unit)} ${T.of} ${fmtAmt(k.initial, unit)}`,
+      state.maturing ? T.maturing(fmtDate(state.maturingUntil)) : `${T.fresh} ${state.pct} %`,
+      !state.maturing && state.below ? T.belowUseBy : !state.maturing && state.useByAt ? T.useBy(fmtDate(state.useByAt)) : null,
+      k.opens ? T.opened(k.opens) : null,
+      state.ratio.source === "own" ? T.learnedTag(num3(state.ratio.r, 2), state.ratio.n) : state.ratio.source === "prior" ? T.priorTag(num3(state.ratio.r, 2)) : null
+    ].filter(Boolean);
+    const act = (key, label, fn, cls = "btn-secondary") => h("button", { type: "button", class: `btn ${cls} btn-sm`, dataset: { act: key }, onclick: fn }, label);
+    return h(
+      "div",
+      { class: "stock-container", dataset: { container: k.id, method: k.method } },
+      h(
+        "div",
+        { class: "stock-head" },
+        h("strong", {}, k.label || m2.label),
+        h("span", { class: "tag" }, methodLabel(k.method)),
+        k.moldAt ? h("span", { class: "tag q-low" }, T.moldTag) : null,
+        state.maturing ? null : h("span", { class: `tag stock-q ${qClass(state.pct)}`, dataset: { q: state.pct } }, `${state.pct} %`)
+      ),
+      h("div", { class: "stock-bar" }, h("span", { style: `width:${Math.max(2, Math.round(k.amount / Math.max(k.initial, k.amount) * 100))}%` })),
+      h("div", { class: "timeline-detail" }, bits.join(" \xB7 ")),
+      h("div", { class: "batch-actions" }, [
+        act("use", T.use, () => stockUseSheet(plant, batch, k, done), "btn-primary"),
+        act("adjust", T.adjust, () => stockAdjustSheet(plant, batch, k, done)),
+        act("move", T.move, () => stockMoveSheet(plant, batch, k, done)),
+        act("check", T.check, () => stockCheckSheet(plant, batch, k, done)),
+        act("discard", T.discard, () => stockDiscardSheet(plant, batch, k, done), "btn-ghost")
+      ])
+    );
+  }
+  function stockPanel(plant, done, nowIso2 = now()) {
+    const ps = plantStock(plant, nowIso2, env());
+    const batches = (plant.cache.batches || []).filter((b) => !b.legacy);
+    const eligible = batches.filter(stockEligible);
+    const out = [];
+    if (ps) out.push(stockSummaryNode(ps, nowIso2));
+    for (const entry of ps ? [...ps.batches].reverse() : []) {
+      const { batch, containers } = entry;
+      const open = containers.filter(({ k }) => k.status === "open");
+      const closed = containers.length - open.length;
+      out.push(h(
+        "div",
+        { class: "card pad stock-batch", dataset: { batch: batch.id } },
+        h(
+          "div",
+          { class: "eval-line" },
+          h("strong", {}, `${fmtDate(batch.harvestedAt)} \xB7 ${S.batchPhase[batch.phase] || batch.phase}`),
+          h("span", { class: "muted" }, `${fmtAmt(entry.remaining, batch.stock.unit)} ${T.of} ${fmtAmt(batch.stock.initial, batch.stock.unit)}`)
+        ),
+        h("div", { class: "muted" }, `${T.source[batch.stock.source]} \xB7 ${T.since} ${fmtDate(batch.stock.at)}`),
+        open.map((c) => containerRow(plant, batch, c, done)),
+        closed ? h("div", { class: "muted" }, T.emptied(closed)) : null
+      ));
+    }
+    for (const b of eligible) {
+      const sug = suggestInitial(plant, b);
+      out.push(h(
+        "div",
+        { class: "card pad stock-batch", dataset: { batch: b.id } },
+        h(
+          "div",
+          { class: "eval-line" },
+          h("strong", {}, batchLabel(b)),
+          sug.amount != null ? h("span", { class: "muted" }, `~${fmtAmt(sug.amount, sug.unit)}`) : null
+        ),
+        h("button", { type: "button", class: "btn btn-primary panel-btn", dataset: { act: "init" }, onclick: () => stockInitSheet(plant, b, done) }, icon("plus"), T.init)
+      ));
+    }
+    if (!out.length) out.push(h("div", { class: "empty-state", id: "stock-empty" }, T.empty));
+    return h("div", { id: "stock-panel" }, out);
+  }
+  var hasStockTab = (plant) => plant.harvestable && (plant.cache.batches || []).some((b) => !b.legacy && (b.stock || b.phase !== "pending"));
+  async function renderStockOverview(root2) {
+    const alive = guard();
+    const { plants } = await loadAll();
+    const nowIso2 = now();
+    const rows = plants.map((p) => ({ p, ps: plantStock(p, nowIso2, env()) })).filter(({ ps }) => ps && ps.remaining > 0).sort((a, b) => (a.ps.runOutDays ?? 1e9) - (b.ps.runOutDays ?? 1e9));
+    const cmp2 = methodComparison(plants);
+    if (!alive()) return;
+    put(
+      clear(root2),
+      h(
+        "div",
+        { class: "top-bar" },
+        h("button", { type: "button", class: "btn btn-ghost", id: "btn-back", "aria-label": S.ui.back, onclick: () => navigate("/") }, icon("back")),
+        h("h2", { class: "page-title" }, T.overview)
+      ),
+      h("p", { class: "muted pad" }, T.overviewIntro),
+      rows.length ? h("div", { class: "card task-list", id: "stock-overview" }, rows.map(({ p, ps }) => {
+        const worst = ps.batches.flatMap((b) => b.containers).filter((c) => c.state).sort((a, b) => a.state.q - b.state.q)[0];
+        return h(
+          "div",
+          { class: "item-row", role: "button", tabindex: 0, dataset: { plant: p.id }, onclick: () => {
+            tabRequest.id = p.id;
+            tabRequest.tab = "stock";
+            navigate(`/plant/${p.id}`);
+          } },
+          h("span", { class: `badge-dot ${worst && worst.state.pct < 40 ? "expired" : worst && worst.state.pct < 70 ? "missing" : "ok"}` }),
+          h(
+            "div",
+            { class: "item-info" },
+            h("div", { class: "item-name" }, `${p.name} \xB7 ${fmtAmt(ps.remaining, ps.unit)}`),
+            h("div", { class: "item-detail" }, h(
+              "span",
+              { class: "item-sub" },
+              [
+                ps.runOutDays != null ? T.runOut(Math.max(1, Math.round(ps.runOutDays)), fmtDate(ps.runOutAt)) : T.noRate,
+                worst ? `${T.fresh} ${worst.state.pct} %` : null
+              ].filter(Boolean).join(" \xB7 ")
+            ))
+          )
+        );
+      })) : h("div", { class: "empty-state", id: "stock-none" }, T.none),
+      h("div", { class: "section-title" }, T.comparison),
+      h("p", { class: "muted pad" }, T.comparisonHint),
+      cmp2.length ? h("div", { class: "card pad", id: "stock-comparison" }, cmp2.map((c) => h(
+        "div",
+        { class: "eval-line", dataset: { method: c.method } },
+        h("span", {}, methodLabel(c.method)),
+        h("span", { class: "muted" }, [T.comparisonRow(c.n, num3(c.avg, 1), c.avgAge), c.lateN ? T.lateAvg(c.lateN, num3(c.lateAvg, 1)) : null].filter(Boolean).join(" \xB7 "))
+      ))) : h("div", { class: "empty-state" }, T.comparisonNone),
+      h("div", { class: "pad" }, h("button", { type: "button", class: "btn btn-secondary panel-btn", id: "btn-stock-settings", onclick: () => navigate("/settings/stock") }, icon("settings"), T.settingsTitle))
+    );
   }
 
   // js/ui-dashboard.js
   var filters = { location: "all", environment: "all", category: "all" };
+  var upcomingOpen = false;
   var CAT_ICON = { herb: "leaf", vegetable: "sprout", fruit: "pot", flower: "sun", tree_shrub: "leaf", houseplant: "sprout", other: "pot" };
   var DOT = { overdue: "expired", today: "missing", upcoming: "needs_check" };
   function runTask(task, plant, done) {
@@ -3444,7 +4798,7 @@
       case "evaluationReview":
         return evaluationSheet(plant, done, { kind: "final", batchId: task.batchId ?? void 0 });
       default:
-        return null;
+        return task.type.startsWith("stock") ? runStockTask(task, plant, done) : null;
     }
   }
   function afterHarvestRows(plants, nowIso2) {
@@ -3461,7 +4815,12 @@
     return h(
       "section",
       { class: "after-harvest", id: "after-harvest" },
-      h("div", { class: "section-title" }, S.ui.afterHarvest),
+      h(
+        "div",
+        { class: "section-title section-title-row" },
+        h("span", {}, S.ui.afterHarvest),
+        rows.some(({ batch }) => batch.stock) ? h("button", { type: "button", class: "btn btn-ghost btn-sm", id: "btn-stock-overview", onclick: () => navigate("/stock") }, S.stock.overview) : null
+      ),
       h("div", { class: "card task-list" }, rows.map(({ plant, batch, pending, progress }) => h(
         "div",
         {
@@ -3479,7 +4838,11 @@
           h("div", { class: "item-detail" }, h(
             "span",
             { class: "item-sub" },
-            [fmtDate(batch.harvestedAt), progress ? S.ui.dayOf(progress.t + 1, progress.est) : null].filter(Boolean).join(" \xB7 ")
+            [
+              fmtDate(batch.harvestedAt),
+              progress ? S.ui.dayOf(progress.t + 1, progress.est) : null,
+              batch.stock ? `${S.stock.left} ${num3(batchRemaining(batch), 2)} ${batch.stock.unit}` : null
+            ].filter(Boolean).join(" \xB7 ")
           ))
         ),
         pending ? h(
@@ -3532,7 +4895,7 @@
       h(
         "div",
         { class: "item-info" },
-        h("div", { class: "item-name" }, `${task.plantName} \u2013 ${S.taskLabel[task.type]}`),
+        h("div", { class: "item-name" }, `${task.plantName} \u2013 ${S.taskLabel[task.type]}${task.note && task.type.startsWith("stock") && task.type !== "stockLow" ? ` \xB7 ${task.note}` : ""}`),
         h("div", { class: "item-detail" }, h("span", { class: "item-sub" }, task.phase ? `${S.batchPhase[task.phase] || task.phase} \xB7 ${when}` : when))
       ),
       h(
@@ -3593,7 +4956,9 @@
     const tasks = computeTasks(plants.filter((p) => p.archivedAt ? true : matches(p)), nowIso2, opts);
     const count = (u) => tasks.filter((t) => t.urgency === u).length;
     const done = list.reduce((n, p) => n + doneToday(byPlant.get(p.id) || [], nowIso2), 0);
-    const open = count("overdue") + count("today");
+    const due = tasks.filter((t) => t.urgency !== "upcoming");
+    const later = tasks.filter((t) => t.urgency === "upcoming");
+    const open = due.length;
     const total = done + open;
     const pct2 = total ? Math.round(done / total * 100) : active.length ? 100 : 0;
     const level = !active.length ? "empty" : pct2 >= 100 ? "done" : pct2 < 34 ? "starting" : "building";
@@ -3642,7 +5007,7 @@
         } }, S.backup.dismiss)
       ));
     }
-    const first = tasks[0];
+    const first = due[0];
     if (first) {
       root2.append(h(
         "div",
@@ -3653,7 +5018,7 @@
           id: "next-action",
           onclick: () => runTask(first, byIdAll.get(first.plantId), rerender)
         },
-        h("div", { class: "next-action-icon" }, icon(first.type === "moisture" ? "drop" : first.type === "fertilizing" ? "leaf" : first.type.startsWith("evaluation") ? "status-ok" : first.type === "batchCheck" || first.type === "useBy" ? "check" : "bug")),
+        h("div", { class: "next-action-icon" }, icon(first.type === "moisture" ? "drop" : first.type === "fertilizing" ? "leaf" : first.type.startsWith("evaluation") ? "status-ok" : first.type === "batchCheck" || first.type === "useBy" || first.type.startsWith("stock") ? "check" : "bug")),
         h(
           "div",
           { class: "next-action-copy" },
@@ -3667,7 +5032,29 @@
     const bar = filterBar(active, rerender);
     if (bar) root2.append(bar);
     root2.append(h("div", { class: "section-title" }, S.ui.needsAttention));
-    root2.append(tasks.length ? h("div", { class: "card task-list" }, tasks.map((t) => taskRow(t, byIdAll.get(t.plantId), rerender))) : h("div", { class: "empty-state" }, S.ui.noTasks));
+    root2.append(due.length ? h("div", { class: "card task-list", id: "due-list" }, due.map((t) => taskRow(t, byIdAll.get(t.plantId), rerender))) : h("div", { class: "empty-state", id: "no-due" }, S.ui.noTasks));
+    if (later.length) {
+      const body = h("div", { class: "card task-list", id: "upcoming-list", hidden: !upcomingOpen }, later.map((t) => taskRow(t, byIdAll.get(t.plantId), rerender)));
+      const toggle = h(
+        "button",
+        {
+          type: "button",
+          class: "upcoming-toggle",
+          id: "btn-upcoming",
+          "aria-expanded": String(upcomingOpen),
+          onclick: () => {
+            upcomingOpen = !upcomingOpen;
+            body.hidden = !upcomingOpen;
+            toggle.setAttribute("aria-expanded", String(upcomingOpen));
+            toggle.classList.toggle("open", upcomingOpen);
+          }
+        },
+        icon("chevron"),
+        h("span", {}, `${S.ui.upcomingSection} (${later.length})`)
+      );
+      toggle.classList.toggle("open", upcomingOpen);
+      root2.append(toggle, body);
+    }
     const after = afterHarvestSection(plants, nowIso2, rerender);
     if (after) root2.append(after);
     for (const key of PROFILES[ctx.profile]?.dashboard || []) {
@@ -3679,8 +5066,8 @@
       root2.append(h("div", { class: "empty-state" }, S.ui.noPlants));
     } else {
       const cards = await Promise.all(list.map((p) => {
-        const next = getPlantTasks(p, nowIso2, opts).sort((a, b) => a.dueAt < b.dueAt ? -1 : 1)[0];
-        const withUrg = next ? { ...next, urgency: next.dueAt < nowIso2 ? "overdue" : "upcoming" } : null;
+        const next = getPlantTasks(p, nowIso2, opts).filter((t) => dayDiff(nowIso2, t.dueAt) <= 0).sort((a, b) => a.dueAt < b.dueAt ? -1 : 1)[0];
+        const withUrg = next ? { ...next, urgency: dayDiff(nowIso2, next.dueAt) < 0 ? "overdue" : "today" } : null;
         return plantCard(p, byPlant.get(p.id) || [], withUrg);
       }));
       root2.append(h("div", { class: "plant-grid" }, cards));
@@ -3986,7 +5373,7 @@
     return hemisphereKnown().then((known) => {
       if (known) return null;
       return new Promise((resolve) => {
-        const pick = async (v) => {
+        const pick2 = async (v) => {
           await setHemisphere(v);
           closeSheet();
           resolve(v);
@@ -3997,8 +5384,8 @@
             "div",
             { class: "stack" },
             h("p", { class: "muted" }, "Ro\u010Dn\xED obdob\xED ovliv\u0148uje z\xE1livku venku. Kde p\u011Bstuje\u0161?"),
-            h("button", { type: "button", class: "btn btn-primary", dataset: { hemi: "north" }, onclick: () => pick("north") }, S.ui.north),
-            h("button", { type: "button", class: "btn btn-secondary", dataset: { hemi: "south" }, onclick: () => pick("south") }, S.ui.south)
+            h("button", { type: "button", class: "btn btn-primary", dataset: { hemi: "north" }, onclick: () => pick2("north") }, S.ui.north),
+            h("button", { type: "button", class: "btn btn-secondary", dataset: { hemi: "south" }, onclick: () => pick2("south") }, S.ui.south)
           ),
           { onClose: () => resolve(null) }
         );
@@ -4027,7 +5414,8 @@
       baseOverride: editing.baseOverride,
       potVolumeL: editing.potVolumeL,
       substrate: editing.substrate,
-      plannedHarvestAt: editing.plannedHarvestAt
+      plannedHarvestAt: editing.plannedHarvestAt,
+      stockPreset: editing.stockPreset
     } : source ? clonePlantInput(source, plants.map((p) => p.name)) : { category: pre.category ?? null, environment: pre.environment ?? null, lifecycle: pre.lifecycle, harvestable: pre.harvestable, source: "seed" };
     const [exName, exVariety] = example(ctx.profile, plants.length);
     const st = { category: init.category, lifecycle: init.lifecycle, environment: init.environment, source: init.source || "seed" };
@@ -4044,10 +5432,10 @@
       st.lifecycle = v;
       fillStages();
     });
-    const env = chipGroup(Object.entries(S.environment), st.environment, (v) => {
+    const env2 = chipGroup(Object.entries(S.environment), st.environment, (v) => {
       st.environment = v;
     });
-    env.el.id = "f-environment";
+    env2.el.id = "f-environment";
     const src = chipGroup(SOURCES.map((s) => [s, S.source[s]]), st.source, (v) => {
       st.source = v;
     });
@@ -4074,6 +5462,23 @@
     const planned = h("input", { type: "date", id: "f-planned", value: init.plannedHarvestAt ? dateOnly(init.plannedHarvestAt) : "" });
     const potValue = () => potVol.value === "" ? null : Number(potVol.value);
     const plannedIso = () => planned.value ? (/* @__PURE__ */ new Date(`${planned.value}T12:00:00`)).toISOString() : null;
+    let stockPreset = init.stockPreset ?? "";
+    const presetChips = chipGroup([["", S.stock.presetDefault], ...Object.values(resolvePresets(ctx.stockCfg)).map((p) => [p.key, p.label])], stockPreset, (v) => {
+      stockPreset = v;
+    });
+    presetChips.el.id = "f-stockpreset";
+    const presetField = field(S.stock.presetPlant, presetChips.el, S.stock.presetPlantHint);
+    const syncPreset = () => {
+      presetField.style.display = harv.checked ? "" : "none";
+    };
+    harv.addEventListener("change", syncPreset);
+    const rememberPreset = async (category, varietyName) => {
+      if (!stockPreset || !varietyName.trim()) return;
+      const key = varietyKey({ category, variety: varietyName });
+      if (ctx.stockCfg.varietyPreset[key] === stockPreset) return;
+      ctx.stockCfg = cleanStock({ ...ctx.stockCfg, varietyPreset: { ...ctx.stockCfg.varietyPreset, [key]: stockPreset } });
+      await metaSet(ctx.db, "stock", ctx.stockCfg);
+    };
     function fillStages() {
       if (!st.category) {
         stage.replaceChildren();
@@ -4088,6 +5493,7 @@
       st.lifecycle = pre.lifecycle === "perennial" ? "perennial" : CATEGORIES[v].lifecycle;
       life.set(st.lifecycle);
       harv.checked = pre.harvestable ?? CATEGORIES[v].harvestable;
+      syncPreset();
       fillStages();
     }
     if (st.category) {
@@ -4095,8 +5501,9 @@
       life.set(st.lifecycle);
     }
     fillStages();
+    syncPreset();
     const errBox = h("div", { class: "form-error", id: "form-error", role: "alert" });
-    const save = async () => {
+    const save2 = async () => {
       errBox.textContent = "";
       try {
         if (editing) {
@@ -4108,8 +5515,10 @@
             baseOverride: base.value === "" ? null : Number(base.value),
             potVolumeL: potValue(),
             substrate: substrate || null,
-            plannedHarvestAt: plannedIso()
+            plannedHarvestAt: plannedIso(),
+            stockPreset: stockPreset || null
           });
+          await rememberPreset(editing.category, variety.value);
           if (st.environment && st.environment !== editing.cache.environment) {
             if (SEASONAL_ENVIRONMENTS.includes(st.environment)) await askHemisphere();
             await appendEvents(ctx.db, id, [{ type: "environment_change", payload: { environment: st.environment } }]);
@@ -4136,8 +5545,10 @@
           learnedBase: init.learnedBase || null,
           potVolumeL: potValue() ?? void 0,
           substrate: substrate || void 0,
-          plannedHarvestAt: plannedIso() ?? void 0
+          plannedHarvestAt: plannedIso() ?? void 0,
+          stockPreset: harv.checked && stockPreset ? stockPreset : void 0
         });
+        if (harv.checked) await rememberPreset(st.category, variety.value);
         const extra = [];
         if (photo.files[0]) {
           const photoId = await savePhotoFile(ctx.db, plant.id, photo.files[0]);
@@ -4190,13 +5601,13 @@
         "form",
         { class: "plant-form", onsubmit: (e) => {
           e.preventDefault();
-          save();
+          save2();
         } },
         field(`${S.ui.name} *`, name),
         field(S.ui.variety, variety),
         field(`${S.ui.category} *`, cat.el, editing ? "Kategorii nelze m\u011Bnit." : null),
         field(S.ui.lifecycle, life.el),
-        field(`${S.ui.environment} *`, env.el),
+        field(`${S.ui.environment} *`, env2.el),
         h("label", { class: "check-row" }, harv, h("span", {}, S.ui.harvestable)),
         editing ? null : field(S.ui.stageLabel, stage),
         field(S.ui.location, location2),
@@ -4205,6 +5616,7 @@
         field(S.ui.potVolume2, potVol),
         field(S.ui.substrateLabel, subChips.el),
         field(S.ui.plannedHarvest, planned),
+        presetField,
         field(S.ui.baseOverride, base),
         editing ? null : field(S.ui.photo, photo),
         editing ? null : field(S.ui.note, note),
@@ -4285,7 +5697,7 @@
       h(
         "div",
         { class: "item-info" },
-        h("div", { class: "item-name" }, S.taskLabel[t.type]),
+        h("div", { class: "item-name" }, S.taskLabel[t.type] + (t.note && t.type !== "stockLow" ? ` \u2013 ${t.note}` : "")),
         h("div", { class: "item-detail" }, h("span", { class: "item-sub" }, `${t.phase ? `${S.batchPhase[t.phase] || t.phase} \xB7 ` : ""}${relDay(t.dueAt, nowIso2)}`))
       ),
       h(
@@ -4300,9 +5712,15 @@
     const tabs = [
       ["diary", S.ui.timeline],
       plant.harvestable ? ["harvests", S.ui.harvests] : ["milestones", S.ui.milestones],
+      hasStockTab(plant) ? ["stock", S.stock.tab] : null,
       canEval ? ["evaluation", S.ui.evaluation] : null,
       ["care", S.ui.careTab]
     ].filter(Boolean);
+    if (tabRequest.id === id && tabs.some(([k]) => k === tabRequest.tab)) {
+      tab = tabRequest.tab;
+      tabPlant = id;
+    }
+    tabRequest.id = null;
     if (tabPlant !== id || !tabs.some(([k]) => k === tab)) {
       tab = "diary";
       tabPlant = id;
@@ -4313,6 +5731,7 @@
     };
     async function buildPanel() {
       if (tab === "harvests") return harvestsPanel();
+      if (tab === "stock") return stockPanel(plant, refresh, nowIso2);
       if (tab === "milestones") return milestonesPanel();
       if (tab === "evaluation") return evaluationPanel();
       if (tab === "care") return carePanel();
@@ -4322,7 +5741,7 @@
       const rows = diaryRows(events);
       const items = await Promise.all(rows.map(async (r) => {
         const src = r.photoId ? await photoUrl(ctx.db, r.photoId) : null;
-        const canVoid = !locked || ["note", "photo", "evaluation", "batch_step", "batch_check"].includes(r.event.type);
+        const canVoid = !locked || ["note", "photo", "evaluation", "batch_step", "batch_check", "stock_init", "stock_use", "stock_adjust", "stock_move", "stock_check"].includes(r.event.type);
         return h(
           "div",
           { class: "timeline-row", dataset: { event: r.event.type } },
@@ -4341,13 +5760,24 @@
             "aria-label": S.ui.voidIt,
             title: S.ui.voidIt,
             onclick: async () => {
-              try {
-                await voidEvent(ctx.db, id, r.event.id);
-                toast("Z\xE1znam zru\u0161en");
-                refresh();
-              } catch (e) {
-                toast(e.message);
-              }
+              const doVoid = async () => {
+                try {
+                  await voidEvent(ctx.db, id, r.event.id);
+                  closeSheet();
+                  toast("Z\xE1znam zru\u0161en");
+                  refresh();
+                } catch (e) {
+                  toast(e.message);
+                }
+              };
+              if (r.event.type !== "harvest") return doVoid();
+              openSheet(S.ui.voidConfirm, h(
+                "div",
+                { class: "stack" },
+                h("p", { class: "muted" }, S.ui.voidHarvestAsk),
+                h("button", { type: "button", class: "btn btn-danger", id: "btn-void-harvest", onclick: doVoid }, S.ui.voidConfirm),
+                h("button", { type: "button", class: "btn btn-secondary", onclick: closeSheet }, S.ui.cancel)
+              ));
             }
           }, icon("trash"))
         );
@@ -4378,6 +5808,7 @@
           b.phase === "pending" ? h("button", { type: "button", class: "btn btn-primary btn-sm", dataset: { act: "method" }, onclick: () => batchMethodSheet(plant, b, refresh) }, S.ui.batchMethod) : null,
           open && b.phase !== "pending" ? h("button", { type: "button", class: "btn btn-secondary btn-sm", dataset: { act: "check" }, onclick: () => batchCheckSheet(plant, b, refresh) }, S.ui.batchCheck) : null,
           open && b.phase !== "pending" ? h("button", { type: "button", class: "btn btn-secondary btn-sm", dataset: { act: "move" }, onclick: () => batchStepSheet(plant, b, refresh) }, S.ui.batchMove) : null,
+          stockEligible(b) ? h("button", { type: "button", class: "btn btn-secondary btn-sm", dataset: { act: "stock" }, onclick: () => stockInitSheet(plant, b, refresh) }, S.stock.init) : null,
           plant.harvestable && b.phase !== "discarded" ? h("button", { type: "button", class: "btn btn-secondary btn-sm", dataset: { act: "eval" }, onclick: () => evaluationSheet(plant, refresh, { batchId: b.id }) }, S.ui.evaluate) : null
         )
       );
@@ -4404,12 +5835,20 @@
           h(
             "div",
             { class: "timeline-body" },
-            h("div", { class: "timeline-title" }, `${fmtDate(e.occurredAt)}${e.payload.final ? ` \xB7 ${S.ui.lastHarvestTag}` : ""}`),
+            h("div", { class: "timeline-title" }, `${fmtDate(e.occurredAt)}${e.payload.final ? ` \xB7 ${S.ui.lastHarvestTag}` : ""}${e.payload.edited ? ` \xB7 ${S.ui.editedTag}` : ""}`),
             h("div", { class: "timeline-detail" }, line(e.payload)),
             e.payload.processingDays != null ? h("div", { class: "timeline-detail" }, `${S.ui.processingDays}: ${e.payload.processingDays}`) : null,
             e.payload.note ? h("div", { class: "timeline-detail" }, e.payload.note) : null,
             batchBlock(batchOf(e))
-          )
+          ),
+          locked ? null : h("button", {
+            type: "button",
+            class: "btn btn-ghost btn-sm",
+            dataset: { act: "edit-harvest" },
+            "aria-label": S.ui.editHarvest,
+            title: S.ui.editHarvest,
+            onclick: () => harvestSheet(plant, refresh, e)
+          }, icon("edit"))
         ))) : h("div", { class: "empty-state" }, S.ui.noHarvests),
         learnNote(),
         hv.length ? h("div", { class: "card pad", id: "harvest-total" }, h("strong", {}, `${S.ui.total}: `), line(totals)) : null
@@ -4603,10 +6042,10 @@
 
   // js/ui-criteria.js
   async function saveCriteria(next) {
-    const clean3 = cleanCriteria(next);
-    await metaSet(ctx.db, "criteria", clean3);
-    ctx.criteria = clean3;
-    return clean3;
+    const clean4 = cleanCriteria(next);
+    await metaSet(ctx.db, "criteria", clean4);
+    ctx.criteria = clean4;
+    return clean4;
   }
   var withEntries = (category, list) => ({ ...ctx.criteria, [category]: list });
   function categoryCard(category, refresh) {
@@ -4623,7 +6062,7 @@
       const input = h("input", {
         type: "text",
         class: "crit-input",
-        maxlength: String(LABEL_MAX),
+        maxlength: String(LABEL_MAX2),
         value: e.label,
         "aria-label": S.crit.renameHint,
         dataset: { crit: e.key },
@@ -4650,7 +6089,7 @@
         }, icon("trash"))
       );
     };
-    const addInput = h("input", { type: "text", class: "crit-input", maxlength: String(LABEL_MAX), placeholder: S.crit.addHint, id: `crit-new-${category}` });
+    const addInput = h("input", { type: "text", class: "crit-input", maxlength: String(LABEL_MAX2), placeholder: S.crit.addHint, id: `crit-new-${category}` });
     const add = async () => {
       err.textContent = "";
       const label = addInput.value.replace(/[\u0000-\u001f\u007f<>]/g, "").trim();
@@ -4742,12 +6181,12 @@
     return ORDERED.some((grp) => grp.includes(key) && grp.some((k, i) => i > 0 && next[k] < next[grp[i - 1]]));
   }
   async function saveRules(overrides) {
-    const clean3 = cleanRules(overrides);
-    await metaSet(ctx.db, "rules", clean3);
-    ctx.overrides = clean3;
-    ctx.rules = resolveRules(clean3);
+    const clean4 = cleanRules(overrides);
+    await metaSet(ctx.db, "rules", clean4);
+    ctx.overrides = clean4;
+    ctx.rules = resolveRules(clean4);
     await rebuildAll(ctx.db);
-    return clean3;
+    return clean4;
   }
   function ruleLabel(def) {
     const L = S.rules.label[def.key];
@@ -4895,6 +6334,216 @@
       } }, S.rules.resetAll),
       h("button", { type: "button", class: "btn btn-secondary", onclick: closeSheet }, S.ui.cancel)
     ));
+  }
+
+  // js/ui-stockcfg.js
+  var T2 = S.stock;
+  var clone = (o) => JSON.parse(JSON.stringify(o));
+  async function save(next) {
+    const clean4 = cleanStock(next);
+    await metaSet(ctx.db, "stock", clean4);
+    ctx.stockCfg = clean4;
+    await refreshPriors();
+    return clean4;
+  }
+  var numInput = (value, def, extra = {}) => h("input", { type: "number", inputmode: "decimal", step: "any", value: value ?? "", placeholder: def != null ? String(def) : "", ...extra });
+  function methodSheet(key, refresh) {
+    const M = resolveMethods(ctx.stockCfg);
+    const cur = M[key];
+    const builtin = key in BUILTIN_METHODS;
+    const label = h("input", { type: "text", maxlength: 40, value: cur.label, id: "method-label" });
+    const inputs = Object.fromEntries(METHOD_PARAMS.map((p) => [p.key, numInput(
+      cur[p.key],
+      builtin ? BUILTIN_METHODS[key][p.key] : null,
+      { min: p.min, max: p.max, id: `mp-${p.key}`, step: p.step ?? (p.int ? 1 : "any") }
+    )]));
+    const err = h("div", { class: "form-error", id: "method-error" });
+    const apply = async (reset) => {
+      const methods = clone(ctx.stockCfg.methods);
+      if (reset) delete methods[key];
+      else {
+        const o = { label: label.value.trim() };
+        if (!o.label) {
+          err.textContent = T2.nameNeeded;
+          return;
+        }
+        for (const p of METHOD_PARAMS) {
+          const raw = inputs[p.key].value;
+          if (raw === "") continue;
+          const v = Number(raw);
+          if (!Number.isFinite(v) || v < p.min || v > p.max || p.int && !Number.isInteger(v)) {
+            err.textContent = `${T2.param[p.key]}: ${T2.invalid}`;
+            return;
+          }
+          o[p.key] = v;
+        }
+        methods[key] = o;
+      }
+      await save({ ...ctx.stockCfg, methods });
+      closeSheet();
+      toast(T2.saved2);
+      refresh();
+    };
+    openSheet(cur.label, h(
+      "div",
+      {},
+      field(T2.name, label),
+      METHOD_PARAMS.map((p) => field(T2.param[p.key], inputs[p.key])),
+      err,
+      h(
+        "div",
+        { class: "form-actions" },
+        builtin ? h("button", { type: "button", class: "btn btn-secondary", id: "btn-method-reset", onclick: () => apply(true) }, T2.reset) : h("button", { type: "button", class: "btn btn-danger", id: "btn-method-delete", onclick: () => apply(true) }, T2.delete),
+        h("button", { type: "button", class: "btn btn-primary", id: "btn-method-save", onclick: () => apply(false) }, S.ui.save)
+      )
+    ));
+  }
+  function newMethodSheet(refresh) {
+    const M = resolveMethods(ctx.stockCfg);
+    const name = h("input", { type: "text", maxlength: 40, id: "new-method-name" });
+    const from = chipGroup(Object.values(M).map((m2) => [m2.key, m2.label]), "jar");
+    const err = h("div", { class: "form-error" });
+    openSheet(T2.addMethod, h(
+      "div",
+      {},
+      field(T2.name, name),
+      field(T2.cloneOf, from.el),
+      err,
+      h(
+        "div",
+        { class: "form-actions" },
+        h("button", { type: "button", class: "btn btn-secondary", onclick: closeSheet }, S.ui.cancel),
+        h("button", { type: "button", class: "btn btn-primary", id: "btn-new-method-save", onclick: async () => {
+          const label = name.value.trim();
+          if (!label) {
+            err.textContent = T2.nameNeeded;
+            return;
+          }
+          const src = M[from.get()];
+          const key = newKey("x", Object.keys(M));
+          const o = { label };
+          for (const p of METHOD_PARAMS) o[p.key] = src[p.key];
+          await save({ ...ctx.stockCfg, methods: { ...clone(ctx.stockCfg.methods), [key]: o } });
+          closeSheet();
+          toast(T2.saved2);
+          refresh();
+        } }, S.ui.save)
+      )
+    ));
+  }
+  function presetSheet(key, refresh) {
+    const P = resolvePresets(ctx.stockCfg);
+    const M = resolveMethods(ctx.stockCfg);
+    const cur = key ? P[key] : { method: "jar", maturingDays: null, useByPct: null, checkDays: null, kFactor: 1, label: "" };
+    const builtin = key in BUILTIN_PRESETS;
+    const label = h("input", { type: "text", maxlength: 40, value: cur.label, id: "preset-label" });
+    const method = chipGroup(Object.values(M).map((m2) => [m2.key, m2.label]), cur.method);
+    method.el.id = "preset-method";
+    const def = builtin ? BUILTIN_PRESETS[key] : {};
+    const fields = [["maturingDays", 0, 365], ["useByPct", 5, 95], ["checkDays", 1, 730], ["kFactor", 0.2, 5]];
+    const inputs = Object.fromEntries(fields.map(([f, lo, hi]) => [f, numInput(cur[f], def[f] ?? (f === "kFactor" ? 1 : null), { min: lo, max: hi, id: `pp-${f}` })]));
+    const err = h("div", { class: "form-error", id: "preset-error" });
+    const apply = async (remove) => {
+      const presets = clone(ctx.stockCfg.presets);
+      const id = key ?? newKey("p", Object.keys(P));
+      if (remove) delete presets[id];
+      else {
+        const o = { label: label.value.trim(), method: method.get() };
+        if (!o.label) {
+          err.textContent = T2.nameNeeded;
+          return;
+        }
+        for (const [f, lo, hi] of fields) {
+          if (inputs[f].value === "") continue;
+          const v = Number(inputs[f].value);
+          if (!Number.isFinite(v) || v < lo || v > hi) {
+            err.textContent = `${T2.presetField[f]}: ${T2.invalid}`;
+            return;
+          }
+          o[f] = v;
+        }
+        presets[id] = o;
+      }
+      await save({ ...ctx.stockCfg, presets });
+      closeSheet();
+      toast(T2.saved2);
+      refresh();
+    };
+    openSheet(key ? cur.label : T2.addPreset, h(
+      "div",
+      {},
+      field(T2.name, label),
+      field(T2.presetField.method, method.el),
+      fields.map(([f]) => field(T2.presetField[f], inputs[f])),
+      err,
+      h(
+        "div",
+        { class: "form-actions" },
+        key ? h("button", { type: "button", class: builtin ? "btn btn-secondary" : "btn btn-danger", id: "btn-preset-reset", onclick: () => apply(true) }, builtin ? T2.reset : T2.delete) : h("button", { type: "button", class: "btn btn-secondary", onclick: closeSheet }, S.ui.cancel),
+        h("button", { type: "button", class: "btn btn-primary", id: "btn-preset-save", onclick: () => apply(false) }, S.ui.save)
+      )
+    ));
+  }
+  var methodSummary = (m2) => [
+    `T\xBD ${num3(m2.tHalfProcessed, 0)} / ${num3(m2.tHalfFresh, 0)} d`,
+    `kontrola ${m2.checkDays} d`,
+    m2.airEveryDays ? `v\u011Btrat ${m2.airEveryDays} d` : null,
+    m2.maturingDays ? `zr\xE1n\xED ${m2.maturingDays} d` : null
+  ].filter(Boolean).join(" \xB7 ");
+  async function renderStockCfg(root2) {
+    const alive = guard();
+    const refresh = () => renderStockCfg(root2);
+    const M = resolveMethods(ctx.stockCfg);
+    const P = resolvePresets(ctx.stockCfg);
+    const catRows = Object.entries(CATEGORIES).filter(([, c]) => c.harvestable).map(([cat]) => {
+      const chips = chipGroup([["", T2.presetDefault], ...Object.values(P).map((p) => [p.key, p.label])], ctx.stockCfg.categoryPreset[cat] ?? "", async (v) => {
+        const categoryPreset = { ...ctx.stockCfg.categoryPreset };
+        if (v) categoryPreset[cat] = v;
+        else delete categoryPreset[cat];
+        await save({ ...ctx.stockCfg, categoryPreset });
+        toast(T2.saved2);
+      });
+      chips.el.id = `catpreset-${cat}`;
+      return field(S.category[cat], chips.el);
+    });
+    if (!alive()) return;
+    const row2 = (title, sub, id, onclick) => h(
+      "div",
+      { class: "item-row profile-row", role: "button", tabindex: 0, id, onclick },
+      h("div", { class: "item-info" }, h("div", { class: "item-name" }, title), h("div", { class: "item-detail" }, h("span", { class: "item-sub" }, sub)))
+    );
+    put(
+      clear(root2),
+      h(
+        "div",
+        { class: "top-bar" },
+        h("button", { type: "button", class: "btn btn-ghost", id: "btn-back", "aria-label": S.ui.back, onclick: () => navigate("/settings") }, icon("back")),
+        h("h1", {}, T2.settingsTitle),
+        h("span")
+      ),
+      h("p", { class: "muted rules-intro" }, T2.settingsIntro),
+      h(
+        "section",
+        { class: "card pad", id: "cfg-methods" },
+        h("h3", {}, T2.methods),
+        Object.values(M).map((m2) => row2(`${m2.label}${m2.custom ? ` (${T2.custom})` : ""}`, methodSummary(m2), `method-${m2.key}`, () => methodSheet(m2.key, refresh))),
+        h("button", { type: "button", class: "btn btn-secondary panel-btn", id: "btn-add-method", onclick: () => newMethodSheet(refresh) }, icon("plus"), T2.addMethod)
+      ),
+      h(
+        "section",
+        { class: "card pad", id: "cfg-presets" },
+        h("h3", {}, T2.presets),
+        Object.values(P).map((p) => row2(
+          `${p.label}${p.custom ? ` (${T2.custom})` : ""}`,
+          [M[p.method]?.label, p.maturingDays != null ? `zr\xE1n\xED ${p.maturingDays} d` : null, p.useByPct != null ? `pr\xE1h ${p.useByPct} %` : null].filter(Boolean).join(" \xB7 "),
+          `preset-${p.key}`,
+          () => presetSheet(p.key, refresh)
+        )),
+        h("button", { type: "button", class: "btn btn-secondary panel-btn", id: "btn-add-preset", onclick: () => presetSheet(null, refresh) }, icon("plus"), T2.addPreset)
+      ),
+      h("section", { class: "card pad", id: "cfg-categories" }, h("h3", {}, T2.categoryDefaults), catRows),
+      h("div", { class: "pad" }, h("button", { type: "button", class: "btn btn-secondary panel-btn", id: "btn-open-stock", onclick: () => navigate("/stock") }, T2.openOverview))
+    );
   }
 
   // js/ui-stats.js
@@ -5078,6 +6727,8 @@
     route("/settings", renderSettings, "settings");
     route("/settings/rules", renderRules, "settings");
     route("/settings/criteria", renderCriteria, "settings");
+    route("/stock", renderStockOverview, "overview");
+    route("/settings/stock", renderStockCfg, "settings");
     route("/install", renderInstall, "settings");
     await startRouter(document.getElementById("view"));
     window.pheno = { db, ...events_exports, ...model_exports };

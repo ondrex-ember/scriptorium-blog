@@ -13,6 +13,8 @@ import { navigate, guard } from './router.js';
 import { closeSheet, openSheet, toast } from './sheet.js';
 import { S } from './strings.cs.js';
 import { toLocalInput } from './format.js';
+import { metaSet } from './storage.js';
+import { cleanStock, resolvePresets, varietyKey } from './stockcfg.js';
 
 /** Ask once which hemisphere the user gardens in (drives the season modifier). */
 export function askHemisphere() {
@@ -44,7 +46,7 @@ export async function renderPlantForm(root, id, query = {}) {
     ? { name: editing.name, variety: editing.variety, category: editing.category, lifecycle: editing.lifecycle,
       environment: editing.cache.environment, harvestable: editing.harvestable, location: editing.location,
       source: editing.source, baseOverride: editing.baseOverride,
-      potVolumeL: editing.potVolumeL, substrate: editing.substrate, plannedHarvestAt: editing.plannedHarvestAt }
+      potVolumeL: editing.potVolumeL, substrate: editing.substrate, plannedHarvestAt: editing.plannedHarvestAt, stockPreset: editing.stockPreset }
     : source ? clonePlantInput(source, plants.map((p) => p.name))
       : { category: pre.category ?? null, environment: pre.environment ?? null, lifecycle: pre.lifecycle, harvestable: pre.harvestable, source: 'seed' };
   const [exName, exVariety] = example(ctx.profile, plants.length);
@@ -75,6 +77,21 @@ export async function renderPlantForm(root, id, query = {}) {
   const potValue = () => (potVol.value === '' ? null : Number(potVol.value));
   const plannedIso = () => (planned.value ? new Date(`${planned.value}T12:00:00`).toISOString() : null);
 
+  let stockPreset = init.stockPreset ?? '';
+  const presetChips = chipGroup([['', S.stock.presetDefault], ...Object.values(resolvePresets(ctx.stockCfg)).map((p) => [p.key, p.label])], stockPreset, (v) => { stockPreset = v; });
+  presetChips.el.id = 'f-stockpreset';
+  const presetField = field(S.stock.presetPlant, presetChips.el, S.stock.presetPlantHint);
+  const syncPreset = () => { presetField.style.display = harv.checked ? '' : 'none'; };
+  harv.addEventListener('change', syncPreset);
+  /** The chosen preset is remembered for the variety, so the next plant of it starts with the same one. */
+  const rememberPreset = async (category, varietyName) => {
+    if (!stockPreset || !varietyName.trim()) return;
+    const key = varietyKey({ category, variety: varietyName });
+    if (ctx.stockCfg.varietyPreset[key] === stockPreset) return;
+    ctx.stockCfg = cleanStock({ ...ctx.stockCfg, varietyPreset: { ...ctx.stockCfg.varietyPreset, [key]: stockPreset } });
+    await metaSet(ctx.db, 'stock', ctx.stockCfg);
+  };
+
   function fillStages() {
     if (!st.category) { stage.replaceChildren(); return; }
     const list = getStages(st.category, st.lifecycle);
@@ -84,11 +101,13 @@ export async function renderPlantForm(root, id, query = {}) {
     st.category = v; cat.set(v);
     st.lifecycle = pre.lifecycle === 'perennial' ? 'perennial' : CATEGORIES[v].lifecycle; life.set(st.lifecycle);
     harv.checked = pre.harvestable ?? CATEGORIES[v].harvestable;
+    syncPreset();
     fillStages();
   }
   if (st.category) { if (!st.lifecycle) st.lifecycle = CATEGORIES[st.category].lifecycle; life.set(st.lifecycle); }
   fillStages();
 
+  syncPreset();
   const errBox = h('div', { class: 'form-error', id: 'form-error', role: 'alert' });
   const save = async () => {
     errBox.textContent = '';
@@ -96,7 +115,8 @@ export async function renderPlantForm(root, id, query = {}) {
       if (editing) {
         await updatePlantMeta(ctx.db, id, { name: name.value, variety: variety.value, location: location.value,
           source: st.source, baseOverride: base.value === '' ? null : Number(base.value),
-          potVolumeL: potValue(), substrate: substrate || null, plannedHarvestAt: plannedIso() });
+          potVolumeL: potValue(), substrate: substrate || null, plannedHarvestAt: plannedIso(), stockPreset: stockPreset || null });
+        await rememberPreset(editing.category, variety.value);
         if (st.environment && st.environment !== editing.cache.environment) {
           if (SEASONAL_ENVIRONMENTS.includes(st.environment)) await askHemisphere();
           await appendEvents(ctx.db, id, [{ type: 'environment_change', payload: { environment: st.environment } }]);
@@ -114,8 +134,10 @@ export async function renderPlantForm(root, id, query = {}) {
         source: st.source, startDate: toIso(start.value),
         baseOverride: base.value === '' ? null : Number(base.value),
         learnedBase: init.learnedBase || null,
-        potVolumeL: potValue() ?? undefined, substrate: substrate || undefined, plannedHarvestAt: plannedIso() ?? undefined
+        potVolumeL: potValue() ?? undefined, substrate: substrate || undefined, plannedHarvestAt: plannedIso() ?? undefined,
+        stockPreset: harv.checked && stockPreset ? stockPreset : undefined
       });
+      if (harv.checked) await rememberPreset(st.category, variety.value);
       const extra = [];
       if (photo.files[0]) {
         const photoId = await savePhotoFile(ctx.db, plant.id, photo.files[0]);
@@ -162,6 +184,7 @@ export async function renderPlantForm(root, id, query = {}) {
       field(S.ui.potVolume2, potVol),
       field(S.ui.substrateLabel, subChips.el),
       field(S.ui.plannedHarvest, planned),
+      presetField,
       field(S.ui.baseOverride, base),
       editing ? null : field(S.ui.photo, photo),
       editing ? null : field(S.ui.note, note),

@@ -17,6 +17,8 @@ import { renderPlant } from './ui-plant.js';
 import { renderPlantForm } from './ui-plant-form.js';
 import { renderCriteria } from './ui-criteria.js';
 import { renderRules } from './ui-rules.js';
+import { renderStockOverview } from './ui-stock.js';
+import { renderStockCfg } from './ui-stockcfg.js';
 import { renderSettings } from './ui-settings.js';
 import { renderVarieties, renderVariety } from './ui-stats.js';
 import { VERSION } from './version.js';
@@ -63,6 +65,8 @@ async function boot() {
   route('/settings', renderSettings, 'settings');
   route('/settings/rules', renderRules, 'settings');
   route('/settings/criteria', renderCriteria, 'settings');
+  route('/stock', renderStockOverview, 'overview');
+  route('/settings/stock', renderStockCfg, 'settings');
   route('/install', renderInstall, 'settings');
   await startRouter(document.getElementById('view'));
   window.pheno = { db, ...events, ...model };

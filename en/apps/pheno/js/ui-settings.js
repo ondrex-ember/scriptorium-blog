@@ -79,6 +79,8 @@ export async function renderSettings(root) {
       field(S.ui.hemisphere, hemi.el, 'Ovlivňuje roční období u rostlin venku a ve skleníku.')),
     h('div', { class: 'card pad' }, h('h3', {}, S.rules.open), h('p', { class: 'muted' }, S.rules.openHint),
       h('button', { type: 'button', class: 'btn btn-secondary', id: 'btn-rules', onclick: () => navigate('/settings/rules') }, S.rules.open)),
+    h('div', { class: 'card pad' }, h('h3', {}, S.stock.settingsTitle), h('p', { class: 'muted' }, S.stock.settingsIntro),
+      h('button', { type: 'button', class: 'btn btn-secondary', id: 'btn-stock-cfg', onclick: () => navigate('/settings/stock') }, S.stock.settingsTitle)),
     h('div', { class: 'card pad' }, h('h3', {}, S.crit.open), h('p', { class: 'muted' }, S.crit.openHint),
       h('button', { type: 'button', class: 'btn btn-secondary', id: 'btn-criteria', onclick: () => navigate('/settings/criteria') }, S.crit.open)),
     h('div', { class: 'card pad' }, h('h3', {}, S.backup.title),

@@ -9,9 +9,15 @@ import { fmtDate, fromLocalInput, num, relDay, toLocalInput } from './format.js'
 import { getEvents } from './storage.js';
 import { latestEvaluation } from './stats.js';
 import { savePhotoFile } from './photos.js';
+import { plantStock } from './stock.js';
 import { closeSheet, openSheet, toast } from './sheet.js';
 import { S } from './strings.cs.js';
 import { daysBetween } from './utils.js';
+
+let stockOffer = null;
+/** ui-stock registers itself here: after a batch becomes ready/stored it offers to weigh the stock (no import cycle). */
+export const setStockOffer = (fn) => { stockOffer = fn; };
+const OFFER_PHASES = ['ready', 'storing', 'freezing', 'curing'];
 
 /** Write events; on success close the sheet, show an undo toast and refresh the view. */
 export async function submit(plantId, inputs, message, done) {
@@ -33,12 +39,12 @@ export async function submit(plantId, inputs, message, done) {
   }
 }
 
-function dateField() {
-  const input = h('input', { type: 'datetime-local', value: toLocalInput(now()) });
+export function dateField(value) {
+  const input = h('input', { type: 'datetime-local', value: toLocalInput(value ?? now()) });
   return { el: field(S.ui.date, input), get: () => fromLocalInput(input.value) };
 }
 
-const buttons = (onSave, label = S.ui.save) =>
+export const buttons = (onSave, label = S.ui.save) =>
   h('div', { class: 'form-actions' },
     h('button', { type: 'button', class: 'btn btn-secondary', onclick: closeSheet }, S.ui.cancel),
     h('button', { type: 'button', class: 'btn btn-primary', onclick: onSave }, label));
@@ -179,12 +185,14 @@ export async function snoozeSheet(task, done) {
 
 // ---------- harvest (spec 5.1, RCv0.191: every harvest is a batch with its own processing) ----------
 const terminalStage = (plant) => getStages(plant.category, plant.lifecycle).find((k) => STAGE_FLAGS[k]?.terminal) ?? null;
-const batchLabel = (b) => `${fmtDate(b.harvestedAt)} · ${S.batchPhase[b.phase] || b.phase}`;
-const btn = (label, cls, fn, id) => h('button', { type: 'button', class: `btn ${cls}`, id, onclick: fn }, label);
+export const batchLabel = (b) => `${fmtDate(b.harvestedAt)} · ${S.batchPhase[b.phase] || b.phase}`;
+export const btn = (label, cls, fn, id) => h('button', { type: 'button', class: `btn ${cls}`, id, onclick: fn }, label);
 
 export function archiveSheet(plant, done) {
+  const ps = plantStock(plant, now(), { cfg: ctx.stockCfg, rules: ctx.rules, priors: ctx.priors });
   openSheet(`${S.ui.archive} – ${plant.name}`, h('div', { class: 'stack' },
     h('p', { class: 'muted' }, S.ui.archiveAsk),
+    ps && ps.remaining > 0 ? h('p', { class: 'muted', id: 'archive-stock-warn' }, S.stock.archiveWarn(`${num(ps.remaining, 2)} ${ps.unit}`)) : null,
     h('button', { type: 'button', class: 'btn btn-primary', id: 'btn-do-archive', onclick: async () => {
       try { await appendEvents(ctx.db, plant.id, [{ type: 'archive', payload: {} }]); closeSheet(); toast('Archivováno'); done?.(); } catch (e) { toast(e.message); }
     } }, S.ui.archive),
@@ -215,8 +223,8 @@ function afterFinalSheet(plant, target, done) {
 const defaultMethod = (plant) => (FRESH_CATEGORIES.includes(plant.category) ? 'none' : 'drying');
 
 /** Processing method chips plus the optional drying estimate (shown only for drying). */
-function methodPicker(plant, value = defaultMethod(plant)) {
-  const est = h('input', { type: 'number', step: '0.5', min: '0.5', max: '120', inputmode: 'decimal', id: 'est-days' });
+function methodPicker(plant, value = defaultMethod(plant), estValue = null) {
+  const est = h('input', { type: 'number', step: '0.5', min: '0.5', max: '120', inputmode: 'decimal', id: 'est-days', value: estValue ?? '' });
   const estField = field(S.ui.estDays, est);
   const toggle = (v) => { estField.style.display = v === 'drying' ? '' : 'none'; };
   const method = chipGroup(PROCESSING_METHODS.map((m) => [m, S.processing[m]]), value, toggle);
@@ -225,13 +233,15 @@ function methodPicker(plant, value = defaultMethod(plant)) {
   return { method, estField, est: () => (est.value === '' ? null : Number(est.value)) };
 }
 
-export function harvestSheet(plant, done) {
+/** New harvest, or (edit = the live harvest event) a correction of an existing one. */
+export function harvestSheet(plant, done, edit = null) {
   const cfg = CATEGORIES[plant.category];
-  const inputs = cfg.harvestFields.map((f) => ({ f, el: h('input', { type: 'number', step: 'any', min: f.min, inputmode: 'decimal', dataset: { key: f.key } }) }));
-  const mp = methodPicker(plant);
-  const note = h('textarea', { rows: 2 });
-  const fin = h('input', { type: 'checkbox', id: 'harvest-final' });
-  const d = dateField();
+  const ep = edit?.payload ?? {};
+  const inputs = cfg.harvestFields.map((f) => ({ f, el: h('input', { type: 'number', step: 'any', min: f.min, inputmode: 'decimal', dataset: { key: f.key }, value: ep[f.key] ?? '' }) }));
+  const mp = methodPicker(plant, ep.processingMethod ?? defaultMethod(plant), ep.estDays ?? null);
+  const note = h('textarea', { rows: 2 }, ep.note ?? '');
+  const fin = h('input', { type: 'checkbox', id: 'harvest-final', checked: !!ep.final });
+  const d = dateField(edit?.occurredAt);
   const save = async () => {
     const payload = {};
     for (const { f, el } of inputs) if (el.value !== '') payload[f.key] = Number(el.value);
@@ -240,6 +250,12 @@ export function harvestSheet(plant, done) {
     if (payload.processingMethod === 'drying' && mp.est() != null) payload.estDays = mp.est();
     if (note.value.trim()) payload.note = note.value.trim();
     if (fin.checked) payload.final = true;
+    if (edit) {
+      if (ep.processingDays != null) payload.processingDays = ep.processingDays;
+      const date = d.get();
+      if (toLocalInput(date) !== toLocalInput(edit.occurredAt)) payload.date = date;
+      return submit(plant.id, [{ type: 'harvest_edit', payload: { harvestId: edit.id, ...payload } }], S.ui.harvestEdited, done);
+    }
     const rule = ctx.rules.afterFinalHarvest;
     const target = fin.checked ? finalTarget(plant) : null;
     const move = !!target && target !== plant.cache.stage;
@@ -248,7 +264,7 @@ export function harvestSheet(plant, done) {
     const ok = await submit(plant.id, events, S.ui.harvestSaved, done);
     if (ok && move && rule === 'ask') afterFinalSheet(plant, target, done);
   };
-  openSheet(`${S.ui.recordHarvest} – ${plant.name}`, h('div', {},
+  openSheet(`${edit ? S.ui.editHarvest : S.ui.recordHarvest} – ${plant.name}`, h('div', {},
     d.el,
     inputs.map(({ f, el }) => field(S.harvestField[f.key] || f.key, el)),
     field(S.ui.processing, mp.method.el),
@@ -271,7 +287,7 @@ export function batchMethodSheet(plant, batch, done) {
       const m = mp.method.get();
       const payload = { batchId: batch.id, phase: m === 'none' ? 'ready' : m, method: m };
       if (m === 'drying' && mp.est() != null) payload.estDays = mp.est();
-      submit(plant.id, [{ type: 'batch_step', payload }], S.ui.batchSaved, done);
+      submit(plant.id, [{ type: 'batch_step', payload }], S.ui.batchSaved, done).then((ok) => { if (ok && OFFER_PHASES.includes(payload.phase)) stockOffer?.(plant.id, batch.id, done); });
     })));
 }
 
@@ -296,7 +312,7 @@ export function batchStepSheet(plant, batch, done, heading) {
       const payload = { batchId: batch.id, phase: phase.get() };
       if (payload.phase === 'drying' && est.value !== '') payload.estDays = Number(est.value);
       if (note.value.trim()) payload.note = note.value.trim();
-      submit(plant.id, [{ type: 'batch_step', occurredAt: d.get(), payload }], S.ui.batchSaved, done);
+      submit(plant.id, [{ type: 'batch_step', occurredAt: d.get(), payload }], S.ui.batchSaved, done).then((ok) => { if (ok && OFFER_PHASES.includes(payload.phase)) stockOffer?.(plant.id, batch.id, done); });
     })));
 }
 
@@ -371,7 +387,7 @@ export function careSheet(plant, done) {
 }
 
 // ---------- evaluation (spec 5.2): each save appends a version ----------
-function starPicker(value, onChange) {
+export function starPicker(value, onChange) {
   let cur = value || 0;
   const el = h('div', { class: 'star-row', role: 'radiogroup' });
   const btns = [];
