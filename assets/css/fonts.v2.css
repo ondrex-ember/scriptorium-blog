@@ -1,4 +1,4 @@
-/* Self-hosted fonts (OFL): Crimson Pro, IM Fell English, IM Fell English SC. Latin-only coverage for IM Fell is the same as on Google Fonts. */
+/* Self-hosted fonts (OFL): Crimson Pro, IM Fell English, IM Fell English SC. IM Fell: subset latin + latin-ext vcetne ceske diakritiky (soubory *-cs-*). */
 @font-face {
   font-family: 'Crimson Pro';
   font-style: normal;
@@ -52,19 +52,19 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url(/assets/fonts/im-fell-english-400-normal.woff2) format('woff2');
+  src: url(/assets/fonts/im-fell-english-cs-400-normal.woff2) format('woff2');
 }
 @font-face {
   font-family: 'IM Fell English';
   font-style: italic;
   font-weight: 400;
   font-display: swap;
-  src: url(/assets/fonts/im-fell-english-400-italic.woff2) format('woff2');
+  src: url(/assets/fonts/im-fell-english-cs-400-italic.woff2) format('woff2');
 }
 @font-face {
   font-family: 'IM Fell English SC';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url(/assets/fonts/im-fell-english-sc-400-normal.woff2) format('woff2');
+  src: url(/assets/fonts/im-fell-english-sc-cs-400-normal.woff2) format('woff2');
 }
