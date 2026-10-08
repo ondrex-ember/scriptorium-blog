@@ -136,7 +136,7 @@ export const S = {
   taskLabel: {
     moisture: 'Zkontrolovat vlhkost', fertilizing: 'Přihnojit', pestCheck: 'Zkontrolovat škůdce',
     problemFollowUp: 'Zkontrolovat problém', batchCheck: 'Zkontrolovat dávku', useBy: 'Spotřebovat dávku', evaluation: 'Ohodnotit sklizeň', evaluationReview: 'Změnil se tvůj názor?',
-    stockCheck: 'Zkontrolovat zásobník', stockAir: 'Vyvětrat zásobník', stockUseBy: 'Spotřebovat zásobník', stockLow: 'Dochází zásoba'
+    custom: 'Vlastní úkol', stockCheck: 'Zkontrolovat zásobník', stockAir: 'Vyvětrat zásobník', stockUseBy: 'Spotřebovat zásobník', stockLow: 'Dochází zásoba'
   },
   stock: {
     method: {
@@ -195,6 +195,65 @@ export const S = {
     comparisonNone: 'Zatím nemáš dost kontrol s hodnocením.', openOverview: 'Zásoby po sklizni', fromTasks: 'Otevřít zásobu',
     lowTask: (d) => `Při současné spotřebě vydrží asi ${d} dní.`, useByTask: 'Čerstvost klesla pod nastavený práh.',
     checkTask: 'Podívej se na vůni a vzhled.', airTask: 'Otevři a nech vyvětrat.'
+  },
+  tasks: {
+    title: 'Vlastní úkoly', open: 'Vlastní úkoly', intro: 'Vlastní opakované nebo jednorázové úkoly (přesazení, řez, měření pH…). Šablonu jednou vytvoříš a přiřadíš rostlině nebo celé skupině. V této verzi se interval neučí, platí tvůj.',
+    none: 'Zatím žádná šablona.', add: 'Nová šablona', edit: 'Upravit šablonu', label: 'Název úkolu', icon: 'Ikona', mode: 'Druh',
+    modes: { recurring: 'Opakovaný', once: 'Jednorázový' }, interval: 'Interval (dny)', anchor: 'Počítat od',
+    anchors: { lastDone: 'Posledního splnění', fixed: 'Pevného rozvrhu', stageStart: 'Začátku fáze' }, offset: 'První úkol po (dnech od začátku fáze)',
+    applies: 'Platí jen pro (nic = vše)', categories: 'Kategorie', stages: 'Fáze', environments: 'Prostředí',
+    delete: 'Smazat šablonu', deleteHint: 'Záznamy v deníku zůstanou, úkol se jen přestane nabízet.', limit: 'Dosažen nejvyšší počet šablon.',
+    saved: 'Uloženo', plantTitle: 'Úkoly rostliny', assigned: 'Zapnuto', paused: 'Pozastaveno', ended: 'Ukončeno', off: 'Nepřiřazeno',
+    enable: 'Zapnout', pause: 'Pozastavit', end: 'Ukončit', once: 'Jednorázový úkol', onceLabel: 'Co je potřeba udělat', onceDue: 'Termín', addOnce: 'Přidat úkol',
+    noTemplates: 'Nejdřív vytvoř šablonu v Nastavení.', manage: 'Spravovat šablony', done: 'Hotovo',
+    assignTitle: { enable: 'Úkol zapnut', pause: 'Úkol pozastaven', end: 'Úkol ukončen' }, doneTitle: 'Úkol splněn', onceTitle: 'Úkol naplánován',
+    every: (n) => `každých ${n} dní`, bulkTitle: 'Úkol pro skupinu', bulkOnce: 'Jednorázový úkol pro všechny', pickTemplate: 'Šablona', action: 'Akce'
+  },
+  categories: {
+    title: 'Vlastní kategorie', open: 'Vlastní kategorie',
+    intro: 'Vlastní kategorie vznikne klonováním té vestavěné: zdědí vše a ty změníš jen to, co potřebuješ (fáze, pole sklizně, intervaly). Rostliny v ní fungují jako ve vestavěné kategorii.',
+    none: 'Zatím žádná vlastní kategorie.', add: 'Nová kategorie', edit: 'Upravit kategorii', pickBase: 'Založit podle', pickBaseHint: 'Vyber kategorii, ze které se vychází. Můžeš vybrat i vlastní.',
+    next: 'Pokračovat', label: 'Název kategorie', icon: 'Ikona', lifecycle: 'Životní cyklus', harvestable: 'Sklízí se', stages: 'Fáze (Dokončeno je vždy poslední)',
+    harvestFields: 'Pole sklizně', fertilizingDays: 'Přihnojit po (dny)', pestCheckDays: 'Kontrola škůdců po (dny)', baseDryingDays: 'Základní doba zpracování (dny)',
+    basedOn: (b) => `podle: ${b}`, limit: 'Dosažen nejvyšší počet vlastních kategorií.', saved: 'Uloženo', needStage: 'Vyber alespoň jednu fázi.', needField: 'Vyber alespoň jedno pole sklizně.',
+    delete: 'Smazat kategorii', deleteFree: 'Žádná rostlina ji nepoužívá, kategorie se smaže úplně.',
+    deleteUsed: (n) => `Používá ji ${n} rostlin. Kategorie se skryje z nabídky pro nové rostliny, stávající rostliny fungují beze změny.`,
+    hidden: 'Skryté kategorie', restore: 'Vrátit', yes: 'Ano', no: 'Ne'
+  },
+  metrics: {
+    title: 'Čísla', intro: 'Odvozeno ze záznamů. Chybějící údaj = pomlčka, nikdy nula. Porovnávají se jen stejné odrůdy a kategorie.',
+    none: 'Zatím není z čeho počítat.', n: (n) => `n = ${n}`, provisional: 'orientační', mixedEnv: 'různá prostředí',
+    items: {
+      yieldPerDay: 'Výnos na den pěstování', yieldPerLiter: 'Výnos na litr nádoby', processedRatio: 'Poměr po zpracování k čerstvému',
+      wateringsPerWeek: 'Zálivek týdně', fertilizingsPerCycle: 'Hnojení za cyklus', problemsPer100Days: 'Problémů na 100 dní',
+      problemResolveDays: 'Doba vyřešení problému', growAgain: 'Pěstoval bych znovu', stockPerDay: 'Spotřeba zásoby'
+    },
+    stages: 'Délka fází', stagesHint: 'Průměr dokončených fází této odrůdy.', vsAvg: 'oproti průměru',
+    patterns: 'Souvislosti', patternsHint: 'Pozorovaný vzorec v datech, ne příčina. Zobrazuje se až od 8 hodnocených rostlin v jedné kategorii.',
+    patternText: {
+      yieldRating: { up: 'Rostliny s vyšším výnosem měly spíš lepší hodnocení', down: 'Rostliny s vyšším výnosem měly spíš horší hodnocení' },
+      problemsRating: { up: 'Rostliny s více problémy měly spíš lepší hodnocení', down: 'Rostliny s více problémy měly spíš horší hodnocení' }
+    },
+    strength: { weak: 'slabá souvislost', medium: 'střední souvislost', strong: 'silná souvislost' },
+    storage: 'Skladování podle způsobu', storageHint: 'Uzavřené nádoby. Životnost se počítá jen u těch, co se zkazily nebo vyhodily.',
+    loss: 'vyhozeno', life: 'reálná životnost', containers: 'nádob'
+  },
+  groups: {
+    title: 'Skupiny rostlin', open: 'Skupiny', intro: 'Skupina je jen výběr rostlin s výchozími hodnotami (místo, záhon, várka). Každá rostlina si i tak drží vlastní data a záznamy.',
+    none: 'Zatím žádná skupina.', add: 'Nová skupina', label: 'Název skupiny', kind: 'Druh', noGroup: 'Bez skupiny', group: 'Skupina',
+    kinds: { place: 'Místo', cohort: 'Várka', bed: 'Záhon' }, defaultEnv: 'Výchozí prostředí (volitelné)',
+    members: 'Rostliny ve skupině', addMembers: 'Přidat rostliny', removeFrom: 'Vyjmout ze skupiny', noMembers: 'Skupina je zatím prázdná.',
+    bulk: 'Hromadné akce', bulkHint: 'Zapíše se samostatný záznam každé vybrané rostlině. Celou akci můžeš vrátit zpět.',
+    selected: (n) => `Vybráno: ${n}`, selectAll: 'Vše', selectNone: 'Nic', activeOnly: 'Hromadně se zapisuje jen aktivním rostlinám.',
+    moisture: 'Vlhkost', water: 'Zalít', fertilize: 'Přihnojit', pestOk: 'Škůdci: bez nálezu', note: 'Poznámka', stage: 'Fáze', env: 'Prostředí',
+    noCommonStage: 'Vybrané rostliny nemají společnou fázi.', pickSome: 'Vyber alespoň jednu rostlinu.',
+    done: (n, skipped) => (skipped ? `Zapsáno: ${n}, přeskočeno: ${skipped}` : `Zapsáno: ${n}`),
+    snoozeAll: 'Odložit celou skupinu', doAll: 'Splnit pro všechny',
+    stats: 'Souhrn skupiny', avgYield: 'Výnos na rostlinu', rated: 'Hodnocení', plants: 'Rostliny', compare: 'Stejná odrůda v různých skupinách',
+    compareHint: 'Porovnávají se jen stejné odrůdy a kategorie; počet rostlin je vždy uveden.', rename: 'Přejmenovat', delete: 'Smazat skupinu',
+    deleteHint: 'Rostliny a jejich záznamy zůstanou, jen přestanou být ve skupině.', fromPlaces: 'Vytvořit z míst rostlin',
+    fromPlacesHint: 'Tato místa používají aspoň dvě rostliny. Skupinu vytvoříš jedním klepnutím.', created: 'Skupina vytvořena', saved: 'Uloženo',
+    filter: 'Skupina', limit: 'Dosažen nejvyšší počet skupin.', moreN: (n) => `a ${n} dalších`, hasTasks: 'Úkoly skupiny'
   },
   ui: {
     today: 'Dnes', tomorrow: 'Zítra', yesterday: 'Včera', overdue: 'Po termínu', upcoming: 'Nadcházející', upcomingSection: 'Nadcházející',

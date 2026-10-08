@@ -51,6 +51,10 @@ export const CATEGORIES = {
   }
 };
 
+/** Icon per category (custom categories add their own entry). */
+export const CATEGORY_ICON = { herb: 'leaf', vegetable: 'sprout', fruit: 'pot', flower: 'sun', tree_shrub: 'leaf', houseplant: 'sprout', other: 'pot' };
+export const CATEGORY_ICON_CHOICES = ['leaf', 'sprout', 'pot', 'sun'];
+
 export const ENVIRONMENTS = ['outdoor', 'greenhouse', 'indoor', 'controlled'];
 export const SOURCES = ['seed', 'cutting', 'seedling', 'other'];
 export const PROBLEM_TYPES = ['pest', 'mold', 'wilting', 'nutrient', 'other'];

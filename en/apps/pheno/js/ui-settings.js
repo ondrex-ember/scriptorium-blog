@@ -1,6 +1,6 @@
 // Settings: appearance, hemisphere, backup (ZIP export/import), storage, install state.
 import { exportBackup, importBackup } from './backup.js';
-import { ctx, getTheme, initCtx, setHemisphere, setTheme } from './ctx.js';
+import { ctx, getTheme, initCtx, refreshGroups, refreshTemplates, setHemisphere, setTheme } from './ctx.js';
 import { chipGroup, clear, field, h, put } from './dom.js';
 import { fmtDateTime } from './format.js';
 import { iosBrowserTab, isStandalone, persistGranted, storageEstimate } from './pwa.js';
@@ -49,6 +49,7 @@ export function importSheet(rerender) {
     go.disabled = true; err.textContent = S.backup.importing;
     try {
       const report = await importBackup(ctx.db, file.files[0], { JSZip: globalThis.JSZip });
+      await refreshGroups(); await refreshTemplates();
       await initCtx(ctx.db);
       openSheet(S.backup.importDone, reportView(report));
       rerender?.();
@@ -77,6 +78,12 @@ export async function renderSettings(root) {
       field(S.ui.appearance, theme.el),
       field(S.profile.label, prof.el, S.profile.settingsHint),
       field(S.ui.hemisphere, hemi.el, 'Ovlivňuje roční období u rostlin venku a ve skleníku.')),
+    h('div', { class: 'card pad' }, h('h3', {}, S.groups.title), h('p', { class: 'muted' }, S.groups.intro),
+      h('button', { type: 'button', class: 'btn btn-secondary', id: 'btn-groups-cfg', onclick: () => navigate('/groups') }, S.groups.open)),
+    h('div', { class: 'card pad' }, h('h3', {}, S.tasks.title), h('p', { class: 'muted' }, S.tasks.intro),
+      h('button', { type: 'button', class: 'btn btn-secondary', id: 'btn-tasks-cfg', onclick: () => navigate('/settings/tasks') }, S.tasks.open)),
+    h('div', { class: 'card pad' }, h('h3', {}, S.categories.title), h('p', { class: 'muted' }, S.categories.intro),
+      h('button', { type: 'button', class: 'btn btn-secondary', id: 'btn-categories-cfg', onclick: () => navigate('/settings/categories') }, S.categories.open)),
     h('div', { class: 'card pad' }, h('h3', {}, S.rules.open), h('p', { class: 'muted' }, S.rules.openHint),
       h('button', { type: 'button', class: 'btn btn-secondary', id: 'btn-rules', onclick: () => navigate('/settings/rules') }, S.rules.open)),
     h('div', { class: 'card pad' }, h('h3', {}, S.stock.settingsTitle), h('p', { class: 'muted' }, S.stock.settingsIntro),

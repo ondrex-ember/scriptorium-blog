@@ -4,7 +4,7 @@ import { batchRatio, dryingInfo, effectiveDryingDays } from './calendar.js';
 import { ctx, now } from './ctx.js';
 import { activeCriteria } from './criteria.js';
 import { chipGroup, field, h } from './dom.js';
-import { appendEvents, snoozeTask, voidEvent } from './events.js';
+import { appendBulk, appendEvents, snoozeTask, voidBulk, voidEvent } from './events.js';
 import { fmtDate, fromLocalInput, num, relDay, toLocalInput } from './format.js';
 import { getEvents } from './storage.js';
 import { latestEvaluation } from './stats.js';
@@ -33,6 +33,26 @@ export async function submit(plantId, inputs, message, done) {
     });
     done?.();
     return events;
+  } catch (err) {
+    toast(err.message || S.err.invalid);
+    return null;
+  }
+}
+
+/** Bulk write (groups): one event per plant sharing an opId; a single undo voids the whole operation. */
+export async function submitBulk(plantIds, make, message, done) {
+  try {
+    const res = await appendBulk(ctx.db, plantIds, make);
+    closeSheet();
+    const skipped = res.skipped.filter((x) => x.message).length;
+    if (!res.events.length) { toast(res.skipped.find((x) => x.message)?.message || S.groups.done(0, 0)); done?.(); return res; }
+    const n = new Set(res.events.map((e) => e.plantId)).size;
+    toast(`${message} · ${S.groups.done(n, skipped)}`, {
+      action: S.ui.undo,
+      onAction: async () => { await voidBulk(ctx.db, res.events); done?.(); }
+    });
+    done?.();
+    return res;
   } catch (err) {
     toast(err.message || S.err.invalid);
     return null;

@@ -34,7 +34,7 @@ test('export → wipe → import gives identical plants, events, photos, meta', 
   const zip = await JSZip.loadAsync(bytes);
   assert.deepEqual(Object.keys(zip.files).sort(), ['data.json', 'manifest.json', 'photos/', 'photos/ph1.jpg']);
   const manifest = JSON.parse(await zip.file('manifest.json').async('string'));
-  assert.equal(manifest.schemaVersion, 3); assert.equal(manifest.counts.plants, 2); assert.equal(manifest.counts.photos, 1);
+  assert.equal(manifest.schemaVersion, 4); assert.equal(manifest.counts.plants, 2); assert.equal(manifest.counts.photos, 1);
 
   const dst = await freshDb();
   const rep = await importBackup(dst, bytes, { JSZip });
@@ -45,7 +45,7 @@ test('export → wipe → import gives identical plants, events, photos, meta', 
   assert.deepEqual(await listPhotoKeys(dst), ['ph1']);
   assert.equal(await metaGet(dst, 'hemisphere'), 'south');
   assert.equal(await metaGet(dst, 'lastExportAt'), undefined);      // device-specific keys do not travel
-  assert.equal(await metaGet(dst, 'schemaVersion'), 3);
+  assert.equal(await metaGet(dst, 'schemaVersion'), 4);
   const t = async (d) => computeTasks(await listPlants(d), day(90), { hemisphere: 'south' }).map((x) => [x.plantId, x.type, x.dueAt]);
   assert.deepEqual(await t(dst), await t(src));
 });
@@ -82,7 +82,7 @@ test('import refuses newer schema, garbage, and drops invalid or orphan records'
     for (const [k, v] of Object.entries(photos)) z.file(`photos/${k}.jpg`, v);
     return z.generateAsync({ type: 'uint8array' });
   };
-  await assert.rejects(importBackup(dst, await mk({ schemaVersion: 4 }, { plants: [], events: [] }), { JSZip }), /novější/);
+  await assert.rejects(importBackup(dst, await mk({ schemaVersion: 5 }, { plants: [], events: [] }), { JSZip }), /novější/);
   const good = { id: 'p1', name: '<img src=x onerror=alert(1)>', category: 'herb', environment: 'indoor', startDate: T0, lifecycle: 'cycle', harvestable: true, extra: 'x' };
   const ev = (o) => ({ id: 'e1', plantId: 'p1', type: 'note', occurredAt: T0, recordedAt: T0, payload: { text: 'a' }, ...o });
   const bytes = await mk({ schemaVersion: 1 }, {

@@ -4,6 +4,7 @@ import {
   ENV_MULTIPLIER, FOLLOWUP_DAYS, LEARN, PEST_BOOST_DAYS, RULE, STAGE_FACTOR
 } from './config-engine.js';
 import { rv } from './config-rules.js';
+import { customTasks } from './customtasks.js';
 import { registerProjector } from './model.js';
 import { applyStockEvent, stockTasks } from './stock.js';
 import { addDays, clamp, coefVariation, dayDiff, daysBetween, isNum, seasonOf, weightedMean } from './utils.js';
@@ -468,6 +469,11 @@ export function getPlantTasks(plant, now, opts = {}) {
   for (const t of stockTasks(plant, now, { rules, cfg: o.stockCfg, priors: o.priors })) {
     const { type, due, ...extra } = t;
     push(type, due, extra);
+  }
+
+  for (const t of customTasks(plant, now, o.taskTemplates)) {
+    const { dueAt, ...extra } = t;
+    push('custom', dueAt, extra);
   }
 
   const ev = evaluationDue(plant, now, rules);

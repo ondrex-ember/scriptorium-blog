@@ -1,19 +1,22 @@
 // ZIP export/import (spec 7.3). Imported content is untrusted: everything is validated and copied through whitelists.
+import { applyCategories, cleanCategories, isCategoryId, mergeCategories, withCategories } from './categories.js';
 import { CATEGORIES, ENVIRONMENTS, SOURCES } from './config-categories.js';
 import { cleanRules } from './config-rules.js';
 import { cleanCriteria } from './criteria.js';
 import { EVENT_TYPES, rebuildAll } from './events.js';
+import { cleanTemplates, mergeTemplates } from './customtasks.js';
+import { cleanGroups, isOpId, mergeGroups } from './groups.js';
 import { emptyCache, isPresetKey, optionalPot } from './model.js';
 import { cleanStock } from './stockcfg.js';
 import { PROFILE_KEYS, PROFILE_SOURCES, UTM_KEYS } from './profile.js';
 import { getAllEvents, getPhoto, listPhotoKeys, listPlants, metaGet, metaSet, putPhoto, withTx } from './storage.js';
-import { normalizeKey, nowIso } from './utils.js';
+import { isGroupId, normalizeKey, nowIso } from './utils.js';
 import { VERSION } from './version.js';
 
-/** 2 = RCv0.191: batch_step / batch_check / care events and meta.rules. Version-1 archives still import. */
-export const SCHEMA_VERSION = 3;
+/** 2 = RCv0.191: batch_step / batch_check / care events and meta.rules. 3 = stock. 4 = RCv0.193: meta.groups, meta.taskTemplates, meta.categories, plant.groupId, event.opId. Older archives still import. */
+export const SCHEMA_VERSION = 4;
 /** Meta keys that travel with a backup; device-specific ones (persistGranted, backup bookkeeping) do not. */
-export const PORTABLE_META = ['hemisphere', 'profile', 'profileSource', 'acquisition', 'rules', 'criteria', 'stock'];
+export const PORTABLE_META = ['hemisphere', 'profile', 'profileSource', 'acquisition', 'rules', 'criteria', 'stock', 'groups', 'taskTemplates', 'categories'];
 const MAX_TEXT = 20000;
 
 const jszip = (JSZip) => JSZip || globalThis.JSZip || (() => { throw new Error('JSZip není načtený'); })();
@@ -53,20 +56,22 @@ const txt = (v, max = 200) => String(v ?? '').slice(0, max);
 
 function cleanPlant(p) {
   if (!isObj(p) || !isId(p.id) || typeof p.name !== 'string' || !p.name.trim()) return null;
-  if (!CATEGORIES[p.category] || !ENVIRONMENTS.includes(p.environment) || !isDate(p.startDate)) return null;
+  // a custom category the archive did not bring along falls back to "other" instead of losing the plant
+  const category = CATEGORIES[p.category] ? p.category : (isCategoryId(p.category) ? 'other' : null);
+  if (!category || !ENVIRONMENTS.includes(p.environment) || !isDate(p.startDate)) return null;
   const lifecycle = p.lifecycle === 'perennial' ? 'perennial' : 'cycle';
   const learned = isObj(p.learnedBase)
     ? Object.fromEntries(Object.entries(p.learnedBase).filter(([, v]) => Number.isFinite(v) && v > 0)) : null;
   const variety = txt(p.variety).trim();
   return {
     id: p.id, name: txt(p.name).trim(), variety, varietyKey: normalizeKey(variety),
-    category: p.category, lifecycle, environment: p.environment,
+    category, lifecycle, environment: p.environment,
     harvestable: !!p.harvestable, location: txt(p.location).trim(),
     source: SOURCES.includes(p.source) ? p.source : 'other',
     baseOverride: Number.isFinite(p.baseOverride) && p.baseOverride > 0 ? p.baseOverride : null,
     learnedBase: learned && Object.keys(learned).length ? learned : null,
     startDate: p.startDate, createdAt: isDate(p.createdAt) ? p.createdAt : p.startDate,
-    ...(p.reminders === false ? { reminders: false } : {}), ...optionalPot(p), ...(isPresetKey(p.stockPreset) ? { stockPreset: p.stockPreset } : {}),
+    ...(p.reminders === false ? { reminders: false } : {}), ...optionalPot(p), ...(isPresetKey(p.stockPreset) ? { stockPreset: p.stockPreset } : {}), ...(isGroupId(p.groupId) ? { groupId: p.groupId } : {}),
     archivedAt: null, cache: emptyCache()
   };
 }
@@ -76,7 +81,7 @@ function cleanEvent(e) {
   if (!isDate(e.occurredAt) || !isDate(e.recordedAt) || !isObj(e.payload)) return null;
   if (JSON.stringify(e.payload).length > MAX_TEXT) return null;
   if (['batch_step', 'batch_check'].includes(e.type) && !isId(e.payload.batchId)) return null;
-  return { id: e.id, plantId: e.plantId, type: e.type, occurredAt: e.occurredAt, recordedAt: e.recordedAt, payload: e.payload };
+  return { id: e.id, plantId: e.plantId, type: e.type, occurredAt: e.occurredAt, recordedAt: e.recordedAt, payload: e.payload, ...(isOpId(e.opId) ? { opId: e.opId } : {}) };
 }
 
 /** Read and validate an archive without touching the database. Throws Error with a Czech message. */
@@ -91,21 +96,29 @@ export async function readBackup(input, { JSZip } = {}) {
   if (!Number.isInteger(manifest?.schemaVersion) || manifest.schemaVersion < 1) throw new Error('Záloha nemá platnou verzi schématu.');
   if (manifest.schemaVersion > SCHEMA_VERSION) throw new Error(`Záloha je z novější verze aplikace (schéma ${manifest.schemaVersion}). Aktualizuj aplikaci.`);
   if (!isObj(data) || !Array.isArray(data.plants) || !Array.isArray(data.events)) throw new Error('Záloha je poškozená (data).');
-  const plants = data.plants.map(cleanPlant).filter(Boolean);
-  const ids = new Set(plants.map((p) => p.id));
-  const events = data.events.map(cleanEvent).filter(Boolean);
-  const skipped = (data.plants.length - plants.length) + (data.events.length - events.length);
-  const photoList = Array.isArray(data.photos) ? data.photos.filter((p) => isObj(p) && isId(p.id) && isId(p.plantId)) : [];
-  const meta = {};
-  for (const k of PORTABLE_META) if (isObj(data.meta) && k in data.meta) meta[k] = data.meta[k];
-  if (meta.hemisphere && !['north', 'south'].includes(meta.hemisphere)) delete meta.hemisphere;
-  if (meta.profile && !PROFILE_KEYS.includes(meta.profile)) { delete meta.profile; delete meta.profileSource; }
-  if (meta.profileSource && !PROFILE_SOURCES.includes(meta.profileSource)) delete meta.profileSource;
-  if ('rules' in meta) { meta.rules = cleanRules(meta.rules); if (!Object.keys(meta.rules).length) delete meta.rules; }
-  if ('stock' in meta) { meta.stock = cleanStock(meta.stock); if (!Object.values(meta.stock).some((v) => Object.keys(v).length)) delete meta.stock; }
-  if ('criteria' in meta) { meta.criteria = cleanCriteria(meta.criteria); if (!Object.keys(meta.criteria).length) delete meta.criteria; }
-  if ('acquisition' in meta) meta.acquisition = cleanAcquisition(meta.acquisition);
-  if (meta.acquisition == null) delete meta.acquisition;
+  const incomingCategories = cleanCategories(isObj(data.meta) ? data.meta.categories : null);
+  const cleaned = withCategories(incomingCategories, () => {
+    const plants = data.plants.map(cleanPlant).filter(Boolean);
+    const ids = new Set(plants.map((p) => p.id));
+    const events = data.events.map(cleanEvent).filter(Boolean);
+    const skipped = (data.plants.length - plants.length) + (data.events.length - events.length);
+    const photoList = Array.isArray(data.photos) ? data.photos.filter((p) => isObj(p) && isId(p.id) && isId(p.plantId)) : [];
+    const meta = {};
+    for (const k of PORTABLE_META) if (isObj(data.meta) && k in data.meta) meta[k] = data.meta[k];
+    if (meta.hemisphere && !['north', 'south'].includes(meta.hemisphere)) delete meta.hemisphere;
+    if (meta.profile && !PROFILE_KEYS.includes(meta.profile)) { delete meta.profile; delete meta.profileSource; }
+    if (meta.profileSource && !PROFILE_SOURCES.includes(meta.profileSource)) delete meta.profileSource;
+    if ('rules' in meta) { meta.rules = cleanRules(meta.rules); if (!Object.keys(meta.rules).length) delete meta.rules; }
+    if ('stock' in meta) { meta.stock = cleanStock(meta.stock); if (!Object.values(meta.stock).some((v) => Object.keys(v).length)) delete meta.stock; }
+    if ('criteria' in meta) { meta.criteria = cleanCriteria(meta.criteria); if (!Object.keys(meta.criteria).length) delete meta.criteria; }
+    if ('groups' in meta) { meta.groups = cleanGroups(meta.groups); if (!meta.groups.length) delete meta.groups; }
+    if ('taskTemplates' in meta) { meta.taskTemplates = cleanTemplates(meta.taskTemplates); if (!meta.taskTemplates.length) delete meta.taskTemplates; }
+    if ('acquisition' in meta) meta.acquisition = cleanAcquisition(meta.acquisition);
+    if (meta.acquisition == null) delete meta.acquisition;
+    return { plants, ids, events, skipped, photoList, meta };
+  });
+  const { plants, ids, events, skipped, photoList, meta } = cleaned;
+  if (Object.keys(incomingCategories).length) meta.categories = incomingCategories; else delete meta.categories;
   return { zip, manifest, plants, events, photoList, meta, skipped, archivePlantIds: ids };
 }
 
@@ -121,6 +134,7 @@ const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
 /** Merge an archive into the database. Returns a report. */
 export async function importBackup(db, input, { JSZip } = {}) {
+  applyCategories(await metaGet(db, 'categories'));   // plants of local custom categories must resolve while the archive is cleaned
   const parsed = await readBackup(input, { JSZip });
   const localPlants = new Map((await listPlants(db)).map((p) => [p.id, p]));
   const localEvents = new Map((await getAllEvents(db)).map((e) => [e.id, e]));
@@ -162,11 +176,15 @@ export async function importBackup(db, input, { JSZip } = {}) {
     for (const e of eventsToPut) s.events.put(e);
     for (const [k, v] of Object.entries(parsed.meta)) {
       const exists = await new Promise((res, rej) => { const r = s.meta.get(k); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
-      if (!exists) s.meta.put({ key: k, value: v });
+      if (k === 'groups') s.meta.put({ key: k, value: mergeGroups(cleanGroups(exists?.value), v) });   // union by id, local wins
+      else if (k === 'categories') s.meta.put({ key: k, value: mergeCategories(cleanCategories(exists?.value), v) });
+      else if (k === 'taskTemplates') s.meta.put({ key: k, value: mergeTemplates(cleanTemplates(exists?.value), v) });
+      else if (!exists) s.meta.put({ key: k, value: v });
     }
     return null;
   });
   await metaSet(db, 'schemaVersion', SCHEMA_VERSION);
+  applyCategories(await metaGet(db, 'categories'));   // the merged set must be registered before the caches are rebuilt
   await rebuildAll(db);
   return report;
 }

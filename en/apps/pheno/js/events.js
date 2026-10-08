@@ -1,7 +1,10 @@
 // Append-only event store: validation, derived fields, atomic writes.
 import { BATCH_ENDED, BATCH_PHASES, CARE_KINDS, CATEGORIES, DRYNESS_MAX, ENVIRONMENTS, EVAL_KINDS, MOISTURE_ANSWERS, PROBLEM_TYPES, PROCESSING_METHODS, RATING_MAX, SOURCES, getStages } from './config-categories.js';
 import { cleanRules, resolveRules } from './config-rules.js';
+import { applyCategories } from './categories.js';
 import { activeCriteria, cleanCriteria } from './criteria.js';
+import { ASSIGN_ACTIONS, MAX_ONCE, cleanLabel, cleanTemplates } from './customtasks.js';
+import { MAX_BULK, cleanGroups, isGroupId, isOpId, newOpId } from './groups.js';
 import { MAX_CONTAINERS, STOCK_EVENT_TYPES, STOCK_UNITS } from './stock.js';
 import { cleanStock, resolveMethods } from './stockcfg.js';
 import './calendar.js';
@@ -11,12 +14,12 @@ import { S } from './strings.cs.js';
 import { PhenoError, compareEvents, daysBetween, isNum, normalizeKey, nowIso, uid } from './utils.js';
 
 /** Bump when projection logic changes: the app rebuilds every cache once on the next start. */
-export const ENGINE_REV = 4;
+export const ENGINE_REV = 5;   // 5 = custom categories (R17): caches depend on the category registry
 
 export const EVENT_TYPES = [
   'created', 'stage_change', 'environment_change', 'watering', 'moisture_check', 'fertilizing',
   'pest_check', 'problem', 'problem_resolved', 'note', 'photo', 'measurement', 'milestone',
-  'harvest', 'evaluation', 'archive', 'unarchive', 'void', 'batch_step', 'batch_check', 'care', 'harvest_edit', ...STOCK_EVENT_TYPES
+  'harvest', 'evaluation', 'archive', 'unarchive', 'void', 'batch_step', 'batch_check', 'care', 'harvest_edit', 'task_assign', 'task_done', 'task_once', ...STOCK_EVENT_TYPES
 ];
 /** Allowed on an archived plant. */
 const ARCHIVED_OK = ['unarchive', 'evaluation', 'note', 'photo', 'void', 'batch_step', 'batch_check', ...STOCK_EVENT_TYPES];
@@ -156,6 +159,26 @@ function validatePayload(type, payload, plant, live, cur, opts = {}) {
     }
     case 'stock_init': case 'stock_use': case 'stock_adjust': case 'stock_move': case 'stock_check':
       return validateStock(type, p, plant, cur, opts);
+    case 'task_assign': {
+      const t = (opts.taskTemplates || []).find((x) => x.id === p.templateId);
+      if (!t || !ASSIGN_ACTIONS.includes(p.action)) throw bad();
+      const st = cur.cache.customTasks?.[t.id];
+      if (p.action === 'enable' ? st?.state === 'active' : !st || st.state === 'ended') throw bad();
+      return { templateId: t.id, action: p.action, label: t.label };
+    }
+    case 'task_done': {
+      const t = (opts.taskTemplates || []).find((x) => x.id === p.ref);
+      const st = cur.cache.customTasks?.[p.ref];
+      const once = (cur.cache.onceTasks || []).find((x) => x.id === p.ref && !x.doneAt);
+      if (!(st?.state === 'active') && !once) throw bad();
+      return { ref: p.ref, label: once ? once.label : (t?.label ?? '') };
+    }
+    case 'task_once': {
+      const label = cleanLabel(p.label, 60);
+      if (!label || typeof p.dueAt !== 'string' || Number.isNaN(Date.parse(p.dueAt))) throw bad();
+      if ((cur.cache.onceTasks || []).filter((x) => !x.doneAt).length >= MAX_ONCE) throw bad();
+      return { label, dueAt: new Date(p.dueAt).toISOString() };
+    }
     case 'care': {
       if (!CARE_KINDS.includes(p.kind)) throw bad();
       const out = { kind: p.kind };
@@ -333,33 +356,77 @@ async function readOpts(s) {
   const r = await idbReq(s.meta.get('rules'));
   const cr = await idbReq(s.meta.get('criteria'));
   const st = await idbReq(s.meta.get('stock'));
-  return { hemisphere: h?.value === 'south' ? 'south' : 'north', rules: resolveRules(cleanRules(r?.value)), criteria: cleanCriteria(cr?.value), stockCfg: cleanStock(st?.value) };
+  const tt = await idbReq(s.meta.get('taskTemplates'));
+  return { taskTemplates: cleanTemplates(tt?.value), hemisphere: h?.value === 'south' ? 'south' : 'north', rules: resolveRules(cleanRules(r?.value)), criteria: cleanCriteria(cr?.value), stockCfg: cleanStock(st?.value) };
+}
+
+/** Body of appendEvents inside an open transaction; `opId` tags the events of one bulk operation. */
+async function appendInTx(s, plantId, inputs, now, opId = null) {
+  const plant = await idbReq(s.plants.get(plantId));
+  if (!plant) throw bad();
+  const opts = await readOpts(s);
+  const existing = await idbReq(s.events.index('plantId').getAll(plantId));
+  const events = buildEvents(plant, existing, inputs, now, opts);
+  if (opId) for (const e of events) e.opId = opId;
+  const snoozed = { ...(plant.cache?.snoozedUntil || {}) };
+  for (const e of events) {
+    for (const k of COMPLETES[e.type] || []) delete snoozed[k];
+    const cid = e.payload?.containerId;
+    if (cid && e.type === 'stock_check') for (const k of [`stockCheck:${cid}`, `stockAir:${cid}`]) delete snoozed[k];
+    if (cid && e.type === 'stock_use') delete snoozed[`stockUseBy:${cid}`];
+    if (e.type === 'task_done') delete snoozed[`custom:${e.payload.ref}`];
+    const bid = e.payload?.batchId;
+    if (bid && ['batch_check', 'batch_step', 'evaluation'].includes(e.type)) {
+      for (const k of [`batchCheck:${bid}`, `useBy:${bid}`, `evaluation:${bid}`]) delete snoozed[k];
+    }
+  }
+  const base = { ...plant, cache: { ...plant.cache, snoozedUntil: snoozed } };
+  const next = projectPlant(base, existing.concat(events), opts);
+  for (const e of events) s.events.put(e);
+  s.plants.put(next);
+  return { plant: next, events };
 }
 
 /** Append events to one plant and refresh its cache, in one transaction. Returns {plant, events}. */
 export function appendEvents(db, plantId, inputs, { now } = {}) {
+  return withTx(db, ['plants', 'events', 'meta'], 'readwrite', (s) => appendInTx(s, plantId, inputs, now));
+}
+
+/**
+ * Bulk: one ordinary event per plant (truth stays per plant), all sharing an opId, in ONE transaction.
+ * `make` is an input array or a function plant → input array (or null to skip). A plant whose events do not validate
+ * (archived, stage not valid for its category, …) is skipped and reported; the others are written.
+ * Returns {opId, events, skipped:[{plantId, message}]}.
+ */
+export function appendBulk(db, plantIds, make, { now, opId = newOpId() } = {}) {
+  const ids = [...new Set(plantIds)];
+  if (!ids.length || ids.length > MAX_BULK || !isOpId(opId)) return Promise.reject(bad());
   return withTx(db, ['plants', 'events', 'meta'], 'readwrite', async (s) => {
-    const plant = await idbReq(s.plants.get(plantId));
-    if (!plant) throw bad();
-    const opts = await readOpts(s);
-    const existing = await idbReq(s.events.index('plantId').getAll(plantId));
-    const events = buildEvents(plant, existing, inputs, now, opts);
-    const snoozed = { ...(plant.cache?.snoozedUntil || {}) };
-    for (const e of events) {
-      for (const k of COMPLETES[e.type] || []) delete snoozed[k];
-      const cid = e.payload?.containerId;
-      if (cid && e.type === 'stock_check') for (const k of [`stockCheck:${cid}`, `stockAir:${cid}`]) delete snoozed[k];
-      if (cid && e.type === 'stock_use') delete snoozed[`stockUseBy:${cid}`];
-      const bid = e.payload?.batchId;
-      if (bid && ['batch_check', 'batch_step', 'evaluation'].includes(e.type)) {
-        for (const k of [`batchCheck:${bid}`, `useBy:${bid}`, `evaluation:${bid}`]) delete snoozed[k];
-      }
+    const events = [];
+    const skipped = [];
+    for (const id of ids) {
+      const plant = await idbReq(s.plants.get(id));
+      if (!plant) { skipped.push({ plantId: id, message: S.err.invalid }); continue; }
+      const inputs = typeof make === 'function' ? make(plant) : make;
+      if (!inputs || !inputs.length) { skipped.push({ plantId: id, message: '' }); continue; }
+      try {
+        const res = await appendInTx(s, id, inputs, now, opId);   // writes only after buildEvents validated: a failure leaves this plant untouched
+        events.push(...res.events);
+      } catch (e) { skipped.push({ plantId: id, message: e.message || S.err.invalid }); }
     }
-    const base = { ...plant, cache: { ...plant.cache, snoozedUntil: snoozed } };
-    const next = projectPlant(base, existing.concat(events), opts);
-    for (const e of events) s.events.put(e);
-    s.plants.put(next);
-    return { plant: next, events };
+    return { opId, events, skipped };
+  });
+}
+
+/** Undo a bulk operation: void each given event (grouped per plant, one transaction). Already voided ones are skipped. */
+export function voidBulk(db, events, { now } = {}) {
+  const opId = events.find((e) => e.opId)?.opId ?? newOpId();
+  return withTx(db, ['plants', 'events', 'meta'], 'readwrite', async (s) => {
+    let voided = 0;
+    for (const e of events) {
+      try { await appendInTx(s, e.plantId, [{ type: 'void', payload: { targetId: e.id, reason: 'undo-bulk' } }], now, opId); voided += 1; } catch { /* already voided or gone */ }
+    }
+    return { voided };
   });
 }
 
@@ -422,6 +489,9 @@ export function updatePlantMeta(db, plantId, patch) {
     if ('stockPreset' in patch) {
       if (isPresetKey(patch.stockPreset)) next.stockPreset = patch.stockPreset; else delete next.stockPreset;
     }
+    if ('groupId' in patch) {
+      if (isGroupId(patch.groupId)) next.groupId = patch.groupId; else delete next.groupId;
+    }
     if ('baseOverride' in patch) {
       const v = patch.baseOverride;
       if (v != null && (!isNum(v) || v <= 0)) throw bad();
@@ -432,6 +502,69 @@ export function updatePlantMeta(db, plantId, patch) {
     const out = projectPlant(next, events, opts);
     s.plants.put(out);
     return out;
+  });
+}
+
+// ---------- groups (RCv0.193): meta.groups + plant.groupId ----------
+export const readGroups = (db) => withTx(db, 'meta', 'readonly', async (s) => cleanGroups((await idbReq(s.meta.get('groups')))?.value));
+
+/** Replace the group list (validated). Members whose group disappeared lose their groupId. */
+export function saveGroups(db, groups) {
+  return withTx(db, ['plants', 'meta'], 'readwrite', async (s) => {
+    const clean = cleanGroups(groups);
+    const ids = new Set(clean.map((g) => g.id));
+    s.meta.put({ key: 'groups', value: clean });
+    for (const p of await idbReq(s.plants.getAll())) {
+      if (p.groupId && !ids.has(p.groupId)) { const copy = { ...p }; delete copy.groupId; s.plants.put(copy); }
+    }
+    return clean;
+  });
+}
+
+/** Save the custom categories: registers them first (the caches depend on them), stores the cleaned map, rebuilds every cache. */
+export async function saveCategories(db, raw) {
+  const clean = applyCategories(raw);
+  await withTx(db, ['meta'], 'readwrite', async (s) => { s.meta.put({ key: 'categories', value: clean }); return null; });
+  await rebuildAll(db);
+  return clean;
+}
+
+/** Put plants into a group (or out of it with null). Only the selector changes; every plant keeps its own data. */
+export function assignGroup(db, plantIds, groupId) {
+  return withTx(db, ['plants', 'meta'], 'readwrite', async (s) => {
+    if (groupId != null) {
+      const groups = cleanGroups((await idbReq(s.meta.get('groups')))?.value);
+      if (!isGroupId(groupId) || !groups.some((g) => g.id === groupId)) throw bad();
+    }
+    let n = 0;
+    for (const id of new Set(plantIds)) {
+      const p = await idbReq(s.plants.get(id));
+      if (!p) continue;
+      if (groupId) p.groupId = groupId; else delete p.groupId;
+      s.plants.put(p); n += 1;
+    }
+    return n;
+  });
+}
+
+// ---------- custom task templates (RCv0.193): meta.taskTemplates ----------
+export const readTemplates = (db) => withTx(db, 'meta', 'readonly', async (s) => cleanTemplates((await idbReq(s.meta.get('taskTemplates')))?.value));
+export const saveTemplates = (db, templates) => withTx(db, 'meta', 'readwrite', async (s) => {
+  const clean = cleanTemplates(templates);
+  s.meta.put({ key: 'taskTemplates', value: clean });
+  return clean;
+});
+
+/** Snooze several plants at once (cache only), e.g. a whole cluster on the dashboard. */
+export function snoozeMany(db, items, untilIso) {
+  return withTx(db, 'plants', 'readwrite', async (s) => {
+    for (const { plantId, key } of items) {
+      const plant = await idbReq(s.plants.get(plantId));
+      if (!plant) continue;
+      plant.cache = { ...plant.cache, snoozedUntil: { ...plant.cache.snoozedUntil, [key]: untilIso } };
+      s.plants.put(plant);
+    }
+    return items.length;
   });
 }
 

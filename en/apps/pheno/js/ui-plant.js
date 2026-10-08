@@ -1,16 +1,20 @@
 // Plant detail: header, stage, drying info, tasks, action bar, diary.
 import { batchRatio, dryingInfo, getPlantTasks, isCaredFor, isDormant } from './calendar.js';
-import { ctx, engineOpts, now, refreshPriors } from './ctx.js';
+import { ctx, engineOpts, loadAll, now, refreshPriors } from './ctx.js';
 import { activeCriteria, criterionLabel } from './criteria.js';
 import { clear, h, icon, put } from './dom.js';
 import { appendEvents, voidEvent } from './events.js';
 import { fmtDate, fmtDateTime, num, relDay, starsText } from './format.js';
 import { BATCH_ENDED, CATEGORIES, getStages } from './config-categories.js';
-import { evaluationHistory, harvestTotals } from './stats.js';
+import { aggregateVarieties, evaluationHistory, harvestTotals, varietyGroupKey } from './stats.js';
+import { metricsFor, varietyMetrics } from './metrics.js';
+import { plantMetricsCard, stagesCard } from './ui-metrics.js';
 import { liveEvents } from './model.js';
 import { getEvents, getPlant } from './storage.js';
 import { photoUrl } from './photos.js';
 import { PROFILES } from './profile.js';
+import { taskTitle } from './customtasks.js';
+import { groupOf } from './groups.js';
 import { navigate, guard } from './router.js';
 import { closeSheet, openSheet, toast } from './sheet.js';
 import { S } from './strings.cs.js';
@@ -22,6 +26,7 @@ import {
   snoozeSheet, submit
 } from './ui-forms.js';
 import { askHemisphere } from './ui-plant-form.js';
+import { plantTasksSheet } from './ui-tasks.js';
 import { hasStockTab, stockEligible, stockInitSheet, stockPanel, tabRequest } from './ui-stock.js';
 
 let tab = 'diary';
@@ -65,6 +70,7 @@ export async function renderPlant(root, id) {
     act('measure', 'thermo', S.ui.measurement, () => measurementSheet(plant, refresh)),
     act('milestone', 'flag', S.ui.milestone, () => milestoneSheet(plant, refresh)),
     act('care', 'leaf', S.ui.care, () => careSheet(plant, refresh)),
+    locked ? null : act('tasks', 'checklist', S.tasks.title, () => plantTasksSheet(plant, refresh)),
     plant.harvestable ? act('harvest', 'leaf', S.ui.harvest, () => harvestSheet(plant, refresh)) : null,
     plant.harvestable ? act('taste', 'check', S.ui.tasting, () => evaluationSheet(plant, refresh, { kind: 'tasting' })) : null,
     act('env', 'swap', S.ui.changeEnv, async () => { await askHemisphere(); environmentSheet(plant, refresh); })].filter(Boolean);
@@ -73,7 +79,7 @@ export async function renderPlant(root, id) {
 
   const taskRows = tasks.map((t) => h('div', { class: 'item-row task-row', dataset: { task: t.type } },
     h('span', { class: `badge-dot ${DOT[t.urgency]}` }),
-    h('div', { class: 'item-info' }, h('div', { class: 'item-name' }, S.taskLabel[t.type] + (t.note && t.type !== 'stockLow' ? ` – ${t.note}` : '')),
+    h('div', { class: 'item-info' }, h('div', { class: 'item-name' }, taskTitle(t) + (t.note && t.type !== 'stockLow' ? ` – ${t.note}` : '')),
       h('div', { class: 'item-detail' }, h('span', { class: 'item-sub' }, `${t.phase ? `${S.batchPhase[t.phase] || t.phase} · ` : ''}${relDay(t.dueAt, nowIso)}`))),
     h('div', { class: 'item-actions qty-stepper' },
       h('button', { type: 'button', class: 'btn-quick', 'aria-label': S.ui.done, onclick: () => runTask(t, plant, refresh) }, icon('check')),
@@ -84,7 +90,7 @@ export async function renderPlant(root, id) {
   const tabs = [['diary', S.ui.timeline],
     plant.harvestable ? ['harvests', S.ui.harvests] : ['milestones', S.ui.milestones],
     hasStockTab(plant) ? ['stock', S.stock.tab] : null,
-    canEval ? ['evaluation', S.ui.evaluation] : null, ['care', S.ui.careTab]].filter(Boolean);
+    canEval ? ['evaluation', S.ui.evaluation] : null, ['care', S.ui.careTab], ['metrics', S.metrics.title]].filter(Boolean);
   if (tabRequest.id === id && tabs.some(([k]) => k === tabRequest.tab)) { tab = tabRequest.tab; tabPlant = id; }
   tabRequest.id = null;
   if (tabPlant !== id || !tabs.some(([k]) => k === tab)) { tab = 'diary'; tabPlant = id; }
@@ -97,6 +103,7 @@ export async function renderPlant(root, id) {
     if (tab === 'milestones') return milestonesPanel();
     if (tab === 'evaluation') return evaluationPanel();
     if (tab === 'care') return carePanel();
+    if (tab === 'metrics') return metricsPanel();
     return diaryPanel();
   }
 
@@ -222,6 +229,16 @@ export async function renderPlant(root, id) {
       hist.filter((r) => r.kind === 'final').length > 1 ? h('div', { class: 'card timeline', id: 'eval-history' }, rows(hist.filter((r) => r.kind === 'final'))) : null);
   }
 
+  async function metricsPanel() {
+    const { plants, byPlant } = await loadAll();
+    const { key } = varietyGroupKey(plant);
+    const g = aggregateVarieties(plants, byPlant).find((x) => x.category === plant.category && x.key === key);
+    const vm = g ? varietyMetrics(g, byPlant, nowIso) : { aggregates: [] };
+    const values = metricsFor(plant, events, nowIso);
+    return h('div', {}, h('p', { class: 'muted pad-x' }, S.metrics.intro), plantMetricsCard(values, vm.aggregates),
+      g ? stagesCard(g.items, byPlant, plant.id) : null);
+  }
+
   function carePanel() {
     return h('div', {},
       caring ? h('div', { class: 'card drying-info', id: 'drying-info' },
@@ -265,6 +282,7 @@ export async function renderPlant(root, id) {
       h('span', { class: 'tag' }, S.category[plant.category]),
       h('span', { class: 'tag' }, S.environment[plant.cache.environment]),
       plant.location ? h('span', { class: 'tag' }, plant.location) : null,
+      groupOf(plant, ctx.groups) ? h('button', { type: 'button', class: 'tag tag-link', id: 'tag-group', onclick: () => navigate(`/group/${plant.groupId}`) }, groupOf(plant, ctx.groups).label) : null,
       locked ? h('span', { class: 'tag' }, S.ui.archived) : null),
     h('div', { class: 'field' }, h('label', {}, S.ui.stageLabel), stageSel),
     plant.cache.openProblems.length

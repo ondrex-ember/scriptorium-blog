@@ -70,7 +70,28 @@ export const RULE_DEFS = [
 export const RULE_GROUPS = [...new Set(RULE_DEFS.map((d) => d.group))];
 const BY_KEY = new Map(RULE_DEFS.map((d) => [d.key, d]));
 export const ruleDef = (key) => BY_KEY.get(key);
-export const DEFAULT_RULES = Object.freeze(Object.fromEntries(RULE_DEFS.map((d) => [d.key, d.def])));
+export const DEFAULT_RULES = Object.fromEntries(RULE_DEFS.map((d) => [d.key, d.def]));
+
+/**
+ * Custom categories (R17) get their own category rules and a use-by rule like their base. Called by the category registry
+ * after every change; mutates the shared tables in place so every importer sees them.
+ */
+export function syncCategoryRules(custom) {
+  const isCustomKey = (k) => /^(cat|useBy)\.u_/.test(k);
+  for (let i = RULE_DEFS.length - 1; i >= 0; i--) if (isCustomKey(RULE_DEFS[i].key)) { BY_KEY.delete(RULE_DEFS[i].key); delete DEFAULT_RULES[RULE_DEFS[i].key]; RULE_DEFS.splice(i, 1); }
+  const add = [];
+  for (const [c, cfg] of Object.entries(custom)) {
+    add.push(num(`cat.${c}.soilDays`, 'category', cfg.baseDryingDays, 0.5, 60, 'dní', 0.5),
+      num(`cat.${c}.fertilizingDays`, 'category', cfg.fertilizingDays, 1, 180, 'dní'),
+      num(`cat.${c}.pestCheckDays`, 'category', cfg.pestCheckDays, 1, 90, 'dní'));
+    const useBy = BY_KEY.get(`useBy.${cfg.base}`);
+    if (useBy) add.push(num(`useBy.${c}`, useBy.group, useBy.def, useBy.min, useBy.max, useBy.unit));
+  }
+  const firstOther = RULE_DEFS.findIndex((d) => !d.key.startsWith('cat.'));
+  RULE_DEFS.splice(firstOther < 0 ? RULE_DEFS.length : firstOther, 0, ...add.filter((d) => d.key.startsWith('cat.')));
+  RULE_DEFS.push(...add.filter((d) => !d.key.startsWith('cat.')));
+  for (const d of add) { BY_KEY.set(d.key, d); DEFAULT_RULES[d.key] = d.def; }
+}
 
 /** True when `value` is acceptable for the rule `key`. */
 export function validRule(key, value) {

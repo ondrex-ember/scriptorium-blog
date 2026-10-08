@@ -69,6 +69,8 @@ export function dayDiff(aIso, bIso) {
 }
 
 export const isNum = (v) => typeof v === 'number' && Number.isFinite(v);
+/** Shape of a plant-group id (groups live in meta.groups; a plant stores only the id). */
+export const isGroupId = (v) => typeof v === 'string' && /^g[a-z0-9]{3,24}$/.test(v);
 
 export function compareEvents(a, b) {
   return a.occurredAt < b.occurredAt ? -1 : a.occurredAt > b.occurredAt ? 1

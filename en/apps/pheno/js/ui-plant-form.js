@@ -1,4 +1,5 @@
 // Plant form: create, clone (?clone=id), edit.
+import { categoryChoices } from './categories.js';
 import { CATEGORIES, SOURCES, getStages } from './config-categories.js';
 import { SUBSTRATES } from './config-rules.js';
 import { SEASONAL_ENVIRONMENTS } from './config-engine.js';
@@ -46,7 +47,7 @@ export async function renderPlantForm(root, id, query = {}) {
     ? { name: editing.name, variety: editing.variety, category: editing.category, lifecycle: editing.lifecycle,
       environment: editing.cache.environment, harvestable: editing.harvestable, location: editing.location,
       source: editing.source, baseOverride: editing.baseOverride,
-      potVolumeL: editing.potVolumeL, substrate: editing.substrate, plannedHarvestAt: editing.plannedHarvestAt, stockPreset: editing.stockPreset }
+      potVolumeL: editing.potVolumeL, substrate: editing.substrate, plannedHarvestAt: editing.plannedHarvestAt, stockPreset: editing.stockPreset, groupId: editing.groupId }
     : source ? clonePlantInput(source, plants.map((p) => p.name))
       : { category: pre.category ?? null, environment: pre.environment ?? null, lifecycle: pre.lifecycle, harvestable: pre.harvestable, source: 'seed' };
   const [exName, exVariety] = example(ctx.profile, plants.length);
@@ -55,11 +56,18 @@ export async function renderPlantForm(root, id, query = {}) {
   const name = h('input', { type: 'text', id: 'f-name', value: init.name || '', placeholder: `např. ${exName}` });
   const variety = h('input', { type: 'text', id: 'f-variety', value: init.variety || '', list: 'dl-variety', placeholder: `např. ${exVariety}` });
   const location = h('input', { type: 'text', id: 'f-location', value: init.location || '', list: 'dl-location', placeholder: 'např. balkon' });
-  const cat = chipGroup(Object.entries(S.category), st.category, (v) => { if (editing) return; setCategory(v); });
+  const cat = chipGroup(categoryChoices(st.category).map((k) => [k, S.category[k]]), st.category, (v) => { if (editing) return; setCategory(v); });
   cat.el.id = 'f-category';
   const life = chipGroup(Object.entries(S.lifecycle), st.lifecycle, (v) => { if (editing) return; st.lifecycle = v; fillStages(); });
   const env = chipGroup(Object.entries(S.environment), st.environment, (v) => { st.environment = v; });
   env.el.id = 'f-environment';
+  st.groupId = ctx.groups.some((g) => g.id === init.groupId) ? init.groupId : '';
+  const grp = chipGroup([['', S.groups.noGroup], ...ctx.groups.map((g) => [g.id, g.label])], st.groupId, (v) => {
+    st.groupId = v;
+    const def = ctx.groups.find((g) => g.id === v)?.environment;
+    if (def && !editing && !st.environment) { st.environment = def; env.set(def); }   // the group only offers a default
+  });
+  grp.el.id = 'f-group';
   const src = chipGroup(SOURCES.map((s) => [s, S.source[s]]), st.source, (v) => { st.source = v; });
   const harv = h('input', { type: 'checkbox', id: 'f-harvestable', checked: init.harvestable ?? true, disabled: !!editing });
   const stage = h('select', { id: 'f-stage', disabled: !!editing });
@@ -114,7 +122,7 @@ export async function renderPlantForm(root, id, query = {}) {
     try {
       if (editing) {
         await updatePlantMeta(ctx.db, id, { name: name.value, variety: variety.value, location: location.value,
-          source: st.source, baseOverride: base.value === '' ? null : Number(base.value),
+          source: st.source, groupId: st.groupId || null, baseOverride: base.value === '' ? null : Number(base.value),
           potVolumeL: potValue(), substrate: substrate || null, plannedHarvestAt: plannedIso(), stockPreset: stockPreset || null });
         await rememberPreset(editing.category, variety.value);
         if (st.environment && st.environment !== editing.cache.environment) {
@@ -130,7 +138,7 @@ export async function renderPlantForm(root, id, query = {}) {
       if (SEASONAL_ENVIRONMENTS.includes(st.environment)) await askHemisphere();
       const plant = await createPlant(ctx.db, {
         name: name.value, variety: variety.value, category: st.category, lifecycle: st.lifecycle,
-        environment: st.environment, harvestable: harv.checked, stage: stage.value, location: location.value,
+        environment: st.environment, harvestable: harv.checked, stage: stage.value, location: location.value, groupId: st.groupId || undefined,
         source: st.source, startDate: toIso(start.value),
         baseOverride: base.value === '' ? null : Number(base.value),
         learnedBase: init.learnedBase || null,
@@ -179,6 +187,7 @@ export async function renderPlantForm(root, id, query = {}) {
       h('label', { class: 'check-row' }, harv, h('span', {}, S.ui.harvestable)),
       editing ? null : field(S.ui.stageLabel, stage),
       field(S.ui.location, location),
+      ctx.groups.length ? field(S.groups.group, grp.el) : null,
       field(S.ui.sourceLabel, src.el),
       editing ? null : field(S.ui.startDate, start),
       field(S.ui.potVolume2, potVol),

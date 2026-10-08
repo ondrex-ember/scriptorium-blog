@@ -83,6 +83,8 @@
       criteria: []
     }
   };
+  var CATEGORY_ICON = { herb: "leaf", vegetable: "sprout", fruit: "pot", flower: "sun", tree_shrub: "leaf", houseplant: "sprout", other: "pot" };
+  var CATEGORY_ICON_CHOICES = ["leaf", "sprout", "pot", "sun"];
   var ENVIRONMENTS = ["outdoor", "greenhouse", "indoor", "controlled"];
   var SOURCES = ["seed", "cutting", "seedling", "other"];
   var PROBLEM_TYPES = ["pest", "mold", "wilting", "nutrient", "other"];
@@ -202,7 +204,32 @@
   ];
   var RULE_GROUPS = [...new Set(RULE_DEFS.map((d) => d.group))];
   var BY_KEY = new Map(RULE_DEFS.map((d) => [d.key, d]));
-  var DEFAULT_RULES = Object.freeze(Object.fromEntries(RULE_DEFS.map((d) => [d.key, d.def])));
+  var DEFAULT_RULES = Object.fromEntries(RULE_DEFS.map((d) => [d.key, d.def]));
+  function syncCategoryRules(custom) {
+    const isCustomKey = (k) => /^(cat|useBy)\.u_/.test(k);
+    for (let i = RULE_DEFS.length - 1; i >= 0; i--) if (isCustomKey(RULE_DEFS[i].key)) {
+      BY_KEY.delete(RULE_DEFS[i].key);
+      delete DEFAULT_RULES[RULE_DEFS[i].key];
+      RULE_DEFS.splice(i, 1);
+    }
+    const add = [];
+    for (const [c, cfg] of Object.entries(custom)) {
+      add.push(
+        num2(`cat.${c}.soilDays`, "category", cfg.baseDryingDays, 0.5, 60, "dn\xED", 0.5),
+        num2(`cat.${c}.fertilizingDays`, "category", cfg.fertilizingDays, 1, 180, "dn\xED"),
+        num2(`cat.${c}.pestCheckDays`, "category", cfg.pestCheckDays, 1, 90, "dn\xED")
+      );
+      const useBy = BY_KEY.get(`useBy.${cfg.base}`);
+      if (useBy) add.push(num2(`useBy.${c}`, useBy.group, useBy.def, useBy.min, useBy.max, useBy.unit));
+    }
+    const firstOther = RULE_DEFS.findIndex((d) => !d.key.startsWith("cat."));
+    RULE_DEFS.splice(firstOther < 0 ? RULE_DEFS.length : firstOther, 0, ...add.filter((d) => d.key.startsWith("cat.")));
+    RULE_DEFS.push(...add.filter((d) => !d.key.startsWith("cat.")));
+    for (const d of add) {
+      BY_KEY.set(d.key, d);
+      DEFAULT_RULES[d.key] = d.def;
+    }
+  }
   function validRule(key, value) {
     const d = BY_KEY.get(key);
     if (!d) return false;
@@ -217,22 +244,7 @@
     return out;
   }
   var resolveRules = (overrides) => ({ ...DEFAULT_RULES, ...cleanRules(overrides) });
-  var rv = (rules, key) => rules?.[key] ?? DEFAULT_RULES[key];
-
-  // js/model.js
-  var model_exports = {};
-  __export(model_exports, {
-    buildPlant: () => buildPlant,
-    clearProjectors: () => clearProjectors,
-    clonePlantInput: () => clonePlantInput,
-    emptyCache: () => emptyCache,
-    isPresetKey: () => isPresetKey,
-    liveEvents: () => liveEvents,
-    optionalPot: () => optionalPot,
-    projectPlant: () => projectPlant,
-    registerProjector: () => registerProjector,
-    unregisterProjector: () => unregisterProjector
-  });
+  var rv = (rules2, key) => rules2?.[key] ?? DEFAULT_RULES[key];
 
   // js/strings.cs.js
   var S = {
@@ -457,6 +469,7 @@
       useBy: "Spot\u0159ebovat d\xE1vku",
       evaluation: "Ohodnotit sklize\u0148",
       evaluationReview: "Zm\u011Bnil se tv\u016Fj n\xE1zor?",
+      custom: "Vlastn\xED \xFAkol",
       stockCheck: "Zkontrolovat z\xE1sobn\xEDk",
       stockAir: "Vyv\u011Btrat z\xE1sobn\xEDk",
       stockUseBy: "Spot\u0159ebovat z\xE1sobn\xEDk",
@@ -611,6 +624,171 @@
       useByTask: "\u010Cerstvost klesla pod nastaven\xFD pr\xE1h.",
       checkTask: "Pod\xEDvej se na v\u016Fni a vzhled.",
       airTask: "Otev\u0159i a nech vyv\u011Btrat."
+    },
+    tasks: {
+      title: "Vlastn\xED \xFAkoly",
+      open: "Vlastn\xED \xFAkoly",
+      intro: "Vlastn\xED opakovan\xE9 nebo jednor\xE1zov\xE9 \xFAkoly (p\u0159esazen\xED, \u0159ez, m\u011B\u0159en\xED pH\u2026). \u0160ablonu jednou vytvo\u0159\xED\u0161 a p\u0159i\u0159ad\xED\u0161 rostlin\u011B nebo cel\xE9 skupin\u011B. V t\xE9to verzi se interval neu\u010D\xED, plat\xED tv\u016Fj.",
+      none: "Zat\xEDm \u017E\xE1dn\xE1 \u0161ablona.",
+      add: "Nov\xE1 \u0161ablona",
+      edit: "Upravit \u0161ablonu",
+      label: "N\xE1zev \xFAkolu",
+      icon: "Ikona",
+      mode: "Druh",
+      modes: { recurring: "Opakovan\xFD", once: "Jednor\xE1zov\xFD" },
+      interval: "Interval (dny)",
+      anchor: "Po\u010D\xEDtat od",
+      anchors: { lastDone: "Posledn\xEDho spln\u011Bn\xED", fixed: "Pevn\xE9ho rozvrhu", stageStart: "Za\u010D\xE1tku f\xE1ze" },
+      offset: "Prvn\xED \xFAkol po (dnech od za\u010D\xE1tku f\xE1ze)",
+      applies: "Plat\xED jen pro (nic = v\u0161e)",
+      categories: "Kategorie",
+      stages: "F\xE1ze",
+      environments: "Prost\u0159ed\xED",
+      delete: "Smazat \u0161ablonu",
+      deleteHint: "Z\xE1znamy v den\xEDku z\u016Fstanou, \xFAkol se jen p\u0159estane nab\xEDzet.",
+      limit: "Dosa\u017Een nejvy\u0161\u0161\xED po\u010Det \u0161ablon.",
+      saved: "Ulo\u017Eeno",
+      plantTitle: "\xDAkoly rostliny",
+      assigned: "Zapnuto",
+      paused: "Pozastaveno",
+      ended: "Ukon\u010Deno",
+      off: "Nep\u0159i\u0159azeno",
+      enable: "Zapnout",
+      pause: "Pozastavit",
+      end: "Ukon\u010Dit",
+      once: "Jednor\xE1zov\xFD \xFAkol",
+      onceLabel: "Co je pot\u0159eba ud\u011Blat",
+      onceDue: "Term\xEDn",
+      addOnce: "P\u0159idat \xFAkol",
+      noTemplates: "Nejd\u0159\xEDv vytvo\u0159 \u0161ablonu v Nastaven\xED.",
+      manage: "Spravovat \u0161ablony",
+      done: "Hotovo",
+      assignTitle: { enable: "\xDAkol zapnut", pause: "\xDAkol pozastaven", end: "\xDAkol ukon\u010Den" },
+      doneTitle: "\xDAkol spln\u011Bn",
+      onceTitle: "\xDAkol napl\xE1nov\xE1n",
+      every: (n) => `ka\u017Ed\xFDch ${n} dn\xED`,
+      bulkTitle: "\xDAkol pro skupinu",
+      bulkOnce: "Jednor\xE1zov\xFD \xFAkol pro v\u0161echny",
+      pickTemplate: "\u0160ablona",
+      action: "Akce"
+    },
+    categories: {
+      title: "Vlastn\xED kategorie",
+      open: "Vlastn\xED kategorie",
+      intro: "Vlastn\xED kategorie vznikne klonov\xE1n\xEDm t\xE9 vestav\u011Bn\xE9: zd\u011Bd\xED v\u0161e a ty zm\u011Bn\xED\u0161 jen to, co pot\u0159ebuje\u0161 (f\xE1ze, pole sklizn\u011B, intervaly). Rostliny v n\xED funguj\xED jako ve vestav\u011Bn\xE9 kategorii.",
+      none: "Zat\xEDm \u017E\xE1dn\xE1 vlastn\xED kategorie.",
+      add: "Nov\xE1 kategorie",
+      edit: "Upravit kategorii",
+      pickBase: "Zalo\u017Eit podle",
+      pickBaseHint: "Vyber kategorii, ze kter\xE9 se vych\xE1z\xED. M\u016F\u017Ee\u0161 vybrat i vlastn\xED.",
+      next: "Pokra\u010Dovat",
+      label: "N\xE1zev kategorie",
+      icon: "Ikona",
+      lifecycle: "\u017Divotn\xED cyklus",
+      harvestable: "Skl\xEDz\xED se",
+      stages: "F\xE1ze (Dokon\u010Deno je v\u017Edy posledn\xED)",
+      harvestFields: "Pole sklizn\u011B",
+      fertilizingDays: "P\u0159ihnojit po (dny)",
+      pestCheckDays: "Kontrola \u0161k\u016Fdc\u016F po (dny)",
+      baseDryingDays: "Z\xE1kladn\xED doba zpracov\xE1n\xED (dny)",
+      basedOn: (b) => `podle: ${b}`,
+      limit: "Dosa\u017Een nejvy\u0161\u0161\xED po\u010Det vlastn\xEDch kategori\xED.",
+      saved: "Ulo\u017Eeno",
+      needStage: "Vyber alespo\u0148 jednu f\xE1zi.",
+      needField: "Vyber alespo\u0148 jedno pole sklizn\u011B.",
+      delete: "Smazat kategorii",
+      deleteFree: "\u017D\xE1dn\xE1 rostlina ji nepou\u017E\xEDv\xE1, kategorie se sma\u017Ee \xFApln\u011B.",
+      deleteUsed: (n) => `Pou\u017E\xEDv\xE1 ji ${n} rostlin. Kategorie se skryje z nab\xEDdky pro nov\xE9 rostliny, st\xE1vaj\xEDc\xED rostliny funguj\xED beze zm\u011Bny.`,
+      hidden: "Skryt\xE9 kategorie",
+      restore: "Vr\xE1tit",
+      yes: "Ano",
+      no: "Ne"
+    },
+    metrics: {
+      title: "\u010C\xEDsla",
+      intro: "Odvozeno ze z\xE1znam\u016F. Chyb\u011Bj\xEDc\xED \xFAdaj = poml\u010Dka, nikdy nula. Porovn\xE1vaj\xED se jen stejn\xE9 odr\u016Fdy a kategorie.",
+      none: "Zat\xEDm nen\xED z \u010Deho po\u010D\xEDtat.",
+      n: (n) => `n = ${n}`,
+      provisional: "orienta\u010Dn\xED",
+      mixedEnv: "r\u016Fzn\xE1 prost\u0159ed\xED",
+      items: {
+        yieldPerDay: "V\xFDnos na den p\u011Bstov\xE1n\xED",
+        yieldPerLiter: "V\xFDnos na litr n\xE1doby",
+        processedRatio: "Pom\u011Br po zpracov\xE1n\xED k \u010Derstv\xE9mu",
+        wateringsPerWeek: "Z\xE1livek t\xFDdn\u011B",
+        fertilizingsPerCycle: "Hnojen\xED za cyklus",
+        problemsPer100Days: "Probl\xE9m\u016F na 100 dn\xED",
+        problemResolveDays: "Doba vy\u0159e\u0161en\xED probl\xE9mu",
+        growAgain: "P\u011Bstoval bych znovu",
+        stockPerDay: "Spot\u0159eba z\xE1soby"
+      },
+      stages: "D\xE9lka f\xE1z\xED",
+      stagesHint: "Pr\u016Fm\u011Br dokon\u010Den\xFDch f\xE1z\xED t\xE9to odr\u016Fdy.",
+      vsAvg: "oproti pr\u016Fm\u011Bru",
+      patterns: "Souvislosti",
+      patternsHint: "Pozorovan\xFD vzorec v datech, ne p\u0159\xED\u010Dina. Zobrazuje se a\u017E od 8 hodnocen\xFDch rostlin v jedn\xE9 kategorii.",
+      patternText: {
+        yieldRating: { up: "Rostliny s vy\u0161\u0161\xEDm v\xFDnosem m\u011Bly sp\xED\u0161 lep\u0161\xED hodnocen\xED", down: "Rostliny s vy\u0161\u0161\xEDm v\xFDnosem m\u011Bly sp\xED\u0161 hor\u0161\xED hodnocen\xED" },
+        problemsRating: { up: "Rostliny s v\xEDce probl\xE9my m\u011Bly sp\xED\u0161 lep\u0161\xED hodnocen\xED", down: "Rostliny s v\xEDce probl\xE9my m\u011Bly sp\xED\u0161 hor\u0161\xED hodnocen\xED" }
+      },
+      strength: { weak: "slab\xE1 souvislost", medium: "st\u0159edn\xED souvislost", strong: "siln\xE1 souvislost" },
+      storage: "Skladov\xE1n\xED podle zp\u016Fsobu",
+      storageHint: "Uzav\u0159en\xE9 n\xE1doby. \u017Divotnost se po\u010D\xEDt\xE1 jen u t\u011Bch, co se zkazily nebo vyhodily.",
+      loss: "vyhozeno",
+      life: "re\xE1ln\xE1 \u017Eivotnost",
+      containers: "n\xE1dob"
+    },
+    groups: {
+      title: "Skupiny rostlin",
+      open: "Skupiny",
+      intro: "Skupina je jen v\xFDb\u011Br rostlin s v\xFDchoz\xEDmi hodnotami (m\xEDsto, z\xE1hon, v\xE1rka). Ka\u017Ed\xE1 rostlina si i tak dr\u017E\xED vlastn\xED data a z\xE1znamy.",
+      none: "Zat\xEDm \u017E\xE1dn\xE1 skupina.",
+      add: "Nov\xE1 skupina",
+      label: "N\xE1zev skupiny",
+      kind: "Druh",
+      noGroup: "Bez skupiny",
+      group: "Skupina",
+      kinds: { place: "M\xEDsto", cohort: "V\xE1rka", bed: "Z\xE1hon" },
+      defaultEnv: "V\xFDchoz\xED prost\u0159ed\xED (voliteln\xE9)",
+      members: "Rostliny ve skupin\u011B",
+      addMembers: "P\u0159idat rostliny",
+      removeFrom: "Vyjmout ze skupiny",
+      noMembers: "Skupina je zat\xEDm pr\xE1zdn\xE1.",
+      bulk: "Hromadn\xE9 akce",
+      bulkHint: "Zap\xED\u0161e se samostatn\xFD z\xE1znam ka\u017Ed\xE9 vybran\xE9 rostlin\u011B. Celou akci m\u016F\u017Ee\u0161 vr\xE1tit zp\u011Bt.",
+      selected: (n) => `Vybr\xE1no: ${n}`,
+      selectAll: "V\u0161e",
+      selectNone: "Nic",
+      activeOnly: "Hromadn\u011B se zapisuje jen aktivn\xEDm rostlin\xE1m.",
+      moisture: "Vlhkost",
+      water: "Zal\xEDt",
+      fertilize: "P\u0159ihnojit",
+      pestOk: "\u0160k\u016Fdci: bez n\xE1lezu",
+      note: "Pozn\xE1mka",
+      stage: "F\xE1ze",
+      env: "Prost\u0159ed\xED",
+      noCommonStage: "Vybran\xE9 rostliny nemaj\xED spole\u010Dnou f\xE1zi.",
+      pickSome: "Vyber alespo\u0148 jednu rostlinu.",
+      done: (n, skipped) => skipped ? `Zaps\xE1no: ${n}, p\u0159esko\u010Deno: ${skipped}` : `Zaps\xE1no: ${n}`,
+      snoozeAll: "Odlo\u017Eit celou skupinu",
+      doAll: "Splnit pro v\u0161echny",
+      stats: "Souhrn skupiny",
+      avgYield: "V\xFDnos na rostlinu",
+      rated: "Hodnocen\xED",
+      plants: "Rostliny",
+      compare: "Stejn\xE1 odr\u016Fda v r\u016Fzn\xFDch skupin\xE1ch",
+      compareHint: "Porovn\xE1vaj\xED se jen stejn\xE9 odr\u016Fdy a kategorie; po\u010Det rostlin je v\u017Edy uveden.",
+      rename: "P\u0159ejmenovat",
+      delete: "Smazat skupinu",
+      deleteHint: "Rostliny a jejich z\xE1znamy z\u016Fstanou, jen p\u0159estanou b\xFDt ve skupin\u011B.",
+      fromPlaces: "Vytvo\u0159it z m\xEDst rostlin",
+      fromPlacesHint: "Tato m\xEDsta pou\u017E\xEDvaj\xED aspo\u0148 dv\u011B rostliny. Skupinu vytvo\u0159\xED\u0161 jedn\xEDm klepnut\xEDm.",
+      created: "Skupina vytvo\u0159ena",
+      saved: "Ulo\u017Eeno",
+      filter: "Skupina",
+      limit: "Dosa\u017Een nejvy\u0161\u0161\xED po\u010Det skupin.",
+      moreN: (n) => `a ${n} dal\u0161\xEDch`,
+      hasTasks: "\xDAkoly skupiny"
     },
     ui: {
       today: "Dnes",
@@ -939,6 +1117,7 @@
     return Math.round((db - da) / 864e5);
   }
   var isNum = (v) => typeof v === "number" && Number.isFinite(v);
+  var isGroupId = (v) => typeof v === "string" && /^g[a-z0-9]{3,24}$/.test(v);
   function compareEvents(a, b) {
     return a.occurredAt < b.occurredAt ? -1 : a.occurredAt > b.occurredAt ? 1 : a.recordedAt < b.recordedAt ? -1 : a.recordedAt > b.recordedAt ? 1 : a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
   }
@@ -950,7 +1129,105 @@
     }
   };
 
+  // js/customtasks.js
+  var MAX_TEMPLATES = 30;
+  var MAX_ONCE = 30;
+  var TASK_ICONS = ["check", "drop", "leaf", "bug", "scissors", "thermo", "ruler", "flag", "sun", "pot", "note", "camera", "swap", "stage"];
+  var ANCHORS = ["lastDone", "fixed", "stageStart"];
+  var TASK_MODES = ["recurring", "once"];
+  var ASSIGN_ACTIONS = ["enable", "pause", "end"];
+  var ALL_STAGES = [.../* @__PURE__ */ new Set([...Object.values(CYCLE_STAGES).flat(), ...PERENNIAL_STAGES])];
+  var isTemplateId = (v) => typeof v === "string" && /^t[a-z0-9]{3,24}$/.test(v);
+  var newTemplateId = () => `t${Math.random().toString(36).slice(2, 8)}${Date.now().toString(36).slice(-4)}`;
+  var cleanLabel = (v, max = 40) => String(v ?? "").replace(/[\u0000-\u001f\u007f<>]/g, "").trim().slice(0, max);
+  var intIn = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi ? v : null;
+  var subset = (arr, allowed) => Array.isArray(arr) ? [...new Set(arr.filter((x) => allowed.includes(x)))] : [];
+  function cleanTemplates(raw) {
+    if (!Array.isArray(raw)) return [];
+    const seen = /* @__PURE__ */ new Set();
+    const out = [];
+    for (const t of raw) {
+      if (!t || typeof t !== "object" || !isTemplateId(t.id) || seen.has(t.id)) continue;
+      const label = cleanLabel(t.label);
+      if (!label) continue;
+      seen.add(t.id);
+      const anchor = ANCHORS.includes(t.anchor) ? t.anchor : "lastDone";
+      const clean4 = {
+        id: t.id,
+        label,
+        icon: TASK_ICONS.includes(t.icon) ? t.icon : "check",
+        mode: TASK_MODES.includes(t.mode) ? t.mode : "recurring",
+        intervalDays: intIn(t.intervalDays, 1, 365) ?? 7,
+        anchor
+      };
+      if (anchor === "stageStart") clean4.offsetDays = intIn(t.offsetDays, 0, 365) ?? clean4.intervalDays;
+      const ap = t.appliesTo && typeof t.appliesTo === "object" ? t.appliesTo : {};
+      const appliesTo = {};
+      const cats = subset(ap.categories, Object.keys(CATEGORIES)), stages = subset(ap.stages, ALL_STAGES), envs = subset(ap.environments, ENVIRONMENTS);
+      if (cats.length) appliesTo.categories = cats;
+      if (stages.length) appliesTo.stages = stages;
+      if (envs.length) appliesTo.environments = envs;
+      if (Object.keys(appliesTo).length) clean4.appliesTo = appliesTo;
+      out.push(clean4);
+      if (out.length >= MAX_TEMPLATES) break;
+    }
+    return out;
+  }
+  function mergeTemplates(local, incoming) {
+    const have = new Set(local.map((t) => t.id));
+    return cleanTemplates([...local, ...incoming.filter((t) => !have.has(t.id))]);
+  }
+  function templateApplies(t, plant) {
+    const a = t.appliesTo;
+    if (!a) return true;
+    return (!a.categories || a.categories.includes(plant.category)) && (!a.stages || a.stages.includes(plant.cache?.stage)) && (!a.environments || a.environments.includes(plant.cache?.environment));
+  }
+  function templateDue(t, st, plant) {
+    if (!st || st.state !== "active") return null;
+    if (t.mode === "once" && st.doneCount > 0) return null;
+    const last = st.lastDoneAt;
+    if (t.anchor === "fixed") {
+      const n = last ? Math.floor(dayDiff(st.since, last) / t.intervalDays) + 1 : 1;
+      return addDays(st.since, n * t.intervalDays);
+    }
+    if (t.anchor === "stageStart") {
+      const stageAt = plant.cache?.stageSince;
+      const base = stageAt && stageAt > st.since ? stageAt : st.since;
+      return last && last >= base ? addDays(last, t.intervalDays) : addDays(base, t.offsetDays ?? t.intervalDays);
+    }
+    return addDays(last ?? st.since, t.intervalDays);
+  }
+  function customTasks(plant, now2, templates = []) {
+    const c = plant.cache;
+    if (!c || plant.archivedAt) return [];
+    const out = [];
+    for (const t of templates) {
+      const st = c.customTasks?.[t.id];
+      if (!st || !templateApplies(t, plant)) continue;
+      const due = templateDue(t, st, plant);
+      if (due) out.push({ dueAt: due, snoozeKey: `custom:${t.id}`, ref: t.id, templateId: t.id, label: t.label, icon: t.icon });
+    }
+    for (const o of c.onceTasks || []) {
+      if (!o.doneAt) out.push({ dueAt: o.dueAt, snoozeKey: `custom:${o.id}`, ref: o.id, label: o.label, icon: "check", once: true });
+    }
+    return out;
+  }
+  var taskTitle = (task) => task.type === "custom" ? task.label : S.taskLabel[task.type];
+
   // js/model.js
+  var model_exports = {};
+  __export(model_exports, {
+    buildPlant: () => buildPlant,
+    clearProjectors: () => clearProjectors,
+    clonePlantInput: () => clonePlantInput,
+    emptyCache: () => emptyCache,
+    isPresetKey: () => isPresetKey,
+    liveEvents: () => liveEvents,
+    optionalPot: () => optionalPot,
+    projectPlant: () => projectPlant,
+    registerProjector: () => registerProjector,
+    unregisterProjector: () => unregisterProjector
+  });
   var projectors = [];
   function registerProjector(p) {
     if (!projectors.includes(p)) projectors.push(p);
@@ -976,6 +1253,8 @@
       soilDryDays: {},
       confidence: {},
       batches: [],
+      customTasks: {},
+      onceTasks: [],
       cacheRev: null
     };
   }
@@ -1049,6 +1328,22 @@
         case "problem_resolved":
           cache.openProblems = cache.openProblems.filter((x) => x.id !== p.problemId);
           break;
+        case "task_assign":
+          if (p.action === "enable") cache.customTasks[p.templateId] = { state: "active", since: e.occurredAt, lastDoneAt: null, doneCount: 0 };
+          else if (cache.customTasks[p.templateId]) cache.customTasks[p.templateId] = { ...cache.customTasks[p.templateId], state: p.action === "pause" ? "paused" : "ended" };
+          break;
+        case "task_done": {
+          const st = cache.customTasks[p.ref];
+          if (st) cache.customTasks[p.ref] = { ...st, lastDoneAt: e.occurredAt, doneCount: st.doneCount + 1 };
+          else {
+            const o = cache.onceTasks.find((x) => x.id === p.ref);
+            if (o) o.doneAt = e.occurredAt;
+          }
+          break;
+        }
+        case "task_once":
+          cache.onceTasks.push({ id: e.id, label: p.label, dueAt: p.dueAt, doneAt: null });
+          break;
         case "archive":
           archivedAt = e.occurredAt;
           break;
@@ -1104,6 +1399,7 @@
     const pot = optionalPot(input);
     Object.assign(plant, pot);
     if (isPresetKey(input.stockPreset)) plant.stockPreset = input.stockPreset;
+    if (isGroupId(input.groupId)) plant.groupId = input.groupId;
     return { plant, stage };
   }
   var isPresetKey = (v) => typeof v === "string" && /^[a-zA-Z0-9]{1,32}$/.test(v);
@@ -1132,7 +1428,8 @@
       learnedBase: learned || null,
       potVolumeL: plant.cache?.pot?.volumeL ?? plant.potVolumeL,
       substrate: plant.substrate,
-      stockPreset: plant.stockPreset
+      stockPreset: plant.stockPreset,
+      groupId: plant.groupId
     };
   }
 
@@ -1506,7 +1803,7 @@
     return { q, pct: Math.round(q * 100), x, ratio: dr, maturing, maturingUntil: maturing ? matureEnd : null, useByAt, below, threshold, method: cur };
   }
   var batchRemaining = (b) => round3((b.stock?.containers || []).filter((k) => k.status === "open").reduce((n, k) => n + k.amount, 0));
-  function consumptionRate(plant, now2, rules, unit) {
+  function consumptionRate(plant, now2, rules2, unit) {
     const uses = [];
     for (const b of plant.cache?.batches || []) {
       if (!b.stock) continue;
@@ -1518,8 +1815,8 @@
     if (!uses.length) return null;
     const first = uses.reduce((a, u) => u.at < a ? u.at : a, uses[0].at);
     const span = daysBetween(first, now2);
-    if (span < rv(rules, "stock.minRateDays")) return null;
-    const w = Math.min(rv(rules, "stock.rateWindowDays"), span);
+    if (span < rv(rules2, "stock.minRateDays")) return null;
+    const w = Math.min(rv(rules2, "stock.rateWindowDays"), span);
     const from = addDays(now2, -w);
     const sum = uses.filter((u) => u.at >= from).reduce((n, u) => n + u.amount, 0);
     return sum > 0 ? { perDay: sum / w, windowDays: w } : null;
@@ -1636,26 +1933,26 @@
   var isPostHarvest = (stage) => !!STAGE_FLAGS[stage]?.postHarvest;
   var isCaredFor = (stage) => !isTerminal(stage) && !isPostHarvest(stage);
   var asOpts = (o) => typeof o === "string" ? { hemisphere: o } : o || {};
-  function potFactor(pot, rules) {
+  function potFactor(pot, rules2) {
     if (!pot || !isNum(pot.volumeL) && !pot.substrate) return 1;
-    const sub = rv(rules, `pot.substrate.${pot.substrate || "soil"}`) ?? 1;
-    const vol = isNum(pot.volumeL) ? (pot.volumeL / rv(rules, "pot.refVolumeL")) ** rv(rules, "pot.volumeExponent") : 1;
-    return clamp(vol * sub, rv(rules, "pot.minFactor"), rv(rules, "pot.maxFactor"));
+    const sub = rv(rules2, `pot.substrate.${pot.substrate || "soil"}`) ?? 1;
+    const vol = isNum(pot.volumeL) ? (pot.volumeL / rv(rules2, "pot.refVolumeL")) ** rv(rules2, "pot.volumeExponent") : 1;
+    return clamp(vol * sub, rv(rules2, "pot.minFactor"), rv(rules2, "pot.maxFactor"));
   }
-  function baseDrying(plant, env2, stage, rules, pot) {
-    const cat = plant.baseOverride ?? rv(rules, `cat.${plant.category}.soilDays`) ?? 3;
+  function baseDrying(plant, env2, stage, rules2, pot) {
+    const cat = plant.baseOverride ?? rv(rules2, `cat.${plant.category}.soilDays`) ?? 3;
     const p = pot ?? plant.cache?.pot ?? { volumeL: plant.potVolumeL, substrate: plant.substrate };
-    return cat * (ENV_MULTIPLIER[env2] ?? 1) * stageFactor(stage) * potFactor(p, rules);
+    return cat * (ENV_MULTIPLIER[env2] ?? 1) * stageFactor(stage) * potFactor(p, rules2);
   }
-  function seasonModifier(iso, env2, hemisphere = "north", rules) {
+  function seasonModifier(iso, env2, hemisphere = "north", rules2) {
     const o = asOpts(hemisphere);
-    const r = o.rules ?? rules;
+    const r = o.rules ?? rules2;
     return rv(r, `season.on.${env2}`) ? rv(r, `season.${seasonOf(iso, o.hemisphere || "north")}`) : 1;
   }
-  function dryingInfo(plant, rules) {
+  function dryingInfo(plant, rules2) {
     const c = plant.cache || {};
     const stage = c.stage;
-    const base = baseDrying(plant, c.environment ?? plant.environment, stage, rules, c.pot);
+    const base = baseDrying(plant, c.environment ?? plant.environment, stage, rules2, c.pot);
     const learnedMap = c.soilDryDays ?? c.dryingDays;
     const learned = learnedMap?.[stage] ?? null;
     return { base, learned, d: learned ?? base, confidence: c.confidence?.[stage] ?? 0 };
@@ -1666,18 +1963,18 @@
     if (isNum(p.totalWeight)) return p.totalWeight * 1e3;
     return null;
   }
-  function estimateDryingDays(batch, rules, learnedRatio = 1) {
-    const ref = rv(rules, "drying.refDays");
+  function estimateDryingDays(batch, rules2, learnedRatio = 1) {
+    const ref = rv(rules2, "drying.refDays");
     if (isNum(batch.estDays)) return batch.estDays;
     let w = batch.weightG;
-    if (!isNum(w) && isNum(batch.heightCm)) w = rv(rules, "drying.refWeightG") * (batch.heightCm / rv(rules, "drying.refHeightCm")) ** 3;
-    const size = isNum(w) && w > 0 ? (w / rv(rules, "drying.refWeightG")) ** rv(rules, "drying.sizeExponent") : 1;
-    const env2 = rv(rules, `drying.env.${batch.env}`) ?? 1;
-    return clamp(ref * size * env2 * learnedRatio, ref * rv(rules, "drying.minFactor"), ref * rv(rules, "drying.maxFactor"));
+    if (!isNum(w) && isNum(batch.heightCm)) w = rv(rules2, "drying.refWeightG") * (batch.heightCm / rv(rules2, "drying.refHeightCm")) ** 3;
+    const size = isNum(w) && w > 0 ? (w / rv(rules2, "drying.refWeightG")) ** rv(rules2, "drying.sizeExponent") : 1;
+    const env2 = rv(rules2, `drying.env.${batch.env}`) ?? 1;
+    return clamp(ref * size * env2 * learnedRatio, ref * rv(rules2, "drying.minFactor"), ref * rv(rules2, "drying.maxFactor"));
   }
   var dryingElapsed = (batch, at) => batch.phase === "drying" ? Math.max(0, daysBetween(batch.phaseSince, at)) : null;
-  function effectiveDryingDays(batch, rules, ratio = 1) {
-    const est = estimateDryingDays(batch, rules, ratio);
+  function effectiveDryingDays(batch, rules2, ratio = 1) {
+    const est = estimateDryingDays(batch, rules2, ratio);
     const d = batch.dryLearn;
     if (isNum(batch.estDays) || batch.phase !== "drying" || !d || d.actual || !(d.level >= 3)) return est;
     const w = 0.5 * (d.level / 5);
@@ -1763,7 +2060,7 @@
     },
     apply(e, ctx2) {
       const c = ctx2.cache, k = cal(ctx2), p = e.payload || {};
-      const rules = ctx2.opts?.rules;
+      const rules2 = ctx2.opts?.rules;
       switch (e.type) {
         case "created":
           k.env = p.environment;
@@ -1802,9 +2099,9 @@
           break;
         case "care":
           if (p.kind === "repotting" && isNum(p.potVolumeL)) {
-            const before = potFactor(c.pot, rules);
+            const before = potFactor(c.pot, rules2);
             c.pot = { ...c.pot, volumeL: p.potVolumeL };
-            const ratio = potFactor(c.pot, rules) / before;
+            const ratio = potFactor(c.pot, rules2) / before;
             if (ratio !== 1) {
               for (const st of Object.keys(c.soilDryDays)) {
                 c.soilDryDays[st] = round22(c.soilDryDays[st] * ratio);
@@ -1888,13 +2185,13 @@
           b.readyAt = b.harvestedAt;
         }
       }
-      const rules = ctx2.opts?.rules, blendOld = rv(rules, "drying.blendOld");
+      const rules2 = ctx2.opts?.rules, blendOld = rv(rules2, "drying.blendOld");
       let ratio = null, n = 0;
       for (const b of c.batches) {
         b.ratio = ratio;
         if (!b.dryLearn?.actual) continue;
-        const model = estimateDryingDays({ ...b, estDays: null }, rules, 1);
-        const r = clamp(b.dryLearn.days / model, rv(rules, "drying.minFactor"), rv(rules, "drying.maxFactor"));
+        const model = estimateDryingDays({ ...b, estDays: null }, rules2, 1);
+        const r = clamp(b.dryLearn.days / model, rv(rules2, "drying.minFactor"), rv(rules2, "drying.maxFactor"));
         b.learnedR = round22(r);
         const wNew = Math.max(1 - blendOld, 1 / (n + 2));
         ratio = round22((1 - wNew) * (ratio ?? 1) + wNew * r);
@@ -1906,10 +2203,10 @@
   registerProjector(calendarProjector);
   function learn(e, ctx2) {
     const c = ctx2.cache, k = cal(ctx2), answer = e.payload.answer, stage = k.stage;
-    const env2 = k.env, rules = ctx2.opts?.rules;
-    const base = baseDrying(ctx2.plant, env2, stage, rules, c.pot);
+    const env2 = k.env, rules2 = ctx2.opts?.rules;
+    const base = baseDrying(ctx2.plant, env2, stage, rules2, c.pot);
     let d = c.soilDryDays[stage] ?? base;
-    const mod = seasonModifier(e.occurredAt, env2, ctx2.opts?.hemisphere, rules);
+    const mod = seasonModifier(e.occurredAt, env2, ctx2.opts?.hemisphere, rules2);
     const t = daysBetween(k.water, e.occurredAt) / mod;
     let implied = null;
     if (answer === "dry") {
@@ -1946,9 +2243,9 @@
     evaluation: "evaluation",
     evaluationReview: "evaluation"
   };
-  function pestInterval(plant, now2, rules) {
+  function pestInterval(plant, now2, rules2) {
     const c = plant.cache;
-    const base = rv(rules, `cat.${plant.category}.pestCheckDays`) ?? CATEGORIES[plant.category].pestCheckDays;
+    const base = rv(rules2, `cat.${plant.category}.pestCheckDays`) ?? CATEGORIES[plant.category].pestCheckDays;
     const boosted = c.pestBoostUntil && now2 < c.pestBoostUntil;
     if (!boosted) return base;
     if (c.openProblems.some((x) => x.problemType === "mold" && x.severity >= 2)) return 2;
@@ -1962,42 +2259,42 @@
     const last = c.lastWateredAt ?? plant.startDate;
     return addDays(last, d * seasonModifier(now2, env2, o.hemisphere, o.rules));
   }
-  function nextFertilizingDue(plant, rules) {
+  function nextFertilizingDue(plant, rules2) {
     const c = plant.cache;
     if (!isCaredFor(c.stage) || isDormant(c.stage)) return null;
     const planned = plant.plannedHarvestAt;
-    const stop = rv(rules, "fertilizing.stopBeforeHarvestDays");
-    const factor = c.stage === "fruiting" ? rv(rules, "fertilizing.fruitingFactor") : 1;
-    const days = rv(rules, `cat.${plant.category}.fertilizingDays`) * factor;
-    const due = c.lastFertilizedAt ? addDays(c.lastFertilizedAt, days) : addDays(plant.startDate, rv(rules, "fertilizing.firstFeedDays"));
+    const stop = rv(rules2, "fertilizing.stopBeforeHarvestDays");
+    const factor = c.stage === "fruiting" ? rv(rules2, "fertilizing.fruitingFactor") : 1;
+    const days = rv(rules2, `cat.${plant.category}.fertilizingDays`) * factor;
+    const due = c.lastFertilizedAt ? addDays(c.lastFertilizedAt, days) : addDays(plant.startDate, rv(rules2, "fertilizing.firstFeedDays"));
     if (stop > 0 && planned && due >= addDays(planned, -stop)) return null;
     return due;
   }
-  function batchCheckInterval(batch, rules, now2, ratio = batch.ratio ?? 1) {
+  function batchCheckInterval(batch, rules2, now2, ratio = batch.ratio ?? 1) {
     const last = batch.lastCheckAt && batch.lastCheckAt > batch.phaseSince ? batch.lastCheckAt : batch.phaseSince;
     const lastCheck = batch.checks.at(-1);
     let days = null;
     switch (batch.phase) {
       case "drying": {
         const t = daysBetween(batch.phaseSince, last);
-        const remaining = Math.max(0, effectiveDryingDays(batch, rules, ratio) - t);
-        days = clamp(rv(rules, "batch.drying.fraction") * remaining, rv(rules, "batch.drying.minDays"), rv(rules, "batch.drying.maxDays"));
-        if ((lastCheck?.dryness ?? 0) >= 4) days = Math.min(days, rv(rules, "batch.drying.nearDays"));
+        const remaining = Math.max(0, effectiveDryingDays(batch, rules2, ratio) - t);
+        days = clamp(rv(rules2, "batch.drying.fraction") * remaining, rv(rules2, "batch.drying.minDays"), rv(rules2, "batch.drying.maxDays"));
+        if ((lastCheck?.dryness ?? 0) >= 4) days = Math.min(days, rv(rules2, "batch.drying.nearDays"));
         break;
       }
       case "curing": {
         const age = daysBetween(batch.phaseSince, last);
-        days = age < 7 ? rv(rules, "batch.curing.firstWeekDays") : age < 28 ? rv(rules, "batch.curing.monthDays") : rv(rules, "batch.curing.laterDays");
+        days = age < 7 ? rv(rules2, "batch.curing.firstWeekDays") : age < 28 ? rv(rules2, "batch.curing.monthDays") : rv(rules2, "batch.curing.laterDays");
         break;
       }
       case "fermenting":
-        days = rv(rules, "batch.fermenting.days");
+        days = rv(rules2, "batch.fermenting.days");
         break;
       case "pickling":
-        days = rv(rules, "batch.pickling.days");
+        days = rv(rules2, "batch.pickling.days");
         break;
       case "storing":
-        days = rv(rules, batch.fresh ? "batch.storing.freshDays" : "batch.storing.driedDays");
+        days = rv(rules2, batch.fresh ? "batch.storing.freshDays" : "batch.storing.driedDays");
         break;
       default:
         return null;
@@ -2005,14 +2302,14 @@
     if (lastCheck?.mold && lastCheck.at === batch.lastCheckAt) days = Math.min(days, 1);
     return { days, last };
   }
-  var reminderOffsets = (batch, rules) => batch.fresh ? [rv(rules, "eval.freshRemind1Days"), rv(rules, "eval.freshRemind2Days")] : [rv(rules, "eval.remind1Days"), rv(rules, "eval.remind2Days"), rv(rules, "eval.remind3Days")];
+  var reminderOffsets = (batch, rules2) => batch.fresh ? [rv(rules2, "eval.freshRemind1Days"), rv(rules2, "eval.freshRemind2Days")] : [rv(rules2, "eval.remind1Days"), rv(rules2, "eval.remind2Days"), rv(rules2, "eval.remind3Days")];
   var anchorOf = (b) => b.readyAt ?? (b.phase === "used" ? b.endedAt : null);
   function pickReminder(anchor, offsets, now2) {
     const dates = offsets.map((n) => addDays(anchor, n));
     const passed = dates.filter((x) => x <= now2);
     return passed.length ? passed[passed.length - 1] : dates[0];
   }
-  function evaluationDue(plant, now2, rules) {
+  function evaluationDue(plant, now2, rules2) {
     const c = plant.cache;
     if (!plant.harvestable || plant.reminders === false) return null;
     const anchored = c.batches.filter((b2) => !b2.legacy || !plant.archivedAt).filter((b2) => b2.phase !== "discarded" && anchorOf(b2));
@@ -2026,18 +2323,18 @@
       if (!missing.length) return null;
       const y = missing.at(-1);
       const b2 = lastBatch(anchored.filter((x) => year(x) === y));
-      return { type: "evaluation", due: pickReminder(anchorOf(b2), reminderOffsets(b2, rules), now2), season: y, batchId: b2.id };
+      return { type: "evaluation", due: pickReminder(anchorOf(b2), reminderOffsets(b2, rules2), now2), season: y, batchId: b2.id };
     }
     const b = lastBatch(anchored);
-    if (!finals.length) return { type: "evaluation", due: pickReminder(anchorOf(b), reminderOffsets(b, rules), now2), season: null, batchId: b.id };
+    if (!finals.length) return { type: "evaluation", due: pickReminder(anchorOf(b), reminderOffsets(b, rules2), now2), season: null, batchId: b.id };
     if (finals.length === 1) {
-      const due = addDays(finals[0].at, rv(rules, "eval.reviewDays"));
+      const due = addDays(finals[0].at, rv(rules2, "eval.reviewDays"));
       if (now2 >= due) return { type: "evaluationReview", due, season: finals[0].season, batchId: finals[0].batchId };
     }
     return null;
   }
   function getPlantTasks(plant, now2, opts = {}) {
-    const o = asOpts(opts), rules = o.rules, hemisphere = o.hemisphere || "north";
+    const o = asOpts(opts), rules2 = o.rules, hemisphere = o.hemisphere || "north";
     const c = plant.cache;
     if (!c) return [];
     const out = [];
@@ -2051,10 +2348,10 @@
     });
     const caring = !plant.archivedAt && isCaredFor(c.stage);
     if (caring) {
-      push("moisture", nextMoistureDue(plant, now2, { hemisphere, rules }));
-      const fert = nextFertilizingDue(plant, rules);
+      push("moisture", nextMoistureDue(plant, now2, { hemisphere, rules: rules2 }));
+      const fert = nextFertilizingDue(plant, rules2);
       if (fert) push("fertilizing", fert);
-      push("pestCheck", addDays(c.lastPestCheckAt ?? plant.startDate, pestInterval(plant, now2, rules)));
+      push("pestCheck", addDays(c.lastPestCheckAt ?? plant.startDate, pestInterval(plant, now2, rules2)));
       for (const pr of c.openProblems) {
         const ref = c.lastPestCheckAt && c.lastPestCheckAt > pr.since ? c.lastPestCheckAt : pr.since;
         const due = addDays(ref, FOLLOWUP_DAYS);
@@ -2063,18 +2360,22 @@
     }
     for (const b of c.batches) {
       if (b.legacy || BATCH_ENDED.includes(b.phase) || b.phase === "pending") continue;
-      const iv = batchCheckInterval(b, rules, now2, batchRatio(plant, b, o.priors));
+      const iv = batchCheckInterval(b, rules2, now2, batchRatio(plant, b, o.priors));
       const inStock = b.stock?.containers.some((k) => k.status === "open");
       if (iv && !(inStock && b.phase === "storing")) push("batchCheck", addDays(iv.last, iv.days), { batchId: b.id, phase: b.phase, snoozeKey: `batchCheck:${b.id}` });
       if (b.fresh && !b.stock && ["storing", "ready"].includes(b.phase)) {
-        push("useBy", addDays(b.harvestedAt, rv(rules, `useBy.${plant.category}`) ?? 10), { batchId: b.id, snoozeKey: `useBy:${b.id}` });
+        push("useBy", addDays(b.harvestedAt, rv(rules2, `useBy.${plant.category}`) ?? 10), { batchId: b.id, snoozeKey: `useBy:${b.id}` });
       }
     }
-    for (const t of stockTasks(plant, now2, { rules, cfg: o.stockCfg, priors: o.priors })) {
+    for (const t of stockTasks(plant, now2, { rules: rules2, cfg: o.stockCfg, priors: o.priors })) {
       const { type, due, ...extra } = t;
       push(type, due, extra);
     }
-    const ev = evaluationDue(plant, now2, rules);
+    for (const t of customTasks(plant, now2, o.taskTemplates)) {
+      const { dueAt, ...extra } = t;
+      push("custom", dueAt, extra);
+    }
+    const ev = evaluationDue(plant, now2, rules2);
     if (ev) push(ev.type, ev.due, { season: ev.season, batchId: ev.batchId });
     return out.filter((t) => {
       const until = c.snoozedUntil?.[t.snoozeKey];
@@ -2094,6 +2395,114 @@
     }
     return out.sort((a, b) => ORDER[a.urgency] - ORDER[b.urgency] || (a.dueAt < b.dueAt ? -1 : a.dueAt > b.dueAt ? 1 : 0));
   }
+
+  // js/categories.js
+  var MAX_CUSTOM_CATEGORIES = 12;
+  var ID_RE = /^u_[a-z0-9]{3,20}$/;
+  var STAGE_VOCAB = ["seedling", "planted", "growing", "vegetative", "budding", "flowering", "fruiting", "harvested", "done"];
+  var HARVEST_FIELD_VOCAB = ["freshWeight", "processedWeight", "totalWeight", "pieceCount", "avgSize", "brix", "bloomCount", "bloomDurationDays", "quantity"];
+  var CATEGORY_LIMITS = { fertilizingDays: [1, 180], pestCheckDays: [1, 90], baseDryingDays: [0.5, 60] };
+  var BUILTIN = new Set(Object.keys(CATEGORIES));
+  var BUILTIN_FRESH = [...FRESH_CATEGORIES];
+  var isCategoryId = (v) => typeof v === "string" && ID_RE.test(v);
+  var newCategoryId = () => `u_${Math.random().toString(36).slice(2, 8)}${Date.now().toString(36).slice(-3)}`;
+  var text = (v, max) => String(v ?? "").replace(/[\u0000-\u001f\u007f<>]/g, "").trim().slice(0, max);
+  function cleanOverrides(o, base) {
+    const out = {};
+    if (!o || typeof o !== "object") return out;
+    const b = CATEGORIES[base];
+    if (o.lifecycle === "cycle" || o.lifecycle === "perennial") {
+      if (o.lifecycle !== b.lifecycle) out.lifecycle = o.lifecycle;
+    }
+    if (typeof o.harvestable === "boolean" && o.harvestable !== b.harvestable) out.harvestable = o.harvestable;
+    if (Array.isArray(o.stages)) {
+      const picked = STAGE_VOCAB.filter((k) => k !== "done" && o.stages.includes(k));
+      const stages = [...picked, "done"];
+      if (picked.length >= 1 && JSON.stringify(stages) !== JSON.stringify(CYCLE_STAGES[base])) out.stages = stages;
+    }
+    if (Array.isArray(o.harvestFields)) {
+      const keys = HARVEST_FIELD_VOCAB.filter((k) => o.harvestFields.includes(k));
+      if (keys.length && JSON.stringify(keys) !== JSON.stringify(b.harvestFields.map((f) => f.key))) out.harvestFields = keys;
+    }
+    for (const [k, [lo, hi]] of Object.entries(CATEGORY_LIMITS)) {
+      const v = o[k];
+      if (typeof v === "number" && Number.isFinite(v) && v >= lo && v <= hi && v !== b[k]) out[k] = v;
+    }
+    return out;
+  }
+  function cleanCategories(raw) {
+    const out = {};
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return out;
+    for (const [id, c] of Object.entries(raw)) {
+      if (Object.keys(out).length >= MAX_CUSTOM_CATEGORIES) break;
+      if (!isCategoryId(id) || !c || typeof c !== "object" || !BUILTIN.has(c.base)) continue;
+      const label = text(c.label, 40);
+      if (!label) continue;
+      out[id] = {
+        label,
+        icon: CATEGORY_ICON_CHOICES.includes(c.icon) ? c.icon : CATEGORY_ICON[c.base] ?? "leaf",
+        base: c.base,
+        overrides: cleanOverrides(c.overrides, c.base),
+        ...c.deleted === true ? { deleted: true } : {}
+      };
+    }
+    return out;
+  }
+  var mergeCategories = (local, incoming) => cleanCategories({ ...incoming, ...local });
+  function resolveCategories(raw) {
+    const out = {};
+    for (const [id, c] of Object.entries(cleanCategories(raw))) {
+      const b = CATEGORIES[c.base], o = c.overrides;
+      out[id] = {
+        ...b,
+        ...o.lifecycle ? { lifecycle: o.lifecycle } : {},
+        ...o.harvestable != null ? { harvestable: o.harvestable } : {},
+        ...o.fertilizingDays ? { fertilizingDays: o.fertilizingDays } : {},
+        ...o.pestCheckDays ? { pestCheckDays: o.pestCheckDays } : {},
+        ...o.baseDryingDays ? { baseDryingDays: o.baseDryingDays } : {},
+        harvestFields: o.harvestFields ? o.harvestFields.map((key) => ({ key, type: "number", min: 0 })) : b.harvestFields.map((f) => ({ ...f })),
+        criteria: [...b.criteria],
+        custom: true,
+        base: c.base,
+        label: c.label,
+        icon: c.icon,
+        deleted: !!c.deleted,
+        stages: o.stages ? [...o.stages] : [...CYCLE_STAGES[c.base]]
+      };
+    }
+    return out;
+  }
+  var current = {};
+  function applyCategories(raw) {
+    const resolved = resolveCategories(raw);
+    for (const k of Object.keys(CATEGORIES)) if (!BUILTIN.has(k)) delete CATEGORIES[k];
+    for (const k of Object.keys(CYCLE_STAGES)) if (!BUILTIN.has(k)) delete CYCLE_STAGES[k];
+    for (const k of Object.keys(CATEGORY_ICON)) if (!BUILTIN.has(k)) delete CATEGORY_ICON[k];
+    for (const k of Object.keys(S.category)) if (!BUILTIN.has(k)) delete S.category[k];
+    FRESH_CATEGORIES.length = 0;
+    FRESH_CATEGORIES.push(...BUILTIN_FRESH);
+    for (const [id, cfg] of Object.entries(resolved)) {
+      CATEGORIES[id] = cfg;
+      CYCLE_STAGES[id] = cfg.stages;
+      CATEGORY_ICON[id] = cfg.icon;
+      S.category[id] = cfg.label;
+      if (BUILTIN_FRESH.includes(cfg.base)) FRESH_CATEGORIES.push(id);
+    }
+    syncCategoryRules(resolved);
+    current = cleanCategories(raw);
+    return current;
+  }
+  function withCategories(extra, fn) {
+    const before = current;
+    applyCategories(mergeCategories(before, cleanCategories(extra)));
+    try {
+      return fn();
+    } finally {
+      applyCategories(before);
+    }
+  }
+  var categoryChoices = (keep) => Object.keys(CATEGORIES).filter((k) => !CATEGORIES[k].deleted || k === keep);
+  var baseLabel = (id) => S.category[current[id]?.base] ?? "";
 
   // js/criteria.js
   var CRITERIA_MAX = 12;
@@ -2137,6 +2546,206 @@
     let key = base, i = 2;
     while (taken.includes(key) || key === "overall") key = `${base}${i++}`;
     return key;
+  }
+
+  // js/stats.js
+  var overallOf = (e) => e.payload?.scores?.overall;
+  var validOverall = (e) => Number.isFinite(overallOf(e));
+  var isFinalEval = (e) => (e.payload?.kind ?? "final") === "final";
+  var evalKey = (e) => `${e.payload.season ?? ""}|${e.payload.batchId ?? ""}|${e.payload.part ?? ""}`;
+  var yieldKey = (category) => CATEGORIES[category]?.harvestFields[0]?.key ?? null;
+  function currentEvaluations(plant, events) {
+    const evs = liveEvents(events).filter((e) => e.type === "evaluation" && validOverall(e) && isFinalEval(e));
+    const byKey = /* @__PURE__ */ new Map();
+    for (const e of evs) byKey.set(evalKey(e), e);
+    return [...byKey.values()].sort((a, b) => a.occurredAt < b.occurredAt ? -1 : 1);
+  }
+  function latestEvaluation(events, season, batchId) {
+    const evs = liveEvents(events).filter((e) => e.type === "evaluation" && validOverall(e) && isFinalEval(e) && (season === void 0 || (e.payload.season ?? null) === season) && (batchId === void 0 || (e.payload.batchId ?? null) === batchId));
+    return evs.at(-1) ?? null;
+  }
+  function evaluationHistory(events) {
+    const live = liveEvents(events);
+    const harvests = live.filter((e) => e.type === "harvest");
+    return live.filter((e) => e.type === "evaluation" && validOverall(e)).reverse().map((e) => {
+      const prev = harvests.filter((h2) => h2.occurredAt <= e.occurredAt).at(-1);
+      return {
+        event: e,
+        at: e.occurredAt,
+        overall: overallOf(e),
+        note: e.payload.note || "",
+        season: e.payload.season ?? null,
+        kind: e.payload.kind ?? "final",
+        part: e.payload.part ?? null,
+        batchId: e.payload.batchId ?? null,
+        daysAfterHarvest: prev ? daysBetween(prev.occurredAt, e.occurredAt) : e.payload.daysSinceLastHarvest ?? null
+      };
+    });
+  }
+  function harvestTotals(plant, events) {
+    const totals = {};
+    for (const f of CATEGORIES[plant.category].harvestFields) {
+      totals[f.key] = liveEvents(events).filter((e) => e.type === "harvest").reduce((s, e) => s + (Number.isFinite(e.payload[f.key]) ? e.payload[f.key] : 0), 0);
+    }
+    return totals;
+  }
+  function plantSummary(plant, events) {
+    const live = liveEvents(events);
+    const harvests = live.filter((e) => e.type === "harvest");
+    const evals = currentEvaluations(plant, events);
+    const yk = yieldKey(plant.category);
+    const yieldSum = harvests.reduce((s, e) => s + (Number.isFinite(e.payload[yk]) ? e.payload[yk] : 0), 0);
+    const seasons = plant.lifecycle === "perennial" ? new Set(harvests.map((e) => new Date(e.occurredAt).getFullYear())).size : harvests.length ? 1 : 0;
+    let cycleDays = null;
+    if (plant.lifecycle !== "perennial") {
+      const end = live.filter((e) => e.type === "stage_change" && STAGE_FLAGS[e.payload.to]?.terminal).at(-1) ?? harvests.at(-1);
+      if (end) cycleDays = daysBetween(plant.startDate, end.occurredAt);
+    }
+    const overall = evals.length ? mean(evals.map(overallOf)) : null;
+    const last = latestEvaluation(events);
+    return {
+      plantId: plant.id,
+      harvestCount: harvests.length,
+      seasons,
+      yield: yieldSum,
+      yieldKey: yk,
+      overall,
+      wouldGrowAgain: last && last.payload.wouldGrowAgain != null ? !!last.payload.wouldGrowAgain : null,
+      cycleDays,
+      problems: live.filter((e) => e.type === "problem").length,
+      evaluated: evals.length > 0
+    };
+  }
+  function varietyGroupKey(plant) {
+    const key = plant.varietyKey || normalizeKey(plant.variety);
+    return key ? { key, unnamed: false } : { key: normalizeKey(plant.name), unnamed: true };
+  }
+  var avg = (xs) => xs.length ? mean(xs) : null;
+  function aggregateVarieties(plants, byPlant) {
+    const groups = /* @__PURE__ */ new Map();
+    for (const plant of plants) {
+      const { key, unnamed } = varietyGroupKey(plant);
+      const gk = `${plant.category}|${key}`;
+      if (!groups.has(gk)) groups.set(gk, { category: plant.category, key, unnamed, items: [] });
+      groups.get(gk).items.push({ plant, summary: plantSummary(plant, byPlant.get(plant.id) || []) });
+    }
+    return [...groups.values()].map((g) => {
+      const items = g.items.sort((a, b) => a.plant.startDate < b.plant.startDate ? 1 : -1);
+      const sums = items.map((i) => i.summary);
+      const rated = sums.filter((s) => s.overall != null);
+      const grow = sums.filter((s) => s.wouldGrowAgain != null);
+      const harvested = sums.filter((s) => s.harvestCount > 0);
+      const totalYield = sums.reduce((s, x) => s + x.yield, 0);
+      return {
+        category: g.category,
+        key: g.key,
+        unnamed: g.unnamed,
+        label: g.unnamed ? items[0].plant.name : items[0].plant.variety || g.key,
+        items,
+        plantCount: items.length,
+        cycles: sums.reduce((s, x) => s + x.seasons, 0),
+        avgOverall: avg(rated.map((s) => s.overall)),
+        wouldGrowAgainShare: grow.length ? grow.filter((s) => s.wouldGrowAgain).length / grow.length : null,
+        totalYield,
+        yieldPerPlant: harvested.length ? totalYield / harvested.length : null,
+        yieldKey: yieldKey(g.category),
+        avgCycleDays: avg(sums.filter((s) => s.cycleDays != null).map((s) => s.cycleDays)),
+        problemsPerPlant: sums.reduce((s, x) => s + x.problems, 0) / items.length
+      };
+    }).sort((a, b) => (b.avgOverall ?? -1) - (a.avgOverall ?? -1) || b.plantCount - a.plantCount);
+  }
+  function overviewNumbers(plants, byPlant) {
+    const sums = plants.map((p) => plantSummary(p, byPlant.get(p.id) || []));
+    return {
+      plants: plants.length,
+      archived: plants.filter((p) => p.archivedAt).length,
+      harvests: sums.reduce((s, x) => s + x.harvestCount, 0),
+      evaluated: sums.filter((x) => x.evaluated).length
+    };
+  }
+
+  // js/groups.js
+  var GROUP_KINDS = ["place", "cohort", "bed"];
+  var MAX_GROUPS = 40;
+  var MAX_BULK = 100;
+  var CLUSTER_TYPES = ["moisture", "fertilizing", "pestCheck"];
+  var newGroupId = () => `g${Math.random().toString(36).slice(2, 8)}${Date.now().toString(36).slice(-4)}`;
+  var isOpId = (v) => typeof v === "string" && /^[\w.-]{1,40}$/.test(v);
+  var newOpId = () => `op${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+  function cleanGroups(raw) {
+    if (!Array.isArray(raw)) return [];
+    const seen = /* @__PURE__ */ new Set();
+    const out = [];
+    for (const g of raw) {
+      if (!g || typeof g !== "object" || !isGroupId(g.id) || seen.has(g.id)) continue;
+      const label = String(g.label ?? "").replace(/[\u0000-\u001f\u007f<>]/g, "").trim().slice(0, 40);
+      if (!label) continue;
+      seen.add(g.id);
+      out.push({ id: g.id, label, kind: GROUP_KINDS.includes(g.kind) ? g.kind : "place", ...ENVIRONMENTS.includes(g.environment) ? { environment: g.environment } : {} });
+      if (out.length >= MAX_GROUPS) break;
+    }
+    return out;
+  }
+  function mergeGroups(local, incoming) {
+    const have = new Set(local.map((g) => g.id));
+    return cleanGroups([...local, ...incoming.filter((g) => !have.has(g.id))]);
+  }
+  var groupOf = (plant, groups) => plant?.groupId ? groups.find((g) => g.id === plant.groupId) ?? null : null;
+  var membersOf = (plants, groupId) => plants.filter((p) => p.groupId === groupId);
+  function commonStages(plants) {
+    if (!plants.length) return [];
+    const lists = plants.map((p) => getStages(p.category, p.lifecycle));
+    return lists[0].filter((s) => lists.every((l) => l.includes(s)));
+  }
+  function clusterTasks(tasks, plantsById, groups) {
+    const out = [];
+    const index = /* @__PURE__ */ new Map();
+    for (const t of tasks) {
+      const g = CLUSTER_TYPES.includes(t.type) || t.type === "custom" && t.templateId ? groupOf(plantsById.get(t.plantId), groups) : null;
+      if (!g) {
+        out.push({ kind: "task", task: t });
+        continue;
+      }
+      const key = `${g.id}|${t.type}|${t.templateId ?? ""}|${t.urgency}`;
+      if (!index.has(key)) {
+        const c = { kind: "cluster", group: g, type: t.type, urgency: t.urgency, ref: t.templateId ?? null, tasks: [] };
+        index.set(key, c);
+        out.push(c);
+      }
+      index.get(key).tasks.push(t);
+    }
+    return out.map((c) => c.kind === "cluster" && c.tasks.length < 2 ? { kind: "task", task: c.tasks[0] } : c);
+  }
+  function groupsFromLocations(plants, groups) {
+    const have = new Set(groups.map((g) => g.label.toLowerCase()));
+    const byLoc = /* @__PURE__ */ new Map();
+    for (const p of plants) {
+      const loc = (p.location || "").trim();
+      if (!loc || p.groupId || have.has(loc.toLowerCase())) continue;
+      if (!byLoc.has(loc)) byLoc.set(loc, []);
+      byLoc.get(loc).push(p.id);
+    }
+    return [...byLoc.entries()].filter(([, ids]) => ids.length >= 2).map(([label, plantIds]) => ({ label, plantIds }));
+  }
+  function groupStats(members, byPlant) {
+    const varieties = aggregateVarieties(members, byPlant);
+    return {
+      count: members.length,
+      active: members.filter((p) => !p.archivedAt).length,
+      varieties
+    };
+  }
+  function compareAcrossGroups(plants, byPlant, groups) {
+    const acc = /* @__PURE__ */ new Map();
+    for (const g of groups) {
+      for (const v of aggregateVarieties(membersOf(plants, g.id), byPlant)) {
+        if (v.unnamed) continue;
+        const k = `${v.category}|${v.key}`;
+        if (!acc.has(k)) acc.set(k, { category: v.category, key: v.key, label: v.label, rows: [] });
+        acc.get(k).rows.push({ group: g, n: v.plantCount, yieldPerPlant: v.yieldPerPlant, avgOverall: v.avgOverall, yieldKey: v.yieldKey });
+      }
+    }
+    return [...acc.values()].filter((x) => x.rows.length >= 2).sort((a, b) => b.rows.length - a.rows.length);
   }
 
   // js/storage.js
@@ -2278,26 +2887,42 @@
   async function applyAcquisition(db, search, now2 = (/* @__PURE__ */ new Date()).toISOString()) {
     const { profile, utm } = parseAcquisition(search);
     if (utm && await metaGet(db, "acquisition") == null) await metaSet(db, "acquisition", { ...utm, capturedAt: now2 });
-    let current = await getProfile(db);
-    if (!current && profile) {
+    let current2 = await getProfile(db);
+    if (!current2 && profile) {
       await setProfile(db, profile, "url");
-      current = profile;
+      current2 = profile;
     }
-    return current;
+    return current2;
   }
 
   // js/ctx.js
-  var ctx = { db: null, hemisphere: "north", profile: null, overrides: {}, rules: resolveRules(), criteria: {}, stockCfg: cleanStock(null), priors: { category: {}, variety: {}, stock: { method: {}, variety: {} } } };
+  var ctx = { db: null, categories: {}, hemisphere: "north", profile: null, overrides: {}, rules: resolveRules(), criteria: {}, groups: [], taskTemplates: [], stockCfg: cleanStock(null), priors: { category: {}, variety: {}, stock: { method: {}, variety: {} } } };
   var now = () => (/* @__PURE__ */ new Date()).toISOString();
   async function initCtx(db) {
     ctx.db = db;
+    ctx.categories = applyCategories(await metaGet(db, "categories"));
     ctx.hemisphere = await metaGet(db, "hemisphere") === "south" ? "south" : "north";
     ctx.profile = await getProfile(db);
     ctx.overrides = cleanRules(await metaGet(db, "rules"));
     ctx.rules = resolveRules(ctx.overrides);
     ctx.criteria = cleanCriteria(await metaGet(db, "criteria"));
     ctx.stockCfg = cleanStock(await metaGet(db, "stock"));
+    ctx.groups = cleanGroups(await metaGet(db, "groups"));
+    ctx.taskTemplates = cleanTemplates(await metaGet(db, "taskTemplates"));
     return ctx;
+  }
+  async function refreshGroups() {
+    ctx.groups = cleanGroups(await metaGet(ctx.db, "groups"));
+    return ctx.groups;
+  }
+  async function refreshCategories() {
+    ctx.categories = applyCategories(await metaGet(ctx.db, "categories"));
+    ctx.rules = resolveRules(ctx.overrides);
+    return ctx.categories;
+  }
+  async function refreshTemplates() {
+    ctx.taskTemplates = cleanTemplates(await metaGet(ctx.db, "taskTemplates"));
+    return ctx.taskTemplates;
   }
   var hemisphereKnown = () => metaGet(ctx.db, "hemisphere").then((v) => v === "north" || v === "south");
   async function setHemisphere(v) {
@@ -2319,7 +2944,7 @@
     return ctx.priors;
   }
   var buildPriors = (plants) => ({ ...buildDryingPriors(plants), stock: buildStockPriors(plants, ctx.stockCfg) });
-  var engineOpts = () => ({ hemisphere: ctx.hemisphere, rules: ctx.rules, priors: ctx.priors, criteria: ctx.criteria, stockCfg: ctx.stockCfg });
+  var engineOpts = () => ({ hemisphere: ctx.hemisphere, rules: ctx.rules, priors: ctx.priors, criteria: ctx.criteria, stockCfg: ctx.stockCfg, taskTemplates: ctx.taskTemplates });
   var THEME_KEY = "pheno.theme";
   function getTheme() {
     try {
@@ -2403,17 +3028,26 @@
   __export(events_exports, {
     ENGINE_REV: () => ENGINE_REV,
     EVENT_TYPES: () => EVENT_TYPES,
+    appendBulk: () => appendBulk,
     appendEvents: () => appendEvents,
+    assignGroup: () => assignGroup,
     buildEvents: () => buildEvents,
     compareEvents: () => compareEvents,
     createPlant: () => createPlant,
     deletePlantPermanently: () => deletePlantPermanently,
+    readGroups: () => readGroups,
+    readTemplates: () => readTemplates,
     rebuildAll: () => rebuildAll,
+    saveCategories: () => saveCategories,
+    saveGroups: () => saveGroups,
+    saveTemplates: () => saveTemplates,
+    snoozeMany: () => snoozeMany,
     snoozeTask: () => snoozeTask,
     updatePlantMeta: () => updatePlantMeta,
+    voidBulk: () => voidBulk,
     voidEvent: () => voidEvent
   });
-  var ENGINE_REV = 4;
+  var ENGINE_REV = 5;
   var EVENT_TYPES = [
     "created",
     "stage_change",
@@ -2437,6 +3071,9 @@
     "batch_check",
     "care",
     "harvest_edit",
+    "task_assign",
+    "task_done",
+    "task_once",
     ...STOCK_EVENT_TYPES
   ];
   var ARCHIVED_OK = ["unarchive", "evaluation", "note", "photo", "void", "batch_step", "batch_check", ...STOCK_EVENT_TYPES];
@@ -2581,6 +3218,26 @@
       case "stock_move":
       case "stock_check":
         return validateStock(type, p, plant, cur, opts);
+      case "task_assign": {
+        const t = (opts.taskTemplates || []).find((x) => x.id === p.templateId);
+        if (!t || !ASSIGN_ACTIONS.includes(p.action)) throw bad();
+        const st = cur.cache.customTasks?.[t.id];
+        if (p.action === "enable" ? st?.state === "active" : !st || st.state === "ended") throw bad();
+        return { templateId: t.id, action: p.action, label: t.label };
+      }
+      case "task_done": {
+        const t = (opts.taskTemplates || []).find((x) => x.id === p.ref);
+        const st = cur.cache.customTasks?.[p.ref];
+        const once = (cur.cache.onceTasks || []).find((x) => x.id === p.ref && !x.doneAt);
+        if (!(st?.state === "active") && !once) throw bad();
+        return { ref: p.ref, label: once ? once.label : t?.label ?? "" };
+      }
+      case "task_once": {
+        const label = cleanLabel(p.label, 60);
+        if (!label || typeof p.dueAt !== "string" || Number.isNaN(Date.parse(p.dueAt))) throw bad();
+        if ((cur.cache.onceTasks || []).filter((x) => !x.doneAt).length >= MAX_ONCE) throw bad();
+        return { label, dueAt: new Date(p.dueAt).toISOString() };
+      }
       case "care": {
         if (!CARE_KINDS.includes(p.kind)) throw bad();
         const out = { kind: p.kind };
@@ -2759,31 +3416,76 @@
     const r = await idbReq(s.meta.get("rules"));
     const cr = await idbReq(s.meta.get("criteria"));
     const st = await idbReq(s.meta.get("stock"));
-    return { hemisphere: h2?.value === "south" ? "south" : "north", rules: resolveRules(cleanRules(r?.value)), criteria: cleanCriteria(cr?.value), stockCfg: cleanStock(st?.value) };
+    const tt = await idbReq(s.meta.get("taskTemplates"));
+    return { taskTemplates: cleanTemplates(tt?.value), hemisphere: h2?.value === "south" ? "south" : "north", rules: resolveRules(cleanRules(r?.value)), criteria: cleanCriteria(cr?.value), stockCfg: cleanStock(st?.value) };
+  }
+  async function appendInTx(s, plantId, inputs, now2, opId = null) {
+    const plant = await idbReq(s.plants.get(plantId));
+    if (!plant) throw bad();
+    const opts = await readOpts(s);
+    const existing = await idbReq(s.events.index("plantId").getAll(plantId));
+    const events = buildEvents(plant, existing, inputs, now2, opts);
+    if (opId) for (const e of events) e.opId = opId;
+    const snoozed = { ...plant.cache?.snoozedUntil || {} };
+    for (const e of events) {
+      for (const k of COMPLETES[e.type] || []) delete snoozed[k];
+      const cid = e.payload?.containerId;
+      if (cid && e.type === "stock_check") for (const k of [`stockCheck:${cid}`, `stockAir:${cid}`]) delete snoozed[k];
+      if (cid && e.type === "stock_use") delete snoozed[`stockUseBy:${cid}`];
+      if (e.type === "task_done") delete snoozed[`custom:${e.payload.ref}`];
+      const bid = e.payload?.batchId;
+      if (bid && ["batch_check", "batch_step", "evaluation"].includes(e.type)) {
+        for (const k of [`batchCheck:${bid}`, `useBy:${bid}`, `evaluation:${bid}`]) delete snoozed[k];
+      }
+    }
+    const base = { ...plant, cache: { ...plant.cache, snoozedUntil: snoozed } };
+    const next = projectPlant(base, existing.concat(events), opts);
+    for (const e of events) s.events.put(e);
+    s.plants.put(next);
+    return { plant: next, events };
   }
   function appendEvents(db, plantId, inputs, { now: now2 } = {}) {
+    return withTx(db, ["plants", "events", "meta"], "readwrite", (s) => appendInTx(s, plantId, inputs, now2));
+  }
+  function appendBulk(db, plantIds, make, { now: now2, opId = newOpId() } = {}) {
+    const ids = [...new Set(plantIds)];
+    if (!ids.length || ids.length > MAX_BULK || !isOpId(opId)) return Promise.reject(bad());
     return withTx(db, ["plants", "events", "meta"], "readwrite", async (s) => {
-      const plant = await idbReq(s.plants.get(plantId));
-      if (!plant) throw bad();
-      const opts = await readOpts(s);
-      const existing = await idbReq(s.events.index("plantId").getAll(plantId));
-      const events = buildEvents(plant, existing, inputs, now2, opts);
-      const snoozed = { ...plant.cache?.snoozedUntil || {} };
-      for (const e of events) {
-        for (const k of COMPLETES[e.type] || []) delete snoozed[k];
-        const cid = e.payload?.containerId;
-        if (cid && e.type === "stock_check") for (const k of [`stockCheck:${cid}`, `stockAir:${cid}`]) delete snoozed[k];
-        if (cid && e.type === "stock_use") delete snoozed[`stockUseBy:${cid}`];
-        const bid = e.payload?.batchId;
-        if (bid && ["batch_check", "batch_step", "evaluation"].includes(e.type)) {
-          for (const k of [`batchCheck:${bid}`, `useBy:${bid}`, `evaluation:${bid}`]) delete snoozed[k];
+      const events = [];
+      const skipped = [];
+      for (const id of ids) {
+        const plant = await idbReq(s.plants.get(id));
+        if (!plant) {
+          skipped.push({ plantId: id, message: S.err.invalid });
+          continue;
+        }
+        const inputs = typeof make === "function" ? make(plant) : make;
+        if (!inputs || !inputs.length) {
+          skipped.push({ plantId: id, message: "" });
+          continue;
+        }
+        try {
+          const res = await appendInTx(s, id, inputs, now2, opId);
+          events.push(...res.events);
+        } catch (e) {
+          skipped.push({ plantId: id, message: e.message || S.err.invalid });
         }
       }
-      const base = { ...plant, cache: { ...plant.cache, snoozedUntil: snoozed } };
-      const next = projectPlant(base, existing.concat(events), opts);
-      for (const e of events) s.events.put(e);
-      s.plants.put(next);
-      return { plant: next, events };
+      return { opId, events, skipped };
+    });
+  }
+  function voidBulk(db, events, { now: now2 } = {}) {
+    const opId = events.find((e) => e.opId)?.opId ?? newOpId();
+    return withTx(db, ["plants", "events", "meta"], "readwrite", async (s) => {
+      let voided = 0;
+      for (const e of events) {
+        try {
+          await appendInTx(s, e.plantId, [{ type: "void", payload: { targetId: e.id, reason: "undo-bulk" } }], now2, opId);
+          voided += 1;
+        } catch {
+        }
+      }
+      return { voided };
     });
   }
   var voidEvent = (db, plantId, targetId, reason) => appendEvents(db, plantId, [{ type: "void", payload: { targetId, reason } }]);
@@ -2847,6 +3549,10 @@
         if (isPresetKey(patch.stockPreset)) next.stockPreset = patch.stockPreset;
         else delete next.stockPreset;
       }
+      if ("groupId" in patch) {
+        if (isGroupId(patch.groupId)) next.groupId = patch.groupId;
+        else delete next.groupId;
+      }
       if ("baseOverride" in patch) {
         const v = patch.baseOverride;
         if (v != null && (!isNum(v) || v <= 0)) throw bad();
@@ -2857,6 +3563,66 @@
       const out = projectPlant(next, events, opts);
       s.plants.put(out);
       return out;
+    });
+  }
+  var readGroups = (db) => withTx(db, "meta", "readonly", async (s) => cleanGroups((await idbReq(s.meta.get("groups")))?.value));
+  function saveGroups(db, groups) {
+    return withTx(db, ["plants", "meta"], "readwrite", async (s) => {
+      const clean4 = cleanGroups(groups);
+      const ids = new Set(clean4.map((g) => g.id));
+      s.meta.put({ key: "groups", value: clean4 });
+      for (const p of await idbReq(s.plants.getAll())) {
+        if (p.groupId && !ids.has(p.groupId)) {
+          const copy = { ...p };
+          delete copy.groupId;
+          s.plants.put(copy);
+        }
+      }
+      return clean4;
+    });
+  }
+  async function saveCategories(db, raw) {
+    const clean4 = applyCategories(raw);
+    await withTx(db, ["meta"], "readwrite", async (s) => {
+      s.meta.put({ key: "categories", value: clean4 });
+      return null;
+    });
+    await rebuildAll(db);
+    return clean4;
+  }
+  function assignGroup(db, plantIds, groupId) {
+    return withTx(db, ["plants", "meta"], "readwrite", async (s) => {
+      if (groupId != null) {
+        const groups = cleanGroups((await idbReq(s.meta.get("groups")))?.value);
+        if (!isGroupId(groupId) || !groups.some((g) => g.id === groupId)) throw bad();
+      }
+      let n = 0;
+      for (const id of new Set(plantIds)) {
+        const p = await idbReq(s.plants.get(id));
+        if (!p) continue;
+        if (groupId) p.groupId = groupId;
+        else delete p.groupId;
+        s.plants.put(p);
+        n += 1;
+      }
+      return n;
+    });
+  }
+  var readTemplates = (db) => withTx(db, "meta", "readonly", async (s) => cleanTemplates((await idbReq(s.meta.get("taskTemplates")))?.value));
+  var saveTemplates = (db, templates) => withTx(db, "meta", "readwrite", async (s) => {
+    const clean4 = cleanTemplates(templates);
+    s.meta.put({ key: "taskTemplates", value: clean4 });
+    return clean4;
+  });
+  function snoozeMany(db, items, untilIso) {
+    return withTx(db, "plants", "readwrite", async (s) => {
+      for (const { plantId, key } of items) {
+        const plant = await idbReq(s.plants.get(plantId));
+        if (!plant) continue;
+        plant.cache = { ...plant.cache, snoozedUntil: { ...plant.cache.snoozedUntil, [key]: untilIso } };
+        s.plants.put(plant);
+      }
+      return items.length;
     });
   }
   function snoozeTask(db, plantId, taskType, untilIso) {
@@ -2904,6 +3670,7 @@
 <symbol id="i-sprout" viewBox="0 0 24 24"><path d="M12 21v-9M12 12c0-4-3-6-7-6 0 4 3 6 7 6Zm0 2c0-3 2.5-5 6-5 0 3-2.5 5-6 5Z"/></symbol>
 <symbol id="i-back" viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></symbol>
 <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+<symbol id="i-groups" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="6" rx="2"/><rect x="3" y="14" width="18" height="6" rx="2"/><path d="M7 7h.01M7 17h.01M11 7h6M11 17h6"/></symbol>
 <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M5 19l1.5-1.5M17.5 6.5 19 5"/></symbol>
 `;
   function injectSprite() {
@@ -2952,13 +3719,13 @@
     cb?.();
   }
   var toastTimer = null;
-  function toast(text, { action, onAction } = {}) {
+  function toast(text2, { action, onAction } = {}) {
     let t = document.getElementById("toast");
     if (!t) {
       t = h("div", { id: "toast", class: "toast", role: "status" });
       document.body.append(t);
     }
-    put(t.replaceChildren() ?? t, h("span", {}, text), action ? h("button", { type: "button", onclick: () => {
+    put(t.replaceChildren() ?? t, h("span", {}, text2), action ? h("button", { type: "button", onclick: () => {
       t.classList.remove("show");
       onAction?.();
     } }, action) : null);
@@ -3031,11 +3798,11 @@
   }
 
   // js/version.js
-  var VERSION = "RCv0.192";
+  var VERSION = "RCv0.193";
 
   // js/backup.js
-  var SCHEMA_VERSION = 3;
-  var PORTABLE_META = ["hemisphere", "profile", "profileSource", "acquisition", "rules", "criteria", "stock"];
+  var SCHEMA_VERSION = 4;
+  var PORTABLE_META = ["hemisphere", "profile", "profileSource", "acquisition", "rules", "criteria", "stock", "groups", "taskTemplates", "categories"];
   var MAX_TEXT = 2e4;
   var jszip = (JSZip) => JSZip || globalThis.JSZip || (() => {
     throw new Error("JSZip nen\xED na\u010Dten\xFD");
@@ -3076,7 +3843,8 @@
   var txt = (v, max = 200) => String(v ?? "").slice(0, max);
   function cleanPlant(p) {
     if (!isObj(p) || !isId(p.id) || typeof p.name !== "string" || !p.name.trim()) return null;
-    if (!CATEGORIES[p.category] || !ENVIRONMENTS.includes(p.environment) || !isDate(p.startDate)) return null;
+    const category = CATEGORIES[p.category] ? p.category : isCategoryId(p.category) ? "other" : null;
+    if (!category || !ENVIRONMENTS.includes(p.environment) || !isDate(p.startDate)) return null;
     const lifecycle = p.lifecycle === "perennial" ? "perennial" : "cycle";
     const learned = isObj(p.learnedBase) ? Object.fromEntries(Object.entries(p.learnedBase).filter(([, v]) => Number.isFinite(v) && v > 0)) : null;
     const variety = txt(p.variety).trim();
@@ -3085,7 +3853,7 @@
       name: txt(p.name).trim(),
       variety,
       varietyKey: normalizeKey(variety),
-      category: p.category,
+      category,
       lifecycle,
       environment: p.environment,
       harvestable: !!p.harvestable,
@@ -3098,6 +3866,7 @@
       ...p.reminders === false ? { reminders: false } : {},
       ...optionalPot(p),
       ...isPresetKey(p.stockPreset) ? { stockPreset: p.stockPreset } : {},
+      ...isGroupId(p.groupId) ? { groupId: p.groupId } : {},
       archivedAt: null,
       cache: emptyCache()
     };
@@ -3107,7 +3876,7 @@
     if (!isDate(e.occurredAt) || !isDate(e.recordedAt) || !isObj(e.payload)) return null;
     if (JSON.stringify(e.payload).length > MAX_TEXT) return null;
     if (["batch_step", "batch_check"].includes(e.type) && !isId(e.payload.batchId)) return null;
-    return { id: e.id, plantId: e.plantId, type: e.type, occurredAt: e.occurredAt, recordedAt: e.recordedAt, payload: e.payload };
+    return { id: e.id, plantId: e.plantId, type: e.type, occurredAt: e.occurredAt, recordedAt: e.recordedAt, payload: e.payload, ...isOpId(e.opId) ? { opId: e.opId } : {} };
   }
   async function readBackup(input, { JSZip } = {}) {
     const Z = jszip(JSZip);
@@ -3129,33 +3898,48 @@
     if (!Number.isInteger(manifest?.schemaVersion) || manifest.schemaVersion < 1) throw new Error("Z\xE1loha nem\xE1 platnou verzi sch\xE9matu.");
     if (manifest.schemaVersion > SCHEMA_VERSION) throw new Error(`Z\xE1loha je z nov\u011Bj\u0161\xED verze aplikace (sch\xE9ma ${manifest.schemaVersion}). Aktualizuj aplikaci.`);
     if (!isObj(data) || !Array.isArray(data.plants) || !Array.isArray(data.events)) throw new Error("Z\xE1loha je po\u0161kozen\xE1 (data).");
-    const plants = data.plants.map(cleanPlant).filter(Boolean);
-    const ids = new Set(plants.map((p) => p.id));
-    const events = data.events.map(cleanEvent).filter(Boolean);
-    const skipped = data.plants.length - plants.length + (data.events.length - events.length);
-    const photoList = Array.isArray(data.photos) ? data.photos.filter((p) => isObj(p) && isId(p.id) && isId(p.plantId)) : [];
-    const meta = {};
-    for (const k of PORTABLE_META) if (isObj(data.meta) && k in data.meta) meta[k] = data.meta[k];
-    if (meta.hemisphere && !["north", "south"].includes(meta.hemisphere)) delete meta.hemisphere;
-    if (meta.profile && !PROFILE_KEYS.includes(meta.profile)) {
-      delete meta.profile;
-      delete meta.profileSource;
-    }
-    if (meta.profileSource && !PROFILE_SOURCES.includes(meta.profileSource)) delete meta.profileSource;
-    if ("rules" in meta) {
-      meta.rules = cleanRules(meta.rules);
-      if (!Object.keys(meta.rules).length) delete meta.rules;
-    }
-    if ("stock" in meta) {
-      meta.stock = cleanStock(meta.stock);
-      if (!Object.values(meta.stock).some((v) => Object.keys(v).length)) delete meta.stock;
-    }
-    if ("criteria" in meta) {
-      meta.criteria = cleanCriteria(meta.criteria);
-      if (!Object.keys(meta.criteria).length) delete meta.criteria;
-    }
-    if ("acquisition" in meta) meta.acquisition = cleanAcquisition(meta.acquisition);
-    if (meta.acquisition == null) delete meta.acquisition;
+    const incomingCategories = cleanCategories(isObj(data.meta) ? data.meta.categories : null);
+    const cleaned = withCategories(incomingCategories, () => {
+      const plants2 = data.plants.map(cleanPlant).filter(Boolean);
+      const ids2 = new Set(plants2.map((p) => p.id));
+      const events2 = data.events.map(cleanEvent).filter(Boolean);
+      const skipped2 = data.plants.length - plants2.length + (data.events.length - events2.length);
+      const photoList2 = Array.isArray(data.photos) ? data.photos.filter((p) => isObj(p) && isId(p.id) && isId(p.plantId)) : [];
+      const meta2 = {};
+      for (const k of PORTABLE_META) if (isObj(data.meta) && k in data.meta) meta2[k] = data.meta[k];
+      if (meta2.hemisphere && !["north", "south"].includes(meta2.hemisphere)) delete meta2.hemisphere;
+      if (meta2.profile && !PROFILE_KEYS.includes(meta2.profile)) {
+        delete meta2.profile;
+        delete meta2.profileSource;
+      }
+      if (meta2.profileSource && !PROFILE_SOURCES.includes(meta2.profileSource)) delete meta2.profileSource;
+      if ("rules" in meta2) {
+        meta2.rules = cleanRules(meta2.rules);
+        if (!Object.keys(meta2.rules).length) delete meta2.rules;
+      }
+      if ("stock" in meta2) {
+        meta2.stock = cleanStock(meta2.stock);
+        if (!Object.values(meta2.stock).some((v) => Object.keys(v).length)) delete meta2.stock;
+      }
+      if ("criteria" in meta2) {
+        meta2.criteria = cleanCriteria(meta2.criteria);
+        if (!Object.keys(meta2.criteria).length) delete meta2.criteria;
+      }
+      if ("groups" in meta2) {
+        meta2.groups = cleanGroups(meta2.groups);
+        if (!meta2.groups.length) delete meta2.groups;
+      }
+      if ("taskTemplates" in meta2) {
+        meta2.taskTemplates = cleanTemplates(meta2.taskTemplates);
+        if (!meta2.taskTemplates.length) delete meta2.taskTemplates;
+      }
+      if ("acquisition" in meta2) meta2.acquisition = cleanAcquisition(meta2.acquisition);
+      if (meta2.acquisition == null) delete meta2.acquisition;
+      return { plants: plants2, ids: ids2, events: events2, skipped: skipped2, photoList: photoList2, meta: meta2 };
+    });
+    const { plants, ids, events, skipped, photoList, meta } = cleaned;
+    if (Object.keys(incomingCategories).length) meta.categories = incomingCategories;
+    else delete meta.categories;
     return { zip, manifest, plants, events, photoList, meta, skipped, archivePlantIds: ids };
   }
   function cleanAcquisition(a) {
@@ -3167,6 +3951,7 @@
   }
   var same2 = (a, b) => JSON.stringify(a) === JSON.stringify(b);
   async function importBackup(db, input, { JSZip } = {}) {
+    applyCategories(await metaGet(db, "categories"));
     const parsed = await readBackup(input, { JSZip });
     const localPlants = new Map((await listPlants(db)).map((p) => [p.id, p]));
     const localEvents = new Map((await getAllEvents(db)).map((e) => [e.id, e]));
@@ -3224,11 +4009,15 @@
           r.onsuccess = () => res(r.result);
           r.onerror = () => rej(r.error);
         });
-        if (!exists) s.meta.put({ key: k, value: v });
+        if (k === "groups") s.meta.put({ key: k, value: mergeGroups(cleanGroups(exists?.value), v) });
+        else if (k === "categories") s.meta.put({ key: k, value: mergeCategories(cleanCategories(exists?.value), v) });
+        else if (k === "taskTemplates") s.meta.put({ key: k, value: mergeTemplates(cleanTemplates(exists?.value), v) });
+        else if (!exists) s.meta.put({ key: k, value: v });
       }
       return null;
     });
     await metaSet(db, "schemaVersion", SCHEMA_VERSION);
+    applyCategories(await metaGet(db, "categories"));
     await rebuildAll(db);
     return report;
   }
@@ -3387,6 +4176,8 @@
       err.textContent = S.backup.importing;
       try {
         const report = await importBackup(ctx.db, file.files[0], { JSZip: globalThis.JSZip });
+        await refreshGroups();
+        await refreshTemplates();
         await initCtx(ctx.db);
         openSheet(S.backup.importDone, reportView(report));
         rerender?.();
@@ -3429,6 +4220,27 @@
         field(S.ui.appearance, theme.el),
         field(S.profile.label, prof.el, S.profile.settingsHint),
         field(S.ui.hemisphere, hemi.el, "Ovliv\u0148uje ro\u010Dn\xED obdob\xED u rostlin venku a ve sklen\xEDku.")
+      ),
+      h(
+        "div",
+        { class: "card pad" },
+        h("h3", {}, S.groups.title),
+        h("p", { class: "muted" }, S.groups.intro),
+        h("button", { type: "button", class: "btn btn-secondary", id: "btn-groups-cfg", onclick: () => navigate("/groups") }, S.groups.open)
+      ),
+      h(
+        "div",
+        { class: "card pad" },
+        h("h3", {}, S.tasks.title),
+        h("p", { class: "muted" }, S.tasks.intro),
+        h("button", { type: "button", class: "btn btn-secondary", id: "btn-tasks-cfg", onclick: () => navigate("/settings/tasks") }, S.tasks.open)
+      ),
+      h(
+        "div",
+        { class: "card pad" },
+        h("h3", {}, S.categories.title),
+        h("p", { class: "muted" }, S.categories.intro),
+        h("button", { type: "button", class: "btn btn-secondary", id: "btn-categories-cfg", onclick: () => navigate("/settings/categories") }, S.categories.open)
       ),
       h(
         "div",
@@ -3543,7 +4355,7 @@
   }
 
   // js/timeline.js
-  var DONE_TYPES = ["watering", "moisture_check", "fertilizing", "pest_check", "batch_check"];
+  var DONE_TYPES = ["watering", "moisture_check", "fertilizing", "pest_check", "batch_check", "task_done"];
   function doneToday(events, now2) {
     return liveEvents(events).filter((e) => DONE_TYPES.includes(e.type) && dayDiff(e.occurredAt, now2) === 0).length;
   }
@@ -3619,6 +4431,12 @@
         ].filter(Boolean);
         return { icon: "check", title: S.stock.checkTitle, detail: bits.join(" \xB7 ") };
       }
+      case "task_assign":
+        return { icon: "check", title: `${S.tasks.assignTitle[p.action] ?? ""}: ${p.label ?? ""}`, detail: "" };
+      case "task_done":
+        return { icon: "check", title: `${S.tasks.doneTitle}: ${p.label ?? ""}`, detail: "" };
+      case "task_once":
+        return { icon: "check", title: `${S.tasks.onceTitle}: ${p.label}`, detail: fmtDate(p.dueAt) };
       case "care":
         return { icon: "leaf", title: p.kind === "custom" ? p.label : S.care[p.kind], detail: [p.potVolumeL ? `${num3(p.potVolumeL, 1)} l` : "", p.note || ""].filter(Boolean).join(" \xB7 ") };
       case "evaluation":
@@ -3641,122 +4459,6 @@
     return live.slice().reverse().map((e) => ({ event: e, ...describeEvent(e, units) }));
   }
 
-  // js/stats.js
-  var overallOf = (e) => e.payload?.scores?.overall;
-  var validOverall = (e) => Number.isFinite(overallOf(e));
-  var isFinalEval = (e) => (e.payload?.kind ?? "final") === "final";
-  var evalKey = (e) => `${e.payload.season ?? ""}|${e.payload.batchId ?? ""}|${e.payload.part ?? ""}`;
-  var yieldKey = (category) => CATEGORIES[category]?.harvestFields[0]?.key ?? null;
-  function currentEvaluations(plant, events) {
-    const evs = liveEvents(events).filter((e) => e.type === "evaluation" && validOverall(e) && isFinalEval(e));
-    const byKey = /* @__PURE__ */ new Map();
-    for (const e of evs) byKey.set(evalKey(e), e);
-    return [...byKey.values()].sort((a, b) => a.occurredAt < b.occurredAt ? -1 : 1);
-  }
-  function latestEvaluation(events, season, batchId) {
-    const evs = liveEvents(events).filter((e) => e.type === "evaluation" && validOverall(e) && isFinalEval(e) && (season === void 0 || (e.payload.season ?? null) === season) && (batchId === void 0 || (e.payload.batchId ?? null) === batchId));
-    return evs.at(-1) ?? null;
-  }
-  function evaluationHistory(events) {
-    const live = liveEvents(events);
-    const harvests = live.filter((e) => e.type === "harvest");
-    return live.filter((e) => e.type === "evaluation" && validOverall(e)).reverse().map((e) => {
-      const prev = harvests.filter((h2) => h2.occurredAt <= e.occurredAt).at(-1);
-      return {
-        event: e,
-        at: e.occurredAt,
-        overall: overallOf(e),
-        note: e.payload.note || "",
-        season: e.payload.season ?? null,
-        kind: e.payload.kind ?? "final",
-        part: e.payload.part ?? null,
-        batchId: e.payload.batchId ?? null,
-        daysAfterHarvest: prev ? daysBetween(prev.occurredAt, e.occurredAt) : e.payload.daysSinceLastHarvest ?? null
-      };
-    });
-  }
-  function harvestTotals(plant, events) {
-    const totals = {};
-    for (const f of CATEGORIES[plant.category].harvestFields) {
-      totals[f.key] = liveEvents(events).filter((e) => e.type === "harvest").reduce((s, e) => s + (Number.isFinite(e.payload[f.key]) ? e.payload[f.key] : 0), 0);
-    }
-    return totals;
-  }
-  function plantSummary(plant, events) {
-    const live = liveEvents(events);
-    const harvests = live.filter((e) => e.type === "harvest");
-    const evals = currentEvaluations(plant, events);
-    const yk = yieldKey(plant.category);
-    const yieldSum = harvests.reduce((s, e) => s + (Number.isFinite(e.payload[yk]) ? e.payload[yk] : 0), 0);
-    const seasons = plant.lifecycle === "perennial" ? new Set(harvests.map((e) => new Date(e.occurredAt).getFullYear())).size : harvests.length ? 1 : 0;
-    let cycleDays = null;
-    if (plant.lifecycle !== "perennial") {
-      const end = live.filter((e) => e.type === "stage_change" && STAGE_FLAGS[e.payload.to]?.terminal).at(-1) ?? harvests.at(-1);
-      if (end) cycleDays = daysBetween(plant.startDate, end.occurredAt);
-    }
-    const overall = evals.length ? mean(evals.map(overallOf)) : null;
-    const last = latestEvaluation(events);
-    return {
-      plantId: plant.id,
-      harvestCount: harvests.length,
-      seasons,
-      yield: yieldSum,
-      yieldKey: yk,
-      overall,
-      wouldGrowAgain: last && last.payload.wouldGrowAgain != null ? !!last.payload.wouldGrowAgain : null,
-      cycleDays,
-      problems: live.filter((e) => e.type === "problem").length,
-      evaluated: evals.length > 0
-    };
-  }
-  function varietyGroupKey(plant) {
-    const key = plant.varietyKey || normalizeKey(plant.variety);
-    return key ? { key, unnamed: false } : { key: normalizeKey(plant.name), unnamed: true };
-  }
-  var avg = (xs) => xs.length ? mean(xs) : null;
-  function aggregateVarieties(plants, byPlant) {
-    const groups = /* @__PURE__ */ new Map();
-    for (const plant of plants) {
-      const { key, unnamed } = varietyGroupKey(plant);
-      const gk = `${plant.category}|${key}`;
-      if (!groups.has(gk)) groups.set(gk, { category: plant.category, key, unnamed, items: [] });
-      groups.get(gk).items.push({ plant, summary: plantSummary(plant, byPlant.get(plant.id) || []) });
-    }
-    return [...groups.values()].map((g) => {
-      const items = g.items.sort((a, b) => a.plant.startDate < b.plant.startDate ? 1 : -1);
-      const sums = items.map((i) => i.summary);
-      const rated = sums.filter((s) => s.overall != null);
-      const grow = sums.filter((s) => s.wouldGrowAgain != null);
-      const harvested = sums.filter((s) => s.harvestCount > 0);
-      const totalYield = sums.reduce((s, x) => s + x.yield, 0);
-      return {
-        category: g.category,
-        key: g.key,
-        unnamed: g.unnamed,
-        label: g.unnamed ? items[0].plant.name : items[0].plant.variety || g.key,
-        items,
-        plantCount: items.length,
-        cycles: sums.reduce((s, x) => s + x.seasons, 0),
-        avgOverall: avg(rated.map((s) => s.overall)),
-        wouldGrowAgainShare: grow.length ? grow.filter((s) => s.wouldGrowAgain).length / grow.length : null,
-        totalYield,
-        yieldPerPlant: harvested.length ? totalYield / harvested.length : null,
-        yieldKey: yieldKey(g.category),
-        avgCycleDays: avg(sums.filter((s) => s.cycleDays != null).map((s) => s.cycleDays)),
-        problemsPerPlant: sums.reduce((s, x) => s + x.problems, 0) / items.length
-      };
-    }).sort((a, b) => (b.avgOverall ?? -1) - (a.avgOverall ?? -1) || b.plantCount - a.plantCount);
-  }
-  function overviewNumbers(plants, byPlant) {
-    const sums = plants.map((p) => plantSummary(p, byPlant.get(p.id) || []));
-    return {
-      plants: plants.length,
-      archived: plants.filter((p) => p.archivedAt).length,
-      harvests: sums.reduce((s, x) => s + x.harvestCount, 0),
-      evaluated: sums.filter((x) => x.evaluated).length
-    };
-  }
-
   // js/ui-forms.js
   var stockOffer = null;
   var setStockOffer = (fn) => {
@@ -3776,6 +4478,31 @@
       });
       done?.();
       return events;
+    } catch (err) {
+      toast(err.message || S.err.invalid);
+      return null;
+    }
+  }
+  async function submitBulk(plantIds, make, message, done) {
+    try {
+      const res = await appendBulk(ctx.db, plantIds, make);
+      closeSheet();
+      const skipped = res.skipped.filter((x) => x.message).length;
+      if (!res.events.length) {
+        toast(res.skipped.find((x) => x.message)?.message || S.groups.done(0, 0));
+        done?.();
+        return res;
+      }
+      const n = new Set(res.events.map((e) => e.plantId)).size;
+      toast(`${message} \xB7 ${S.groups.done(n, skipped)}`, {
+        action: S.ui.undo,
+        onAction: async () => {
+          await voidBulk(ctx.db, res.events);
+          done?.();
+        }
+      });
+      done?.();
+      return res;
     } catch (err) {
       toast(err.message || S.err.invalid);
       return null;
@@ -3845,30 +4572,30 @@
   function pestCheckSheet(plant, done) {
     const result = chipGroup([["clean", S.ui.pestClean], ["found", S.ui.pestFound]], "clean");
     result.el.id = "pest-result";
-    const note = h("textarea", { rows: 2 });
+    const note2 = h("textarea", { rows: 2 });
     const d = dateField();
     openSheet(`${S.ui.pestCheck} \u2013 ${plant.name}`, h(
       "div",
       {},
       field(S.ui.pestCheck, result.el),
-      field(S.ui.note, note),
+      field(S.ui.note, note2),
       d.el,
-      buttons(() => submit(plant.id, [{ type: "pest_check", occurredAt: d.get(), payload: { found: result.get() === "found", note: note.value } }], "Kontrola zaps\xE1na", done))
+      buttons(() => submit(plant.id, [{ type: "pest_check", occurredAt: d.get(), payload: { found: result.get() === "found", note: note2.value } }], "Kontrola zaps\xE1na", done))
     ));
   }
   function problemSheet(plant, done) {
     const type = chipGroup(PROBLEM_TYPES.map((k) => [k, S.problem[k]]), "pest");
     const sev = chipGroup([[1, "1 \u2013 lehk\xE9"], [2, "2 \u2013 st\u0159edn\xED"], [3, "3 \u2013 v\xE1\u017En\xE9"]], 1);
-    const note = h("textarea", { rows: 2 });
+    const note2 = h("textarea", { rows: 2 });
     const d = dateField();
     openSheet(`${S.ui.problem} \u2013 ${plant.name}`, h(
       "div",
       {},
       field("Typ", type.el),
       field(S.ui.severity, sev.el),
-      field(S.ui.note, note),
+      field(S.ui.note, note2),
       d.el,
-      buttons(() => submit(plant.id, [{ type: "problem", occurredAt: d.get(), payload: { problemType: type.get(), severity: sev.get(), note: note.value } }], "Probl\xE9m zaps\xE1n", done))
+      buttons(() => submit(plant.id, [{ type: "problem", occurredAt: d.get(), payload: { problemType: type.get(), severity: sev.get(), note: note2.value } }], "Probl\xE9m zaps\xE1n", done))
     ));
   }
   function followUpSheet(plant, task, done) {
@@ -3884,14 +4611,14 @@
     ));
   }
   function noteSheet(plant, done) {
-    const text = h("textarea", { rows: 4 });
+    const text2 = h("textarea", { rows: 4 });
     const d = dateField();
     openSheet(`${S.ui.addNote} \u2013 ${plant.name}`, h(
       "div",
       {},
-      field(S.ui.note, text),
+      field(S.ui.note, text2),
       d.el,
-      buttons(() => submit(plant.id, [{ type: "note", occurredAt: d.get(), payload: { text: text.value } }], "Pozn\xE1mka ulo\u017Eena", done))
+      buttons(() => submit(plant.id, [{ type: "note", occurredAt: d.get(), payload: { text: text2.value } }], "Pozn\xE1mka ulo\u017Eena", done))
     ));
   }
   function photoSheet(plant, done) {
@@ -4042,7 +4769,7 @@
     const ep = edit?.payload ?? {};
     const inputs = cfg.harvestFields.map((f) => ({ f, el: h("input", { type: "number", step: "any", min: f.min, inputmode: "decimal", dataset: { key: f.key }, value: ep[f.key] ?? "" }) }));
     const mp = methodPicker(plant, ep.processingMethod ?? defaultMethod(plant), ep.estDays ?? null);
-    const note = h("textarea", { rows: 2 }, ep.note ?? "");
+    const note2 = h("textarea", { rows: 2 }, ep.note ?? "");
     const fin = h("input", { type: "checkbox", id: "harvest-final", checked: !!ep.final });
     const d = dateField(edit?.occurredAt);
     const save2 = async () => {
@@ -4051,7 +4778,7 @@
       if (!Object.keys(payload).length) return toast(S.ui.fillOne);
       payload.processingMethod = mp.method.get();
       if (payload.processingMethod === "drying" && mp.est() != null) payload.estDays = mp.est();
-      if (note.value.trim()) payload.note = note.value.trim();
+      if (note2.value.trim()) payload.note = note2.value.trim();
       if (fin.checked) payload.final = true;
       if (edit) {
         if (ep.processingDays != null) payload.processingDays = ep.processingDays;
@@ -4076,7 +4803,7 @@
       mp.estField,
       h("label", { class: "check-row" }, fin, h("span", {}, S.ui.finalHarvest)),
       h("div", { class: "field-hint" }, S.ui.finalHint),
-      field(S.ui.note, note),
+      field(S.ui.note, note2),
       buttons(save2)
     ));
   }
@@ -4111,7 +4838,7 @@
     const phase = chipGroup(options.map((x) => [x, S.batchPhase[x]]), start, toggle);
     phase.el.id = "batch-phase";
     toggle(start);
-    const note = h("textarea", { rows: 2 });
+    const note2 = h("textarea", { rows: 2 });
     const d = dateField();
     openSheet(`${S.ui.movePhase} \u2013 ${plant.name}`, h(
       "div",
@@ -4119,12 +4846,12 @@
       h("p", { class: "muted" }, heading || batchLabel(batch)),
       field(S.ui.movePhase, phase.el),
       estField,
-      field(S.ui.note, note),
+      field(S.ui.note, note2),
       d.el,
       buttons(() => {
         const payload = { batchId: batch.id, phase: phase.get() };
         if (payload.phase === "drying" && est.value !== "") payload.estDays = Number(est.value);
-        if (note.value.trim()) payload.note = note.value.trim();
+        if (note2.value.trim()) payload.note = note2.value.trim();
         submit(plant.id, [{ type: "batch_step", occurredAt: d.get(), payload }], S.ui.batchSaved, done).then((ok) => {
           if (ok && OFFER_PHASES.includes(payload.phase)) stockOffer?.(plant.id, batch.id, done);
         });
@@ -4139,7 +4866,7 @@
     const mold = chipGroup([["no", S.ui.moldNone], ["yes", S.ui.moldFound]], "no");
     mold.el.id = "batch-mold";
     const scent = starPicker(0), look = starPicker(0);
-    const note = h("textarea", { rows: 2 });
+    const note2 = h("textarea", { rows: 2 });
     const d = dateField();
     openSheet(`${S.ui.batchCheck} \u2013 ${plant.name}`, h(
       "div",
@@ -4149,7 +4876,7 @@
       field(S.ui.mold, mold.el),
       field(S.ui.scent, scent.el),
       field(S.ui.batchLook, look.el),
-      field(S.ui.note, note),
+      field(S.ui.note, note2),
       d.el,
       buttons(async () => {
         if (drying && dry.get() == null) return toast(S.ui.dryness);
@@ -4157,7 +4884,7 @@
         if (drying) payload.dryness = Number(dry.get());
         if (scent.get()) payload.scent = scent.get();
         if (look.get()) payload.appearance = look.get();
-        if (note.value.trim()) payload.note = note.value.trim();
+        if (note2.value.trim()) payload.note = note2.value.trim();
         const ok = await submit(plant.id, [{ type: "batch_check", occurredAt: d.get(), payload }], "Kontrola zaps\xE1na", done);
         if (ok && drying && payload.dryness === DRYNESS_MAX) batchStepSheet(plant, batch, done, S.ui.dryDone);
       })
@@ -4196,7 +4923,7 @@
     const pot = field(S.ui.potVolume, potInput);
     label.style.display = "none";
     pot.style.display = "none";
-    const note = h("textarea", { rows: 2 });
+    const note2 = h("textarea", { rows: 2 });
     const d = dateField();
     openSheet(`${S.ui.care} \u2013 ${plant.name}`, h(
       "div",
@@ -4204,13 +4931,13 @@
       field(S.ui.careKind, kind.el),
       label,
       pot,
-      field(S.ui.note, note),
+      field(S.ui.note, note2),
       d.el,
       buttons(() => {
         const payload = { kind: kind.get() };
         if (payload.kind === "custom") payload.label = labelInput.value;
         if (payload.kind === "repotting" && potInput.value !== "") payload.potVolumeL = Number(potInput.value);
-        if (note.value.trim()) payload.note = note.value.trim();
+        if (note2.value.trim()) payload.note = note2.value.trim();
         submit(plant.id, [{ type: "care", occurredAt: d.get(), payload }], S.care[payload.kind], done);
       })
     ));
@@ -4271,8 +4998,8 @@
       grow = v === "yes";
     });
     growChips.el.id = "eval-grow";
-    const note = h("textarea", { rows: 3 });
-    note.value = p.note || "";
+    const note2 = h("textarea", { rows: 3 });
+    note2.value = p.note || "";
     const season = h("input", { type: "number", step: "1", min: "2000", max: "2100", value: p.season ?? (/* @__PURE__ */ new Date()).getFullYear() });
     const d = dateField();
     const save2 = () => {
@@ -4281,7 +5008,7 @@
       for (const k of criteria) if (pickers[k].get()) scores[k] = pickers[k].get();
       const payload = { scores, kind };
       if (grow != null) payload.wouldGrowAgain = grow;
-      if (note.value.trim()) payload.note = note.value.trim();
+      if (note2.value.trim()) payload.note = note2.value.trim();
       if (perennialHarvest && season.value !== "") payload.season = Number(season.value);
       if (batchId) payload.batchId = batchId;
       if (part.value.trim()) payload.part = part.value.trim();
@@ -4297,19 +5024,1171 @@
       criteriaList.map((c2) => field(c2.label, pickers[c2.key].el)),
       field(S.ui.wouldGrowAgain, growChips.el),
       perennialHarvest ? field(S.ui.season, season) : null,
-      field(S.ui.note, note),
+      field(S.ui.note, note2),
       d.el,
       buttons(save2)
     ));
   }
 
+  // js/metrics.js
+  var MIN_N = 3;
+  var MIN_CORRELATION_N = 8;
+  var rules = resolveRules();
+  var round = (v, d = 2) => Math.round(v * 10 ** d) / 10 ** d;
+  function careSpan(plant, summary, now2) {
+    const d = summary.cycleDays ?? daysBetween(plant.startDate, plant.archivedAt ?? now2);
+    return d >= 1 ? d : null;
+  }
+  var totalWeightG = (live) => {
+    const ws = live.filter((e) => e.type === "harvest").map((e) => harvestWeightG(e.payload || {})).filter(isNum);
+    return ws.length ? ws.reduce((a, b) => a + b, 0) : null;
+  };
+  var METRICS = [
+    {
+      key: "yieldPerDay",
+      unit: "g/den",
+      scope: "plant",
+      better: "higher",
+      digits: 2,
+      compute: ({ live, summary }) => {
+        const g = totalWeightG(live);
+        return g != null && g > 0 && summary.cycleDays >= 1 ? round(g / summary.cycleDays) : null;
+      }
+    },
+    {
+      key: "yieldPerLiter",
+      unit: "g/l",
+      scope: "plant",
+      better: "higher",
+      digits: 1,
+      compute: ({ plant, live }) => {
+        const g = totalWeightG(live);
+        const l = plant.cache?.pot?.volumeL ?? plant.potVolumeL;
+        return g != null && g > 0 && isNum(l) && l > 0 ? round(g / l, 1) : null;
+      }
+    },
+    {
+      key: "processedRatio",
+      unit: "%",
+      scope: "plant",
+      better: null,
+      digits: 0,
+      compute: ({ live }) => {
+        const hs = live.filter((e) => e.type === "harvest" && isNum(e.payload.freshWeight) && e.payload.freshWeight > 0 && isNum(e.payload.processedWeight));
+        if (!hs.length) return null;
+        const fresh = hs.reduce((s, e) => s + e.payload.freshWeight, 0);
+        return round(100 * hs.reduce((s, e) => s + e.payload.processedWeight, 0) / fresh, 1);
+      }
+    },
+    {
+      key: "wateringsPerWeek",
+      unit: "\xD7/t\xFDden",
+      scope: "plant",
+      better: null,
+      digits: 1,
+      compute: ({ plant, live, summary, now: now2 }) => {
+        const span = careSpan(plant, summary, now2);
+        const n = live.filter((e) => e.type === "watering" || e.type === "moisture_check" && e.payload.watered).length;
+        return span != null && span >= 7 && n > 0 ? round(n / (span / 7), 1) : null;
+      }
+    },
+    {
+      key: "fertilizingsPerCycle",
+      unit: "\xD7",
+      scope: "plant",
+      better: null,
+      digits: 0,
+      compute: ({ live, summary }) => {
+        const n = live.filter((e) => e.type === "fertilizing").length;
+        return summary.cycleDays != null && n > 0 ? n : null;
+      }
+    },
+    {
+      key: "problemsPer100Days",
+      unit: "/100 dn\xED",
+      scope: "plant",
+      better: "lower",
+      digits: 1,
+      compute: ({ plant, live, summary, now: now2 }) => {
+        const span = careSpan(plant, summary, now2);
+        return span != null && span >= 14 ? round(100 * live.filter((e) => e.type === "problem").length / span, 1) : null;
+      }
+    },
+    {
+      key: "problemResolveDays",
+      unit: "dn\xED",
+      scope: "plant",
+      better: "lower",
+      digits: 1,
+      compute: ({ live }) => {
+        const at = new Map(live.filter((e) => e.type === "problem").map((e) => [e.id, e.occurredAt]));
+        const days = live.filter((e) => e.type === "problem_resolved" && at.has(e.payload.problemId)).map((e) => daysBetween(at.get(e.payload.problemId), e.occurredAt)).filter((d) => d >= 0);
+        return days.length ? round(mean(days), 1) : null;
+      }
+    },
+    {
+      key: "growAgain",
+      unit: "%",
+      scope: "plant",
+      better: "higher",
+      digits: 0,
+      compute: ({ summary }) => summary.wouldGrowAgain == null ? null : summary.wouldGrowAgain ? 100 : 0
+    },
+    {
+      key: "stockPerDay",
+      unit: "g/den",
+      scope: "plant",
+      better: null,
+      digits: 1,
+      compute: ({ plant, now: now2 }) => {
+        const unit = [...plant.cache?.batches || []].reverse().find((b) => b.stock)?.stock.unit;
+        if (!unit || unit === "ks") return null;
+        const rate = consumptionRate(plant, now2, rules, unit);
+        const g = rate ? convertAmount(rate.perDay, unit, "g") : null;
+        return g != null ? round(g, 1) : null;
+      }
+    }
+  ];
+  var metricLabel = (key) => S.metrics.items[key] ?? key;
+  var metricDef = (key) => METRICS.find((m2) => m2.key === key) ?? null;
+  function metricsFor(plant, events, now2, summary) {
+    const live = liveEvents(events);
+    const ctx2 = { plant, live, summary: summary ?? plantSummary(plant, events), now: now2 };
+    return Object.fromEntries(METRICS.map((m2) => [m2.key, m2.compute(ctx2)]));
+  }
+  function fmtMetric(def, value) {
+    if (value == null) return "\u2014";
+    const text2 = value.toLocaleString("cs-CZ", { maximumFractionDigits: def.digits, minimumFractionDigits: 0 });
+    return `${text2} ${def.unit}`;
+  }
+  function aggregateMetric(rows, key) {
+    const vals = rows.filter((r) => isNum(r.values[key]));
+    if (!vals.length) return { key, n: 0, mean: null, min: null, max: null, mixedEnv: false, provisional: true };
+    const xs = vals.map((r) => r.values[key]);
+    const mixedEnv = new Set(vals.map((r) => r.plant.environment)).size > 1;
+    return { key, n: xs.length, mean: round(mean(xs), 3), min: Math.min(...xs), max: Math.max(...xs), mixedEnv, provisional: xs.length < MIN_N || mixedEnv };
+  }
+  function varietyMetrics(group, byPlant, now2) {
+    const rows = group.items.map(({ plant, summary }) => ({ plant, values: metricsFor(plant, byPlant.get(plant.id) || [], now2, summary) }));
+    return { rows, aggregates: METRICS.map((m2) => aggregateMetric(rows, m2.key)).filter((a) => a.n > 0) };
+  }
+  function stageDurations(plant, events) {
+    const changes = liveEvents(events).filter((e) => e.type === "stage_change");
+    if (!changes.length) return {};
+    const marks = [{ stage: changes[0].payload.from, at: plant.startDate }, ...changes.map((e) => ({ stage: e.payload.to, at: e.occurredAt }))];
+    const out = {};
+    for (let i = 0; i < marks.length - 1; i++) {
+      const { stage, at } = marks[i];
+      if (!stage || STAGE_FLAGS[stage]?.terminal) continue;
+      const d = daysBetween(at, marks[i + 1].at);
+      if (d >= 0) out[stage] = round((out[stage] ?? 0) + d, 1);
+    }
+    return out;
+  }
+  function stageStats(items, byPlant) {
+    const acc = /* @__PURE__ */ new Map();
+    for (const { plant } of items) {
+      for (const [stage, days] of Object.entries(stageDurations(plant, byPlant.get(plant.id) || []))) {
+        if (!acc.has(stage)) acc.set(stage, { stage, n: 0, sum: 0, byPlant: {} });
+        const a = acc.get(stage);
+        a.n += 1;
+        a.sum += days;
+        a.byPlant[plant.id] = days;
+      }
+    }
+    return [...acc.values()].map((a) => ({ stage: a.stage, n: a.n, mean: round(a.sum / a.n, 1), byPlant: a.byPlant, provisional: a.n < MIN_N }));
+  }
+  function ranks(xs) {
+    const idx = xs.map((v, i) => [v, i]).sort((a, b) => a[0] - b[0]);
+    const r = new Array(xs.length);
+    for (let i = 0; i < idx.length; ) {
+      let j = i;
+      while (j + 1 < idx.length && idx[j + 1][0] === idx[i][0]) j += 1;
+      for (let k = i; k <= j; k++) r[idx[k][1]] = (i + j) / 2 + 1;
+      i = j + 1;
+    }
+    return r;
+  }
+  function spearman(xs, ys) {
+    if (xs.length < 2 || xs.length !== ys.length) return null;
+    const a = ranks(xs), b = ranks(ys);
+    const ma = mean(a), mb2 = mean(b);
+    let num4 = 0, da = 0, db = 0;
+    for (let i = 0; i < a.length; i++) {
+      num4 += (a[i] - ma) * (b[i] - mb2);
+      da += (a[i] - ma) ** 2;
+      db += (b[i] - mb2) ** 2;
+    }
+    return da === 0 || db === 0 ? null : round(num4 / Math.sqrt(da * db), 3);
+  }
+  var strengthOf = (r) => Math.abs(r) >= 0.6 ? "strong" : Math.abs(r) >= 0.4 ? "medium" : "weak";
+  function patterns(plants, byPlant, now2) {
+    const out = [];
+    const cats = [...new Set(plants.map((p) => p.category))];
+    for (const category of cats) {
+      const rows = plants.filter((p) => p.category === category).map((p) => {
+        const evs = byPlant.get(p.id) || [];
+        const sum = plantSummary(p, evs);
+        return { values: metricsFor(p, evs, now2, sum), overall: sum.overall, yieldG: totalWeightG(liveEvents(evs)) };
+      }).filter((r) => r.overall != null);
+      const pairs = [
+        ["yieldRating", rows.filter((r) => r.yieldG != null && r.yieldG > 0).map((r) => [r.yieldG, r.overall])],
+        ["problemsRating", rows.filter((r) => r.values.problemsPer100Days != null).map((r) => [r.values.problemsPer100Days, r.overall])]
+      ];
+      for (const [id, ps] of pairs) {
+        if (ps.length < MIN_CORRELATION_N) continue;
+        const r = spearman(ps.map((p) => p[0]), ps.map((p) => p[1]));
+        if (r != null && Math.abs(r) >= 0.3) out.push({ id, category, n: ps.length, r, direction: r > 0 ? "up" : "down", strength: strengthOf(r) });
+      }
+    }
+    return out;
+  }
+  function storageStats(plants) {
+    const acc = {};
+    for (const pl2 of plants) {
+      for (const b of pl2.cache?.batches || []) {
+        for (const k of b.stock?.containers || []) {
+          if (k.status === "open" || !isNum(k.initial) || k.initial <= 0) continue;
+          const m2 = acc[k.method] || (acc[k.method] = { method: k.method, n: 0, loss: [], life: [] });
+          m2.n += 1;
+          m2.loss.push((k.discarded || 0) / k.initial);
+          const spoiledAt = k.moldAt ?? (k.discarded > 0 || k.status === "discarded" ? k.endedAt : null);
+          if (spoiledAt) m2.life.push(daysBetween(k.since, spoiledAt));
+        }
+      }
+    }
+    return Object.values(acc).map((m2) => ({
+      method: m2.method,
+      n: m2.n,
+      lossShare: round(mean(m2.loss), 3),
+      spoiledN: m2.life.length,
+      shelfLifeDays: m2.life.length ? Math.round(mean(m2.life)) : null,
+      provisional: m2.n < MIN_N
+    })).sort((a, b) => b.n - a.n);
+  }
+
+  // js/ui-metrics.js
+  var T = S.metrics;
+  var note = (a) => a.n < 3 ? T.provisional : a.mixedEnv ? `${T.provisional}, ${T.mixedEnv}` : null;
+  var tags = (a) => [h("span", { class: "tag" }, T.n(a.n)), note(a) ? h("span", { class: "tag tag-warn" }, note(a)) : null];
+  var metricRows = (aggregates) => aggregates.filter((a) => a.n > 0).map((a) => h(
+    "div",
+    { class: "kv metric-row", dataset: { metric: a.key } },
+    h("span", {}, metricLabel(a.key)),
+    h("span", { class: "metric-val" }, h("strong", {}, fmtMetric(metricDef(a.key), a.mean)), ...tags(a))
+  ));
+  function metricsCard(aggregates, id = "metrics-card") {
+    const rows = metricRows(aggregates);
+    return rows.length ? h("div", { class: "card pad", id }, rows) : h("div", { class: "empty-state", id }, T.none);
+  }
+  function plantMetricsCard(values, aggregates) {
+    const rows = METRICS.filter((m2) => values[m2.key] != null);
+    if (!rows.length) return h("div", { class: "empty-state", id: "metrics-card" }, T.none);
+    const agg = Object.fromEntries(aggregates.map((a) => [a.key, a]));
+    return h("div", { class: "card pad", id: "metrics-card" }, rows.map((m2) => {
+      const a = agg[m2.key];
+      return h(
+        "div",
+        { class: "kv metric-row", dataset: { metric: m2.key } },
+        h("span", {}, metricLabel(m2.key)),
+        h(
+          "span",
+          { class: "metric-val" },
+          h("strong", {}, fmtMetric(m2, values[m2.key])),
+          a && a.n >= 2 ? h("span", { class: "muted" }, ` \xB7 \xD8 ${fmtMetric(m2, a.mean)}`) : null,
+          ...a && a.n >= 2 ? tags(a) : []
+        )
+      );
+    }));
+  }
+  function stagesCard(items, byPlant, ownId) {
+    const st = stageStats(items, byPlant);
+    if (!st.length) return null;
+    return h(
+      "div",
+      {},
+      h("div", { class: "section-title flush" }, T.stages),
+      h("p", { class: "muted pad-x" }, T.stagesHint),
+      h("div", { class: "card pad", id: "stages-card" }, st.map((s) => {
+        const own = ownId ? s.byPlant[ownId] : null;
+        return h(
+          "div",
+          { class: "kv", dataset: { stage: s.stage } },
+          h("span", {}, S.stage[s.stage] || s.stage),
+          h(
+            "span",
+            { class: "metric-val" },
+            own != null ? h("strong", {}, `${num3(own, 1)} ${S.ui.days}`) : null,
+            h("span", own != null ? { class: "muted" } : {}, own != null ? ` \xB7 \xD8 ${num3(s.mean, 1)}` : `\xD8 ${num3(s.mean, 1)} ${S.ui.days}`),
+            h("span", { class: "tag" }, T.n(s.n)),
+            s.provisional ? h("span", { class: "tag tag-warn" }, T.provisional) : null
+          )
+        );
+      }))
+    );
+  }
+  function patternsCard(list) {
+    if (!list.length) return null;
+    return h(
+      "div",
+      {},
+      h("div", { class: "section-title" }, T.patterns),
+      h("p", { class: "muted pad-x" }, T.patternsHint),
+      h("div", { class: "card pad", id: "patterns-card" }, list.map((p) => h(
+        "div",
+        { class: "kv pattern-row", dataset: { pattern: p.id, category: p.category } },
+        h("span", {}, `${S.category[p.category]}: ${T.patternText[p.id][p.direction]}`),
+        h("span", { class: "metric-val" }, h("span", { class: "tag" }, T.strength[p.strength]), h("span", { class: "tag" }, T.n(p.n)))
+      )))
+    );
+  }
+  function storageCard(list) {
+    if (!list.length) return null;
+    const label = (m2) => resolveMethods(ctx.stockCfg)[m2]?.label ?? S.stock.method.other;
+    return h(
+      "div",
+      {},
+      h("div", { class: "section-title" }, T.storage),
+      h("p", { class: "muted pad-x" }, T.storageHint),
+      h("div", { class: "card pad", id: "storage-card" }, list.map((s) => h(
+        "div",
+        { class: "kv", dataset: { method: s.method } },
+        h("span", {}, `${label(s.method)} \xB7 ${s.n} ${T.containers}`),
+        h(
+          "span",
+          { class: "metric-val" },
+          `${T.loss} ${Math.round(s.lossShare * 100)} %`,
+          s.shelfLifeDays != null ? ` \xB7 ${T.life} ${s.shelfLifeDays} ${S.ui.days} (n = ${s.spoiledN})` : "",
+          s.provisional ? h("span", { class: "tag tag-warn" }, T.provisional) : null
+        )
+      )))
+    );
+  }
+
+  // js/ui-plant-form.js
+  function askHemisphere() {
+    return hemisphereKnown().then((known) => {
+      if (known) return null;
+      return new Promise((resolve) => {
+        const pick2 = async (v) => {
+          await setHemisphere(v);
+          closeSheet();
+          resolve(v);
+        };
+        openSheet(
+          S.ui.hemisphere,
+          h(
+            "div",
+            { class: "stack" },
+            h("p", { class: "muted" }, "Ro\u010Dn\xED obdob\xED ovliv\u0148uje z\xE1livku venku. Kde p\u011Bstuje\u0161?"),
+            h("button", { type: "button", class: "btn btn-primary", dataset: { hemi: "north" }, onclick: () => pick2("north") }, S.ui.north),
+            h("button", { type: "button", class: "btn btn-secondary", dataset: { hemi: "south" }, onclick: () => pick2("south") }, S.ui.south)
+          ),
+          { onClose: () => resolve(null) }
+        );
+      });
+    });
+  }
+  var datalist = (id, values) => h("datalist", { id }, values.map((v) => h("option", { value: v })));
+  var dateOnly = (iso) => toLocalInput(iso).slice(0, 10);
+  var toIso = (d) => !d || d === dateOnly(now()) ? now() : (/* @__PURE__ */ new Date(`${d}T12:00:00`)).toISOString();
+  async function renderPlantForm(root2, id, query = {}) {
+    const alive = guard();
+    const { plants } = await loadAll();
+    const editing = id ? plants.find((p) => p.id === id) : null;
+    if (id && !editing) return navigate("/");
+    const pre = editing ? {} : PROFILES[ctx.profile]?.preselect || {};
+    const source = editing || (query.clone ? plants.find((p) => p.id === query.clone) : null);
+    const init = editing ? {
+      name: editing.name,
+      variety: editing.variety,
+      category: editing.category,
+      lifecycle: editing.lifecycle,
+      environment: editing.cache.environment,
+      harvestable: editing.harvestable,
+      location: editing.location,
+      source: editing.source,
+      baseOverride: editing.baseOverride,
+      potVolumeL: editing.potVolumeL,
+      substrate: editing.substrate,
+      plannedHarvestAt: editing.plannedHarvestAt,
+      stockPreset: editing.stockPreset,
+      groupId: editing.groupId
+    } : source ? clonePlantInput(source, plants.map((p) => p.name)) : { category: pre.category ?? null, environment: pre.environment ?? null, lifecycle: pre.lifecycle, harvestable: pre.harvestable, source: "seed" };
+    const [exName, exVariety] = example(ctx.profile, plants.length);
+    const st = { category: init.category, lifecycle: init.lifecycle, environment: init.environment, source: init.source || "seed" };
+    const name = h("input", { type: "text", id: "f-name", value: init.name || "", placeholder: `nap\u0159. ${exName}` });
+    const variety = h("input", { type: "text", id: "f-variety", value: init.variety || "", list: "dl-variety", placeholder: `nap\u0159. ${exVariety}` });
+    const location2 = h("input", { type: "text", id: "f-location", value: init.location || "", list: "dl-location", placeholder: "nap\u0159. balkon" });
+    const cat = chipGroup(categoryChoices(st.category).map((k) => [k, S.category[k]]), st.category, (v) => {
+      if (editing) return;
+      setCategory(v);
+    });
+    cat.el.id = "f-category";
+    const life = chipGroup(Object.entries(S.lifecycle), st.lifecycle, (v) => {
+      if (editing) return;
+      st.lifecycle = v;
+      fillStages();
+    });
+    const env2 = chipGroup(Object.entries(S.environment), st.environment, (v) => {
+      st.environment = v;
+    });
+    env2.el.id = "f-environment";
+    st.groupId = ctx.groups.some((g) => g.id === init.groupId) ? init.groupId : "";
+    const grp = chipGroup([["", S.groups.noGroup], ...ctx.groups.map((g) => [g.id, g.label])], st.groupId, (v) => {
+      st.groupId = v;
+      const def = ctx.groups.find((g) => g.id === v)?.environment;
+      if (def && !editing && !st.environment) {
+        st.environment = def;
+        env2.set(def);
+      }
+    });
+    grp.el.id = "f-group";
+    const src = chipGroup(SOURCES.map((s) => [s, S.source[s]]), st.source, (v) => {
+      st.source = v;
+    });
+    const harv = h("input", { type: "checkbox", id: "f-harvestable", checked: init.harvestable ?? true, disabled: !!editing });
+    const stage = h("select", { id: "f-stage", disabled: !!editing });
+    const start = h("input", { type: "date", id: "f-start", value: dateOnly(now()) });
+    const photo = h("input", { type: "file", id: "f-photo", accept: "image/*", capture: "environment" });
+    const note2 = h("textarea", { id: "f-note", rows: 2 });
+    const base = h("input", {
+      type: "number",
+      id: "f-base",
+      step: "any",
+      min: "0.5",
+      inputmode: "decimal",
+      value: init.baseOverride ?? "",
+      placeholder: "ponech pr\xE1zdn\xE9 = automaticky"
+    });
+    const potVol = h("input", { type: "number", id: "f-pot", step: "any", min: "0.1", inputmode: "decimal", value: init.potVolumeL ?? "", placeholder: "nepovinn\xE9" });
+    let substrate = init.substrate ?? "";
+    const subChips = chipGroup([["", S.ui.unspecified], ...SUBSTRATES.map((x) => [x, S.substrate[x]])], substrate, (v) => {
+      substrate = v;
+    });
+    subChips.el.id = "f-substrate";
+    const planned = h("input", { type: "date", id: "f-planned", value: init.plannedHarvestAt ? dateOnly(init.plannedHarvestAt) : "" });
+    const potValue = () => potVol.value === "" ? null : Number(potVol.value);
+    const plannedIso = () => planned.value ? (/* @__PURE__ */ new Date(`${planned.value}T12:00:00`)).toISOString() : null;
+    let stockPreset = init.stockPreset ?? "";
+    const presetChips = chipGroup([["", S.stock.presetDefault], ...Object.values(resolvePresets(ctx.stockCfg)).map((p) => [p.key, p.label])], stockPreset, (v) => {
+      stockPreset = v;
+    });
+    presetChips.el.id = "f-stockpreset";
+    const presetField = field(S.stock.presetPlant, presetChips.el, S.stock.presetPlantHint);
+    const syncPreset = () => {
+      presetField.style.display = harv.checked ? "" : "none";
+    };
+    harv.addEventListener("change", syncPreset);
+    const rememberPreset = async (category, varietyName) => {
+      if (!stockPreset || !varietyName.trim()) return;
+      const key = varietyKey({ category, variety: varietyName });
+      if (ctx.stockCfg.varietyPreset[key] === stockPreset) return;
+      ctx.stockCfg = cleanStock({ ...ctx.stockCfg, varietyPreset: { ...ctx.stockCfg.varietyPreset, [key]: stockPreset } });
+      await metaSet(ctx.db, "stock", ctx.stockCfg);
+    };
+    function fillStages() {
+      if (!st.category) {
+        stage.replaceChildren();
+        return;
+      }
+      const list = getStages(st.category, st.lifecycle);
+      stage.replaceChildren(...list.map((s) => h("option", { value: s }, S.stage[s])));
+    }
+    function setCategory(v) {
+      st.category = v;
+      cat.set(v);
+      st.lifecycle = pre.lifecycle === "perennial" ? "perennial" : CATEGORIES[v].lifecycle;
+      life.set(st.lifecycle);
+      harv.checked = pre.harvestable ?? CATEGORIES[v].harvestable;
+      syncPreset();
+      fillStages();
+    }
+    if (st.category) {
+      if (!st.lifecycle) st.lifecycle = CATEGORIES[st.category].lifecycle;
+      life.set(st.lifecycle);
+    }
+    fillStages();
+    syncPreset();
+    const errBox = h("div", { class: "form-error", id: "form-error", role: "alert" });
+    const save2 = async () => {
+      errBox.textContent = "";
+      try {
+        if (editing) {
+          await updatePlantMeta(ctx.db, id, {
+            name: name.value,
+            variety: variety.value,
+            location: location2.value,
+            source: st.source,
+            groupId: st.groupId || null,
+            baseOverride: base.value === "" ? null : Number(base.value),
+            potVolumeL: potValue(),
+            substrate: substrate || null,
+            plannedHarvestAt: plannedIso(),
+            stockPreset: stockPreset || null
+          });
+          await rememberPreset(editing.category, variety.value);
+          if (st.environment && st.environment !== editing.cache.environment) {
+            if (SEASONAL_ENVIRONMENTS.includes(st.environment)) await askHemisphere();
+            await appendEvents(ctx.db, id, [{ type: "environment_change", payload: { environment: st.environment } }]);
+          }
+          toast("Ulo\u017Eeno");
+          return navigate(`/plant/${id}`);
+        }
+        if (!name.value.trim()) throw new Error(S.err.name);
+        if (!st.category) throw new Error(S.err.category);
+        if (!st.environment) throw new Error(S.err.environment);
+        if (SEASONAL_ENVIRONMENTS.includes(st.environment)) await askHemisphere();
+        const plant = await createPlant(ctx.db, {
+          name: name.value,
+          variety: variety.value,
+          category: st.category,
+          lifecycle: st.lifecycle,
+          environment: st.environment,
+          harvestable: harv.checked,
+          stage: stage.value,
+          location: location2.value,
+          groupId: st.groupId || void 0,
+          source: st.source,
+          startDate: toIso(start.value),
+          baseOverride: base.value === "" ? null : Number(base.value),
+          learnedBase: init.learnedBase || null,
+          potVolumeL: potValue() ?? void 0,
+          substrate: substrate || void 0,
+          plannedHarvestAt: plannedIso() ?? void 0,
+          stockPreset: harv.checked && stockPreset ? stockPreset : void 0
+        });
+        if (harv.checked) await rememberPreset(st.category, variety.value);
+        const extra = [];
+        if (photo.files[0]) {
+          const photoId = await savePhotoFile(ctx.db, plant.id, photo.files[0]);
+          extra.push({ type: "photo", payload: { photoId } });
+        }
+        if (note2.value.trim()) extra.push({ type: "note", payload: { text: note2.value } });
+        if (extra.length) await appendEvents(ctx.db, plant.id, extra);
+        requestPersistence(ctx.db);
+        return navigate(`/plant/${plant.id}`);
+      } catch (e) {
+        errBox.textContent = e.message || S.err.invalid;
+        return void 0;
+      }
+    };
+    const remove = () => {
+      const typed = h("input", { type: "text", id: "f-confirm", placeholder: editing.name });
+      openSheet(S.ui.delete, h(
+        "div",
+        {},
+        h("p", { class: "muted" }, `${S.err.confirmName} Sma\u017Ee se rostlina, jej\xED z\xE1znamy i fotky.`),
+        field(S.ui.name, typed),
+        h(
+          "div",
+          { class: "form-actions" },
+          h("button", { type: "button", class: "btn btn-secondary", onclick: closeSheet }, S.ui.cancel),
+          h("button", { type: "button", class: "btn btn-danger", id: "btn-confirm-delete", onclick: async () => {
+            try {
+              await deletePlantPermanently(ctx.db, id, typed.value);
+              closeSheet();
+              toast("Smaz\xE1no");
+              navigate("/");
+            } catch (e) {
+              toast(e.message);
+            }
+          } }, S.ui.delete)
+        )
+      ));
+    };
+    if (!alive()) return void 0;
+    put(
+      clear(root2),
+      h(
+        "div",
+        { class: "top-bar" },
+        h("button", { type: "button", class: "btn btn-ghost", "aria-label": S.ui.back, onclick: () => navigate(editing ? `/plant/${id}` : "/") }, icon("back")),
+        h("h1", {}, editing ? S.ui.edit : query.clone ? S.ui.clone : S.ui.newPlant),
+        h("span")
+      ),
+      h(
+        "form",
+        { class: "plant-form", onsubmit: (e) => {
+          e.preventDefault();
+          save2();
+        } },
+        field(`${S.ui.name} *`, name),
+        field(S.ui.variety, variety),
+        field(`${S.ui.category} *`, cat.el, editing ? "Kategorii nelze m\u011Bnit." : null),
+        field(S.ui.lifecycle, life.el),
+        field(`${S.ui.environment} *`, env2.el),
+        h("label", { class: "check-row" }, harv, h("span", {}, S.ui.harvestable)),
+        editing ? null : field(S.ui.stageLabel, stage),
+        field(S.ui.location, location2),
+        ctx.groups.length ? field(S.groups.group, grp.el) : null,
+        field(S.ui.sourceLabel, src.el),
+        editing ? null : field(S.ui.startDate, start),
+        field(S.ui.potVolume2, potVol),
+        field(S.ui.substrateLabel, subChips.el),
+        field(S.ui.plannedHarvest, planned),
+        presetField,
+        field(S.ui.baseOverride, base),
+        editing ? null : field(S.ui.photo, photo),
+        editing ? null : field(S.ui.note, note2),
+        datalist("dl-variety", [...new Set(plants.map((p) => p.variety).filter(Boolean))]),
+        datalist("dl-location", [...new Set(plants.map((p) => p.location).filter(Boolean))]),
+        errBox,
+        h(
+          "div",
+          { class: "form-actions" },
+          h("button", { type: "button", class: "btn btn-secondary", onclick: () => navigate(editing ? `/plant/${id}` : "/") }, S.ui.cancel),
+          h("button", { type: "submit", class: "btn btn-primary", id: "btn-save" }, S.ui.save)
+        ),
+        editing ? h("button", { type: "button", class: "btn btn-danger delete-plant", id: "btn-delete", onclick: remove }, icon("trash"), S.ui.delete) : null
+      )
+    );
+    return void 0;
+  }
+
+  // js/ui-tasks.js
+  var T2 = S.tasks;
+  function multiChips(options, selected = []) {
+    const sel = new Set(selected);
+    const el = h("div", { class: "chip-group", role: "group" });
+    for (const [v, label] of options) {
+      const b = h("button", {
+        type: "button",
+        class: `chip${sel.has(v) ? " selected" : ""}`,
+        dataset: { value: v },
+        onclick: () => {
+          if (sel.has(v)) sel.delete(v);
+          else sel.add(v);
+          b.classList.toggle("selected", sel.has(v));
+        }
+      }, label);
+      el.append(b);
+    }
+    return { el, get: () => options.map(([v]) => v).filter((v) => sel.has(v)) };
+  }
+  var describe = (t) => [
+    T2.modes[t.mode],
+    t.mode === "recurring" ? T2.every(t.intervalDays) : null,
+    t.anchor !== "lastDone" ? T2.anchors[t.anchor] : null
+  ].filter(Boolean).join(" \xB7 ");
+  function templateSheet(tpl, done) {
+    const label = h("input", { type: "text", id: "t-label", maxlength: 40, value: tpl?.label || "", placeholder: "nap\u0159. P\u0159esadit" });
+    const ic = chipGroup(TASK_ICONS.map((k) => [k, k]), tpl?.icon || "check");
+    const mode = chipGroup(TASK_MODES.map((k) => [k, T2.modes[k]]), tpl?.mode || "recurring");
+    const interval = h("input", { type: "number", id: "t-interval", min: 1, max: 365, step: 1, inputmode: "numeric", value: tpl?.intervalDays ?? 7 });
+    const anchor = chipGroup(ANCHORS.map((k) => [k, T2.anchors[k]]), tpl?.anchor || "lastDone");
+    const offset = h("input", { type: "number", id: "t-offset", min: 0, max: 365, step: 1, inputmode: "numeric", value: tpl?.offsetDays ?? "" });
+    const cats = multiChips(Object.keys(CATEGORIES).map((k) => [k, S.category[k]]), tpl?.appliesTo?.categories);
+    const stages = multiChips(ALL_STAGES.map((k) => [k, S.stage[k] || k]), tpl?.appliesTo?.stages);
+    const envs = multiChips(ENVIRONMENTS.map((k) => [k, S.environment[k]]), tpl?.appliesTo?.environments);
+    ic.el.id = "t-icon";
+    mode.el.id = "t-mode";
+    anchor.el.id = "t-anchor";
+    openSheet(tpl ? T2.edit : T2.add, h(
+      "div",
+      { class: "stack" },
+      field(T2.label, label),
+      field(T2.mode, mode.el),
+      field(T2.interval, interval),
+      field(T2.anchor, anchor.el),
+      field(T2.offset, offset),
+      field(T2.icon, ic.el),
+      h("div", { class: "section-title flush" }, T2.applies),
+      field(T2.categories, cats.el),
+      field(T2.stages, stages.el),
+      field(T2.environments, envs.el),
+      buttons(async () => {
+        const text2 = label.value.trim();
+        if (!text2) return toast(S.err.name);
+        const iv = Number(interval.value);
+        if (!Number.isInteger(iv) || iv < 1 || iv > 365) return toast(S.err.invalid);
+        const next = {
+          id: tpl?.id ?? newTemplateId(),
+          label: text2,
+          icon: ic.get(),
+          mode: mode.get(),
+          intervalDays: iv,
+          anchor: anchor.get(),
+          ...anchor.get() === "stageStart" && offset.value !== "" ? { offsetDays: Number(offset.value) } : {},
+          appliesTo: { categories: cats.get(), stages: stages.get(), environments: envs.get() }
+        };
+        const list = ctx.taskTemplates.slice();
+        const i = list.findIndex((x) => x.id === next.id);
+        if (i >= 0) list[i] = next;
+        else {
+          if (list.length >= MAX_TEMPLATES) return toast(T2.limit);
+          list.push(next);
+        }
+        await saveTemplates(ctx.db, list);
+        await refreshTemplates();
+        closeSheet();
+        toast(T2.saved);
+        done?.();
+        return void 0;
+      })
+    ));
+  }
+  async function renderTemplates(root2) {
+    const alive = guard();
+    await refreshTemplates();
+    const rerender = () => renderTemplates(root2);
+    if (!alive()) return void 0;
+    put(
+      clear(root2),
+      h(
+        "div",
+        { class: "top-bar" },
+        h("button", { type: "button", class: "btn btn-ghost", "aria-label": S.ui.back, onclick: () => navigate("/settings") }, icon("back")),
+        h("h1", {}, T2.title),
+        h("button", { type: "button", class: "btn btn-ghost", id: "btn-new-template", "aria-label": T2.add, onclick: () => templateSheet(null, rerender) }, icon("plus"))
+      ),
+      h("p", { class: "muted pad-x" }, T2.intro),
+      ctx.taskTemplates.length ? h("div", { class: "variety-list", id: "template-list" }, ctx.taskTemplates.map((t) => h(
+        "div",
+        { class: "card pad template-card", dataset: { template: t.id } },
+        h("div", { class: "variety-head" }, h("strong", {}, t.label), h("button", { type: "button", class: "btn btn-ghost btn-sm", dataset: { act: "edit" }, "aria-label": T2.edit, onclick: () => templateSheet(t, rerender) }, icon("edit"))),
+        h("div", { class: "muted" }, describe(t)),
+        h(
+          "div",
+          { class: "form-actions" },
+          h("button", { type: "button", class: "btn btn-danger btn-sm", dataset: { act: "delete" }, onclick: () => openSheet(T2.delete, h(
+            "div",
+            {},
+            h("p", { class: "muted" }, T2.deleteHint),
+            h(
+              "div",
+              { class: "form-actions" },
+              h("button", { type: "button", class: "btn btn-secondary", onclick: closeSheet }, S.ui.cancel),
+              h("button", { type: "button", class: "btn btn-danger", id: "btn-confirm-delete-template", onclick: async () => {
+                await saveTemplates(ctx.db, ctx.taskTemplates.filter((x) => x.id !== t.id));
+                await refreshTemplates();
+                closeSheet();
+                toast(T2.saved);
+                rerender();
+              } }, T2.delete)
+            )
+          )) }, icon("trash"), T2.delete)
+        )
+      ))) : h("div", { class: "empty-state", id: "no-templates" }, T2.none)
+    );
+    return void 0;
+  }
+  function onceForm() {
+    const label = h("input", { type: "text", id: "once-label", maxlength: 60 });
+    const due = h("input", { type: "date", id: "once-due", value: toLocalInput((/* @__PURE__ */ new Date()).toISOString()).slice(0, 10) });
+    return {
+      el: h("div", { class: "stack" }, field(T2.onceLabel, label), field(T2.onceDue, due)),
+      get: () => ({ label: label.value.trim(), dueAt: (/* @__PURE__ */ new Date(`${due.value}T09:00:00`)).toISOString() })
+    };
+  }
+  function plantTasksSheet(plant, done) {
+    const st = plant.cache.customTasks || {};
+    const stateOf = (id) => st[id]?.state;
+    const act = (t, action, label) => h("button", {
+      type: "button",
+      class: "btn btn-secondary btn-sm",
+      dataset: { act: action, template: t.id },
+      onclick: () => submit(plant.id, [{ type: "task_assign", payload: { templateId: t.id, action } }], `${t.label}: ${label}`, done)
+    }, label);
+    const rows = ctx.taskTemplates.map((t) => {
+      const s = stateOf(t.id);
+      return h(
+        "div",
+        { class: "settings-row task-assign-row", dataset: { template: t.id } },
+        h("span", {}, h("strong", {}, t.label), h("div", { class: "muted" }, `${describe(t)} \xB7 ${T2[s === "active" ? "assigned" : s === "paused" ? "paused" : s === "ended" ? "ended" : "off"]}`)),
+        h(
+          "span",
+          { class: "row-actions" },
+          s !== "active" ? act(t, "enable", T2.enable) : act(t, "pause", T2.pause),
+          s && s !== "ended" ? act(t, "end", T2.end) : null
+        )
+      );
+    });
+    const once = onceForm();
+    openSheet(`${T2.plantTitle} \u2013 ${plant.name}`, h(
+      "div",
+      { class: "stack" },
+      rows.length ? h("div", { id: "plant-templates" }, rows) : h("p", { class: "muted" }, T2.noTemplates),
+      h("button", { type: "button", class: "btn btn-ghost btn-sm", onclick: () => {
+        closeSheet();
+        navigate("/settings/tasks");
+      } }, T2.manage),
+      h("div", { class: "section-title flush" }, T2.once),
+      once.el,
+      h("button", { type: "button", class: "btn btn-primary", id: "btn-add-once", onclick: () => {
+        const v = once.get();
+        if (!v.label) return toast(S.err.invalid);
+        return submit(plant.id, [{ type: "task_once", payload: v }], T2.onceTitle, done);
+      } }, T2.addOnce)
+    ));
+  }
+
+  // js/ui-groups.js
+  var G = S.groups;
+  function bulkSheet(kind, plants, done) {
+    const active = plants.filter((p) => !p.archivedAt);
+    if (!active.length) return toast(G.pickSome);
+    const ids = active.map((p) => p.id);
+    const d = dateField();
+    const title = `${kind === "task" ? S.tasks.bulkTitle : kind === "once" ? S.tasks.bulkOnce : G[kind === "pest" ? "pestOk" : kind] ?? kind} \u2013 ${G.selected(ids.length)}`;
+    const body = h("div", { class: "bulk-sheet", dataset: { kind } });
+    const save2 = (make, msg) => submitBulk(ids, make, msg, done);
+    if (kind === "moisture") {
+      let answer = null, touched = false;
+      const cb = h("input", { type: "checkbox", checked: true });
+      cb.addEventListener("change", () => {
+        touched = true;
+      });
+      const opts = MOISTURE_ANSWERS.map((a) => h("button", {
+        type: "button",
+        class: `moisture-btn ${a}`,
+        dataset: { answer: a },
+        onclick: () => {
+          answer = a;
+          opts.forEach((o) => o.classList.toggle("selected", o.dataset.answer === a));
+          if (!touched) cb.checked = a !== "wet";
+        }
+      }, S.moisture[a]));
+      put(
+        body,
+        h("div", { class: "moisture-row" }, opts),
+        h("label", { class: "check-row" }, cb, h("span", {}, S.ui.watered)),
+        d.el,
+        buttons(() => {
+          if (!answer) return toast(S.err.invalid);
+          const at = d.get(), watered = cb.checked;
+          save2([{ type: "moisture_check", occurredAt: at, payload: { answer, watered } }], `${S.moisture[answer]}${watered ? " \xB7 zalito" : ""}`);
+        })
+      );
+    } else if (kind === "watering") {
+      put(body, d.el, buttons(() => save2([{ type: "watering", occurredAt: d.get(), payload: {} }], "Zalito")));
+    } else if (kind === "fertilizing") {
+      const product = h("input", { type: "text", id: "bulk-product" });
+      put(
+        body,
+        field("Hnojivo (nepovinn\xE9)", product),
+        d.el,
+        buttons(() => save2([{ type: "fertilizing", occurredAt: d.get(), payload: product.value.trim() ? { product: product.value.trim() } : {} }], "P\u0159ihnojeno"))
+      );
+    } else if (kind === "pest") {
+      put(
+        body,
+        h("p", { class: "muted" }, "Zap\xED\u0161e kontrolu bez n\xE1lezu. N\xE1lez nahlas u konkr\xE9tn\xED rostliny."),
+        d.el,
+        buttons(() => save2([{ type: "pest_check", occurredAt: d.get(), payload: { found: false } }], "Kontrola zaps\xE1na"))
+      );
+    } else if (kind === "note") {
+      const text2 = h("textarea", { id: "bulk-note", rows: 3 });
+      put(
+        body,
+        field(S.ui.note, text2),
+        d.el,
+        buttons(() => {
+          if (!text2.value.trim()) return toast(S.err.invalid);
+          return save2([{ type: "note", occurredAt: d.get(), payload: { text: text2.value } }], "Pozn\xE1mka ulo\u017Eena");
+        })
+      );
+    } else if (kind === "task") {
+      if (!ctx.taskTemplates.length) return toast(S.tasks.noTemplates);
+      const tpl = chipGroup(ctx.taskTemplates.map((t) => [t.id, t.label]), ctx.taskTemplates[0].id);
+      const action = chipGroup([["enable", S.tasks.enable], ["pause", S.tasks.pause], ["end", S.tasks.end]], "enable");
+      tpl.el.id = "bulk-template";
+      put(
+        body,
+        field(S.tasks.pickTemplate, tpl.el),
+        field(S.tasks.action, action.el),
+        d.el,
+        buttons(() => {
+          const t = ctx.taskTemplates.find((x) => x.id === tpl.get());
+          const a = action.get(), at = d.get();
+          save2([{ type: "task_assign", occurredAt: at, payload: { templateId: t.id, action: a } }], `${t.label}: ${S.tasks[a]}`);
+        })
+      );
+    } else if (kind === "once") {
+      const f = onceForm();
+      put(body, f.el, buttons(() => {
+        const v = f.get();
+        if (!v.label) return toast(S.err.invalid);
+        return save2([{ type: "task_once", payload: v }], S.tasks.onceTitle);
+      }));
+    } else if (kind === "stage") {
+      const stages = commonStages(active);
+      if (!stages.length) return toast(G.noCommonStage);
+      const chips = chipGroup(stages.map((k) => [k, S.stage[k] || k]), null);
+      put(
+        body,
+        field(S.ui.stageLabel, chips.el),
+        d.el,
+        buttons(() => {
+          const to = chips.get();
+          if (!to) return toast(S.err.invalid);
+          const at = d.get();
+          save2((p) => p.cache.stage === to ? null : [{ type: "stage_change", occurredAt: at, payload: { from: p.cache.stage, to } }], `${S.ui.stageLabel}: ${S.stage[to] || to}`);
+        })
+      );
+    } else if (kind === "env") {
+      const chips = chipGroup(Object.entries(S.environment), null);
+      put(
+        body,
+        field(S.ui.environment, chips.el),
+        d.el,
+        buttons(async () => {
+          const environment = chips.get();
+          if (!environment) return toast(S.err.invalid);
+          if (SEASONAL_ENVIRONMENTS.includes(environment)) await askHemisphere();
+          const at = d.get();
+          save2((p) => p.cache.environment === environment ? null : [{ type: "environment_change", occurredAt: at, payload: { environment } }], `${S.ui.environment}: ${S.environment[environment]}`);
+        })
+      );
+    }
+    return openSheet(title, body);
+  }
+  function groupEditSheet(group, done) {
+    const label = h("input", { type: "text", id: "g-label", maxlength: 40, value: group?.label || "", placeholder: "nap\u0159. Box A" });
+    const kind = chipGroup(GROUP_KINDS.map((k) => [k, G.kinds[k]]), group?.kind || "place");
+    const env2 = chipGroup([["", "\u2014"], ...Object.entries(S.environment)], group?.environment || "");
+    kind.el.id = "g-kind";
+    env2.el.id = "g-env";
+    openSheet(group ? G.rename : G.add, h(
+      "div",
+      {},
+      field(G.label, label),
+      field(G.kind, kind.el),
+      field(G.defaultEnv, env2.el),
+      buttons(async () => {
+        const text2 = label.value.trim();
+        if (!text2) return toast(S.err.name);
+        const list = ctx.groups.slice();
+        if (group) {
+          const i = list.findIndex((g) => g.id === group.id);
+          list[i] = { id: group.id, label: text2, kind: kind.get(), ...env2.get() ? { environment: env2.get() } : {} };
+        } else {
+          if (list.length >= MAX_GROUPS) return toast(G.limit);
+          list.push({ id: newGroupId(), label: text2, kind: kind.get(), ...env2.get() ? { environment: env2.get() } : {} });
+        }
+        await saveGroups(ctx.db, list);
+        await refreshGroups();
+        closeSheet();
+        toast(group ? G.saved : G.created);
+        done?.(group ? group.id : list.at(-1).id);
+      })
+    ));
+  }
+  async function renderGroups(root2) {
+    const alive = guard();
+    const { plants, byPlant } = await loadAll();
+    await refreshGroups();
+    const groups = ctx.groups;
+    const rerender = () => renderGroups(root2);
+    const proposals = groupsFromLocations(plants.filter((p) => !p.archivedAt), groups);
+    const cmp2 = compareAcrossGroups(plants, byPlant, groups);
+    if (!alive()) return void 0;
+    put(
+      clear(root2),
+      h(
+        "div",
+        { class: "top-bar" },
+        h("button", { type: "button", class: "btn btn-ghost", "aria-label": S.ui.back, onclick: () => navigate("/") }, icon("back")),
+        h("h1", {}, G.title),
+        h("button", { type: "button", class: "btn btn-ghost", id: "btn-new-group", "aria-label": G.add, onclick: () => groupEditSheet(null, (id) => navigate(`/group/${id}`)) }, icon("plus"))
+      ),
+      h("p", { class: "muted pad-x" }, G.intro),
+      groups.length ? h("div", { class: "variety-list", id: "group-list" }, groups.map((g) => {
+        const m2 = membersOf(plants, g.id);
+        const act = m2.filter((p) => !p.archivedAt).length;
+        return h(
+          "button",
+          { type: "button", class: "card variety-card group-card", dataset: { group: g.id }, onclick: () => navigate(`/group/${g.id}`) },
+          h("div", { class: "variety-head" }, h("strong", {}, g.label), h("span", { class: "tag" }, G.kinds[g.kind])),
+          h("div", { class: "muted" }, [`${act} ${plantsWord(act)}`, m2.length > act ? `${m2.length - act} archivov\xE1no` : null, g.environment ? S.environment[g.environment] : null].filter(Boolean).join(" \xB7 "))
+        );
+      })) : h("div", { class: "empty-state", id: "no-groups" }, G.none),
+      proposals.length ? h(
+        "div",
+        { class: "card pad", id: "group-proposals", style: "margin:0 16px 12px" },
+        h("h3", {}, G.fromPlaces),
+        h("p", { class: "muted" }, G.fromPlacesHint),
+        proposals.map((pr) => h(
+          "div",
+          { class: "settings-row" },
+          h("span", {}, `${pr.label} (${pr.plantIds.length})`),
+          h("button", { type: "button", class: "btn btn-secondary btn-sm", dataset: { act: "from-place" }, onclick: async () => {
+            if (ctx.groups.length >= MAX_GROUPS) return toast(G.limit);
+            const id = newGroupId();
+            await saveGroups(ctx.db, [...ctx.groups, { id, label: pr.label, kind: "place" }]);
+            await refreshGroups();
+            await assignGroup(ctx.db, pr.plantIds, id);
+            toast(G.created);
+            rerender();
+          } }, G.add)
+        ))
+      ) : null,
+      cmp2.length ? h(
+        "section",
+        { id: "group-compare" },
+        h("div", { class: "section-title" }, G.compare),
+        h("p", { class: "muted pad-x" }, G.compareHint),
+        cmp2.map((c) => h(
+          "div",
+          { class: "card pad", style: "margin:0 16px 10px" },
+          h("h3", {}, c.label),
+          c.rows.map((r) => h(
+            "div",
+            { class: "settings-row" },
+            h("span", {}, `${r.group.label} (${r.n})`),
+            h("strong", {}, [r.yieldPerPlant != null ? `${num3(r.yieldPerPlant, 1)}` : null, r.avgOverall != null ? `${num3(r.avgOverall)} \u2605` : null].filter(Boolean).join(" \xB7 ") || "\u2014")
+          ))
+        ))
+      ) : null
+    );
+    return void 0;
+  }
+  async function renderGroup(root2, id) {
+    const alive = guard();
+    const { plants, byPlant } = await loadAll();
+    await refreshGroups();
+    const group = ctx.groups.find((g) => g.id === id);
+    if (!group) return navigate("/groups");
+    const members = membersOf(plants, id).sort((a, b) => a.name < b.name ? -1 : 1);
+    const rerender = () => renderGroup(root2, id);
+    const checks = /* @__PURE__ */ new Map();
+    const counter = h("span", { class: "muted", id: "sel-count" });
+    const selected = () => members.filter((p) => checks.get(p.id)?.checked);
+    const upd = () => {
+      counter.textContent = G.selected(selected().filter((p) => !p.archivedAt).length);
+    };
+    const rows = members.map((p) => {
+      const cb = h("input", { type: "checkbox", checked: !p.archivedAt, disabled: !!p.archivedAt, dataset: { plant: p.id } });
+      cb.addEventListener("change", upd);
+      checks.set(p.id, cb);
+      return h(
+        "div",
+        { class: "item-row group-member", dataset: { plant: p.id } },
+        h("label", { class: "check-row", style: "margin:0" }, cb),
+        h(
+          "div",
+          { class: "item-info", role: "button", tabindex: 0, onclick: () => navigate(`/plant/${p.id}`) },
+          h("div", { class: "item-name" }, p.name),
+          h("div", { class: "item-detail" }, h("span", { class: "item-sub" }, [p.variety, S.stage[p.cache.stage] || p.cache.stage, p.archivedAt ? S.ui.archived : null].filter(Boolean).join(" \xB7 ")))
+        )
+      );
+    });
+    const setAll = (v) => {
+      for (const p of members) if (!p.archivedAt) checks.get(p.id).checked = v;
+      upd();
+    };
+    const act = (kind, label, ic) => h("button", {
+      type: "button",
+      class: "btn btn-secondary btn-sm",
+      dataset: { bulk: kind },
+      onclick: () => bulkSheet(kind, selected(), rerender)
+    }, icon(ic), label);
+    const stats = groupStats(members, byPlant);
+    const others = plants.filter((p) => p.groupId !== id && !p.archivedAt);
+    const addMembers = () => {
+      const boxes = others.map((p) => ({ p, cb: h("input", { type: "checkbox", dataset: { plant: p.id } }) }));
+      openSheet(G.addMembers, h(
+        "div",
+        {},
+        boxes.length ? boxes.map(({ p, cb }) => h("label", { class: "check-row" }, cb, h("span", {}, `${p.name}${p.groupId ? ` (${ctx.groups.find((g) => g.id === p.groupId)?.label ?? ""})` : ""}`))) : h("p", { class: "muted" }, G.noMembers),
+        buttons(async () => {
+          const pick2 = boxes.filter((b) => b.cb.checked).map((b) => b.p.id);
+          if (pick2.length) await assignGroup(ctx.db, pick2, id);
+          closeSheet();
+          rerender();
+        })
+      ));
+    };
+    const removeSel = async () => {
+      const pick2 = selected().map((p) => p.id);
+      if (!pick2.length) return toast(G.pickSome);
+      await assignGroup(ctx.db, pick2, null);
+      toast(G.saved);
+      rerender();
+    };
+    const del = () => openSheet(G.delete, h(
+      "div",
+      {},
+      h("p", { class: "muted" }, G.deleteHint),
+      h(
+        "div",
+        { class: "form-actions" },
+        h("button", { type: "button", class: "btn btn-secondary", onclick: closeSheet }, S.ui.cancel),
+        h("button", { type: "button", class: "btn btn-danger", id: "btn-confirm-delete-group", onclick: async () => {
+          await saveGroups(ctx.db, ctx.groups.filter((g) => g.id !== id));
+          await refreshGroups();
+          closeSheet();
+          toast(G.saved);
+          navigate("/groups");
+        } }, G.delete)
+      )
+    ));
+    if (!alive()) return void 0;
+    upd();
+    put(
+      clear(root2),
+      h(
+        "div",
+        { class: "top-bar" },
+        h("button", { type: "button", class: "btn btn-ghost", "aria-label": S.ui.back, onclick: () => navigate("/groups") }, icon("back")),
+        h("h1", { id: "group-title" }, group.label),
+        h("button", { type: "button", class: "btn btn-ghost", id: "btn-edit-group", "aria-label": G.rename, onclick: () => groupEditSheet(group, rerender) }, icon("edit"))
+      ),
+      h("div", { class: "plant-tags pad-x" }, h("span", { class: "tag" }, G.kinds[group.kind]), group.environment ? h("span", { class: "tag" }, S.environment[group.environment]) : null),
+      h("div", { class: "section-title section-title-row" }, h("span", {}, G.members), counter),
+      h(
+        "div",
+        { class: "pad-x", style: "display:flex;gap:8px;margin-bottom:8px" },
+        h("button", { type: "button", class: "btn btn-ghost btn-sm", id: "sel-all", onclick: () => setAll(true) }, G.selectAll),
+        h("button", { type: "button", class: "btn btn-ghost btn-sm", id: "sel-none", onclick: () => setAll(false) }, G.selectNone)
+      ),
+      rows.length ? h("div", { class: "card task-list", id: "group-members" }, rows) : h("div", { class: "empty-state" }, G.noMembers),
+      h("div", { class: "section-title" }, G.bulk),
+      h("p", { class: "muted pad-x" }, `${G.bulkHint} ${G.activeOnly}`),
+      h(
+        "div",
+        { class: "bulk-actions pad-x", id: "bulk-actions" },
+        act("moisture", G.moisture, "drop"),
+        act("watering", G.water, "drop"),
+        act("fertilizing", G.fertilize, "leaf"),
+        act("pest", G.pestOk, "bug"),
+        act("note", G.note, "note"),
+        act("stage", G.stage, "stage"),
+        act("env", G.env, "swap"),
+        act("task", S.tasks.title, "checklist"),
+        act("once", S.tasks.once, "flag")
+      ),
+      h(
+        "div",
+        { class: "pad-x", style: "display:flex;gap:8px;margin:12px 0" },
+        h("button", { type: "button", class: "btn btn-secondary btn-sm", id: "btn-add-members", onclick: addMembers }, icon("plus"), G.addMembers),
+        h("button", { type: "button", class: "btn btn-secondary btn-sm", id: "btn-remove-members", onclick: removeSel }, G.removeFrom)
+      ),
+      members.length ? h(
+        "section",
+        { id: "group-stats" },
+        h("div", { class: "section-title" }, G.stats),
+        stats.varieties.map((v) => h(
+          "div",
+          { class: "card pad", style: "margin:0 16px 10px" },
+          h("div", { class: "variety-head" }, h("strong", {}, v.label), h("span", { class: "tag" }, `${v.plantCount} ${plantsWord(v.plantCount)}`)),
+          h("div", { class: "settings-row" }, h("span", {}, G.avgYield), h("strong", {}, v.yieldPerPlant != null ? num3(v.yieldPerPlant, 1) : "\u2014")),
+          h("div", { class: "settings-row" }, h("span", {}, G.rated), h("strong", {}, v.avgOverall != null ? `${num3(v.avgOverall)} \u2605` : "\u2014")),
+          metricRows(varietyMetrics(v, byPlant, (/* @__PURE__ */ new Date()).toISOString()).aggregates)
+        ))
+      ) : null,
+      h("button", { type: "button", class: "btn btn-danger delete-plant", id: "btn-delete-group", onclick: del }, icon("trash"), G.delete)
+    );
+    return void 0;
+  }
+
   // js/ui-stock.js
-  var T = S.stock;
+  var T3 = S.stock;
   var DIGITS = { g: 1, kg: 2, ks: 0 };
   var fmtAmt = (a, unit) => `${num3(a, DIGITS[unit] ?? 1)} ${unit}`;
   var env = () => ({ cfg: ctx.stockCfg, rules: ctx.rules, priors: ctx.priors });
   var methodChips = (value, onChange) => chipGroup(Object.values(resolveMethods(ctx.stockCfg)).map((m2) => [m2.key, m2.label]), value, onChange);
-  var methodLabel = (key) => resolveMethods(ctx.stockCfg)[key]?.label ?? T.method.other;
+  var methodLabel = (key) => resolveMethods(ctx.stockCfg)[key]?.label ?? T3.method.other;
   var qClass = (pct2) => pct2 >= 70 ? "q-ok" : pct2 >= 40 ? "q-mid" : "q-low";
   var tabRequest = { id: null, tab: null };
   var stockEligible = (b) => !b.legacy && !b.stock && !["pending", "drying"].includes(b.phase) && !BATCH_ENDED.includes(b.phase);
@@ -4326,13 +6205,13 @@
     const preset = presetFor(plant, ctx.stockCfg);
     const rows = [];
     const list = h("div", { class: "stack", id: "stock-rows" });
-    const addBtn = h("button", { type: "button", class: "btn btn-secondary btn-sm", id: "btn-add-container", onclick: () => addRow(null) }, icon("plus"), T.addContainer);
+    const addBtn = h("button", { type: "button", class: "btn btn-secondary btn-sm", id: "btn-add-container", onclick: () => addRow(null) }, icon("plus"), T3.addContainer);
     function addRow(amount) {
-      if (rows.length >= MAX_CONTAINERS) return toast(T.tooMany);
+      if (rows.length >= MAX_CONTAINERS) return toast(T3.tooMany);
       const amt = h("input", { type: "number", step: "any", min: "0", inputmode: "decimal", class: "stock-amount", value: amount ?? "" });
       const method = methodChips(preset.method);
-      const label = h("input", { type: "text", maxlength: 40, placeholder: T.labelPh });
-      const rm = h("button", { type: "button", class: "btn btn-ghost btn-sm", "aria-label": T.removeContainer, onclick: () => {
+      const label = h("input", { type: "text", maxlength: 40, placeholder: T3.labelPh });
+      const rm = h("button", { type: "button", class: "btn btn-ghost btn-sm", "aria-label": T3.removeContainer, onclick: () => {
         rows.splice(rows.indexOf(row2), 1);
         row2.el.remove();
         renumber();
@@ -4342,9 +6221,9 @@
         "div",
         { class: "card pad stock-row" },
         h("div", { class: "stock-row-head" }, title, rm),
-        field(T.amount, amt),
-        field(T.storedIn, method.el),
-        field(T.label, label)
+        field(T3.amount, amt),
+        field(T3.storedIn, method.el),
+        field(T3.label, label)
       ) };
       rows.push(row2);
       list.append(row2.el);
@@ -4352,7 +6231,7 @@
     }
     function renumber() {
       rows.forEach((r, i) => {
-        r.title.textContent = T.containerN(i + 1);
+        r.title.textContent = T3.containerN(i + 1);
         r.rm.style.display = rows.length > 1 ? "" : "none";
       });
       addBtn.disabled = rows.length >= MAX_CONTAINERS;
@@ -4369,21 +6248,21 @@
     unitChips.el.id = "stock-unit";
     const est = h("input", { type: "checkbox", id: "stock-estimate", checked: sug.basis === "default" || sug.basis === "none" });
     const d = dateField();
-    const hint = sug.basis === "learned" ? T.suggest.learned(num3(sug.ratio, 2)) : T.suggest[sug.basis];
-    openSheet(`${T.initTitle} \u2013 ${plant.name}`, h(
+    const hint = sug.basis === "learned" ? T3.suggest.learned(num3(sug.ratio, 2)) : T3.suggest[sug.basis];
+    openSheet(`${T3.initTitle} \u2013 ${plant.name}`, h(
       "div",
       {},
-      h("p", { class: "muted" }, `${batchLabel(batch)} \xB7 ${T.initHint}`),
+      h("p", { class: "muted" }, `${batchLabel(batch)} \xB7 ${T3.initHint}`),
       h("div", { class: "field-hint", id: "stock-suggest" }, hint),
-      field(T.unit, unitChips.el),
+      field(T3.unit, unitChips.el),
       list,
       addBtn,
-      h("label", { class: "check-row" }, est, h("span", {}, T.estimate)),
+      h("label", { class: "check-row" }, est, h("span", {}, T3.estimate)),
       d.el,
       buttons(() => {
         const containers = rows.map((r) => ({ id: uid(), amount: Number(r.amt.value), method: r.method.get(), ...r.label.value.trim() ? { label: r.label.value.trim() } : {} }));
-        if (containers.some((c) => !(c.amount > 0))) return toast(T.needAmount);
-        submit(plant.id, [{ type: "stock_init", occurredAt: d.get(), payload: { batchId: batch.id, unit, containers, source: est.checked ? "estimate" : "weighed" } }], T.saved, done);
+        if (containers.some((c) => !(c.amount > 0))) return toast(T3.needAmount);
+        submit(plant.id, [{ type: "stock_init", occurredAt: d.get(), payload: { batchId: batch.id, unit, containers, source: est.checked ? "estimate" : "weighed" } }], T3.saved, done);
       })
     ));
   }
@@ -4393,125 +6272,125 @@
     const d = dateField();
     const first = !batch.stock.uses.length && !batch.evals.some((e) => e.kind === "tasting");
     const use = async (amount) => {
-      if (!(amount > 0)) return toast(T.needAmount);
+      if (!(amount > 0)) return toast(T3.needAmount);
       const amt = Math.min(amount, k.amount);
       const ok = await submit(
         plant.id,
         [{ type: "stock_use", occurredAt: d.get(), payload: { batchId: batch.id, stockId: batch.stock.id, containerId: k.id, amount: amt } }],
-        amt >= k.amount - 1e-9 ? T.usedAll : T.used,
+        amt >= k.amount - 1e-9 ? T3.usedAll : T3.used,
         done
       );
       if (ok && first && plant.harvestable) tastePrompt(plant, batch, done);
     };
     const custom = h("input", { type: "number", step: "any", min: "0", inputmode: "decimal", id: "use-custom" });
     const quick = (QUICK[unit] || []).filter((a) => a < k.amount - 1e-9);
-    openSheet(`${T.useTitle} \u2013 ${plant.name}`, h(
+    openSheet(`${T3.useTitle} \u2013 ${plant.name}`, h(
       "div",
       { class: "stack" },
-      h("p", { class: "muted" }, `${k.label || methodLabel(k.method)} \xB7 ${T.left} ${fmtAmt(k.amount, unit)}`),
+      h("p", { class: "muted" }, `${k.label || methodLabel(k.method)} \xB7 ${T3.left} ${fmtAmt(k.amount, unit)}`),
       h(
         "div",
         { class: "quick-row" },
         quick.map((a) => h("button", { type: "button", class: "btn btn-secondary", dataset: { amount: a }, onclick: () => use(a) }, fmtAmt(a, unit))),
-        h("button", { type: "button", class: "btn btn-secondary", id: "btn-use-all", onclick: () => use(k.amount) }, T.useAll)
+        h("button", { type: "button", class: "btn btn-secondary", id: "btn-use-all", onclick: () => use(k.amount) }, T3.useAll)
       ),
-      field(T.useCustom, custom),
+      field(T3.useCustom, custom),
       d.el,
       h(
         "div",
         { class: "form-actions" },
         h("button", { type: "button", class: "btn btn-secondary", onclick: closeSheet }, S.ui.cancel),
-        h("button", { type: "button", class: "btn btn-primary", id: "btn-use-custom", onclick: () => use(Number(custom.value)) }, T.use)
+        h("button", { type: "button", class: "btn btn-primary", id: "btn-use-custom", onclick: () => use(Number(custom.value)) }, T3.use)
       )
     ));
   }
   function tastePrompt(plant, batch, done) {
-    openSheet(T.firstUse, h(
+    openSheet(T3.firstUse, h(
       "div",
       { class: "stack" },
-      h("p", { class: "muted" }, T.tasteAsk),
+      h("p", { class: "muted" }, T3.tasteAsk),
       h("button", { type: "button", class: "btn btn-primary", id: "btn-taste-now", onclick: () => {
         closeSheet();
         evaluationSheet(plant, done, { kind: "tasting", batchId: batch.id });
-      } }, T.tasteNow),
-      h("button", { type: "button", class: "btn btn-secondary", onclick: closeSheet }, T.tasteSkip)
+      } }, T3.tasteNow),
+      h("button", { type: "button", class: "btn btn-secondary", onclick: closeSheet }, T3.tasteSkip)
     ));
   }
   function stockAdjustSheet(plant, batch, k, done) {
     const unit = batch.stock.unit;
     const rem = h("input", { type: "number", step: "any", min: "0", inputmode: "decimal", id: "adjust-remaining", value: k.amount });
     const d = dateField();
-    openSheet(`${T.adjustTitle} \u2013 ${plant.name}`, h(
+    openSheet(`${T3.adjustTitle} \u2013 ${plant.name}`, h(
       "div",
       {},
-      h("p", { class: "muted" }, `${k.label || methodLabel(k.method)} \xB7 ${T.adjustHint}`),
-      field(`${T.left} (${unit})`, rem),
+      h("p", { class: "muted" }, `${k.label || methodLabel(k.method)} \xB7 ${T3.adjustHint}`),
+      field(`${T3.left} (${unit})`, rem),
       d.el,
       buttons(() => {
         const v = Number(rem.value);
-        if (rem.value === "" || !(v >= 0)) return toast(T.needAmount);
-        submit(plant.id, [{ type: "stock_adjust", occurredAt: d.get(), payload: { batchId: batch.id, stockId: batch.stock.id, containerId: k.id, remaining: v } }], T.adjusted, done);
+        if (rem.value === "" || !(v >= 0)) return toast(T3.needAmount);
+        submit(plant.id, [{ type: "stock_adjust", occurredAt: d.get(), payload: { batchId: batch.id, stockId: batch.stock.id, containerId: k.id, remaining: v } }], T3.adjusted, done);
       })
     ));
   }
   function stockMoveSheet(plant, batch, k, done) {
     const unit = batch.stock.unit;
     let scope = "whole";
-    const scopeChips = chipGroup([["whole", T.moveWhole], ["part", T.movePart]], scope, (v) => {
+    const scopeChips = chipGroup([["whole", T3.moveWhole], ["part", T3.movePart]], scope, (v) => {
       scope = v;
       amtField.style.display = v === "part" ? "" : "none";
     });
     scopeChips.el.id = "move-scope";
     const amt = h("input", { type: "number", step: "any", min: "0", inputmode: "decimal", id: "move-amount", value: Math.round(k.amount / 2 * 1e3) / 1e3 });
-    const amtField = field(`${T.moveAmount} (${unit})`, amt);
+    const amtField = field(`${T3.moveAmount} (${unit})`, amt);
     amtField.style.display = "none";
     const method = methodChips(k.method);
     method.el.id = "move-method";
-    const label = h("input", { type: "text", maxlength: 40, placeholder: T.labelPh });
+    const label = h("input", { type: "text", maxlength: 40, placeholder: T3.labelPh });
     const d = dateField();
-    openSheet(`${T.moveTitle} \u2013 ${plant.name}`, h(
+    openSheet(`${T3.moveTitle} \u2013 ${plant.name}`, h(
       "div",
       {},
-      h("p", { class: "muted" }, `${k.label || methodLabel(k.method)} \xB7 ${T.left} ${fmtAmt(k.amount, unit)}`),
-      field(T.scope, scopeChips.el),
+      h("p", { class: "muted" }, `${k.label || methodLabel(k.method)} \xB7 ${T3.left} ${fmtAmt(k.amount, unit)}`),
+      field(T3.scope, scopeChips.el),
       amtField,
-      field(T.moveTo, method.el),
-      field(T.label, label),
+      field(T3.moveTo, method.el),
+      field(T3.label, label),
       d.el,
       buttons(() => {
         const payload = { batchId: batch.id, stockId: batch.stock.id, containerId: k.id, method: method.get() };
         const v = Number(amt.value);
         const partial = scope === "part" && v > 0 && v < k.amount - 1e-9;
-        if (scope === "part" && !(v > 0)) return toast(T.needAmount);
-        if (!partial && payload.method === k.method) return toast(T.moveNeed);
+        if (scope === "part" && !(v > 0)) return toast(T3.needAmount);
+        if (!partial && payload.method === k.method) return toast(T3.moveNeed);
         if (partial) {
           payload.amount = v;
           payload.newContainerId = uid();
         }
         if (label.value.trim()) payload.label = label.value.trim();
-        submit(plant.id, [{ type: "stock_move", occurredAt: d.get(), payload }], T.moved, done);
+        submit(plant.id, [{ type: "stock_move", occurredAt: d.get(), payload }], T3.moved, done);
       })
     ));
   }
   function stockCheckSheet(plant, batch, k, done) {
     const m2 = resolveMethods(ctx.stockCfg)[k.method];
     const scent = starPicker(0), look = starPicker(0);
-    const mold = chipGroup([["no", T.moldNo], ["yes", T.moldYes]], "no");
+    const mold = chipGroup([["no", T3.moldNo], ["yes", T3.moldYes]], "no");
     mold.el.id = "stock-mold";
     const rh = h("input", { type: "number", step: "1", min: "0", max: "100", inputmode: "decimal", id: "stock-rh" });
     const aired = h("input", { type: "checkbox", id: "stock-aired" });
-    const note = h("textarea", { rows: 2 });
+    const note2 = h("textarea", { rows: 2 });
     const d = dateField();
-    openSheet(`${T.checkTitle} \u2013 ${plant.name}`, h(
+    openSheet(`${T3.checkTitle} \u2013 ${plant.name}`, h(
       "div",
       {},
-      h("p", { class: "muted" }, `${k.label || methodLabel(k.method)} \xB7 ${T.checkHint}`),
-      field(T.scent, scent.el),
-      field(T.look, look.el),
-      field(T.mold, mold.el),
-      field(T.rh, rh),
-      m2?.airEveryDays > 0 ? h("label", { class: "check-row" }, aired, h("span", {}, T.aired)) : null,
-      field(S.ui.note, note),
+      h("p", { class: "muted" }, `${k.label || methodLabel(k.method)} \xB7 ${T3.checkHint}`),
+      field(T3.scent, scent.el),
+      field(T3.look, look.el),
+      field(T3.mold, mold.el),
+      field(T3.rh, rh),
+      m2?.airEveryDays > 0 ? h("label", { class: "check-row" }, aired, h("span", {}, T3.aired)) : null,
+      field(S.ui.note, note2),
       d.el,
       buttons(async () => {
         const payload = { batchId: batch.id, stockId: batch.stock.id, containerId: k.id, mold: mold.get() === "yes" };
@@ -4519,35 +6398,35 @@
         if (look.get()) payload.appearance = look.get();
         if (rh.value !== "") payload.rh = Number(rh.value);
         if (aired.checked) payload.aired = true;
-        if (note.value.trim()) payload.note = note.value.trim();
-        const ok = await submit(plant.id, [{ type: "stock_check", occurredAt: d.get(), payload }], T.checked, done);
+        if (note2.value.trim()) payload.note = note2.value.trim();
+        const ok = await submit(plant.id, [{ type: "stock_check", occurredAt: d.get(), payload }], T3.checked, done);
         if (ok && payload.mold) moldPrompt(plant, batch, k, done);
       })
     ));
   }
   function moldPrompt(plant, batch, k, done) {
-    openSheet(T.moldYes, h(
+    openSheet(T3.moldYes, h(
       "div",
       { class: "stack" },
-      h("p", { class: "muted" }, T.moldAsk),
+      h("p", { class: "muted" }, T3.moldAsk),
       h("button", { type: "button", class: "btn btn-danger", id: "btn-mold-discard", onclick: () => {
         closeSheet();
         stockDiscardSheet(plant, batch, k, done, "mold");
-      } }, T.discard),
+      } }, T3.discard),
       h("button", { type: "button", class: "btn btn-secondary", onclick: () => {
         closeSheet();
         done?.();
-      } }, T.moldKeep)
+      } }, T3.moldKeep)
     ));
   }
   function stockDiscardSheet(plant, batch, k, done, reason = "") {
-    const why = h("input", { type: "text", maxlength: 80, id: "discard-reason", value: reason === "mold" ? T.moldYes : "" });
+    const why = h("input", { type: "text", maxlength: 80, id: "discard-reason", value: reason === "mold" ? T3.moldYes : "" });
     const d = dateField();
-    openSheet(`${T.discardTitle} \u2013 ${plant.name}`, h(
+    openSheet(`${T3.discardTitle} \u2013 ${plant.name}`, h(
       "div",
       {},
-      h("p", { class: "muted" }, T.discardAsk(fmtAmt(k.amount, batch.stock.unit))),
-      field(T.reason, why),
+      h("p", { class: "muted" }, T3.discardAsk(fmtAmt(k.amount, batch.stock.unit))),
+      field(T3.reason, why),
       d.el,
       h(
         "div",
@@ -4557,7 +6436,7 @@
           type: "stock_use",
           occurredAt: d.get(),
           payload: { batchId: batch.id, stockId: batch.stock.id, containerId: k.id, amount: k.amount, kind: "discard", ...why.value.trim() ? { reason: why.value.trim() } : {} }
-        }], T.discarded, done) }, T.discard)
+        }], T3.discarded, done) }, T3.discard)
       )
     ));
   }
@@ -4583,33 +6462,33 @@
       case "stockCheck":
         return batch && k ? stockCheckSheet(plant, batch, k, done) : null;
       case "stockAir":
-        return batch && k ? submit(plant.id, [{ type: "stock_check", payload: { batchId: batch.id, stockId: batch.stock.id, containerId: k.id, aired: true } }], T.checked, done) : null;
+        return batch && k ? submit(plant.id, [{ type: "stock_check", payload: { batchId: batch.id, stockId: batch.stock.id, containerId: k.id, aired: true } }], T3.checked, done) : null;
       case "stockUseBy":
         if (!batch || !k) return null;
         return openSheet(`${S.taskLabel.stockUseBy} \u2013 ${plant.name}`, h(
           "div",
           { class: "stack" },
-          h("p", { class: "muted" }, `${k.label || methodLabel(k.method)} \xB7 ${T.useByTask}`),
+          h("p", { class: "muted" }, `${k.label || methodLabel(k.method)} \xB7 ${T3.useByTask}`),
           h("button", { type: "button", class: "btn btn-primary", id: "btn-useby-use", onclick: () => {
             closeSheet();
             stockUseSheet(plant, batch, k, done);
-          } }, T.use),
+          } }, T3.use),
           h("button", { type: "button", class: "btn btn-secondary", id: "btn-useby-check", onclick: () => {
             closeSheet();
             stockCheckSheet(plant, batch, k, done);
-          } }, T.check),
+          } }, T3.check),
           h("button", { type: "button", class: "btn btn-secondary", id: "btn-useby-discard", onclick: () => {
             closeSheet();
             stockDiscardSheet(plant, batch, k, done);
-          } }, T.discard),
+          } }, T3.discard),
           h("button", { type: "button", class: "btn btn-secondary", id: "btn-useby-keep", onclick: () => snooze(3) }, S.ui.stillHave)
         ));
       case "stockLow":
         return openSheet(`${S.taskLabel.stockLow} \u2013 ${plant.name}`, h(
           "div",
           { class: "stack" },
-          h("p", { class: "muted" }, T.lowTask(task.note ?? "?")),
-          h("button", { type: "button", class: "btn btn-primary", id: "btn-low-open", onclick: open }, T.fromTasks),
+          h("p", { class: "muted" }, T3.lowTask(task.note ?? "?")),
+          h("button", { type: "button", class: "btn btn-primary", id: "btn-low-open", onclick: open }, T3.fromTasks),
           h("button", { type: "button", class: "btn btn-secondary", id: "btn-low-snooze", onclick: () => snooze(7) }, S.ui.later)
         ));
       default:
@@ -4620,29 +6499,29 @@
     const plant = await getPlant(ctx.db, plantId);
     const batch = plant?.cache.batches?.find((b) => b.id === batchId);
     if (!plant?.harvestable || !batch || !stockEligible(batch)) return;
-    openSheet(T.init, h(
+    openSheet(T3.init, h(
       "div",
       { class: "stack" },
-      h("p", { class: "muted" }, T.weighPrompt),
+      h("p", { class: "muted" }, T3.weighPrompt),
       h("button", { type: "button", class: "btn btn-primary", id: "btn-weigh-now", onclick: () => {
         closeSheet();
         stockInitSheet(plant, batch, done);
-      } }, T.weighNow),
-      h("button", { type: "button", class: "btn btn-secondary", id: "btn-weigh-later", onclick: closeSheet }, T.weighLater)
+      } }, T3.weighNow),
+      h("button", { type: "button", class: "btn btn-secondary", id: "btn-weigh-later", onclick: closeSheet }, T3.weighLater)
     ));
   }
   setStockOffer(offerStock);
   function stockSummaryNode(ps, nowIso2) {
     const bits = [];
-    if (ps.rate) bits.push(T.rate(fmtAmt(ps.rate.perDay, ps.unit), Math.round(ps.rate.windowDays)));
-    else if (ps.remaining > 0) bits.push(T.noRate);
-    if (ps.runOutDays != null) bits.push(T.runOut(Math.max(1, Math.round(ps.runOutDays)), fmtDate(ps.runOutAt)));
+    if (ps.rate) bits.push(T3.rate(fmtAmt(ps.rate.perDay, ps.unit), Math.round(ps.rate.windowDays)));
+    else if (ps.remaining > 0) bits.push(T3.noRate);
+    if (ps.runOutDays != null) bits.push(T3.runOut(Math.max(1, Math.round(ps.runOutDays)), fmtDate(ps.runOutAt)));
     return h(
       "div",
       { class: "card pad", id: "stock-summary" },
-      h("div", { class: "eval-line" }, h("span", {}, T.summary), h("strong", { id: "stock-total" }, fmtAmt(ps.remaining, ps.unit))),
+      h("div", { class: "eval-line" }, h("span", {}, T3.summary), h("strong", { id: "stock-total" }, fmtAmt(ps.remaining, ps.unit))),
       bits.map((x) => h("div", { class: "muted" }, x)),
-      h("div", { class: "muted" }, `${T.presetLabel}: ${ps.preset.label}`)
+      h("div", { class: "muted" }, `${T3.presetLabel}: ${ps.preset.label}`)
     );
   }
   function containerRow(plant, batch, entry, done) {
@@ -4650,11 +6529,11 @@
     const unit = batch.stock.unit;
     const m2 = state.method;
     const bits = [
-      `${T.left} ${fmtAmt(k.amount, unit)} ${T.of} ${fmtAmt(k.initial, unit)}`,
-      state.maturing ? T.maturing(fmtDate(state.maturingUntil)) : `${T.fresh} ${state.pct} %`,
-      !state.maturing && state.below ? T.belowUseBy : !state.maturing && state.useByAt ? T.useBy(fmtDate(state.useByAt)) : null,
-      k.opens ? T.opened(k.opens) : null,
-      state.ratio.source === "own" ? T.learnedTag(num3(state.ratio.r, 2), state.ratio.n) : state.ratio.source === "prior" ? T.priorTag(num3(state.ratio.r, 2)) : null
+      `${T3.left} ${fmtAmt(k.amount, unit)} ${T3.of} ${fmtAmt(k.initial, unit)}`,
+      state.maturing ? T3.maturing(fmtDate(state.maturingUntil)) : `${T3.fresh} ${state.pct} %`,
+      !state.maturing && state.below ? T3.belowUseBy : !state.maturing && state.useByAt ? T3.useBy(fmtDate(state.useByAt)) : null,
+      k.opens ? T3.opened(k.opens) : null,
+      state.ratio.source === "own" ? T3.learnedTag(num3(state.ratio.r, 2), state.ratio.n) : state.ratio.source === "prior" ? T3.priorTag(num3(state.ratio.r, 2)) : null
     ].filter(Boolean);
     const act = (key, label, fn, cls = "btn-secondary") => h("button", { type: "button", class: `btn ${cls} btn-sm`, dataset: { act: key }, onclick: fn }, label);
     return h(
@@ -4665,17 +6544,17 @@
         { class: "stock-head" },
         h("strong", {}, k.label || m2.label),
         h("span", { class: "tag" }, methodLabel(k.method)),
-        k.moldAt ? h("span", { class: "tag q-low" }, T.moldTag) : null,
+        k.moldAt ? h("span", { class: "tag q-low" }, T3.moldTag) : null,
         state.maturing ? null : h("span", { class: `tag stock-q ${qClass(state.pct)}`, dataset: { q: state.pct } }, `${state.pct} %`)
       ),
       h("div", { class: "stock-bar" }, h("span", { style: `width:${Math.max(2, Math.round(k.amount / Math.max(k.initial, k.amount) * 100))}%` })),
       h("div", { class: "timeline-detail" }, bits.join(" \xB7 ")),
       h("div", { class: "batch-actions" }, [
-        act("use", T.use, () => stockUseSheet(plant, batch, k, done), "btn-primary"),
-        act("adjust", T.adjust, () => stockAdjustSheet(plant, batch, k, done)),
-        act("move", T.move, () => stockMoveSheet(plant, batch, k, done)),
-        act("check", T.check, () => stockCheckSheet(plant, batch, k, done)),
-        act("discard", T.discard, () => stockDiscardSheet(plant, batch, k, done), "btn-ghost")
+        act("use", T3.use, () => stockUseSheet(plant, batch, k, done), "btn-primary"),
+        act("adjust", T3.adjust, () => stockAdjustSheet(plant, batch, k, done)),
+        act("move", T3.move, () => stockMoveSheet(plant, batch, k, done)),
+        act("check", T3.check, () => stockCheckSheet(plant, batch, k, done)),
+        act("discard", T3.discard, () => stockDiscardSheet(plant, batch, k, done), "btn-ghost")
       ])
     );
   }
@@ -4696,11 +6575,11 @@
           "div",
           { class: "eval-line" },
           h("strong", {}, `${fmtDate(batch.harvestedAt)} \xB7 ${S.batchPhase[batch.phase] || batch.phase}`),
-          h("span", { class: "muted" }, `${fmtAmt(entry.remaining, batch.stock.unit)} ${T.of} ${fmtAmt(batch.stock.initial, batch.stock.unit)}`)
+          h("span", { class: "muted" }, `${fmtAmt(entry.remaining, batch.stock.unit)} ${T3.of} ${fmtAmt(batch.stock.initial, batch.stock.unit)}`)
         ),
-        h("div", { class: "muted" }, `${T.source[batch.stock.source]} \xB7 ${T.since} ${fmtDate(batch.stock.at)}`),
+        h("div", { class: "muted" }, `${T3.source[batch.stock.source]} \xB7 ${T3.since} ${fmtDate(batch.stock.at)}`),
         open.map((c) => containerRow(plant, batch, c, done)),
-        closed ? h("div", { class: "muted" }, T.emptied(closed)) : null
+        closed ? h("div", { class: "muted" }, T3.emptied(closed)) : null
       ));
     }
     for (const b of eligible) {
@@ -4714,10 +6593,10 @@
           h("strong", {}, batchLabel(b)),
           sug.amount != null ? h("span", { class: "muted" }, `~${fmtAmt(sug.amount, sug.unit)}`) : null
         ),
-        h("button", { type: "button", class: "btn btn-primary panel-btn", dataset: { act: "init" }, onclick: () => stockInitSheet(plant, b, done) }, icon("plus"), T.init)
+        h("button", { type: "button", class: "btn btn-primary panel-btn", dataset: { act: "init" }, onclick: () => stockInitSheet(plant, b, done) }, icon("plus"), T3.init)
       ));
     }
-    if (!out.length) out.push(h("div", { class: "empty-state", id: "stock-empty" }, T.empty));
+    if (!out.length) out.push(h("div", { class: "empty-state", id: "stock-empty" }, T3.empty));
     return h("div", { id: "stock-panel" }, out);
   }
   var hasStockTab = (plant) => plant.harvestable && (plant.cache.batches || []).some((b) => !b.legacy && (b.stock || b.phase !== "pending"));
@@ -4734,9 +6613,9 @@
         "div",
         { class: "top-bar" },
         h("button", { type: "button", class: "btn btn-ghost", id: "btn-back", "aria-label": S.ui.back, onclick: () => navigate("/") }, icon("back")),
-        h("h2", { class: "page-title" }, T.overview)
+        h("h2", { class: "page-title" }, T3.overview)
       ),
-      h("p", { class: "muted pad" }, T.overviewIntro),
+      h("p", { class: "muted pad" }, T3.overviewIntro),
       rows.length ? h("div", { class: "card task-list", id: "stock-overview" }, rows.map(({ p, ps }) => {
         const worst = ps.batches.flatMap((b) => b.containers).filter((c) => c.state).sort((a, b) => a.state.q - b.state.q)[0];
         return h(
@@ -4755,29 +6634,29 @@
               "span",
               { class: "item-sub" },
               [
-                ps.runOutDays != null ? T.runOut(Math.max(1, Math.round(ps.runOutDays)), fmtDate(ps.runOutAt)) : T.noRate,
-                worst ? `${T.fresh} ${worst.state.pct} %` : null
+                ps.runOutDays != null ? T3.runOut(Math.max(1, Math.round(ps.runOutDays)), fmtDate(ps.runOutAt)) : T3.noRate,
+                worst ? `${T3.fresh} ${worst.state.pct} %` : null
               ].filter(Boolean).join(" \xB7 ")
             ))
           )
         );
-      })) : h("div", { class: "empty-state", id: "stock-none" }, T.none),
-      h("div", { class: "section-title" }, T.comparison),
-      h("p", { class: "muted pad" }, T.comparisonHint),
+      })) : h("div", { class: "empty-state", id: "stock-none" }, T3.none),
+      h("div", { class: "section-title" }, T3.comparison),
+      h("p", { class: "muted pad" }, T3.comparisonHint),
       cmp2.length ? h("div", { class: "card pad", id: "stock-comparison" }, cmp2.map((c) => h(
         "div",
         { class: "eval-line", dataset: { method: c.method } },
         h("span", {}, methodLabel(c.method)),
-        h("span", { class: "muted" }, [T.comparisonRow(c.n, num3(c.avg, 1), c.avgAge), c.lateN ? T.lateAvg(c.lateN, num3(c.lateAvg, 1)) : null].filter(Boolean).join(" \xB7 "))
-      ))) : h("div", { class: "empty-state" }, T.comparisonNone),
-      h("div", { class: "pad" }, h("button", { type: "button", class: "btn btn-secondary panel-btn", id: "btn-stock-settings", onclick: () => navigate("/settings/stock") }, icon("settings"), T.settingsTitle))
+        h("span", { class: "muted" }, [T3.comparisonRow(c.n, num3(c.avg, 1), c.avgAge), c.lateN ? T3.lateAvg(c.lateN, num3(c.lateAvg, 1)) : null].filter(Boolean).join(" \xB7 "))
+      ))) : h("div", { class: "empty-state" }, T3.comparisonNone),
+      h("div", { class: "pad" }, h("button", { type: "button", class: "btn btn-secondary panel-btn", id: "btn-stock-settings", onclick: () => navigate("/settings/stock") }, icon("settings"), T3.settingsTitle))
     );
   }
 
   // js/ui-dashboard.js
-  var filters = { location: "all", environment: "all", category: "all" };
+  var filters = { location: "all", group: "all", environment: "all", category: "all" };
   var upcomingOpen = false;
-  var CAT_ICON = { herb: "leaf", vegetable: "sprout", fruit: "pot", flower: "sun", tree_shrub: "leaf", houseplant: "sprout", other: "pot" };
+  var CAT_ICON = CATEGORY_ICON;
   var DOT = { overdue: "expired", today: "missing", upcoming: "needs_check" };
   function runTask(task, plant, done) {
     const batch = task.batchId ? (plant.cache.batches || []).find((b) => b.id === task.batchId) : null;
@@ -4788,6 +6667,8 @@
         return submit(plant.id, [{ type: "fertilizing", payload: {} }], "P\u0159ihnojeno", done);
       case "pestCheck":
         return submit(plant.id, [{ type: "pest_check", payload: { found: false } }], "Kontrola zaps\xE1na", done);
+      case "custom":
+        return submit(plant.id, [{ type: "task_done", payload: { ref: task.ref } }], `${task.label}: ${S.tasks.done}`, done);
       case "problemFollowUp":
         return followUpSheet(plant, task, done);
       case "batchCheck":
@@ -4862,11 +6743,12 @@
     );
   }
   function matches(p) {
-    return (filters.location === "all" || p.location === filters.location) && (filters.environment === "all" || p.cache.environment === filters.environment) && (filters.category === "all" || p.category === filters.category);
+    return (filters.location === "all" || p.location === filters.location) && (filters.group === "all" || p.groupId === filters.group) && (filters.environment === "all" || p.cache.environment === filters.environment) && (filters.category === "all" || p.category === filters.category);
   }
   function filterBar(active, rerender) {
     const groups = [
       ["location", "M\xEDsto", [...new Set(active.map((p) => p.location).filter(Boolean))].map((v) => [v, v])],
+      ["group", S.groups.filter, ctx.groups.filter((g) => active.some((p) => p.groupId === g.id)).map((g) => [g.id, g.label])],
       ["environment", S.ui.environment, [...new Set(active.map((p) => p.cache.environment))].map((v) => [v, S.environment[v]])],
       ["category", S.ui.category, [...new Set(active.map((p) => p.category))].map((v) => [v, S.category[v]])]
     ].filter(([, , opts]) => opts.length > 1);
@@ -4895,7 +6777,7 @@
       h(
         "div",
         { class: "item-info" },
-        h("div", { class: "item-name" }, `${task.plantName} \u2013 ${S.taskLabel[task.type]}${task.note && task.type.startsWith("stock") && task.type !== "stockLow" ? ` \xB7 ${task.note}` : ""}`),
+        h("div", { class: "item-name" }, `${task.plantName} \u2013 ${taskTitle(task)}${task.note && task.type.startsWith("stock") && task.type !== "stockLow" ? ` \xB7 ${task.note}` : ""}`),
         h("div", { class: "item-detail" }, h("span", { class: "item-sub" }, task.phase ? `${S.batchPhase[task.phase] || task.phase} \xB7 ${when}` : when))
       ),
       h(
@@ -4924,6 +6806,77 @@
       )
     );
   }
+  var CLUSTER_ACTION = {
+    custom: (ids, done, c) => submitBulk(ids, [{ type: "task_done", payload: { ref: c.ref } }], `${c.tasks[0].label}: ${S.tasks.done}`, done),
+    fertilizing: (ids, done) => submitBulk(ids, [{ type: "fertilizing", payload: {} }], "P\u0159ihnojeno", done),
+    pestCheck: (ids, done) => submitBulk(ids, [{ type: "pest_check", payload: { found: false } }], "Kontrola zaps\xE1na", done)
+  };
+  function snoozeClusterSheet(c, done) {
+    const btn2 = (n) => h("button", { type: "button", class: "btn btn-secondary", onclick: async () => {
+      const d = /* @__PURE__ */ new Date();
+      d.setHours(0, 0, 0, 0);
+      d.setDate(d.getDate() + n);
+      await snoozeMany(ctx.db, c.tasks.map((t) => ({ plantId: t.plantId, key: t.snoozeKey })), d.toISOString());
+      closeSheet();
+      toast(`Odlo\u017Eeno do ${relDay(d.toISOString(), now())}`);
+      done?.();
+    } }, n === 1 ? "Na z\xEDtra" : `Na ${n} dny`);
+    openSheet(`${S.groups.snoozeAll} \u2013 ${c.group.label}`, h("div", { class: "stack" }, [1, 2, 3].map(btn2)));
+  }
+  function clusterRow(c, byId, done) {
+    const n = c.tasks.length;
+    const plants = c.tasks.map((t) => byId.get(t.plantId)).filter(Boolean);
+    const body = h("div", { class: "cluster-body", hidden: true }, c.tasks.map((t) => taskRow(t, byId.get(t.plantId), done)));
+    const when = c.urgency === "overdue" ? "Po term\xEDnu" : c.urgency === "today" ? "Dnes" : "Nadch\xE1zej\xEDc\xED";
+    const head = h(
+      "div",
+      {
+        class: "item-row task-row cluster-head",
+        role: "button",
+        tabindex: 0,
+        "aria-expanded": "false",
+        dataset: { cluster: c.group.id, type: c.type },
+        onclick: () => {
+          body.hidden = !body.hidden;
+          head.setAttribute("aria-expanded", String(!body.hidden));
+          head.classList.toggle("open", !body.hidden);
+        }
+      },
+      h("span", { class: `badge-dot ${DOT[c.urgency]}` }),
+      h(
+        "div",
+        { class: "item-info" },
+        h("div", { class: "item-name" }, `${c.group.label} \u2013 ${taskTitle(c.tasks[0])} (${n} ${plantsWord(n)})`),
+        h("div", { class: "item-detail" }, h("span", { class: "item-sub" }, when))
+      ),
+      h(
+        "div",
+        { class: "item-actions qty-stepper" },
+        h("button", {
+          type: "button",
+          class: "btn-quick",
+          "aria-label": S.groups.doAll,
+          dataset: { act: "do-all" },
+          onclick: (e) => {
+            e.stopPropagation();
+            c.type === "moisture" ? bulkSheet("moisture", plants, done) : CLUSTER_ACTION[c.type](plants.map((p) => p.id), done, c);
+          }
+        }, icon("check")),
+        h("button", {
+          type: "button",
+          class: "qty-btn",
+          "aria-label": S.groups.snoozeAll,
+          dataset: { act: "snooze-all" },
+          onclick: (e) => {
+            e.stopPropagation();
+            snoozeClusterSheet(c, done);
+          }
+        }, icon("clock"))
+      )
+    );
+    return h("div", { class: "cluster" }, head, body);
+  }
+  var taskRows = (tasks, byId, done) => clusterTasks(tasks, byId, ctx.groups).map((i) => i.kind === "cluster" ? clusterRow(i, byId, done) : taskRow(i.task, byId.get(i.task.plantId), done));
   async function plantCard(plant, events, nextTask) {
     const cfg = CATEGORIES[plant.category];
     const url = await photoUrl(ctx.db, latestPhotoId(events));
@@ -4938,7 +6891,7 @@
         h("div", { class: "plant-name" }, plant.name),
         h("div", { class: "plant-sub" }, plant.variety || S.category[plant.category]),
         h("div", { class: "plant-tags" }, h("span", { class: "tag" }, stage), h("span", { class: "tag" }, S.environment[plant.cache.environment])),
-        nextTask ? h("div", { class: `plant-next ${nextTask.urgency}` }, `${S.taskLabel[nextTask.type]} \xB7 ${relDay(nextTask.dueAt, now())}`) : null
+        nextTask ? h("div", { class: `plant-next ${nextTask.urgency}` }, `${taskTitle(nextTask)} \xB7 ${relDay(nextTask.dueAt, now())}`) : null
       ),
       cfg ? null : null
     );
@@ -4969,7 +6922,12 @@
         "div",
         { class: "top-bar" },
         h("h1", {}, S.nav.overview),
-        h("button", { type: "button", class: "btn btn-ghost", id: "btn-new", "aria-label": S.ui.newPlant, onclick: () => navigate("/new") }, icon("plus"))
+        h(
+          "div",
+          { class: "top-actions" },
+          h("button", { type: "button", class: "btn btn-ghost", id: "btn-groups", "aria-label": S.groups.open, title: S.groups.open, onclick: () => navigate("/groups") }, icon("groups")),
+          h("button", { type: "button", class: "btn btn-ghost", id: "btn-new", "aria-label": S.ui.newPlant, onclick: () => navigate("/new") }, icon("plus"))
+        )
       ),
       h(
         "section",
@@ -5023,7 +6981,7 @@
           "div",
           { class: "next-action-copy" },
           h("span", {}, S.ui.nextStep),
-          h("strong", {}, `${first.plantName} \u2013 ${S.taskLabel[first.type]}`),
+          h("strong", {}, `${first.plantName} \u2013 ${taskTitle(first)}`),
           h("small", {}, relDay(first.dueAt, nowIso2))
         ),
         h("button", { type: "button", "aria-label": S.ui.done }, icon("chevron"))
@@ -5032,9 +6990,9 @@
     const bar = filterBar(active, rerender);
     if (bar) root2.append(bar);
     root2.append(h("div", { class: "section-title" }, S.ui.needsAttention));
-    root2.append(due.length ? h("div", { class: "card task-list", id: "due-list" }, due.map((t) => taskRow(t, byIdAll.get(t.plantId), rerender))) : h("div", { class: "empty-state", id: "no-due" }, S.ui.noTasks));
+    root2.append(due.length ? h("div", { class: "card task-list", id: "due-list" }, taskRows(due, byIdAll, rerender)) : h("div", { class: "empty-state", id: "no-due" }, S.ui.noTasks));
     if (later.length) {
-      const body = h("div", { class: "card task-list", id: "upcoming-list", hidden: !upcomingOpen }, later.map((t) => taskRow(t, byIdAll.get(t.plantId), rerender)));
+      const body = h("div", { class: "card task-list", id: "upcoming-list", hidden: !upcomingOpen }, taskRows(later, byIdAll, rerender));
       const toggle = h(
         "button",
         {
@@ -5083,10 +7041,10 @@
       h("div", { class: "lbl" }, label)
     );
   }
-  var secRow = (text, sub, path) => h(
+  var secRow = (text2, sub, path) => h(
     "div",
     { class: "item-row profile-row", role: "button", tabindex: 0, onclick: path ? () => navigate(path) : null },
-    h("div", { class: "item-info" }, h("div", { class: "item-name" }, text), sub ? h("div", { class: "item-detail" }, h("span", { class: "item-sub" }, sub)) : null)
+    h("div", { class: "item-info" }, h("div", { class: "item-name" }, text2), sub ? h("div", { class: "item-detail" }, h("span", { class: "item-sub" }, sub)) : null)
   );
   function profileSection(key, active, all, byPlant, nowIso2) {
     if (!all.length) return null;
@@ -5368,273 +7326,6 @@
     onInstallChange(build);
   }
 
-  // js/ui-plant-form.js
-  function askHemisphere() {
-    return hemisphereKnown().then((known) => {
-      if (known) return null;
-      return new Promise((resolve) => {
-        const pick2 = async (v) => {
-          await setHemisphere(v);
-          closeSheet();
-          resolve(v);
-        };
-        openSheet(
-          S.ui.hemisphere,
-          h(
-            "div",
-            { class: "stack" },
-            h("p", { class: "muted" }, "Ro\u010Dn\xED obdob\xED ovliv\u0148uje z\xE1livku venku. Kde p\u011Bstuje\u0161?"),
-            h("button", { type: "button", class: "btn btn-primary", dataset: { hemi: "north" }, onclick: () => pick2("north") }, S.ui.north),
-            h("button", { type: "button", class: "btn btn-secondary", dataset: { hemi: "south" }, onclick: () => pick2("south") }, S.ui.south)
-          ),
-          { onClose: () => resolve(null) }
-        );
-      });
-    });
-  }
-  var datalist = (id, values) => h("datalist", { id }, values.map((v) => h("option", { value: v })));
-  var dateOnly = (iso) => toLocalInput(iso).slice(0, 10);
-  var toIso = (d) => !d || d === dateOnly(now()) ? now() : (/* @__PURE__ */ new Date(`${d}T12:00:00`)).toISOString();
-  async function renderPlantForm(root2, id, query = {}) {
-    const alive = guard();
-    const { plants } = await loadAll();
-    const editing = id ? plants.find((p) => p.id === id) : null;
-    if (id && !editing) return navigate("/");
-    const pre = editing ? {} : PROFILES[ctx.profile]?.preselect || {};
-    const source = editing || (query.clone ? plants.find((p) => p.id === query.clone) : null);
-    const init = editing ? {
-      name: editing.name,
-      variety: editing.variety,
-      category: editing.category,
-      lifecycle: editing.lifecycle,
-      environment: editing.cache.environment,
-      harvestable: editing.harvestable,
-      location: editing.location,
-      source: editing.source,
-      baseOverride: editing.baseOverride,
-      potVolumeL: editing.potVolumeL,
-      substrate: editing.substrate,
-      plannedHarvestAt: editing.plannedHarvestAt,
-      stockPreset: editing.stockPreset
-    } : source ? clonePlantInput(source, plants.map((p) => p.name)) : { category: pre.category ?? null, environment: pre.environment ?? null, lifecycle: pre.lifecycle, harvestable: pre.harvestable, source: "seed" };
-    const [exName, exVariety] = example(ctx.profile, plants.length);
-    const st = { category: init.category, lifecycle: init.lifecycle, environment: init.environment, source: init.source || "seed" };
-    const name = h("input", { type: "text", id: "f-name", value: init.name || "", placeholder: `nap\u0159. ${exName}` });
-    const variety = h("input", { type: "text", id: "f-variety", value: init.variety || "", list: "dl-variety", placeholder: `nap\u0159. ${exVariety}` });
-    const location2 = h("input", { type: "text", id: "f-location", value: init.location || "", list: "dl-location", placeholder: "nap\u0159. balkon" });
-    const cat = chipGroup(Object.entries(S.category), st.category, (v) => {
-      if (editing) return;
-      setCategory(v);
-    });
-    cat.el.id = "f-category";
-    const life = chipGroup(Object.entries(S.lifecycle), st.lifecycle, (v) => {
-      if (editing) return;
-      st.lifecycle = v;
-      fillStages();
-    });
-    const env2 = chipGroup(Object.entries(S.environment), st.environment, (v) => {
-      st.environment = v;
-    });
-    env2.el.id = "f-environment";
-    const src = chipGroup(SOURCES.map((s) => [s, S.source[s]]), st.source, (v) => {
-      st.source = v;
-    });
-    const harv = h("input", { type: "checkbox", id: "f-harvestable", checked: init.harvestable ?? true, disabled: !!editing });
-    const stage = h("select", { id: "f-stage", disabled: !!editing });
-    const start = h("input", { type: "date", id: "f-start", value: dateOnly(now()) });
-    const photo = h("input", { type: "file", id: "f-photo", accept: "image/*", capture: "environment" });
-    const note = h("textarea", { id: "f-note", rows: 2 });
-    const base = h("input", {
-      type: "number",
-      id: "f-base",
-      step: "any",
-      min: "0.5",
-      inputmode: "decimal",
-      value: init.baseOverride ?? "",
-      placeholder: "ponech pr\xE1zdn\xE9 = automaticky"
-    });
-    const potVol = h("input", { type: "number", id: "f-pot", step: "any", min: "0.1", inputmode: "decimal", value: init.potVolumeL ?? "", placeholder: "nepovinn\xE9" });
-    let substrate = init.substrate ?? "";
-    const subChips = chipGroup([["", S.ui.unspecified], ...SUBSTRATES.map((x) => [x, S.substrate[x]])], substrate, (v) => {
-      substrate = v;
-    });
-    subChips.el.id = "f-substrate";
-    const planned = h("input", { type: "date", id: "f-planned", value: init.plannedHarvestAt ? dateOnly(init.plannedHarvestAt) : "" });
-    const potValue = () => potVol.value === "" ? null : Number(potVol.value);
-    const plannedIso = () => planned.value ? (/* @__PURE__ */ new Date(`${planned.value}T12:00:00`)).toISOString() : null;
-    let stockPreset = init.stockPreset ?? "";
-    const presetChips = chipGroup([["", S.stock.presetDefault], ...Object.values(resolvePresets(ctx.stockCfg)).map((p) => [p.key, p.label])], stockPreset, (v) => {
-      stockPreset = v;
-    });
-    presetChips.el.id = "f-stockpreset";
-    const presetField = field(S.stock.presetPlant, presetChips.el, S.stock.presetPlantHint);
-    const syncPreset = () => {
-      presetField.style.display = harv.checked ? "" : "none";
-    };
-    harv.addEventListener("change", syncPreset);
-    const rememberPreset = async (category, varietyName) => {
-      if (!stockPreset || !varietyName.trim()) return;
-      const key = varietyKey({ category, variety: varietyName });
-      if (ctx.stockCfg.varietyPreset[key] === stockPreset) return;
-      ctx.stockCfg = cleanStock({ ...ctx.stockCfg, varietyPreset: { ...ctx.stockCfg.varietyPreset, [key]: stockPreset } });
-      await metaSet(ctx.db, "stock", ctx.stockCfg);
-    };
-    function fillStages() {
-      if (!st.category) {
-        stage.replaceChildren();
-        return;
-      }
-      const list = getStages(st.category, st.lifecycle);
-      stage.replaceChildren(...list.map((s) => h("option", { value: s }, S.stage[s])));
-    }
-    function setCategory(v) {
-      st.category = v;
-      cat.set(v);
-      st.lifecycle = pre.lifecycle === "perennial" ? "perennial" : CATEGORIES[v].lifecycle;
-      life.set(st.lifecycle);
-      harv.checked = pre.harvestable ?? CATEGORIES[v].harvestable;
-      syncPreset();
-      fillStages();
-    }
-    if (st.category) {
-      if (!st.lifecycle) st.lifecycle = CATEGORIES[st.category].lifecycle;
-      life.set(st.lifecycle);
-    }
-    fillStages();
-    syncPreset();
-    const errBox = h("div", { class: "form-error", id: "form-error", role: "alert" });
-    const save2 = async () => {
-      errBox.textContent = "";
-      try {
-        if (editing) {
-          await updatePlantMeta(ctx.db, id, {
-            name: name.value,
-            variety: variety.value,
-            location: location2.value,
-            source: st.source,
-            baseOverride: base.value === "" ? null : Number(base.value),
-            potVolumeL: potValue(),
-            substrate: substrate || null,
-            plannedHarvestAt: plannedIso(),
-            stockPreset: stockPreset || null
-          });
-          await rememberPreset(editing.category, variety.value);
-          if (st.environment && st.environment !== editing.cache.environment) {
-            if (SEASONAL_ENVIRONMENTS.includes(st.environment)) await askHemisphere();
-            await appendEvents(ctx.db, id, [{ type: "environment_change", payload: { environment: st.environment } }]);
-          }
-          toast("Ulo\u017Eeno");
-          return navigate(`/plant/${id}`);
-        }
-        if (!name.value.trim()) throw new Error(S.err.name);
-        if (!st.category) throw new Error(S.err.category);
-        if (!st.environment) throw new Error(S.err.environment);
-        if (SEASONAL_ENVIRONMENTS.includes(st.environment)) await askHemisphere();
-        const plant = await createPlant(ctx.db, {
-          name: name.value,
-          variety: variety.value,
-          category: st.category,
-          lifecycle: st.lifecycle,
-          environment: st.environment,
-          harvestable: harv.checked,
-          stage: stage.value,
-          location: location2.value,
-          source: st.source,
-          startDate: toIso(start.value),
-          baseOverride: base.value === "" ? null : Number(base.value),
-          learnedBase: init.learnedBase || null,
-          potVolumeL: potValue() ?? void 0,
-          substrate: substrate || void 0,
-          plannedHarvestAt: plannedIso() ?? void 0,
-          stockPreset: harv.checked && stockPreset ? stockPreset : void 0
-        });
-        if (harv.checked) await rememberPreset(st.category, variety.value);
-        const extra = [];
-        if (photo.files[0]) {
-          const photoId = await savePhotoFile(ctx.db, plant.id, photo.files[0]);
-          extra.push({ type: "photo", payload: { photoId } });
-        }
-        if (note.value.trim()) extra.push({ type: "note", payload: { text: note.value } });
-        if (extra.length) await appendEvents(ctx.db, plant.id, extra);
-        requestPersistence(ctx.db);
-        return navigate(`/plant/${plant.id}`);
-      } catch (e) {
-        errBox.textContent = e.message || S.err.invalid;
-        return void 0;
-      }
-    };
-    const remove = () => {
-      const typed = h("input", { type: "text", id: "f-confirm", placeholder: editing.name });
-      openSheet(S.ui.delete, h(
-        "div",
-        {},
-        h("p", { class: "muted" }, `${S.err.confirmName} Sma\u017Ee se rostlina, jej\xED z\xE1znamy i fotky.`),
-        field(S.ui.name, typed),
-        h(
-          "div",
-          { class: "form-actions" },
-          h("button", { type: "button", class: "btn btn-secondary", onclick: closeSheet }, S.ui.cancel),
-          h("button", { type: "button", class: "btn btn-danger", id: "btn-confirm-delete", onclick: async () => {
-            try {
-              await deletePlantPermanently(ctx.db, id, typed.value);
-              closeSheet();
-              toast("Smaz\xE1no");
-              navigate("/");
-            } catch (e) {
-              toast(e.message);
-            }
-          } }, S.ui.delete)
-        )
-      ));
-    };
-    if (!alive()) return void 0;
-    put(
-      clear(root2),
-      h(
-        "div",
-        { class: "top-bar" },
-        h("button", { type: "button", class: "btn btn-ghost", "aria-label": S.ui.back, onclick: () => navigate(editing ? `/plant/${id}` : "/") }, icon("back")),
-        h("h1", {}, editing ? S.ui.edit : query.clone ? S.ui.clone : S.ui.newPlant),
-        h("span")
-      ),
-      h(
-        "form",
-        { class: "plant-form", onsubmit: (e) => {
-          e.preventDefault();
-          save2();
-        } },
-        field(`${S.ui.name} *`, name),
-        field(S.ui.variety, variety),
-        field(`${S.ui.category} *`, cat.el, editing ? "Kategorii nelze m\u011Bnit." : null),
-        field(S.ui.lifecycle, life.el),
-        field(`${S.ui.environment} *`, env2.el),
-        h("label", { class: "check-row" }, harv, h("span", {}, S.ui.harvestable)),
-        editing ? null : field(S.ui.stageLabel, stage),
-        field(S.ui.location, location2),
-        field(S.ui.sourceLabel, src.el),
-        editing ? null : field(S.ui.startDate, start),
-        field(S.ui.potVolume2, potVol),
-        field(S.ui.substrateLabel, subChips.el),
-        field(S.ui.plannedHarvest, planned),
-        presetField,
-        field(S.ui.baseOverride, base),
-        editing ? null : field(S.ui.photo, photo),
-        editing ? null : field(S.ui.note, note),
-        datalist("dl-variety", [...new Set(plants.map((p) => p.variety).filter(Boolean))]),
-        datalist("dl-location", [...new Set(plants.map((p) => p.location).filter(Boolean))]),
-        errBox,
-        h(
-          "div",
-          { class: "form-actions" },
-          h("button", { type: "button", class: "btn btn-secondary", onclick: () => navigate(editing ? `/plant/${id}` : "/") }, S.ui.cancel),
-          h("button", { type: "submit", class: "btn btn-primary", id: "btn-save" }, S.ui.save)
-        ),
-        editing ? h("button", { type: "button", class: "btn btn-danger delete-plant", id: "btn-delete", onclick: remove }, icon("trash"), S.ui.delete) : null
-      )
-    );
-    return void 0;
-  }
-
   // js/ui-plant.js
   var tab = "diary";
   var tabPlant = null;
@@ -5681,6 +7372,7 @@
       act("measure", "thermo", S.ui.measurement, () => measurementSheet(plant, refresh)),
       act("milestone", "flag", S.ui.milestone, () => milestoneSheet(plant, refresh)),
       act("care", "leaf", S.ui.care, () => careSheet(plant, refresh)),
+      locked ? null : act("tasks", "checklist", S.tasks.title, () => plantTasksSheet(plant, refresh)),
       plant.harvestable ? act("harvest", "leaf", S.ui.harvest, () => harvestSheet(plant, refresh)) : null,
       plant.harvestable ? act("taste", "check", S.ui.tasting, () => evaluationSheet(plant, refresh, { kind: "tasting" })) : null,
       act("env", "swap", S.ui.changeEnv, async () => {
@@ -5690,14 +7382,14 @@
     ].filter(Boolean);
     if (PROFILES[ctx.profile]?.preselect.measurementsFirst) actionList.sort((a, b) => (b.dataset.act === "measure") - (a.dataset.act === "measure"));
     const actions = locked ? null : h("div", { class: "action-grid" }, actionList);
-    const taskRows = tasks.map((t) => h(
+    const taskRows2 = tasks.map((t) => h(
       "div",
       { class: "item-row task-row", dataset: { task: t.type } },
       h("span", { class: `badge-dot ${DOT2[t.urgency]}` }),
       h(
         "div",
         { class: "item-info" },
-        h("div", { class: "item-name" }, S.taskLabel[t.type] + (t.note && t.type !== "stockLow" ? ` \u2013 ${t.note}` : "")),
+        h("div", { class: "item-name" }, taskTitle(t) + (t.note && t.type !== "stockLow" ? ` \u2013 ${t.note}` : "")),
         h("div", { class: "item-detail" }, h("span", { class: "item-sub" }, `${t.phase ? `${S.batchPhase[t.phase] || t.phase} \xB7 ` : ""}${relDay(t.dueAt, nowIso2)}`))
       ),
       h(
@@ -5714,7 +7406,8 @@
       plant.harvestable ? ["harvests", S.ui.harvests] : ["milestones", S.ui.milestones],
       hasStockTab(plant) ? ["stock", S.stock.tab] : null,
       canEval ? ["evaluation", S.ui.evaluation] : null,
-      ["care", S.ui.careTab]
+      ["care", S.ui.careTab],
+      ["metrics", S.metrics.title]
     ].filter(Boolean);
     if (tabRequest.id === id && tabs.some(([k]) => k === tabRequest.tab)) {
       tab = tabRequest.tab;
@@ -5735,6 +7428,7 @@
       if (tab === "milestones") return milestonesPanel();
       if (tab === "evaluation") return evaluationPanel();
       if (tab === "care") return carePanel();
+      if (tab === "metrics") return metricsPanel();
       return diaryPanel();
     }
     async function diaryPanel() {
@@ -5877,9 +7571,9 @@
       const hist = evaluationHistory(events);
       const cur = hist.find((r) => r.kind === "final");
       const taste = hist.filter((r) => r.kind === "tasting");
-      const current = ["overall", ...activeCriteria(plant.category, ctx.criteria).map((c) => c.key)];
+      const current2 = ["overall", ...activeCriteria(plant.category, ctx.criteria).map((c) => c.key)];
       const stored = Object.keys(cur?.event.payload.scores || {});
-      const criteria = [...current, ...stored.filter((k) => !current.includes(k))];
+      const criteria = [...current2, ...stored.filter((k) => !current2.includes(k))];
       const rows = (list) => list.map((r) => h(
         "div",
         { class: "timeline-row muted-row", dataset: { kind: r.kind } },
@@ -5936,6 +7630,20 @@
         hist.filter((r) => r.kind === "final").length > 1 ? h("div", { class: "card timeline", id: "eval-history" }, rows(hist.filter((r) => r.kind === "final"))) : null
       );
     }
+    async function metricsPanel() {
+      const { plants, byPlant } = await loadAll();
+      const { key } = varietyGroupKey(plant);
+      const g = aggregateVarieties(plants, byPlant).find((x) => x.category === plant.category && x.key === key);
+      const vm = g ? varietyMetrics(g, byPlant, nowIso2) : { aggregates: [] };
+      const values = metricsFor(plant, events, nowIso2);
+      return h(
+        "div",
+        {},
+        h("p", { class: "muted pad-x" }, S.metrics.intro),
+        plantMetricsCard(values, vm.aggregates),
+        g ? stagesCard(g.items, byPlant, plant.id) : null
+      );
+    }
     function carePanel() {
       return h(
         "div",
@@ -5948,7 +7656,7 @@
           h("div", {}, `${S.ui.confidence}: `, h("strong", {}, `${Math.round((info.confidence || 0) * 100)} %`)),
           plant.baseOverride ? h("div", {}, `${S.ui.baseOverride}: `, h("strong", {}, num3(plant.baseOverride))) : null
         ) : locked ? null : h("div", { class: "empty-state", id: "no-care-tasks" }, S.ui.noCareTasks),
-        tasks.length ? h("div", { class: "card task-list" }, taskRows) : h("div", { class: "empty-state" }, S.ui.noTasks)
+        tasks.length ? h("div", { class: "card task-list" }, taskRows2) : h("div", { class: "empty-state" }, S.ui.noTasks)
       );
     }
     const tabBar = h("div", { class: "tab-bar", role: "tablist" }, tabs.map(([k, label]) => h("button", {
@@ -6012,6 +7720,7 @@
         h("span", { class: "tag" }, S.category[plant.category]),
         h("span", { class: "tag" }, S.environment[plant.cache.environment]),
         plant.location ? h("span", { class: "tag" }, plant.location) : null,
+        groupOf(plant, ctx.groups) ? h("button", { type: "button", class: "tag tag-link", id: "tag-group", onclick: () => navigate(`/group/${plant.groupId}`) }, groupOf(plant, ctx.groups).label) : null,
         locked ? h("span", { class: "tag" }, S.ui.archived) : null
       ),
       h("div", { class: "field" }, h("label", {}, S.ui.stageLabel), stageSel),
@@ -6176,8 +7885,8 @@
     ["drying.minFactor", "drying.maxFactor"],
     ["pot.minFactor", "pot.maxFactor"]
   ];
-  function orderViolation(rules, key, value) {
-    const next = { ...rules, [key]: value };
+  function orderViolation(rules2, key, value) {
+    const next = { ...rules2, [key]: value };
     return ORDERED.some((grp) => grp.includes(key) && grp.some((k, i) => i > 0 && next[k] < next[grp[i - 1]]));
   }
   async function saveRules(overrides) {
@@ -6337,7 +8046,7 @@
   }
 
   // js/ui-stockcfg.js
-  var T2 = S.stock;
+  var T4 = S.stock;
   var clone = (o) => JSON.parse(JSON.stringify(o));
   async function save(next) {
     const clean4 = cleanStock(next);
@@ -6364,7 +8073,7 @@
       else {
         const o = { label: label.value.trim() };
         if (!o.label) {
-          err.textContent = T2.nameNeeded;
+          err.textContent = T4.nameNeeded;
           return;
         }
         for (const p of METHOD_PARAMS) {
@@ -6372,7 +8081,7 @@
           if (raw === "") continue;
           const v = Number(raw);
           if (!Number.isFinite(v) || v < p.min || v > p.max || p.int && !Number.isInteger(v)) {
-            err.textContent = `${T2.param[p.key]}: ${T2.invalid}`;
+            err.textContent = `${T4.param[p.key]}: ${T4.invalid}`;
             return;
           }
           o[p.key] = v;
@@ -6381,19 +8090,19 @@
       }
       await save({ ...ctx.stockCfg, methods });
       closeSheet();
-      toast(T2.saved2);
+      toast(T4.saved2);
       refresh();
     };
     openSheet(cur.label, h(
       "div",
       {},
-      field(T2.name, label),
-      METHOD_PARAMS.map((p) => field(T2.param[p.key], inputs[p.key])),
+      field(T4.name, label),
+      METHOD_PARAMS.map((p) => field(T4.param[p.key], inputs[p.key])),
       err,
       h(
         "div",
         { class: "form-actions" },
-        builtin ? h("button", { type: "button", class: "btn btn-secondary", id: "btn-method-reset", onclick: () => apply(true) }, T2.reset) : h("button", { type: "button", class: "btn btn-danger", id: "btn-method-delete", onclick: () => apply(true) }, T2.delete),
+        builtin ? h("button", { type: "button", class: "btn btn-secondary", id: "btn-method-reset", onclick: () => apply(true) }, T4.reset) : h("button", { type: "button", class: "btn btn-danger", id: "btn-method-delete", onclick: () => apply(true) }, T4.delete),
         h("button", { type: "button", class: "btn btn-primary", id: "btn-method-save", onclick: () => apply(false) }, S.ui.save)
       )
     ));
@@ -6403,11 +8112,11 @@
     const name = h("input", { type: "text", maxlength: 40, id: "new-method-name" });
     const from = chipGroup(Object.values(M).map((m2) => [m2.key, m2.label]), "jar");
     const err = h("div", { class: "form-error" });
-    openSheet(T2.addMethod, h(
+    openSheet(T4.addMethod, h(
       "div",
       {},
-      field(T2.name, name),
-      field(T2.cloneOf, from.el),
+      field(T4.name, name),
+      field(T4.cloneOf, from.el),
       err,
       h(
         "div",
@@ -6416,7 +8125,7 @@
         h("button", { type: "button", class: "btn btn-primary", id: "btn-new-method-save", onclick: async () => {
           const label = name.value.trim();
           if (!label) {
-            err.textContent = T2.nameNeeded;
+            err.textContent = T4.nameNeeded;
             return;
           }
           const src = M[from.get()];
@@ -6425,7 +8134,7 @@
           for (const p of METHOD_PARAMS) o[p.key] = src[p.key];
           await save({ ...ctx.stockCfg, methods: { ...clone(ctx.stockCfg.methods), [key]: o } });
           closeSheet();
-          toast(T2.saved2);
+          toast(T4.saved2);
           refresh();
         } }, S.ui.save)
       )
@@ -6450,14 +8159,14 @@
       else {
         const o = { label: label.value.trim(), method: method.get() };
         if (!o.label) {
-          err.textContent = T2.nameNeeded;
+          err.textContent = T4.nameNeeded;
           return;
         }
         for (const [f, lo, hi] of fields) {
           if (inputs[f].value === "") continue;
           const v = Number(inputs[f].value);
           if (!Number.isFinite(v) || v < lo || v > hi) {
-            err.textContent = `${T2.presetField[f]}: ${T2.invalid}`;
+            err.textContent = `${T4.presetField[f]}: ${T4.invalid}`;
             return;
           }
           o[f] = v;
@@ -6466,20 +8175,20 @@
       }
       await save({ ...ctx.stockCfg, presets });
       closeSheet();
-      toast(T2.saved2);
+      toast(T4.saved2);
       refresh();
     };
-    openSheet(key ? cur.label : T2.addPreset, h(
+    openSheet(key ? cur.label : T4.addPreset, h(
       "div",
       {},
-      field(T2.name, label),
-      field(T2.presetField.method, method.el),
-      fields.map(([f]) => field(T2.presetField[f], inputs[f])),
+      field(T4.name, label),
+      field(T4.presetField.method, method.el),
+      fields.map(([f]) => field(T4.presetField[f], inputs[f])),
       err,
       h(
         "div",
         { class: "form-actions" },
-        key ? h("button", { type: "button", class: builtin ? "btn btn-secondary" : "btn btn-danger", id: "btn-preset-reset", onclick: () => apply(true) }, builtin ? T2.reset : T2.delete) : h("button", { type: "button", class: "btn btn-secondary", onclick: closeSheet }, S.ui.cancel),
+        key ? h("button", { type: "button", class: builtin ? "btn btn-secondary" : "btn btn-danger", id: "btn-preset-reset", onclick: () => apply(true) }, builtin ? T4.reset : T4.delete) : h("button", { type: "button", class: "btn btn-secondary", onclick: closeSheet }, S.ui.cancel),
         h("button", { type: "button", class: "btn btn-primary", id: "btn-preset-save", onclick: () => apply(false) }, S.ui.save)
       )
     ));
@@ -6496,12 +8205,12 @@
     const M = resolveMethods(ctx.stockCfg);
     const P = resolvePresets(ctx.stockCfg);
     const catRows = Object.entries(CATEGORIES).filter(([, c]) => c.harvestable).map(([cat]) => {
-      const chips = chipGroup([["", T2.presetDefault], ...Object.values(P).map((p) => [p.key, p.label])], ctx.stockCfg.categoryPreset[cat] ?? "", async (v) => {
+      const chips = chipGroup([["", T4.presetDefault], ...Object.values(P).map((p) => [p.key, p.label])], ctx.stockCfg.categoryPreset[cat] ?? "", async (v) => {
         const categoryPreset = { ...ctx.stockCfg.categoryPreset };
         if (v) categoryPreset[cat] = v;
         else delete categoryPreset[cat];
         await save({ ...ctx.stockCfg, categoryPreset });
-        toast(T2.saved2);
+        toast(T4.saved2);
       });
       chips.el.id = `catpreset-${cat}`;
       return field(S.category[cat], chips.el);
@@ -6518,32 +8227,181 @@
         "div",
         { class: "top-bar" },
         h("button", { type: "button", class: "btn btn-ghost", id: "btn-back", "aria-label": S.ui.back, onclick: () => navigate("/settings") }, icon("back")),
-        h("h1", {}, T2.settingsTitle),
+        h("h1", {}, T4.settingsTitle),
         h("span")
       ),
-      h("p", { class: "muted rules-intro" }, T2.settingsIntro),
+      h("p", { class: "muted rules-intro" }, T4.settingsIntro),
       h(
         "section",
         { class: "card pad", id: "cfg-methods" },
-        h("h3", {}, T2.methods),
-        Object.values(M).map((m2) => row2(`${m2.label}${m2.custom ? ` (${T2.custom})` : ""}`, methodSummary(m2), `method-${m2.key}`, () => methodSheet(m2.key, refresh))),
-        h("button", { type: "button", class: "btn btn-secondary panel-btn", id: "btn-add-method", onclick: () => newMethodSheet(refresh) }, icon("plus"), T2.addMethod)
+        h("h3", {}, T4.methods),
+        Object.values(M).map((m2) => row2(`${m2.label}${m2.custom ? ` (${T4.custom})` : ""}`, methodSummary(m2), `method-${m2.key}`, () => methodSheet(m2.key, refresh))),
+        h("button", { type: "button", class: "btn btn-secondary panel-btn", id: "btn-add-method", onclick: () => newMethodSheet(refresh) }, icon("plus"), T4.addMethod)
       ),
       h(
         "section",
         { class: "card pad", id: "cfg-presets" },
-        h("h3", {}, T2.presets),
+        h("h3", {}, T4.presets),
         Object.values(P).map((p) => row2(
-          `${p.label}${p.custom ? ` (${T2.custom})` : ""}`,
+          `${p.label}${p.custom ? ` (${T4.custom})` : ""}`,
           [M[p.method]?.label, p.maturingDays != null ? `zr\xE1n\xED ${p.maturingDays} d` : null, p.useByPct != null ? `pr\xE1h ${p.useByPct} %` : null].filter(Boolean).join(" \xB7 "),
           `preset-${p.key}`,
           () => presetSheet(p.key, refresh)
         )),
-        h("button", { type: "button", class: "btn btn-secondary panel-btn", id: "btn-add-preset", onclick: () => presetSheet(null, refresh) }, icon("plus"), T2.addPreset)
+        h("button", { type: "button", class: "btn btn-secondary panel-btn", id: "btn-add-preset", onclick: () => presetSheet(null, refresh) }, icon("plus"), T4.addPreset)
       ),
-      h("section", { class: "card pad", id: "cfg-categories" }, h("h3", {}, T2.categoryDefaults), catRows),
-      h("div", { class: "pad" }, h("button", { type: "button", class: "btn btn-secondary panel-btn", id: "btn-open-stock", onclick: () => navigate("/stock") }, T2.openOverview))
+      h("section", { class: "card pad", id: "cfg-categories" }, h("h3", {}, T4.categoryDefaults), catRows),
+      h("div", { class: "pad" }, h("button", { type: "button", class: "btn btn-secondary panel-btn", id: "btn-open-stock", onclick: () => navigate("/stock") }, T4.openOverview))
     );
+  }
+
+  // js/ui-categories.js
+  var C = S.categories;
+  function pickBaseSheet(done) {
+    if (Object.keys(ctx.categories).length >= MAX_CUSTOM_CATEGORIES) return toast(C.limit);
+    const keys = Object.keys(CATEGORIES).filter((k) => !CATEGORIES[k].deleted);
+    const base = chipGroup(keys.map((k) => [k, S.category[k]]), "herb");
+    base.el.id = "c-base";
+    openSheet(C.add, h(
+      "div",
+      { class: "stack" },
+      h("p", { class: "muted" }, C.pickBaseHint),
+      field(C.pickBase, base.el),
+      buttons(() => {
+        closeSheet();
+        categorySheet(null, base.get(), done);
+      }, C.next)
+    ));
+    return void 0;
+  }
+  function categorySheet(id, startKey, done) {
+    const existing = id ? ctx.categories[id] : null;
+    const cfg = CATEGORIES[id ?? startKey];
+    const baseKey = existing?.base ?? (ctx.categories[startKey]?.base ?? startKey);
+    const label = h("input", { type: "text", id: "c-label", maxlength: 40, value: existing?.label ?? "", placeholder: "nap\u0159. Chilli" });
+    const ic = chipGroup(CATEGORY_ICON_CHOICES.map((k) => [k, icon(k)]), existing?.icon ?? CATEGORY_ICON[startKey] ?? "leaf");
+    ic.el.id = "c-icon";
+    const life = chipGroup(Object.entries(S.lifecycle), cfg.lifecycle);
+    life.el.id = "c-lifecycle";
+    const harvestable = chipGroup([[true, C.yes], [false, C.no]], cfg.harvestable);
+    harvestable.el.id = "c-harvestable";
+    const stages = multiChips(STAGE_VOCAB.filter((k) => k !== "done").map((k) => [k, S.stage[k]]), (CYCLE_STAGES[id ?? startKey] ?? []).filter((k) => k !== "done"));
+    stages.el.id = "c-stages";
+    const fields = multiChips(HARVEST_FIELD_VOCAB.map((k) => [k, S.harvestField[k]]), cfg.harvestFields.map((f) => f.key));
+    fields.el.id = "c-fields";
+    const num4 = (key, idAttr) => h("input", { type: "number", id: idAttr, step: key === "baseDryingDays" ? 0.5 : 1, inputmode: "decimal", min: CATEGORY_LIMITS[key][0], max: CATEGORY_LIMITS[key][1], value: cfg[key] });
+    const fert = num4("fertilizingDays", "c-fert"), pest = num4("pestCheckDays", "c-pest"), dry = num4("baseDryingDays", "c-dry");
+    openSheet(existing ? C.edit : C.add, h(
+      "div",
+      { class: "stack" },
+      h("p", { class: "muted" }, C.basedOn(S.category[baseKey])),
+      field(C.label, label),
+      field(C.icon, ic.el),
+      field(C.lifecycle, life.el),
+      field(C.harvestable, harvestable.el),
+      field(C.stages, stages.el),
+      field(C.harvestFields, fields.el),
+      field(C.fertilizingDays, fert),
+      field(C.pestCheckDays, pest),
+      field(C.baseDryingDays, dry),
+      buttons(async () => {
+        if (!label.value.trim()) return toast(S.err.name);
+        const nums = { fertilizingDays: Number(fert.value), pestCheckDays: Number(pest.value), baseDryingDays: Number(dry.value) };
+        for (const [k, v] of Object.entries(nums)) if (!Number.isFinite(v) || v < CATEGORY_LIMITS[k][0] || v > CATEGORY_LIMITS[k][1]) return toast(S.err.invalid);
+        const lifecycle = life.get();
+        if (lifecycle === "cycle" && !stages.get().length) return toast(C.needStage);
+        if (!fields.get().length) return toast(C.needField);
+        const entry = {
+          label: label.value.trim(),
+          icon: ic.get(),
+          base: baseKey,
+          overrides: { lifecycle, harvestable: harvestable.get(), stages: stages.get(), harvestFields: fields.get(), ...nums }
+        };
+        if (existing?.deleted) entry.deleted = true;
+        await saveCategories(ctx.db, { ...ctx.categories, [id ?? newCategoryId()]: entry });
+        await refreshCategories();
+        closeSheet();
+        toast(C.saved);
+        done?.();
+        return void 0;
+      })
+    ));
+  }
+  async function deleteSheet(id, done) {
+    const used = (await listPlants(ctx.db)).filter((p) => p.category === id).length;
+    openSheet(C.delete, h(
+      "div",
+      { class: "stack" },
+      h("p", { class: "muted" }, used ? C.deleteUsed(used) : C.deleteFree),
+      h(
+        "div",
+        { class: "form-actions" },
+        h("button", { type: "button", class: "btn btn-secondary", onclick: closeSheet }, S.ui.cancel),
+        h("button", { type: "button", class: "btn btn-danger", id: "btn-confirm-delete-category", onclick: async () => {
+          const next = { ...ctx.categories };
+          if (used) next[id] = { ...next[id], deleted: true };
+          else delete next[id];
+          await saveCategories(ctx.db, next);
+          await refreshCategories();
+          await refreshTemplates();
+          closeSheet();
+          toast(C.saved);
+          done();
+        } }, C.delete)
+      )
+    ));
+  }
+  async function renderCategories(root2) {
+    const alive = guard();
+    await refreshCategories();
+    const rerender = () => renderCategories(root2);
+    if (!alive()) return void 0;
+    const live = Object.entries(ctx.categories).filter(([, c]) => !c.deleted);
+    const hidden = Object.entries(ctx.categories).filter(([, c]) => c.deleted);
+    put(
+      clear(root2),
+      h(
+        "div",
+        { class: "top-bar" },
+        h("button", { type: "button", class: "btn btn-ghost", "aria-label": S.ui.back, onclick: () => navigate("/settings") }, icon("back")),
+        h("h1", {}, C.title),
+        h("button", { type: "button", class: "btn btn-ghost", id: "btn-new-category", "aria-label": C.add, onclick: () => pickBaseSheet(rerender) }, icon("plus"))
+      ),
+      h("p", { class: "muted pad-x" }, C.intro),
+      live.length ? h("div", { class: "variety-list", id: "category-list" }, live.map(([id, c]) => h(
+        "div",
+        { class: "card pad", dataset: { category: id } },
+        h(
+          "div",
+          { class: "variety-head" },
+          h("strong", {}, c.label),
+          h("button", { type: "button", class: "btn btn-ghost btn-sm", dataset: { act: "edit" }, "aria-label": C.edit, onclick: () => categorySheet(id, null, rerender) }, icon("edit"))
+        ),
+        h("div", { class: "muted" }, C.basedOn(baseLabel(id))),
+        h(
+          "div",
+          { class: "form-actions" },
+          h("button", { type: "button", class: "btn btn-danger btn-sm", dataset: { act: "delete" }, onclick: () => deleteSheet(id, rerender) }, icon("trash"), C.delete)
+        )
+      ))) : h("div", { class: "empty-state", id: "no-categories" }, C.none),
+      hidden.length ? h(
+        "div",
+        { id: "hidden-categories" },
+        h("div", { class: "section-title" }, C.hidden),
+        hidden.map(([id, c]) => h("div", { class: "card pad", dataset: { category: id } }, h(
+          "div",
+          { class: "variety-head" },
+          h("strong", {}, c.label),
+          h("button", { type: "button", class: "btn btn-secondary btn-sm", dataset: { act: "restore" }, onclick: async () => {
+            const revived = { label: c.label, icon: c.icon, base: c.base, overrides: c.overrides };
+            await saveCategories(ctx.db, { ...ctx.categories, [id]: revived });
+            await refreshCategories();
+            rerender();
+          } }, C.restore)
+        )))
+      ) : null
+    );
+    return void 0;
   }
 
   // js/ui-stats.js
@@ -6622,6 +8480,8 @@
         tile2(nums.archived, "Archiv")
       ),
       groups.length ? h("div", { class: "variety-list" }, groups.map(varietyCard)) : h("div", { class: "empty-state" }, S.ui.noVarieties),
+      patternsCard(patterns(plants, byPlant, now())),
+      storageCard(storageStats(plants)),
       h("div", { class: "section-title" }, `${S.ui.archiveTitle} (${archived.length})`),
       archived.length ? h("div", { class: "plant-grid", id: "archive-grid" }, cards) : h("div", { class: "empty-state" }, S.ui.noPlants)
     );
@@ -6675,7 +8535,11 @@
       varietyCard(g),
       h("div", { class: "section-title" }, S.ui.plantsOfVariety),
       h("div", { class: "variety-list", id: "variety-plants" }, rows),
-      h("div", { class: "card pad" }, kv(S.ui.cycles, g.cycles), kv(S.ui.problemsPer, num3(g.problemsPerPlant)))
+      h("div", { class: "card pad" }, kv(S.ui.cycles, g.cycles), kv(S.ui.problemsPer, num3(g.problemsPerPlant))),
+      h("div", { class: "section-title" }, S.metrics.title),
+      h("p", { class: "muted pad-x" }, S.metrics.intro),
+      metricsCard(varietyMetrics(g, byPlant, now()).aggregates),
+      stagesCard(g.items, byPlant, null)
     );
   }
 
@@ -6720,6 +8584,8 @@
     route("/new", (r, _p, q) => renderPlantForm(r, null, q), "overview");
     route("/plant/:id", (r, p) => renderPlant(r, p.id), "overview");
     route("/plant/:id/edit", (r, p) => renderPlantForm(r, p.id), "overview");
+    route("/groups", renderGroups, "overview");
+    route("/group/:id", (r, p) => renderGroup(r, p.id), "overview");
     route("/walk", renderWalk, "walk");
     route("/onboarding", renderOnboarding, "overview");
     route("/varieties", renderVarieties, "varieties");
@@ -6729,6 +8595,8 @@
     route("/settings/criteria", renderCriteria, "settings");
     route("/stock", renderStockOverview, "overview");
     route("/settings/stock", renderStockCfg, "settings");
+    route("/settings/tasks", renderTemplates, "settings");
+    route("/settings/categories", renderCategories, "settings");
     route("/install", renderInstall, "settings");
     await startRouter(document.getElementById("view"));
     window.pheno = { db, ...events_exports, ...model_exports };

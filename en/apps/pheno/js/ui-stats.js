@@ -6,6 +6,9 @@ import { fmtDate, num, plantsWord, starsText } from './format.js';
 import { navigate, guard } from './router.js';
 import { S } from './strings.cs.js';
 import { aggregateVarieties, overviewNumbers, plantSummary } from './stats.js';
+import { patterns, storageStats, varietyMetrics } from './metrics.js';
+import { metricsCard, patternsCard, stagesCard, storageCard } from './ui-metrics.js';
+import { now } from './ctx.js';
 import { CAT_ICON } from './ui-dashboard.js';
 import { photoUrl } from './photos.js';
 import { ctx } from './ctx.js';
@@ -59,6 +62,7 @@ export async function renderVarieties(root) {
     h('div', { class: 'summary-grid' },
       tile(nums.plants, 'Rostliny'), tile(nums.harvests, 'Sklizně'), tile(nums.evaluated, 'Hodnoceno'), tile(nums.archived, 'Archiv')),
     groups.length ? h('div', { class: 'variety-list' }, groups.map(varietyCard)) : h('div', { class: 'empty-state' }, S.ui.noVarieties),
+    patternsCard(patterns(plants, byPlant, now())), storageCard(storageStats(plants)),
     h('div', { class: 'section-title' }, `${S.ui.archiveTitle} (${archived.length})`),
     archived.length ? h('div', { class: 'plant-grid', id: 'archive-grid' }, cards) : h('div', { class: 'empty-state' }, S.ui.noPlants));
 }
@@ -91,5 +95,7 @@ export async function renderVariety(root, category, key) {
     varietyCard(g),
     h('div', { class: 'section-title' }, S.ui.plantsOfVariety),
     h('div', { class: 'variety-list', id: 'variety-plants' }, rows),
-    h('div', { class: 'card pad' }, kv(S.ui.cycles, g.cycles), kv(S.ui.problemsPer, num(g.problemsPerPlant))));
+    h('div', { class: 'card pad' }, kv(S.ui.cycles, g.cycles), kv(S.ui.problemsPer, num(g.problemsPerPlant))),
+    h('div', { class: 'section-title' }, S.metrics.title), h('p', { class: 'muted pad-x' }, S.metrics.intro),
+    metricsCard(varietyMetrics(g, byPlant, now()).aggregates), stagesCard(g.items, byPlant, null));
 }

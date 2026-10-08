@@ -12,17 +12,22 @@ import { aggregateVarieties } from './stats.js';
 import { seasonOf, dayDiff, daysBetween } from './utils.js';
 import { SEASONAL_ENVIRONMENTS } from './config-engine.js';
 import { fmtDate, num, plantsWord } from './format.js';
-import { batchCheckSheet, batchEstimate, batchMethodSheet, evaluationSheet, followUpSheet, moistureSheet, snoozeSheet, submit, useBySheet } from './ui-forms.js';
+import { batchCheckSheet, batchEstimate, batchMethodSheet, evaluationSheet, followUpSheet, moistureSheet, snoozeSheet, submit, submitBulk, useBySheet } from './ui-forms.js';
 import { navigate, guard } from './router.js';
+import { clusterTasks } from './groups.js';
+import { snoozeMany } from './events.js';
+import { taskTitle } from './customtasks.js';
+import { bulkSheet } from './ui-groups.js';
+import { closeSheet, openSheet, toast } from './sheet.js';
 import { runStockTask } from './ui-stock.js';
 import { batchRemaining } from './stock.js';
 import { backupReminderDue, dismissBackupReminder } from './backup.js';
 import { doExport } from './ui-settings.js';
-import { BATCH_ENDED, CATEGORIES } from './config-categories.js';
+import { BATCH_ENDED, CATEGORIES, CATEGORY_ICON } from './config-categories.js';
 
-const filters = { location: 'all', environment: 'all', category: 'all' };
+const filters = { location: 'all', group: 'all', environment: 'all', category: 'all' };
 let upcomingOpen = false;   // the "Nadcházející" section starts collapsed on every visit to the app
-export const CAT_ICON = { herb: 'leaf', vegetable: 'sprout', fruit: 'pot', flower: 'sun', tree_shrub: 'leaf', houseplant: 'sprout', other: 'pot' };
+export const CAT_ICON = CATEGORY_ICON;
 const DOT = { overdue: 'expired', today: 'missing', upcoming: 'needs_check' };
 
 /** Run a task from the list: moisture opens the sheet, quick tasks write directly. */
@@ -32,6 +37,7 @@ export function runTask(task, plant, done) {
     case 'moisture': return moistureSheet(plant, done);
     case 'fertilizing': return submit(plant.id, [{ type: 'fertilizing', payload: {} }], 'Přihnojeno', done);
     case 'pestCheck': return submit(plant.id, [{ type: 'pest_check', payload: { found: false } }], 'Kontrola zapsána', done);
+    case 'custom': return submit(plant.id, [{ type: 'task_done', payload: { ref: task.ref } }], `${task.label}: ${S.tasks.done}`, done);
     case 'problemFollowUp': return followUpSheet(plant, task, done);
     case 'batchCheck': return batch ? batchCheckSheet(plant, batch, done) : null;
     case 'useBy': return useBySheet(plant, task, done);
@@ -71,6 +77,7 @@ function afterHarvestSection(plants, nowIso, rerender) {
 
 function matches(p) {
   return (filters.location === 'all' || p.location === filters.location)
+    && (filters.group === 'all' || p.groupId === filters.group)
     && (filters.environment === 'all' || p.cache.environment === filters.environment)
     && (filters.category === 'all' || p.category === filters.category);
 }
@@ -78,6 +85,7 @@ function matches(p) {
 function filterBar(active, rerender) {
   const groups = [
     ['location', 'Místo', [...new Set(active.map((p) => p.location).filter(Boolean))].map((v) => [v, v])],
+    ['group', S.groups.filter, ctx.groups.filter((g) => active.some((p) => p.groupId === g.id)).map((g) => [g.id, g.label])],
     ['environment', S.ui.environment, [...new Set(active.map((p) => p.cache.environment))].map((v) => [v, S.environment[v]])],
     ['category', S.ui.category, [...new Set(active.map((p) => p.category))].map((v) => [v, S.category[v]])]
   ].filter(([, , opts]) => opts.length > 1);
@@ -96,7 +104,7 @@ function taskRow(task, plant, done) {
     onclick: () => navigate(`/plant/${task.plantId}`) },
     h('span', { class: `badge-dot ${DOT[task.urgency]}` }),
     h('div', { class: 'item-info' },
-      h('div', { class: 'item-name' }, `${task.plantName} – ${S.taskLabel[task.type]}${task.note && task.type.startsWith('stock') && task.type !== 'stockLow' ? ` · ${task.note}` : ''}`),
+      h('div', { class: 'item-name' }, `${task.plantName} – ${taskTitle(task)}${task.note && task.type.startsWith('stock') && task.type !== 'stockLow' ? ` · ${task.note}` : ''}`),
       h('div', { class: 'item-detail' }, h('span', { class: 'item-sub' }, task.phase ? `${S.batchPhase[task.phase] || task.phase} · ${when}` : when))),
     h('div', { class: 'item-actions qty-stepper' },
       h('button', { type: 'button', class: 'btn-quick', 'aria-label': S.ui.done, dataset: { act: 'do' },
@@ -104,6 +112,44 @@ function taskRow(task, plant, done) {
       h('button', { type: 'button', class: 'qty-btn', 'aria-label': S.ui.snooze, dataset: { act: 'snooze' },
         onclick: (e) => { e.stopPropagation(); snoozeSheet(task, done); } }, icon('clock'))));
 }
+
+const CLUSTER_ACTION = {
+  custom: (ids, done, c) => submitBulk(ids, [{ type: 'task_done', payload: { ref: c.ref } }], `${c.tasks[0].label}: ${S.tasks.done}`, done),
+  fertilizing: (ids, done) => submitBulk(ids, [{ type: 'fertilizing', payload: {} }], 'Přihnojeno', done),
+  pestCheck: (ids, done) => submitBulk(ids, [{ type: 'pest_check', payload: { found: false } }], 'Kontrola zapsána', done)
+};
+
+function snoozeClusterSheet(c, done) {
+  const btn = (n) => h('button', { type: 'button', class: 'btn btn-secondary', onclick: async () => {
+    const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + n);
+    await snoozeMany(ctx.db, c.tasks.map((t) => ({ plantId: t.plantId, key: t.snoozeKey })), d.toISOString());
+    closeSheet(); toast(`Odloženo do ${relDay(d.toISOString(), now())}`); done?.();
+  } }, n === 1 ? 'Na zítra' : `Na ${n} dny`);
+  openSheet(`${S.groups.snoozeAll} – ${c.group.label}`, h('div', { class: 'stack' }, [1, 2, 3].map(btn)));
+}
+
+/** One merged row for the same task of several plants of a group; expands to the individual rows (individual snooze = exceptions). */
+function clusterRow(c, byId, done) {
+  const n = c.tasks.length;
+  const plants = c.tasks.map((t) => byId.get(t.plantId)).filter(Boolean);
+  const body = h('div', { class: 'cluster-body', hidden: true }, c.tasks.map((t) => taskRow(t, byId.get(t.plantId), done)));
+  const when = c.urgency === 'overdue' ? 'Po termínu' : c.urgency === 'today' ? 'Dnes' : 'Nadcházející';
+  const head = h('div', { class: 'item-row task-row cluster-head', role: 'button', tabindex: 0, 'aria-expanded': 'false', dataset: { cluster: c.group.id, type: c.type },
+    onclick: () => { body.hidden = !body.hidden; head.setAttribute('aria-expanded', String(!body.hidden)); head.classList.toggle('open', !body.hidden); } },
+  h('span', { class: `badge-dot ${DOT[c.urgency]}` }),
+  h('div', { class: 'item-info' },
+    h('div', { class: 'item-name' }, `${c.group.label} – ${taskTitle(c.tasks[0])} (${n} ${plantsWord(n)})`),
+    h('div', { class: 'item-detail' }, h('span', { class: 'item-sub' }, when))),
+  h('div', { class: 'item-actions qty-stepper' },
+    h('button', { type: 'button', class: 'btn-quick', 'aria-label': S.groups.doAll, dataset: { act: 'do-all' },
+      onclick: (e) => { e.stopPropagation(); (c.type === 'moisture' ? bulkSheet('moisture', plants, done) : CLUSTER_ACTION[c.type](plants.map((p) => p.id), done, c)); } }, icon('check')),
+    h('button', { type: 'button', class: 'qty-btn', 'aria-label': S.groups.snoozeAll, dataset: { act: 'snooze-all' },
+      onclick: (e) => { e.stopPropagation(); snoozeClusterSheet(c, done); } }, icon('clock'))));
+  return h('div', { class: 'cluster' }, head, body);
+}
+
+const taskRows = (tasks, byId, done) => clusterTasks(tasks, byId, ctx.groups)
+  .map((i) => (i.kind === 'cluster' ? clusterRow(i, byId, done) : taskRow(i.task, byId.get(i.task.plantId), done)));
 
 async function plantCard(plant, events, nextTask) {
   const cfg = CATEGORIES[plant.category];
@@ -115,7 +161,7 @@ async function plantCard(plant, events, nextTask) {
       h('div', { class: 'plant-name' }, plant.name),
       h('div', { class: 'plant-sub' }, plant.variety || S.category[plant.category]),
       h('div', { class: 'plant-tags' }, h('span', { class: 'tag' }, stage), h('span', { class: 'tag' }, S.environment[plant.cache.environment])),
-      nextTask ? h('div', { class: `plant-next ${nextTask.urgency}` }, `${S.taskLabel[nextTask.type]} · ${relDay(nextTask.dueAt, now())}`) : null),
+      nextTask ? h('div', { class: `plant-next ${nextTask.urgency}` }, `${taskTitle(nextTask)} · ${relDay(nextTask.dueAt, now())}`) : null),
     cfg ? null : null);
 }
 
@@ -144,7 +190,9 @@ export async function renderDashboard(root) {
   clear(root);
   root.append(
     h('div', { class: 'top-bar' }, h('h1', {}, S.nav.overview),
-      h('button', { type: 'button', class: 'btn btn-ghost', id: 'btn-new', 'aria-label': S.ui.newPlant, onclick: () => navigate('/new') }, icon('plus'))),
+      h('div', { class: 'top-actions' },
+        h('button', { type: 'button', class: 'btn btn-ghost', id: 'btn-groups', 'aria-label': S.groups.open, title: S.groups.open, onclick: () => navigate('/groups') }, icon('groups')),
+        h('button', { type: 'button', class: 'btn btn-ghost', id: 'btn-new', 'aria-label': S.ui.newPlant, onclick: () => navigate('/new') }, icon('plus')))),
     h('section', { class: 'readiness-panel', dataset: { level } },
       h('div', { class: 'readiness-mark' }, h('div', { class: 'readiness-ring', style: `--readiness:${pct}%` }, h('span', {}, `${pct} %`))),
       h('div', { class: 'readiness-copy' },
@@ -170,7 +218,7 @@ export async function renderDashboard(root) {
       onclick: () => runTask(first, byIdAll.get(first.plantId), rerender) },
       h('div', { class: 'next-action-icon' }, icon(first.type === 'moisture' ? 'drop' : first.type === 'fertilizing' ? 'leaf' : first.type.startsWith('evaluation') ? 'status-ok' : first.type === 'batchCheck' || first.type === 'useBy' || first.type.startsWith('stock') ? 'check' : 'bug')),
       h('div', { class: 'next-action-copy' }, h('span', {}, S.ui.nextStep),
-        h('strong', {}, `${first.plantName} – ${S.taskLabel[first.type]}`), h('small', {}, relDay(first.dueAt, nowIso))),
+        h('strong', {}, `${first.plantName} – ${taskTitle(first)}`), h('small', {}, relDay(first.dueAt, nowIso))),
       h('button', { type: 'button', 'aria-label': S.ui.done }, icon('chevron'))));
   }
 
@@ -179,10 +227,10 @@ export async function renderDashboard(root) {
 
   root.append(h('div', { class: 'section-title' }, S.ui.needsAttention));
   root.append(due.length
-    ? h('div', { class: 'card task-list', id: 'due-list' }, due.map((t) => taskRow(t, byIdAll.get(t.plantId), rerender)))
+    ? h('div', { class: 'card task-list', id: 'due-list' }, taskRows(due, byIdAll, rerender))
     : h('div', { class: 'empty-state', id: 'no-due' }, S.ui.noTasks));
   if (later.length) {
-    const body = h('div', { class: 'card task-list', id: 'upcoming-list', hidden: !upcomingOpen }, later.map((t) => taskRow(t, byIdAll.get(t.plantId), rerender)));
+    const body = h('div', { class: 'card task-list', id: 'upcoming-list', hidden: !upcomingOpen }, taskRows(later, byIdAll, rerender));
     const toggle = h('button', { type: 'button', class: 'upcoming-toggle', id: 'btn-upcoming', 'aria-expanded': String(upcomingOpen),
       onclick: () => { upcomingOpen = !upcomingOpen; body.hidden = !upcomingOpen; toggle.setAttribute('aria-expanded', String(upcomingOpen)); toggle.classList.toggle('open', upcomingOpen); } },
     icon('chevron'), h('span', {}, `${S.ui.upcomingSection} (${later.length})`));

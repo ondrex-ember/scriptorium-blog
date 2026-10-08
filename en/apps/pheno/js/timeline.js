@@ -2,9 +2,9 @@
 import { liveEvents } from './model.js';
 import { S } from './strings.cs.js';
 import { dayDiff } from './utils.js';
-import { num } from './format.js';
+import { fmtDate, num } from './format.js';
 
-const DONE_TYPES = ['watering', 'moisture_check', 'fertilizing', 'pest_check', 'batch_check'];
+const DONE_TYPES = ['watering', 'moisture_check', 'fertilizing', 'pest_check', 'batch_check', 'task_done'];
 
 /** Care actions recorded on the same calendar day as `now`. */
 export function doneToday(events, now) {
@@ -56,6 +56,9 @@ export function describeEvent(e, units = {}) {
         p.rh != null ? `${p.rh} %` : null, p.aired ? S.stock.aired : null, p.note || null].filter(Boolean);
       return { icon: 'check', title: S.stock.checkTitle, detail: bits.join(' · ') };
     }
+    case 'task_assign': return { icon: 'check', title: `${S.tasks.assignTitle[p.action] ?? ''}: ${p.label ?? ''}`, detail: '' };
+    case 'task_done': return { icon: 'check', title: `${S.tasks.doneTitle}: ${p.label ?? ''}`, detail: '' };
+    case 'task_once': return { icon: 'check', title: `${S.tasks.onceTitle}: ${p.label}`, detail: fmtDate(p.dueAt) };
     case 'care': return { icon: 'leaf', title: p.kind === 'custom' ? p.label : S.care[p.kind], detail: [p.potVolumeL ? `${num(p.potVolumeL, 1)} l` : '', p.note || ''].filter(Boolean).join(' · ') };
     case 'evaluation': return {
       icon: 'check', title: S.evalKind[p.kind ?? 'final'],

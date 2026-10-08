@@ -3,7 +3,7 @@ import { CATEGORIES, ENVIRONMENTS, SOURCES, getStages } from './config-categorie
 import { PEST_BOOST_DAYS } from './config-engine.js';
 import { SUBSTRATES } from './config-rules.js';
 import { S } from './strings.cs.js';
-import { PhenoError, addDays, compareEvents, normalizeKey, nowIso, uid } from './utils.js';
+import { PhenoError, addDays, compareEvents, isGroupId, normalizeKey, nowIso, uid } from './utils.js';
 
 const projectors = [];
 /** Extension point: {init(ctx), apply(event, ctx), finalize(ctx)}; ctx = {plant, cache, events, opts}. Used by calendar.js (S2). */
@@ -17,7 +17,7 @@ export function emptyCache(prev) {
     lastWateredAt: null, lastFertilizedAt: null, lastPestCheckAt: null,
     openProblems: [], pestBoostUntil: null,
     snoozedUntil: { ...(prev?.snoozedUntil || {}) },
-    soilDryDays: {}, confidence: {}, batches: [],
+    soilDryDays: {}, confidence: {}, batches: [], customTasks: {}, onceTasks: [],
     cacheRev: null
   };
 }
@@ -91,6 +91,19 @@ export function projectPlant(plant, events, opts = {}) {
       case 'problem_resolved':
         cache.openProblems = cache.openProblems.filter((x) => x.id !== p.problemId);
         break;
+      case 'task_assign':
+        if (p.action === 'enable') cache.customTasks[p.templateId] = { state: 'active', since: e.occurredAt, lastDoneAt: null, doneCount: 0 };
+        else if (cache.customTasks[p.templateId]) cache.customTasks[p.templateId] = { ...cache.customTasks[p.templateId], state: p.action === 'pause' ? 'paused' : 'ended' };
+        break;
+      case 'task_done': {
+        const st = cache.customTasks[p.ref];
+        if (st) cache.customTasks[p.ref] = { ...st, lastDoneAt: e.occurredAt, doneCount: st.doneCount + 1 };
+        else { const o = cache.onceTasks.find((x) => x.id === p.ref); if (o) o.doneAt = e.occurredAt; }
+        break;
+      }
+      case 'task_once':
+        cache.onceTasks.push({ id: e.id, label: p.label, dueAt: p.dueAt, doneAt: null });
+        break;
       case 'archive':
         archivedAt = e.occurredAt;
         break;
@@ -145,6 +158,7 @@ export function buildPlant(input, now = nowIso()) {
   const pot = optionalPot(input);
   Object.assign(plant, pot);
   if (isPresetKey(input.stockPreset)) plant.stockPreset = input.stockPreset;
+  if (isGroupId(input.groupId)) plant.groupId = input.groupId;
   return { plant, stage };
 }
 
@@ -172,6 +186,6 @@ export function clonePlantInput(plant, existingNames = []) {
     harvestable: plant.harvestable, location: plant.location, source: plant.source,
     baseOverride: plant.baseOverride, learnedBase: learned || null,
     potVolumeL: plant.cache?.pot?.volumeL ?? plant.potVolumeL, substrate: plant.substrate,
-    stockPreset: plant.stockPreset
+    stockPreset: plant.stockPreset, groupId: plant.groupId
   };
 }

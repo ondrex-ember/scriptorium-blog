@@ -207,3 +207,23 @@ input, select, textarea { font-size: 16px; }
 .tag.q-mid { background: var(--status-expiring-bg); color: var(--status-expiring); border-color: transparent; }
 .tag.q-low { background: var(--status-expired-bg); color: var(--status-expired); border-color: transparent; }
 .stock-q { font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* RCv0.193: plant groups */
+.tag-link { cursor: pointer; font: inherit; font-size: 11px; color: var(--accent); border-color: var(--accent); background: var(--surface-alt); }
+.group-card { display: block; }
+.cluster { border-bottom: 1px solid var(--border); }
+.cluster:last-child { border-bottom: 0; }
+.cluster-head .item-name::before { content: '▸ '; color: var(--text-muted); }
+.cluster-head.open .item-name::before { content: '▾ '; }
+.cluster-body { padding-left: 14px; border-left: 3px solid var(--border); margin-left: 10px; }
+.bulk-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.bulk-actions .btn { display: inline-flex; gap: 6px; align-items: center; }
+.group-member .check-row input { width: 22px; height: 22px; }
+.row-actions { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.task-assign-row { align-items: center; gap: 10px; }
+.template-card .form-actions { justify-content: flex-end; margin-top: 8px; }
+
+/* derived metrics */
+.tag-warn { color: var(--status-missing); border-color: currentColor; }
+.metric-val { display: inline-flex; flex-wrap: wrap; gap: 4px 6px; justify-content: flex-end; align-items: center; text-align: right; }
+.metric-row, .pattern-row { align-items: center; }
